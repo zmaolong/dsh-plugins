@@ -4,13 +4,13 @@ DSH 的 **Agent 插件**运行时与市场（骨架）。
 
 Agent 插件指跨 Harness 的插件资产包：`plugin.json` 加 `skills/`、`commands/`、`hooks/`、`mcpServers` 等能力。已知格式包括 Claude Code、CodeBuddy、ZCode；它们不是 DSH 插件（cordis bundle）。本包自己才是 DSH 插件，负责把 Agent 插件装进 DSH，并把能力注册成 DSH 的技能、命令、hooks 与 MCP。
 
-> 当前只是**骨架**：包能装、能加载、能用 `/hub` 查看状态；还不能真的安装或运行 Agent 插件。
+> 当前只是**骨架**：包能装、能加载、能用 `/agent-plugin` 查看状态；还不能真的安装或运行 Agent 插件。
 
 ## 现在有什么
 
 - 标准 DSH 组合包：`package.json` 的 `dsh.bundle.patch` → `cordis.patch.yml`
 - 入口 `lib/index.js`：导出 `name`、`inject`、`apply(ctx, config)`
-- `/hub` 命令：`status`、`formats`、`path`、`version`
+- `/agent-plugin` 命令：`status`、`formats`、`path`、`version`
 - 格式注册表：claude / codebuddy / zcode 的 manifest 与 marketplace 候选路径
 - 存储根解析：配置 `home` → `DSH_AGENT_PLUGIN_HUB_HOME` → `~/.dsh/agent-plugin-hub`
 
@@ -24,7 +24,7 @@ dsh-agent-plugin-hub/
 │  ├─ index.js           # Cordis 入口
 │  ├─ hub.js             # 路径、格式表、状态
 │  ├─ formats.js         # 各 Harness 格式的清单路径
-│  └─ commands.js        # /hub 命令
+│  └─ commands.js        # /agent-plugin 命令
 └─ README.md
 ```
 
@@ -43,7 +43,7 @@ dsh plugin --profile web add E:\workspace\dsh-plugins\packages\dsh-agent-plugin-
 dsh --profile web
 ```
 
-装好后在会话里执行 `/hub` 验证；`cordis.patch.yml` 的改动约 1 秒热重载，`lib/*.js` 的改动需要重启宿主。
+装好后在会话里执行 `/agent-plugin` 验证；`cordis.patch.yml` 的改动约 1 秒热重载，`lib/*.js` 的改动需要重启宿主。
 
 ## 配置
 
@@ -69,7 +69,7 @@ dsh --profile web
 ## 约定
 
 - 不 import 任何 `@deepseek-ai/*` 包：profile 的 `autoInstallPeers` 是关闭的，第三方插件只依赖 Node 内置模块与 `ctx` 接口。
-- 被托管的 Agent 插件不进入 DSH 插件树，不出现在 Plugins 页；管理入口是本包的 `/hub` 命令（后续加 Web 页）。
+- 被托管的 Agent 插件不进入 DSH 插件树，不出现在 Plugins 页；管理入口是本包的 `/agent-plugin` 命令（后续加 Web 页）。
 - 不读取、不依赖、不写入其他 Harness 的插件目录；扩展包只从用户显式添加的市场进入本包自己的 cache。
 
 ## 市场索引

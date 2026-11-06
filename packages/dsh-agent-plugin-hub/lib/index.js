@@ -5,7 +5,7 @@
  * 跨 Harness 的 Agent 插件（Claude Code / CodeBuddy / ZCode 等格式）。
  * 被托管的 Agent 插件不是 DSH 插件，不会出现在 DSH 的插件树里。
  *
- * 骨架阶段只做三件事：算出存储根、注册格式表、暴露 `/hub` 命令。
+ * 骨架阶段只做三件事：算出存储根、注册格式表、暴露 `/agent-plugin` 命令。
  *
  * @module dsh-agent-plugin-hub
  */

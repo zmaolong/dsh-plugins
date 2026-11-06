@@ -89,7 +89,7 @@ dsh --profile web
 
 | 包 | 作用 | 代码要点 |
 |---|---|---|
-| `dsh-agent-plugin-hub` | 托管 Claude Code、CodeBuddy、ZCode 等 Agent 插件格式的运行时与市场骨架 | 组合包 + `/hub` 命令；`lib/hub.js` 解析存储根与格式表，`lib/formats.js` 列清单路径 |
+| `dsh-agent-plugin-hub` | 托管 Claude Code、CodeBuddy、ZCode 等 Agent 插件格式的运行时与市场骨架 | 组合包 + `/agent-plugin` 命令；`lib/hub.js` 解析存储根与格式表，`lib/formats.js` 列清单路径 |
 
 包内细节见 [`packages/dsh-agent-plugin-hub/README.md`](packages/dsh-agent-plugin-hub/README.md)。
 
