@@ -1,7 +1,8 @@
 # HANDOFF — dsh-agent-plugin-hub 0.1.0
 
 > 状态：**主功能可用，已发布 0.1.0**。本文件在 `release-0.1.0` 分支提交，记录次日接手所需的一切。
-> 发布代码提交：`373d499`（`release: 0.1.0 版本号与 README 更新`）；本 HANDOFF 与索引提交在该提交之后。
+> 发布代码提交：`373d499`（`release: 0.1.0 版本号与 README 更新`）；HANDOFF 提交 `3380f4f`；
+> 索引提交 `8844625`（`index.json` 指向 `3380f4f`，已验证线上 raw 可读）。
 
 ## 30 秒速览
 
@@ -77,7 +78,8 @@ $ cd packages\dsh-agent-plugin-hub; npm test
    - 斜杠命令的 **UI 调用**无法由 Agent 自动执行（宿主没有给 Agent 的命令执行接口），
      `/agent-plugin` 与插件命令的注册由代码路径 + 无注册错误日志 + 单测证明；
    - **宿主重启后的现场恢复**未实测（单测覆盖）；下次启动会自动读取 `state.json` 并重建注入；
-   - hooks 的 MCP/Notification 等未映射事件、MCP 挂载均按决策表标注「未生效」。
+   - hooks 的 MCP/Notification 等未映射事件、MCP 挂载均按决策表标注「未生效」；
+   - 当前宿主进程里仍按安装时的 0.0.1 元数据运行（代码走 link 指向工作区），重启后显示 0.1.0。
 
 ## 分支 / 提交 / 索引
 
@@ -85,10 +87,24 @@ $ cd packages\dsh-agent-plugin-hub; npm test
 |---|---|
 | 发布分支 | `release-0.1.0`（代码 + 脚本 + index.json + HANDOFF.md） |
 | 发布代码提交 | `373d499`（版本号 0.1.0 + README） |
+| HANDOFF 提交 | `3380f4f` |
+| 索引提交 | `8844625`（`index.json` 指向 `3380f4f`，source commit 已核对） |
 | 功能提交 | `0a4cb85`（市场、安装器、能力注入）、`9127546`（`/hub` → `/agent-plugin`） |
 | 索引 URL | `https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.1.0/index.json` |
 | 主分支 | `main` 只保留 `README.md`（文档分支，不放代码） |
 | 旧分支 | `release-0.0.1` 保留 0.0.1 骨架历史 |
+
+线上索引验证（推送后立即执行，带 `?nocache=` 绕过缓存）：
+
+```text
+HTTP 200
+format=1  plugin=dsh-agent-plugin-hub  version=0.1.0
+commit=3380f4f493d95851dd8a5a98a6211e2d7603f577
+path=packages/dsh-agent-plugin-hub
+title_zh=Agent 插件中心
+```
+
+远端分支确认：`git ls-remote origin` 含 `refs/heads/release-0.1.0 -> 884462511937019398c0020ec651cc5733c1cc0e`。
 
 索引由 `node scripts\build-index.mjs` 生成（先删除旧 `index.json` 以免合并 0.0.1 条目）；
 条目 commit 指向发布代码提交，版本 `0.1.0`，source 为 `git+https://github.com/zmaolong/dsh-plugins#<commit>&path:packages/dsh-agent-plugin-hub`。
