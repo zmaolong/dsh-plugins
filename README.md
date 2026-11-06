@@ -28,13 +28,24 @@ dsh-plugins/
 │   ├── build-index.mjs
 │   └── serve-index.mjs
 └── packages/
-    ├── dsh-example-hello/      # 最小插件
-    │   ├── package.json
-    │   ├── cordis.patch.yml
-    │   ├── README.md
-    │   └── lib/index.js
-    ├── dsh-example-tool/       # 注册一个模型工具
-    └── dsh-example-skill/      # 注册一个内置 skill
+    └── dsh-agent-plugin-hub/   # Agent 插件运行时与市场（骨架）
+        ├── package.json
+        ├── cordis.patch.yml
+        ├── README.md
+        └── lib/
+```
+
+### 分支与发布
+
+| 分支 | 内容 |
+|---|---|
+| `main` | 文档与仓库说明（本 README） |
+| `release-x.y.z` | 对应版本的插件代码、脚本与生成的 `index.json`；市场索引从发布分支读取 |
+
+当前发布分支为 `release-0.0.1`。在 DSH 插件页 → **发现** → **添加索引源** 时填：
+
+```text
+https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json
 ```
 
 ---
@@ -55,12 +66,12 @@ node scripts\serve-index.mjs
 # http://127.0.0.1:8231/index.json
 ```
 
-> 此时索引里的安装地址还是占位仓库地址，真装会失败。要真正安装，先推送 Git 仓库（或发布 npm），再重新生成索引。
+> 索引里的安装地址取自 `git remote origin`（本仓库：`https://github.com/zmaolong/dsh-plugins`）。发布时在对应的 `release-x.y.z` 分支提交后重新生成索引，安装才能命中真实 Git 提交。
 
 ### 3. 先把插件装上跑起来（绕过索引，开发期用）
 
 ```powershell
-dsh plugin --profile web add E:\workspace\dsh-plugins\packages\dsh-example-hello
+dsh plugin --profile web add E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub
 dsh --profile web
 ```
 
@@ -74,21 +85,21 @@ dsh --profile web
 
 ---
 
-## 三个示例
+## 仓库里的插件
 
-| 包 | 演示 | 代码要点 |
+| 包 | 作用 | 代码要点 |
 |---|---|---|
-| `dsh-example-hello` | 最小可跑插件 | `export const name` + `export function apply(ctx)` |
-| `dsh-example-tool` | 给模型加一个工具 `hello_tool` | `inject = ['tools']`，`ctx.tools.register({...})` |
-| `dsh-example-skill` | 内置一条 skill | `inject = ['skills']`，`ctx.skills.registerProvider(...)` |
+| `dsh-agent-plugin-hub` | 托管 Claude Code、CodeBuddy、ZCode 等 Agent 插件格式的运行时与市场骨架 | 组合包 + `/hub` 命令；`lib/hub.js` 解析存储根与格式表，`lib/formats.js` 列清单路径 |
 
-三个示例都**刻意不 import 任何 `@deepseek-ai/*` 包**。原因：profile 的 `pnpm-workspace.yaml` 里是 `autoInstallPeers: false`，peer 依赖不会被安装，第三方插件 `import '@deepseek-ai/...'` 会在宿主里解析失败。需要 `defineTool` 这类助手时，把它写进 `dependencies` 并和宿主版本对齐；能用 `ctx` 提供的接口就优先用 `ctx`。
+包内细节见 [`packages/dsh-agent-plugin-hub/README.md`](packages/dsh-agent-plugin-hub/README.md)。
+
+本包**刻意不 import 任何 `@deepseek-ai/*` 包**。原因：profile 的 `pnpm-workspace.yaml` 里是 `autoInstallPeers: false`，peer 依赖不会被安装，第三方插件 `import '@deepseek-ai/...'` 会在宿主里解析失败。需要 `defineTool` 这类助手时，把它写进 `dependencies` 并和宿主版本对齐；能用 `ctx` 提供的接口就优先用 `ctx`。
 
 ---
 
 ## 新建一个插件
 
-1. 复制 `packages/dsh-example-hello`，改成你的包名目录。
+1. 参考 `packages/dsh-agent-plugin-hub` 的骨架，复制成你的包名目录。
 2. 改 `package.json`：`name`、`version`、`description`、`dsh.market` 展示信息。
 3. 改 `cordis.patch.yml`：`id` 换成本插件独有的行 id，`name` 换成**自己的包名**。
 4. 改 `lib/index.js`：`export const name` 和 `apply` 里的逻辑。
@@ -106,8 +117,8 @@ dsh --profile web
 
   ```yaml
   - insert:
-      - id: example-hello
-        name: 'dsh-example-hello'
+      - id: my-plugin
+        name: 'my-plugin'
   ```
 
 - 索引条目的 `name` 必须等于该包 `package.json` 的 `name`（Git + `path` 安装时，就是子目录里那个 `package.json` 的 `name`），否则安装状态对不上。
@@ -127,9 +138,9 @@ dsh --profile web
   },
   "plugins": [
     {
-      "name": "dsh-example-hello",
-      "title": { "en": "Example Hello", "zh-cn": "示例：问候" },
-      "description": { "en": "Minimal plugin.", "zh-cn": "最小示例。" },
+      "name": "my-plugin",
+      "title": { "en": "My Plugin", "zh-cn": "我的插件" },
+      "description": { "en": "Sample plugin.", "zh-cn": "示例插件。" },
       "metadata": { "category": "tool", "keywords": ["example"] },
       "versions": [
         {
@@ -137,9 +148,9 @@ dsh --profile web
           "publishTimestamp": 1767225600,
           "source": {
             "type": "git",
-            "url": "https://github.com/your-name/dsh-plugins",
+            "url": "https://github.com/zmaolong/dsh-plugins",
             "commit": "0123456789abcdef0123456789abcdef01234567",
-            "path": "packages/dsh-example-hello"
+            "path": "packages/my-plugin"
           }
         }
       ]
@@ -178,7 +189,7 @@ node scripts\build-index.mjs
 
 | 方式 | 索引 URL | 说明 |
 |---|---|---|
-| 仓库 raw | `https://raw.githubusercontent.com/<org>/<repo>/HEAD/index.json` | 最省事，无需开 Pages |
+| 仓库 raw | `https://raw.githubusercontent.com/<org>/<repo>/HEAD/index.json` | 最省事，无需开 Pages；索引在发布分支时把 `HEAD` 换成分支名 |
 | GitHub Pages | `https://<org>.github.io/<repo>/index.json` | 需要仓库开 Pages |
 | npm 包 + jsDelivr | `https://cdn.jsdelivr.net/npm/<index-pkg>/index.json` | 最快、有版本号可回滚 |
 | 内网静态服务器 | `https://intranet.example/index.json` | 团队私有最直接，`http:` 也接受 |
