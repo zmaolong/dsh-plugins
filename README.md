@@ -28,11 +28,13 @@ dsh-plugins/
 │   ├── build-index.mjs
 │   └── serve-index.mjs
 └── packages/
-    └── dsh-agent-plugin-hub/   # Agent 插件运行时与市场（骨架）
+    └── dsh-agent-plugin-hub/   # Agent 插件运行时与市场（0.1.0）
         ├── package.json
         ├── cordis.patch.yml
         ├── README.md
-        └── lib/
+        ├── docs/HOST-API.md    # 宿主 API 侦察结论
+        ├── lib/                # 12 个 ES 模块，零运行时依赖
+        └── test/               # node --test：fixtures + 53 个用例
 ```
 
 ### 分支与发布
@@ -42,10 +44,10 @@ dsh-plugins/
 | `main` | 文档与仓库说明（本 README） |
 | `release-x.y.z` | 对应版本的插件代码、脚本与生成的 `index.json`；市场索引从发布分支读取 |
 
-当前发布分支为 `release-0.0.1`。在 DSH 插件页 → **发现** → **添加索引源** 时填：
+当前发布分支为 `release-0.1.0`。在 DSH 插件页 → **发现** → **添加索引源** 时填：
 
 ```text
-https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json
+https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.1.0/index.json
 ```
 
 ---
@@ -89,7 +91,7 @@ dsh --profile web
 
 | 包 | 作用 | 代码要点 |
 |---|---|---|
-| `dsh-agent-plugin-hub` | 托管 Claude Code、CodeBuddy、ZCode 等 Agent 插件格式的运行时与市场骨架 | 组合包 + `/agent-plugin` 命令；`lib/hub.js` 解析存储根与格式表，`lib/formats.js` 列清单路径 |
+| `dsh-agent-plugin-hub` | 在 DSH 里托管 Claude Code、CodeBuddy、ZCode 等 Agent 插件：市场、安装/更新/回滚与能力注入 | 组合包 + `/agent-plugin` 命令；skills/commands/hooks 注入，MCP 清单标注；`lib/` 12 个模块，53 个 `node --test` 用例 |
 
 包内细节见 [`packages/dsh-agent-plugin-hub/README.md`](packages/dsh-agent-plugin-hub/README.md)。
 

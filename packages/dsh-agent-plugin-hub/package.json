@@ -1,6 +1,6 @@
 {
   "name": "dsh-agent-plugin-hub",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Agent Plugin Hub for DSH: host Claude Code / CodeBuddy / ZCode Agent plugins as DSH skills, commands, hooks and MCP.",
   "type": "module",
   "main": "lib/index.js",
