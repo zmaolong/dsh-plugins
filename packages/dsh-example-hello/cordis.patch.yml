@@ -1,5 +1,0 @@
-# 把这个包的行插进 profile 的组合层。
-# id 只要在本 profile 里唯一即可；name 必须是能解析到的模块名（通常就是自己的包名）。
-- insert:
-    - id: example-hello
-      name: 'dsh-example-hello'
