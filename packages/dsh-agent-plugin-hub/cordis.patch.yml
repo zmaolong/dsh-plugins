@@ -1,0 +1,7 @@
+# 把 Agent Plugin Hub 的行插进 profile 组合层。
+# home 留空时依次取 DSH_AGENT_PLUGIN_HUB_HOME、~/.dsh/agent-plugin-hub。
+- insert:
+    - id: agent-plugin-hub
+      name: 'dsh-agent-plugin-hub'
+      config:
+        home: ''

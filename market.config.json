@@ -18,9 +18,5 @@
       "title": { "en": "Interface", "zh-cn": "界面" }
     }
   },
-  "labels": {
-    "example": {
-      "title": { "en": "Example", "zh-cn": "示例" }
-    }
-  }
+  "labels": {}
 }
