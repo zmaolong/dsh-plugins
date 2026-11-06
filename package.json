@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugins",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "description": "Multiple DSH plugins in one repository, aggregated into one plugin market index.",

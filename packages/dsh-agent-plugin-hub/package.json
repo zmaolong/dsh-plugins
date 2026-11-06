@@ -1,6 +1,6 @@
 {
   "name": "dsh-agent-plugin-hub",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Agent Plugin Hub for DSH: a skeleton runtime and market for Agent plugin formats (Claude Code, CodeBuddy, ZCode).",
   "type": "module",
   "main": "lib/index.js",
