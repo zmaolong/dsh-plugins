@@ -42,12 +42,12 @@ dsh-plugins/
 | 分支 | 内容 |
 |---|---|
 | `main` | 文档与仓库说明（本 README） |
-| `release-x.y.z` | 对应版本的插件代码、脚本与生成的 `index.json`；市场索引从发布分支读取 |
+| `release-0.0.1` | 当前全部插件代码、脚本、`HANDOFF.md` 与生成的 `index.json`；市场索引从该分支读取（分支名沿用首个发布版本，包版本为 0.1.0） |
 
-当前发布分支为 `release-0.1.0`。在 DSH 插件页 → **发现** → **添加索引源** 时填：
+当前发布分支为 `release-0.0.1`。在 DSH 插件页 → **发现** → **添加索引源** 时填：
 
 ```text
-https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.1.0/index.json
+https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json
 ```
 
 ---
