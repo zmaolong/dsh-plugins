@@ -1,8 +1,8 @@
 # HANDOFF — dsh-agent-plugin-hub 0.1.0
 
-> 状态：**主功能可用，已发布 0.1.0**。本文件在 `release-0.1.0` 分支提交，记录次日接手所需的一切。
-> 发布代码提交：`373d499`（`release: 0.1.0 版本号与 README 更新`）；HANDOFF 提交 `3380f4f`；
-> 索引提交 `8844625`（`index.json` 指向 `3380f4f`，已验证线上 raw 可读）。
+> 状态：**主功能可用，已发布 0.1.0**。本文件在 `release-0.0.1` 分支提交（该分支承载当前全部代码）。
+> 提交作者与提交者统一为 `zmaolong <203504243+zmaolong@users.noreply.github.com>`；
+> 原 `release-0.1.0` 分支已删除，其内容全部并入 `release-0.0.1`。
 
 ## 30 秒速览
 
@@ -22,7 +22,7 @@
 - 索引源（DSH 插件页 → 发现 → 添加索引源）：
 
 ```text
-https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.1.0/index.json
+https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json
 ```
 
 ## 功能清单与 DoD 对照
@@ -85,29 +85,30 @@ $ cd packages\dsh-agent-plugin-hub; npm test
 
 | 项目 | 值 |
 |---|---|
-| 发布分支 | `release-0.1.0`（代码 + 脚本 + index.json + HANDOFF.md） |
-| 发布代码提交 | `373d499`（版本号 0.1.0 + README） |
-| HANDOFF 提交 | `3380f4f` |
-| 索引提交 | `8844625`（`index.json` 指向 `3380f4f`，source commit 已核对） |
-| 功能提交 | `0a4cb85`（市场、安装器、能力注入）、`9127546`（`/hub` → `/agent-plugin`） |
-| 索引 URL | `https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.1.0/index.json` |
+| 发布分支 | `release-0.0.1`（承载当前全部代码 + 脚本 + index.json + HANDOFF.md；包版本 `0.1.0`，分支名沿用首个发布版本） |
+| 发布代码提交 | `f05ab9d`（`release: 0.1.0 版本号与 README 更新`） |
+| 功能提交 | `8d56fc8`（市场、安装器、能力注入）、`11888c4`（`/hub` → `/agent-plugin`） |
+| 索引提交 | 本分支当前 `index.json` 所在提交（`git log -1 -- index.json`） |
+| 索引 URL | `https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json` |
 | 主分支 | `main` 只保留 `README.md`（文档分支，不放代码） |
-| 旧分支 | `release-0.0.1` 保留 0.0.1 骨架历史 |
+| 提交作者 | 全部作者与提交者统一为 `zmaolong <203504243+zmaolong@users.noreply.github.com>` |
+| 已删除分支 | `release-0.1.0`（本地与远端均已删除，内容并入 `release-0.0.1`） |
 
-线上索引验证（推送后立即执行，带 `?nocache=` 绕过缓存）：
+线上索引验证（推送后执行，带 `?nocache=` 绕过缓存）：
 
 ```text
 HTTP 200
 format=1  plugin=dsh-agent-plugin-hub  version=0.1.0
-commit=3380f4f493d95851dd8a5a98a6211e2d7603f577
 path=packages/dsh-agent-plugin-hub
 title_zh=Agent 插件中心
+source.commit = 本分支生成索引时的 HEAD（与本文件更新提交一致）
 ```
 
-远端分支确认：`git ls-remote origin` 含 `refs/heads/release-0.1.0 -> 884462511937019398c0020ec651cc5733c1cc0e`。
+远端分支确认：`git ls-remote origin` 只应含 `refs/heads/main` 与 `refs/heads/release-0.0.1`。
 
-索引由 `node scripts\build-index.mjs` 生成（先删除旧 `index.json` 以免合并 0.0.1 条目）；
-条目 commit 指向发布代码提交，版本 `0.1.0`，source 为 `git+https://github.com/zmaolong/dsh-plugins#<commit>&path:packages/dsh-agent-plugin-hub`。
+索引由 `node scripts\build-index.mjs` 生成（先删除旧 `index.json` 以免合并历史条目）；
+条目 commit 指向生成索引时的发布分支 HEAD，版本 `0.1.0`，source 为
+`git+https://github.com/zmaolong/dsh-plugins#<commit>&path:packages/dsh-agent-plugin-hub`。
 
 ## 已知限制与自动决策记录
 
@@ -137,7 +138,7 @@ title_zh=Agent 插件中心
 2. 重启后执行 `/agent-plugin status`，应看到：版本 `0.1.0`、0 插件 / 0 市场、技能 provider 已注册、
    commands 已注册、hooks 已挂载、MCP 未生效（带原因）。
 3. 若当前会话技能目录里还能看到夹具技能 `greet`，那是清理前的缓存；重启后消失。
-4. 可选：在插件页「发现 → 添加索引源」填入上面的 `release-0.1.0` 索引 URL，即可一键安装本插件后续版本。
+4. 可选：在插件页「发现 → 添加索引源」填入上面的 `release-0.0.1` 索引 URL，即可一键安装本插件后续版本。
 5. 想立即试用真实 Agent 插件：
 
 ```text

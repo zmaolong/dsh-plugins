@@ -172,10 +172,10 @@ E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub
 
 ## 市场索引
 
-发布分支：`release-0.1.0`。在 DSH 插件页 → 发现 → 添加索引源：
+发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 0.1.0）。在 DSH 插件页 → 发现 → 添加索引源：
 
 ```text
-https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.1.0/index.json
+https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json
 ```
 
 本包更新后先提交 Git，再重新生成聚合索引（见仓库根 README）。
