@@ -121,15 +121,15 @@ dsh --profile web
 ```json
 {
   "format": 1,
-  "title": { "en": "My DSH plugins", "zh-CN": "我的 DSH 插件集" },
+  "title": { "en": "My DSH plugins", "zh-cn": "我的 DSH 插件集" },
   "metadata": {
-    "categories": { "tool": { "title": { "en": "Tools", "zh-CN": "工具" } } }
+    "categories": { "tool": { "title": { "en": "Tools", "zh-cn": "工具" } } }
   },
   "plugins": [
     {
       "name": "dsh-example-hello",
-      "title": { "en": "Example Hello", "zh-CN": "示例：问候" },
-      "description": { "en": "Minimal plugin.", "zh-CN": "最小示例。" },
+      "title": { "en": "Example Hello", "zh-cn": "示例：问候" },
+      "description": { "en": "Minimal plugin.", "zh-cn": "最小示例。" },
       "metadata": { "category": "tool", "keywords": ["example"] },
       "versions": [
         {
@@ -207,6 +207,8 @@ node scripts\build-index.mjs
 
 顶层：`format`（必填，只能是 `1`）、`title`（必填，字符串或带 `en` 的多语言对象）、`description`（可选）、`metadata`（可选，声明分类/标签/排序键）。
 
+> 多语言对象的语言 id 必须**小写**：`zh-cn`、`en`。写成 `zh-CN` 会被校验器拒绝（这是最容易踩的一条，本仓库的 `build-index.mjs` 会自动把 key 转小写）。
+
 `plugins[]`：`name`（必填，合法 npm 包名，全局唯一）、`title`、`description`、`icon`、`author`、`homepage`、`repository`、`metadata`（`category` / `labels` / `sortKeys` / `keywords`）、`versions`（必填，非空）。
 
 `versions[]`：`version`（必填，精确 SemVer）、`publishTimestamp`（必填，Unix 秒整数）、`engines`（可选，`{ dsh: "<SemVer range>" }`）、`source`（必填）。
@@ -226,6 +228,7 @@ node scripts\build-index.mjs
 - **想一次装完所有插件**：索引是逐个装的；真要"一装全装"，就做一个打包 bundle，在它的 `cordis.patch.yml` 里 insert 多行——但那样版本会绑在一起，不适合独立迭代。
 - **图标不显示**：图标必须 https 或与索引同源，别写 http 图床。
 - **同一个包名重复**：索引内不允许重复，改包名前先看看索引生成有没有报错。
+- **索引加不进去**：先看发现页「索引源」里对应源下方的错误；最常见的是语言 id 写成 `zh-CN`、URL 有重定向或带查询串。
 
 ---
 

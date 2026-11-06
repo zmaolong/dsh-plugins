@@ -22,10 +22,10 @@
       "patch": "./cordis.patch.yml"
     },
     "market": {
-      "title": { "en": "Example Skill", "zh-CN": "示例：内置技能" },
+      "title": { "en": "Example Skill", "zh-cn": "示例：内置技能" },
       "description": {
         "en": "Ships an example-greeting skill from an asset Markdown file.",
-        "zh-CN": "从 assets 里的 Markdown 提供一条 example-greeting 技能。"
+        "zh-cn": "从 assets 里的 Markdown 提供一条 example-greeting 技能。"
       },
       "category": "skill",
       "labels": ["example"],

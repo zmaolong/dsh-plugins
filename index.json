@@ -1,0 +1,143 @@
+{
+  "format": 1,
+  "title": {
+    "en": "My DSH plugins",
+    "zh-cn": "我的 DSH 插件集"
+  },
+  "description": {
+    "en": "A self-hosted plugin index for my own DeepSeek Harness plugins.",
+    "zh-cn": "我自己的一组 DSH 插件索引。"
+  },
+  "metadata": {
+    "categories": {
+      "tool": {
+        "title": {
+          "en": "Tools",
+          "zh-cn": "工具"
+        }
+      },
+      "skill": {
+        "title": {
+          "en": "Skills",
+          "zh-cn": "技能"
+        }
+      },
+      "ui": {
+        "title": {
+          "en": "Interface",
+          "zh-cn": "界面"
+        }
+      }
+    },
+    "labels": {
+      "example": {
+        "title": {
+          "en": "Example",
+          "zh-cn": "示例"
+        }
+      }
+    },
+    "sortKeys": {}
+  },
+  "plugins": [
+    {
+      "name": "dsh-example-hello",
+      "title": {
+        "en": "Example Hello",
+        "zh-cn": "示例：问候"
+      },
+      "description": {
+        "en": "The smallest possible DSH plugin: one module, one row, one log line.",
+        "zh-cn": "最小的 DSH 插件：一个模块、一行配置、一行日志。"
+      },
+      "metadata": {
+        "category": "tool",
+        "labels": [
+          "example"
+        ],
+        "keywords": [
+          "example",
+          "hello"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1793972947,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/your-name/dsh-plugins",
+            "commit": "df8ac1b5a5dd5cb1e93dd6ec484a3c3cc51a3890",
+            "path": "packages/dsh-example-hello"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dsh-example-skill",
+      "title": {
+        "en": "Example Skill",
+        "zh-cn": "示例：内置技能"
+      },
+      "description": {
+        "en": "Ships an example-greeting skill from an asset Markdown file.",
+        "zh-cn": "从 assets 里的 Markdown 提供一条 example-greeting 技能。"
+      },
+      "metadata": {
+        "category": "skill",
+        "labels": [
+          "example"
+        ],
+        "keywords": [
+          "example",
+          "skill"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1793972947,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/your-name/dsh-plugins",
+            "commit": "df8ac1b5a5dd5cb1e93dd6ec484a3c3cc51a3890",
+            "path": "packages/dsh-example-skill"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dsh-example-tool",
+      "title": {
+        "en": "Example Tool",
+        "zh-cn": "示例：自定义工具"
+      },
+      "description": {
+        "en": "Registers a hello_tool the model can call; shows the tool registration shape.",
+        "zh-cn": "注册一个模型可调用的 hello_tool，演示工具注册写法。"
+      },
+      "metadata": {
+        "category": "tool",
+        "labels": [
+          "example"
+        ],
+        "keywords": [
+          "example",
+          "tool"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.1.0",
+          "publishTimestamp": 1793972947,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/your-name/dsh-plugins",
+            "commit": "df8ac1b5a5dd5cb1e93dd6ec484a3c3cc51a3890",
+            "path": "packages/dsh-example-tool"
+          }
+        }
+      ]
+    }
+  ]
+}

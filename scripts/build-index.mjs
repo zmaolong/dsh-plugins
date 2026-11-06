@@ -70,10 +70,18 @@ function detectRepo() {
   return PLACEHOLDER_REPO
 }
 
+/** 多语言文本：字符串视为英文；对象要求有小写语言 id，并补齐 en。 */
 function localized(value, fallback) {
-  if (typeof value === 'string' && value.trim() !== '') return { en: value.trim() }
-  if (value && typeof value === 'object' && !Array.isArray(value)) return value
-  return fallback
+  const source = typeof value === 'string' ? { en: value } : value
+  if (source === null || typeof source !== 'object' || Array.isArray(source)) return fallback
+  const text = {}
+  for (const [language, member] of Object.entries(source)) {
+    const id = String(language).toLowerCase()
+    if (typeof member !== 'string' || member.trim() === '') continue
+    text[id] = member
+  }
+  if (!Object.hasOwn(text, 'en')) text.en = fallback.en
+  return text
 }
 
 /** 简单 SemVer 比较，够排序索引里的版本用。 */
@@ -178,10 +186,15 @@ async function main() {
     pkg.__dir = dir
     validatePackage(pkg, dir, { metadata })
 
+    const source = sourceFor(pkg)
+    const previousVersion = previous.get(`${pkg.name}@${pkg.version}`)
     const current = {
       version: pkg.version,
-      publishTimestamp: SOURCE_MODE === 'git' || pkg.dsh?.market?.source?.type === 'git' ? gitState().timestamp : Math.floor(Date.now() / 1000),
-      source: sourceFor(pkg),
+      publishTimestamp:
+        source.type === 'git'
+          ? gitState().timestamp
+          : (previousVersion?.publishTimestamp ?? Math.floor(Date.now() / 1000)),
+      source,
     }
 
     const versions = [current]
@@ -233,7 +246,8 @@ async function main() {
 
   console.log(`[build-index] 已写出 ${INDEX_PATH}`)
   for (const entry of entries) {
-    const source = SOURCE_MODE === 'git' ? `git+path (${entry.versions[0].source.path})` : 'npm'
+    const first = entry.versions[0]
+    const source = first.source.type === 'git' ? `git+path (${first.source.path})` : 'npm'
     console.log(`  - ${entry.name}@${entry.versions[0].version}  ${source}  版本数 ${entry.versions.length}`)
   }
   console.log(`\n下一步：托管 index.json（见 README「索引（市场源）」），然后在 DSH 插件页 → 发现 → 添加索引源。`)

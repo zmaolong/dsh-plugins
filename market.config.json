@@ -1,26 +1,26 @@
 {
   "title": {
     "en": "My DSH plugins",
-    "zh-CN": "我的 DSH 插件集"
+    "zh-cn": "我的 DSH 插件集"
   },
   "description": {
     "en": "A self-hosted plugin index for my own DeepSeek Harness plugins.",
-    "zh-CN": "我自己的一组 DSH 插件索引。"
+    "zh-cn": "我自己的一组 DSH 插件索引。"
   },
   "categories": {
     "tool": {
-      "title": { "en": "Tools", "zh-CN": "工具" }
+      "title": { "en": "Tools", "zh-cn": "工具" }
     },
     "skill": {
-      "title": { "en": "Skills", "zh-CN": "技能" }
+      "title": { "en": "Skills", "zh-cn": "技能" }
     },
     "ui": {
-      "title": { "en": "Interface", "zh-CN": "界面" }
+      "title": { "en": "Interface", "zh-cn": "界面" }
     }
   },
   "labels": {
     "example": {
-      "title": { "en": "Example", "zh-CN": "示例" }
+      "title": { "en": "Example", "zh-cn": "示例" }
     }
   }
 }

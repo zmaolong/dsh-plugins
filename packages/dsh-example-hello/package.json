@@ -21,10 +21,10 @@
       "patch": "./cordis.patch.yml"
     },
     "market": {
-      "title": { "en": "Example Hello", "zh-CN": "示例：问候" },
+      "title": { "en": "Example Hello", "zh-cn": "示例：问候" },
       "description": {
         "en": "The smallest possible DSH plugin: one module, one row, one log line.",
-        "zh-CN": "最小的 DSH 插件：一个模块、一行配置、一行日志。"
+        "zh-cn": "最小的 DSH 插件：一个模块、一行配置、一行日志。"
       },
       "category": "tool",
       "labels": ["example"],
