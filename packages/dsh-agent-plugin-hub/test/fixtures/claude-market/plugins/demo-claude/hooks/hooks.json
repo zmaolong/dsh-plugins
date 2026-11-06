@@ -1,0 +1,21 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|pwsh",
+        "hooks": [
+          { "type": "command", "command": "node -e \"process.exit(2)\"", "timeout": 5 }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      { "hooks": [{ "type": "command", "command": "node -e \"process.stdout.write('ok')\"", "timeout": 5 }] }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": "node -e \";\"", "timeout": 5 }] }
+    ],
+    "Notification": [
+      { "hooks": [{ "type": "command", "command": "node -e \";\"", "timeout": 5 }] }
+    ]
+  }
+}

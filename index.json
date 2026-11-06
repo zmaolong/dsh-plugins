@@ -40,8 +40,8 @@
         "zh-cn": "Agent 插件中心"
       },
       "description": {
-        "en": "Skeleton runtime and market for Agent plugin formats in DSH.",
-        "zh-cn": "DSH 的 Agent 插件运行时与市场骨架：宿主多 Harness 插件格式。"
+        "en": "Host Claude Code / CodeBuddy / ZCode Agent plugins in DSH: markets, install/update/rollback, and skills/commands/hooks/MCP capability injection.",
+        "zh-cn": "在 DSH 里托管 Claude Code / CodeBuddy / ZCode 等 Agent 插件：市场、安装/更新/回滚，以及技能、命令、hooks、MCP 能力注入。"
       },
       "metadata": {
         "category": "tool",
@@ -56,11 +56,11 @@
       "versions": [
         {
           "version": "0.0.1",
-          "publishTimestamp": 1793977045,
+          "publishTimestamp": 1793977783,
           "source": {
             "type": "git",
             "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "fec7ae51f0cc35adf635d8b643b8e1e130852691",
+            "commit": "9127546aa32865482069a3c63e91ca86dea37e54",
             "path": "packages/dsh-agent-plugin-hub"
           }
         }

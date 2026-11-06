@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "fixture-fs": {
+      "command": "node",
+      "args": ["server.js"],
+      "env": { "ROOT": "." }
+    },
+    "fixture-http": {
+      "type": "streamable-http",
+      "url": "http://127.0.0.1:1/mcp"
+    }
+  }
+}

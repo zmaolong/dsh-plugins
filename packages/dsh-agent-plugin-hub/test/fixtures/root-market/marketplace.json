@@ -1,0 +1,10 @@
+{
+  "name": "fixture-root-market",
+  "owner": { "name": "fixture" },
+  "plugins": [
+    {
+      "name": "demo-root",
+      "source": "./plugins/demo-root"
+    }
+  ]
+}

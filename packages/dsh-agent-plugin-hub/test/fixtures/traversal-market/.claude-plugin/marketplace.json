@@ -1,0 +1,14 @@
+{
+  "name": "fixture-traversal-market",
+  "owner": { "name": "fixture" },
+  "plugins": [
+    {
+      "name": "escape-plugin",
+      "source": "../outside-plugin"
+    },
+    {
+      "name": "absolute-plugin",
+      "source": "C:\\Windows\\System32"
+    }
+  ]
+}

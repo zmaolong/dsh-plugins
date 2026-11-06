@@ -1,0 +1,8 @@
+{
+  "name": "demo-claude",
+  "version": "0.1.0",
+  "description": "夹具：Claude Code 格式的 Agent 插件",
+  "author": { "name": "fixture" },
+  "skills": "./skills",
+  "commands": "./commands"
+}

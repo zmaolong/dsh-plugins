@@ -1,0 +1,27 @@
+{
+  "name": "fixture-claude-market",
+  "owner": { "name": "dsh-agent-plugin-hub fixtures" },
+  "metadata": {
+    "version": "0.1.0",
+    "description": "测试夹具：Claude Code 格式市场"
+  },
+  "plugins": [
+    {
+      "name": "demo-claude",
+      "version": "0.1.0",
+      "description": "夹具：Claude Code 格式的 Agent 插件",
+      "source": "./plugins/demo-claude"
+    },
+    {
+      "name": "missing-dir",
+      "version": "0.1.0",
+      "description": "夹具：source 指向不存在的目录",
+      "source": "./plugins/not-there"
+    },
+    {
+      "name": "npm-plugin",
+      "description": "夹具：npm 源（MVP 不支持）",
+      "source": { "source": "npm", "package": "left-pad" }
+    }
+  ]
+}
