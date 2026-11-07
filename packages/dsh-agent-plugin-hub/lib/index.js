@@ -21,6 +21,36 @@ export const name = 'agent-plugin-hub'
 export const inject = ['commands']
 
 /**
+ * 延迟等待可选服务就绪后执行 callback。
+ *
+ * 宿主按「服务可用性」驱动激活：本插件只硬依赖 commands，skills / webServer
+ * 可能在本插件 apply 之后才注册。直接用 ctx.get() 会拿到 undefined，
+ * 因此失败时用 ctx.inject(deps, callback) 挂到服务出现的那一刻。
+ *
+ * @param {object} ctx
+ * @param {string[]} deps
+ * @param {(scope: object) => void} callback
+ * @param {(message: string) => void} onError
+ */
+function deferService(ctx, deps, callback, onError) {
+  try {
+    if (typeof ctx.inject !== 'function') {
+      onError(`宿主 ctx 不支持 inject，无法等待服务 ${deps.join('+')}`)
+      return
+    }
+    ctx.inject(deps, (scope) => {
+      try {
+        callback(scope)
+      } catch (error) {
+        onError(`服务 ${deps.join('+')} 就绪后执行失败：${error instanceof Error ? error.message : String(error)}`)
+      }
+    })
+  } catch (error) {
+    onError(`等待服务 ${deps.join('+')} 失败：${error instanceof Error ? error.message : String(error)}`)
+  }
+}
+
+/**
  * 插件入口。启动失败不会让宿主加载失败：错误写入 hub 日志并在 status 里展示。
  *
  * @param {object} ctx - 宿主注入的上下文（此时 commands 服务已可用）。
@@ -42,7 +72,13 @@ export function apply(ctx, config = {}) {
   } catch {
     /* 宿主不支持 effect 时忽略；进程退出由宿主回收 */
   }
-  // 插件页「Agent Plugin」Tab 的 HTTP 数据面；宿主没有 webServer 时只记录原因。
+  // skills：start() 里若服务尚未就绪会注册失败，这里等服务出现后补注册。
+  if (!hub.skills?.registered) {
+    deferService(ctx, ['skills'], (scope) => {
+      if (hub.skills && !hub.skills.registered) hub.skills.register(scope)
+    }, (message) => hub.store.log('warn', message))
+  }
+  // 插件页「Agent Plugin」Tab 的 HTTP 数据面；webServer 晚到也没关系。
   let uiRoutes = { dispose: () => {} }
   try {
     uiRoutes = mountUiRoutes(ctx, hub)
@@ -56,9 +92,21 @@ export function apply(ctx, config = {}) {
   } catch {
     /* 同上 */
   }
+  if (!hub.uiRoutes?.active) {
+    deferService(ctx, ['webServer'], (scope) => {
+      if (hub.uiRoutes?.active) return
+      const status = mountUiRoutes(scope, hub)
+      if (typeof scope.effect === 'function') {
+        scope.effect(() => () => status.dispose?.())
+      }
+    }, (message) => {
+      hub.uiRoutes = { active: false, reason: message, path: '/agent-plugin/api' }
+      hub.store.log('warn', message)
+    })
+  }
   console.log(
     `[dsh-agent-plugin-hub] v${HUB_VERSION} 已加载；home=${hub.home}；`
-    + `已安装 ${hub.state.plugins.length} 个 Agent 插件，市场 ${hub.markets.list().length} 个；`
+    + `已安装 ${hub.state.plugins.length} 个智能体插件，市场 ${hub.markets.list().length} 个；`
     + `插件页 API：${hub.uiRoutes.active ? '已挂载' : hub.uiRoutes.reason}`,
   )
   return hub

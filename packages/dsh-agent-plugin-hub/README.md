@@ -13,7 +13,7 @@ DSH 的**智能体插件**（Agent Plugins）运行时与市场。
 （cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
 
-> 版本 0.2.2：在 0.1.0（市场 → 安装 → skills/commands 注入、hooks 映射）之上新增
+> 版本 0.2.3：在 0.1.0（市场 → 安装 → skills/commands 注入、hooks 映射）之上新增
 > 插件页「智能体插件」Tab：可视化增删市场、安装/更新/回滚/卸载插件，并逐项启停
 > 技能、命令、hooks 与 MCP 清单。MCP 仍受宿主接口限制，只解析展示并标注「未生效」
 > （见下文与 [`docs/HOST-API.md`](docs/HOST-API.md)）。
@@ -30,7 +30,7 @@ DSH 的技能、命令、hooks 与 MCP。
 `/agent-plugin` 是本包唯一的命令入口；已安装智能体插件自带的命令会注册成
 `/<插件名>-<命令名>`。
 
-## 插件页 UI：智能体插件 Tab（0.2.2）
+## 插件页 UI：智能体插件 Tab（0.2.3）
 
 位置：**首页左边栏 → 插件 → 「已安装」Tab 右侧的「智能体插件」**（order 50，位于「已安装」与「市场」之间）。
 
@@ -44,6 +44,11 @@ DSH 的技能、命令、hooks 与 MCP。
 
 首次安装/升级后：**Host 端需要重启一次 DSH** 才会加载新版插件代码；浏览器端如未出现 Tab，
 刷新一次页面即可（Client 代码由模块表加载）。若 Host API 不可用，Tab 内会显示原因。
+
+> 启动顺序：宿主按「服务可用性」驱动插件激活，本插件只硬依赖 `commands`；
+> `skills` / `webServer` / `subprocess` 可能在本插件 apply 之后才注册。因此技能 provider 与
+> `/agent-plugin/api` 路由通过 `ctx.inject(deps, ...)` 延迟注册，hooks 的执行器改为事件时懒探测，
+> 服务晚到也能自动恢复，不需要重启。
 
 数据通路：Host 端注册前缀路由 `/agent-plugin/api`（本机回环同源访问、POST 要求同源
 Origin + JSON），Client 端通过 `dsh.client` 清单注册到 `settings.plugins.tab` 槽位。

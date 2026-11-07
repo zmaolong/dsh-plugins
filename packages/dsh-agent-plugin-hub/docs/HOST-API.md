@@ -211,3 +211,20 @@ window.__ModuleLoader__.load({ id: 'dsh-agent-plugin-hub', factory(require) {
 
 未使用的替代方案：宿主生成的 `@Remote` 命名空间需要 `@deepseek-ai/*` 依赖（profile 关闭
 `autoInstallPeers`，第三方插件不能 import），因此选择 webServer 前缀路由 + 原生 fetch。
+
+### 启动顺序（0.2.3 修正）
+
+宿主 Loader 按「服务可用性」激活插件：插件行在 `inject` 声明的服务出现后即 apply，但**不保证**
+其它可选服务已经注册。实测一次冷启动中，本插件 apply 时 `ctx.get('webServer')` 返回 undefined，
+导致 API 路由没有挂载（`/agent-plugin/api` 404），技能 provider 也没有注册。
+
+修正：
+
+- 硬依赖只保留 `inject: ['commands']`；
+- `skills` 与 `webServer` 用 `ctx.inject(['skills'], cb)` / `ctx.inject(['webServer'], cb)`
+  延迟注册——服务出现时 callback 才执行，并用 `scope.effect` 绑定注销；
+- hooks 的事件监听不再依赖 `tools` 服务（监听不存在的宿主事件无害），`subprocess` 执行器
+  改为事件发生时懒探测（`probeExecutor()`），服务晚到后 hooks 自动恢复可用。
+
+结论：可选服务应当用 `ctx.inject` 等待而不是在 apply 里一次性 `ctx.get`；不要缓存「服务缺失」
+这一结论。

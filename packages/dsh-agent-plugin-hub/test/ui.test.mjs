@@ -273,3 +273,47 @@ test('ui-data：buildUiState / buildUiPluginDetail 直接调用可用', async (t
   assert.equal(detail.capabilities.hooks.length, 4)
   assert.equal(detail.capabilities.mcpServers.length, 2)
 })
+
+test('hooks：subprocess 服务晚到后执行器懒探测生效', async (t) => {
+  const work = tempHome('hub-ui-')
+  cleanup(t, work)
+  const marketDir = copyFixture('claude-market', work)
+  const ctx = createFakeCtx()
+  // 初始没有 subprocess 服务，模拟宿主按服务可用性激活时本插件先启动
+  const spawnCalls = []
+  const hub = new AgentPluginHub({ home: path.join(work, 'hub-home'), ctx })
+  hub.start()
+  const market = await hub.marketAdd({ type: 'local', location: marketDir })
+  await hub.install({ name: 'demo-claude', market: market.id })
+  const [preListener] = listenerOf(ctx, 'tools/pre-execute')
+  assert.ok(preListener, '即使 subprocess 未就绪也应注册工具事件监听')
+  const before = await preListener({ name: 'Bash', arguments: {} }, async () => ({ kind: 'allow' }))
+  assert.equal(before.kind, 'allow')
+  assert.equal(spawnCalls.length, 0)
+  assert.equal(hub.hooks.stats().events.find((item) => item.event === 'PreToolUse').effective, false)
+
+  // 服务晚到：加入一个可用的假 subprocess
+  ctx.state.services.subprocess = {
+    async terminalEnvironment() {
+      return { platform: 'posix', defaultShell: 'sh' }
+    },
+    async resolveExecutable(name) {
+      return name
+    },
+    spawn(spec) {
+      spawnCalls.push(spec)
+      return {
+        terminate() {},
+        done: Promise.resolve({ exitCode: 0, signal: null }),
+        collected: {
+          stdout: { readFrom: () => ({ text: '' }) },
+          stderr: { readFrom: () => ({ text: '' }) },
+        },
+      }
+    },
+  }
+  const after = await preListener({ name: 'Bash', arguments: {} }, async () => ({ kind: 'allow' }))
+  assert.equal(after.kind, 'allow')
+  assert.equal(spawnCalls.length, 1, '服务到位后应真正执行 hook 命令')
+  assert.equal(hub.hooks.stats().events.find((item) => item.event === 'PreToolUse').effective, true)
+})

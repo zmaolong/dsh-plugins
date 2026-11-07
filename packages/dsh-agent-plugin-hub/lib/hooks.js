@@ -151,7 +151,8 @@ export class HookRuntime {
     this.store = options.store
     this.config = options.config ?? {}
     this.ctx = null
-    this.executor = options.executor ?? null
+    this.fixedExecutor = options.executor ?? null
+    this.executor = this.fixedExecutor
     this.disposers = []
     this.attached = false
     this.reason = ''
@@ -172,18 +173,11 @@ export class HookRuntime {
       return false
     }
     this.ctx = ctx
-    const executor = this.executor ?? createSubprocessExecutor(ctx)
-    this.executor = executor
-    if (!executor.available) {
-      this.reason = executor.reason
-      return false
-    }
     const on = ctx?.on?.bind(ctx)
     if (typeof on !== 'function') {
       this.reason = '宿主 ctx 不支持事件监听'
       return false
     }
-    const tools = ctx.get?.('tools')
     const register = (event, listener) => {
       try {
         const disposer = on(event, listener)
@@ -194,10 +188,9 @@ export class HookRuntime {
         return false
       }
     }
-    if (tools) {
-      register('tools/pre-execute', async (exec, next) => this.onPreToolUse(exec, next))
-      register('tools/result', (exec, result) => this.fire('PostToolUse', exec, result))
-    }
+    // 事件监听不依赖 tools/subprocess：服务晚到也没关系，执行时再懒探测。
+    register('tools/pre-execute', async (exec, next) => this.onPreToolUse(exec, next))
+    register('tools/result', (exec, result) => this.fire('PostToolUse', exec, result))
     register('agent/inbox/inserted', (payload) => this.fire('UserPromptSubmit', payload))
     register('agent/turn-stopping', async (payload) => {
       await this.runEvent('Stop', payload, this.payloadFor('Stop', payload))
@@ -205,8 +198,27 @@ export class HookRuntime {
     register('session/created', (session) => this.fire('SessionStart', { session }))
     register('agent/disposed', (payload) => this.fire('SessionEnd', payload))
     this.attached = true
-    this.reason = tools ? '' : '宿主未提供 tools 服务，工具类 hooks 不会触发'
+    this.probeExecutor()
     return true
+  }
+
+  /**
+   * 解析可用的 subprocess 执行器（懒探测）。
+   *
+   * 宿主按「服务可用性」驱动激活：本插件可能先于 webServer / subprocess 行启动，
+   * 启动瞬间 ctx.get('subprocess') 可能是 undefined。因此这里不缓存失败结果，
+   * 每次执行与状态展示时重新探测，服务晚到后 hooks 自动恢复可用。
+   */
+  probeExecutor() {
+    if (this.executor?.available === true) return this.executor
+    if (this.fixedExecutor) {
+      this.executor = this.fixedExecutor
+      return this.executor
+    }
+    const created = createSubprocessExecutor(this.ctx)
+    this.executor = created.available ? created : null
+    this.reason = created.available ? '' : created.reason
+    return this.executor
   }
 
   /** PreToolUse：waterfall 里执行，命中 deny 时阻断工具调用。 */
@@ -298,7 +310,8 @@ export class HookRuntime {
       this.unmapped.add(hookEvent)
       return {}
     }
-    if (!this.executor?.available) {
+    const executor = this.probeExecutor()
+    if (executor === null) {
       this.unmapped.add(hookEvent)
       return {}
     }
@@ -310,7 +323,7 @@ export class HookRuntime {
     for (const group of groups) {
       let result
       try {
-        result = await this.executor.run({
+        result = await executor.run({
           command: group.command,
           cwd: group.cwd,
           payload: hookPayload,
@@ -349,12 +362,15 @@ export class HookRuntime {
 
   /** 能力清单：哪些事件已映射、哪些未生效。 */
   stats() {
+    const executor = this.probeExecutor()
     const effective = Object.entries(HOOK_EVENT_MAP).map(([event, mapping]) => ({
       event,
       host: mapping.host,
       mode: mapping.mode ?? '',
-      effective: mapping.host !== null && this.attached && this.executor?.available === true,
-      reason: mapping.host === null ? mapping.reason : (mapping.note ?? ''),
+      effective: mapping.host !== null && this.attached && executor !== null,
+      reason: mapping.host === null
+        ? mapping.reason
+        : executor === null ? (this.reason || 'subprocess 服务不可用') : (mapping.note ?? ''),
     }))
     return {
       attached: this.attached,
