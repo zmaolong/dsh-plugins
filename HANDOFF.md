@@ -1,7 +1,10 @@
-# HANDOFF — dsh-agent-plugin-hub 0.3.4
+# HANDOFF — dsh-agent-plugin-hub 0.3.5
 
-> 状态：**0.3.4 已开发完成，安装进桌面端 desktop profile（link 指向运行时副本）并通过 Host API E2E**。
+> 状态：**0.3.5 已开发完成，安装进桌面端 desktop profile（link 指向运行时副本）并通过 Host API E2E**。
 > 本文件随 `release-0.0.1` 分支提交；提交作者与提交者统一为 `zmaolong <203504243+zmaolong@users.noreply.github.com>`。
+>
+> **0.3.5 主题**：换行与截断优化——组件行名称/描述改为上下堆叠；单行文本统一 ellipsis + title 提示；
+> 多行文本统一允许换行；窄宽度下详情头部/弹窗底部自动换行。
 >
 > **0.3.4 主题**：修复弹窗重影——浮层只渲染栈顶弹窗（底层弹窗不再透过遮罩显示），
 > 弹窗/菜单阴影对齐 ZCode `shadow-md`，遮罩改为 `black/60` + blur 2px。
@@ -23,13 +26,29 @@
 
 ## 30 秒速览
 
-- 安装形态：`dsh-agent-plugin-hub@0.3.4`，link 到 `E:\workspace\dsh-agent-plugin-hub-runtime\0.3.4`（运行时副本）。
+- 安装形态：`dsh-agent-plugin-hub@0.3.5`，link 到 `E:\workspace\dsh-agent-plugin-hub-runtime\0.3.5`（运行时副本）。
   仓库源码：`E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub`。
 - 左侧栏入口：**首页左侧栏「智能体插件」图标**（order 5，位于「插件」与「自动化任务」之间），
   点击后中央面板打开 ZCode 风格商店。
 - 升级后需要 **刷新页面** 才载入新 Client；Host 端本次通过新运行时路径热加载（无需重启）。
 - 会话命令仍是 `/agent-plugin`，子命令与以前一致。
-- 自测：`cd packages\dsh-agent-plugin-hub; npm run check && npm test` → **143/143 通过，零网络**。
+- 自测：`cd packages\dsh-agent-plugin-hub; npm run check && npm test` → **146/146 通过，零网络**。
+
+## 0.3.5 优化：换行与截断
+
+问题：组件行把描述放在开关一侧，长描述与名称/开关互相挤压；卡片/来源/信息值等单行文本截断后没有
+title 提示；详情描述、警告、来源错误等多行文本缺少换行策略，窄宽度下溢出或断行突兀。
+
+修复：
+- 组件行结构改为「icon + [name / desc] + side（徽章/开关）」，name 与 desc 都在同一个
+  `.aph-comp-body` 内，desc 单行截断并带 title（与 ZCode 组件行一致）。
+- 单行截断 + title：卡片标题/描述/副标题、来源名称/副标题、组件名称/描述、信息值（外链内部再包 span）、
+  回滚版本行、弹窗标题。
+- 多行换行：`.aph-detail-desc`（`pre-line` + anywhere）、`.aph-dialog-body`、`.aph-toast-body`、
+  `.aph-error`、`.aph-source-error`（pre-wrap）、`.aph-warning`、`.aph-risk`、`.aph-check`、`.aph-placeholder`。
+- 窄宽度：`.aph-detail-head` 可换行、详情按钮 `margin-left:auto`、`.aph-dialog-foot` 可换行、
+  信息标签 `nowrap`。
+- 新增 `test/layout.test.mjs`（3 个用例）；`npm test` 146/146。
 
 ## 0.3.4 修复：弹窗重影 / 阴影偏移
 
@@ -166,8 +185,8 @@
 $ cd packages/dsh-agent-plugin-hub
 $ npm run check     # 全部 lib + client.js 语法通过
 $ npm test
-ℹ tests 143
-ℹ pass 143
+ℹ tests 146
+ℹ pass 146
 ℹ fail 0
 ```
 
@@ -185,7 +204,7 @@ Client 模块注册 / 纯函数 / store / 组件冒烟（32 个 client 用例）
 
 同时验证：
 
-- `GET /store` 返回 `version=0.3.4`、`ui.active=true`。
+- `GET /store` 返回 `version=0.3.5`、`ui.active=true`。
 - 真实 git 市场（重启前 `refreshError` 为旧的 path TypeError）刷新成功：
   `mattpocock` 插件条目出现，市场 `display.owner/description` 解析正确——P0 修复现场确认。
 - 迁移日志：`存储 schema 已迁移：v1 → v2`；真实 home 的 `state.json` / `marketplaces.json` 均升为 v2。
@@ -208,8 +227,8 @@ Client 模块注册 / 纯函数 / store / 组件冒烟（32 个 client 用例）
 
 ## 当前安装状态与手工步骤
 
-1. 运行中的 Host 已加载 0.3.4：`plugin_manager install_bundle` 的结果为 `application: applied`，
-   profile `package.json` 依赖为 `"dsh-agent-plugin-hub": "link:E:/workspace/dsh-agent-plugin-hub-runtime/0.3.4"`。
+1. 运行中的 Host 已加载 0.3.5：`plugin_manager install_bundle` 的结果为 `application: applied`，
+   profile `package.json` 依赖为 `"dsh-agent-plugin-hub": "link:E:/workspace/dsh-agent-plugin-hub-runtime/0.3.5"`。
 2. **请刷新一次桌面端页面**：Client 代码由浏览器模块表加载，刷新后商店面板与 `shell.overlay` 生效。
 3. 打开「智能体插件」后应看到：
    - 标题「智能体插件」+ 刷新/市场源/添加/插件管理；「个人」分段；搜索；
@@ -259,14 +278,14 @@ Client 模块注册 / 纯函数 / store / 组件冒烟（32 个 client 用例）
 | `lib/capabilities.js` / `skills.js` / `plugin-commands.js` / `hooks.js` / `mcp.js` | 能力扫描与注入 |
 | `lib/commands.js` / `report.js` | `/agent-plugin` 命令与文本渲染 |
 | `docs/HOST-API.md` | 当前 HTTP API、数据结构、错误码与并发语义 |
-| `test/` | `node --test`：143 个用例（含迁移、来源识别、/store、Client） |
+| `test/` | `node --test`：146 个用例（含迁移、来源识别、/store、Client） |
 
 ## 分支 / 提交 / 索引
 
 | 项目 | 值 |
 |---|---|
 | 发布分支 | `release-0.0.1` |
-| 包版本 | `0.3.4` |
+| 包版本 | `0.3.5` |
 | 索引 URL | `https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json` |
 | 索引重新生成 | 代码提交后执行 `node scripts\build-index.mjs`，再提交 `index.json`（使其 commit 指向代码提交） |
 | 提交作者 | `zmaolong <203504243+zmaolong@users.noreply.github.com>`（无 Co-Authored-By） |

@@ -326,12 +326,12 @@ window.__ModuleLoader__.load({
      * 调色板按 ZCode ZaiLight / ZaiDark 两套 token 显式定义，布局尺寸仍按 ZCode 规格。
      * ---------------------------------------------------------------------- */
     const CSS = `
-.aph-root{position:relative;height:100%;min-height:0;overflow-y:auto;overflow-x:hidden;container-type:inline-size;background:var(--aph-bg);color:var(--aph-fg);font-size:14px;line-height:1.5}
+.aph-root{position:relative;height:100%;min-height:0;overflow-y:auto;overflow-x:hidden;container-type:inline-size;background:var(--aph-bg);color:var(--aph-fg);font-size:14px;line-height:1.5;overflow-wrap:break-word}
 .aph-root *{box-sizing:border-box}
 /* ZCode ZaiLight 调色板（packages/ui/src/styles.css 第 521-546 行）；暗色在下方覆盖。 */.aph-root,.aph-overlay-root{--aph-bg:#f8f8f8;--aph-card:#ffffff;--aph-input:#ffffff;--aph-primary:#000000;--aph-primary-fg:#ffffff;--aph-secondary:#e6e6e6;--aph-fg:#262626;--aph-fg-subtle:rgba(38,38,38,.6);--aph-fg-subtlest:rgba(38,38,38,.4);--aph-border:rgba(13,13,13,.1);--aph-border-hover:rgba(13,13,13,.15);--aph-hover:rgba(13,13,13,.05);--aph-active:rgba(13,13,13,.05);--aph-selected:rgba(13,13,13,.05);--aph-surface:rgba(13,13,13,.03);--aph-surface-hover:rgba(13,13,13,.05);--aph-success:#1e8a3e;--aph-success-surface:#eaf7ee;--aph-warning:#e07b00;--aph-warning-surface:color-mix(in srgb,#e07b00 12%,transparent);--aph-danger:#e03131;--aph-danger-fg:#ffffff;--aph-toast-bg:#ffffff;--aph-toast-fg:#262626;--aph-focus:var(--aph-border-hover);--aph-on-brand:var(--aph-primary-fg)}/* ZCode ZaiDark 调色板（packages/ui/src/styles.css 第 686-812 行） */body[data-ds-dark-theme] .aph-root,body[data-ds-dark-theme] .aph-overlay-root{--aph-bg:#161616;--aph-card:#2b2b2b;--aph-input:#2b2b2b;--aph-primary:#ffffff;--aph-primary-fg:#000000;--aph-secondary:#363636;--aph-fg:#d4d4d4;--aph-fg-subtle:rgba(212,212,212,.6);--aph-fg-subtlest:rgba(212,212,212,.3);--aph-border:rgba(255,255,255,.1);--aph-border-hover:rgba(255,255,255,.15);--aph-hover:rgba(255,255,255,.05);--aph-active:rgba(255,255,255,.1);--aph-selected:rgba(255,255,255,.1);--aph-surface:rgba(255,255,255,.05);--aph-surface-hover:rgba(255,255,255,.1);--aph-success:#46bf72;--aph-success-surface:rgba(70,191,114,.16);--aph-warning:#ff8a30;--aph-warning-surface:color-mix(in srgb,#ff8a30 16%,transparent);--aph-danger:#ff5c5c;--aph-danger-fg:#ffffff;--aph-toast-bg:#2b2b2b;--aph-toast-fg:#ffffff;--aph-focus:var(--aph-border-hover)}
 .aph-page{display:flex;flex-direction:column;gap:20px;min-height:100%;padding:20px 24px 32px}
 .aph-topbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
-.aph-title{margin:0;font-size:18px;font-weight:600;letter-spacing:-0.01em}
+.aph-title{margin:0;font-size:18px;font-weight:600;letter-spacing:-0.01em;min-width:0;overflow-wrap:anywhere}
 .aph-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .aph-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 12px;border-radius:8px;border:1px solid transparent;background:var(--aph-secondary);color:var(--aph-fg);font:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .12s ease,color .12s ease,border-color .12s ease,opacity .12s ease}
 .aph-btn:hover:not(:disabled){background:color-mix(in srgb,var(--aph-secondary) 80%,transparent)}
@@ -349,7 +349,7 @@ window.__ModuleLoader__.load({
 .aph-btn.secondary-icon:hover:not(:disabled){color:var(--aph-fg);background:color-mix(in srgb,var(--aph-secondary) 80%,transparent)}
 .aph-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px}
 .aph-seg{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px}
-.aph-seg-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;border:0;background:transparent;color:var(--aph-fg-subtle);font:inherit;font-size:14px;font-weight:500;cursor:pointer;transition:background .12s ease,color .12s ease}
+.aph-seg-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;border:0;background:transparent;color:var(--aph-fg-subtle);font:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .12s ease,color .12s ease}
 .aph-seg-pill:hover{background:var(--aph-hover);color:var(--aph-fg)}
 .aph-seg-pill[aria-pressed="true"]{background:var(--aph-active);color:var(--aph-fg)}
 .aph-seg-pill:focus-visible{outline:2px solid var(--aph-focus);outline-offset:1px}
@@ -364,8 +364,8 @@ window.__ModuleLoader__.load({
 .aph-search-clear:hover{background:var(--aph-hover)}
 .aph-section{display:flex;flex-direction:column}
 .aph-section-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding:0 8px 8px}
-.aph-section-title{margin:0;font-size:16px;font-weight:500}
-.aph-section-count{font-size:12px;color:var(--aph-fg-subtle)}
+.aph-section-title{margin:0;min-width:0;overflow-wrap:anywhere;font-size:16px;font-weight:500}
+.aph-section-count{flex:none;white-space:nowrap;font-size:12px;color:var(--aph-fg-subtle)}
 .aph-divider{height:1px;background:var(--aph-border)}
 .aph-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:24px;row-gap:4px;margin-top:8px}
 .aph-grid.single{grid-template-columns:minmax(0,1fr)}
@@ -380,7 +380,7 @@ window.__ModuleLoader__.load({
 .aph-avatar img{width:100%;height:100%;object-fit:contain}
 .aph-card-body{display:flex;flex-direction:column;min-width:0;flex:1}
 .aph-card-title-line{display:flex;align-items:center;gap:6px;min-width:0}
-.aph-card-title{font-size:14px;font-weight:500;line-height:20px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aph-card-title{flex-shrink:1;font-size:14px;font-weight:500;line-height:20px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .aph-card-desc{font-size:13px;line-height:20px;min-height:20px;color:var(--aph-fg-subtle);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
 .aph-card-sub{font-size:12px;line-height:18px;color:var(--aph-fg-subtle);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px}
 .aph-card-warning{display:flex;align-items:center;gap:4px;margin-top:2px;font-size:12px;color:var(--aph-warning);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -388,16 +388,16 @@ window.__ModuleLoader__.load({
 .aph-card .aph-menu-wrap{opacity:0;transition:opacity .12s ease}
 .aph-card:hover .aph-menu-wrap,.aph-card:focus-within .aph-menu-wrap,.aph-card .aph-menu[data-open="true"]{opacity:1}
 @media (hover:none){.aph-card .aph-menu-wrap{opacity:1}}
-.aph-badge{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:999px;font-size:11px;line-height:1;white-space:nowrap;color:var(--aph-fg-subtle);border:1px solid var(--aph-border)}
+.aph-badge{display:inline-flex;flex:none;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:999px;font-size:11px;line-height:1;white-space:nowrap;color:var(--aph-fg-subtle);border:1px solid var(--aph-border)}
 .aph-badge.success{color:var(--aph-success);border-color:transparent;background:var(--aph-success-surface)}
 .aph-badge.warn{color:var(--aph-warning);border-color:transparent;background:var(--aph-warning-surface)}
 .aph-badge.error{color:var(--aph-danger);border-color:transparent;background:color-mix(in srgb,var(--aph-danger) 12%,transparent)}
 .aph-badge.plain{border-color:transparent;background:var(--aph-surface-hover)}
-.aph-update-badge{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:999px;font-size:11px;line-height:1;white-space:nowrap;color:var(--aph-success);background:var(--aph-success-surface)}
+.aph-update-badge{display:inline-flex;flex:none;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:999px;font-size:11px;line-height:1;white-space:nowrap;color:var(--aph-success);background:var(--aph-success-surface)}
 .aph-menu-wrap{position:relative;display:inline-flex}
 .aph-menu-backdrop{position:fixed;inset:0;z-index:40;background:transparent}
 .aph-menu{position:absolute;top:calc(100% + 4px);right:0;z-index:41;min-width:168px;padding:4px;border-radius:12px;border:1px solid var(--aph-border);background:var(--aph-card);box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1)}
-.aph-menu-item{display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px;border:0;border-radius:8px;background:transparent;color:var(--aph-fg);font:inherit;font-size:14px;text-align:left;cursor:pointer}
+.aph-menu-item{display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px;border:0;border-radius:8px;background:transparent;color:var(--aph-fg);font:inherit;font-size:14px;text-align:left;white-space:nowrap;overflow:hidden;cursor:pointer}
 .aph-menu-item:hover{background:var(--aph-hover)}
 .aph-menu-item.danger{color:var(--aph-danger)}
 .aph-menu-sep{height:1px;margin:4px 6px;background:var(--aph-border)}
@@ -407,50 +407,53 @@ window.__ModuleLoader__.load({
 .aph-switch[aria-checked="true"]::after{left:16px}
 .aph-switch:disabled{opacity:.5;cursor:not-allowed}
 .aph-switch:focus-visible{outline:2px solid var(--aph-focus);outline-offset:2px}
-.aph-collapse-row{display:flex;align-items:center;gap:8px;width:100%;margin-top:8px;padding:8px 8px;border:0;border-radius:12px;background:transparent;color:var(--aph-fg-subtle);font:inherit;font-size:14px;text-align:left;cursor:pointer}
+.aph-collapse-row{display:flex;align-items:center;gap:8px;width:100%;margin-top:8px;padding:8px 8px;border:0;border-radius:12px;background:transparent;color:var(--aph-fg-subtle);font:inherit;font-size:14px;text-align:left;white-space:nowrap;cursor:pointer}
 .aph-collapse-row:hover{background:var(--aph-hover);color:var(--aph-fg)}
 .aph-collapse-avatars{display:flex;flex:none;align-items:center;gap:6px}
 .aph-collapse-avatars .aph-avatar{width:20px;height:20px;border-radius:6px}
 .aph-collapse-avatars .aph-avatar svg{width:10px;height:10px}
-.aph-placeholder{display:flex;align-items:center;justify-content:center;gap:8px;min-height:96px;padding:24px 16px;border:1px dashed var(--aph-border);border-radius:12px;color:var(--aph-fg-subtle);font-size:14px;text-align:center}
+.aph-placeholder{display:flex;align-items:center;justify-content:center;gap:8px;min-height:96px;padding:24px 16px;border:1px dashed var(--aph-border);border-radius:12px;color:var(--aph-fg-subtle);font-size:14px;text-align:center;overflow-wrap:anywhere}
 .aph-placeholder.column{flex-direction:column;gap:12px}
 .aph-placeholder-title{font-size:14px;font-weight:500;color:var(--aph-fg)}
 .aph-placeholder-desc{font-size:12px;max-width:420px}
 .aph-error{border:1px solid color-mix(in srgb,var(--aph-danger) 35%,transparent);background:color-mix(in srgb,var(--aph-danger) 10%,transparent);color:var(--aph-danger);padding:10px 12px;border-radius:10px;font-size:13px;white-space:pre-wrap;word-break:break-word}
-.aph-warning{border:1px solid color-mix(in srgb,var(--aph-warning) 35%,transparent);background:var(--aph-warning-surface);color:var(--aph-warning);padding:10px 12px;border-radius:10px;font-size:13px;display:flex;align-items:flex-start;gap:8px}
+.aph-warning{border:1px solid color-mix(in srgb,var(--aph-warning) 35%,transparent);background:var(--aph-warning-surface);color:var(--aph-warning);padding:10px 12px;border-radius:10px;font-size:13px;display:flex;align-items:flex-start;gap:8px;word-break:break-word}
+.aph-warning>span{min-width:0;overflow-wrap:anywhere}
 .aph-warning .aph-inline-btn{margin-left:auto}
 .aph-spinner{display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid color-mix(in srgb,currentColor 30%,transparent);border-top-color:currentColor;animation:aph-spin .8s linear infinite;flex:none}
 .aph-spinner.large{width:20px;height:20px;border-width:2.5px}
 @keyframes aph-spin{to{transform:rotate(360deg)}}
-.aph-back{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 8px;margin-left:-8px;border:0;border-radius:8px;background:transparent;color:var(--aph-fg-subtle);font:inherit;font-size:14px;cursor:pointer;width:fit-content}
+.aph-back{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 8px;margin-left:-8px;border:0;border-radius:8px;background:transparent;color:var(--aph-fg-subtle);font:inherit;font-size:14px;cursor:pointer;width:fit-content;white-space:nowrap}
 .aph-back:hover{background:var(--aph-hover);color:var(--aph-fg)}
 .aph-detail{gap:32px}
-.aph-detail-head{display:flex;align-items:flex-start;gap:16px;min-width:0}
+.aph-detail-head{display:flex;flex-wrap:wrap;align-items:flex-start;gap:16px;min-width:0}
 .aph-detail-headmain{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
 .aph-detail-titleline{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0}
 .aph-detail-title{margin:0;font-size:18px;font-weight:500;min-width:0;word-break:break-word}
-.aph-detail-desc{margin:0;font-size:14px;color:var(--aph-fg-subtle)}
-.aph-detail-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;flex:none}
-.aph-detail-warning{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--aph-warning)}
+.aph-detail-desc{margin:0;font-size:14px;color:var(--aph-fg-subtle);white-space:pre-line;overflow-wrap:anywhere}
+.aph-detail-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;flex:none;margin-left:auto}
+.aph-detail-warning{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:14px;color:var(--aph-warning);overflow-wrap:anywhere}
 .aph-comp-head{display:flex;align-items:baseline;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--aph-border)}
-.aph-comp-title{margin:0;font-size:16px;font-weight:600}
+.aph-comp-title{margin:0;min-width:0;overflow-wrap:anywhere;font-size:16px;font-weight:600}
 .aph-comp-count{font-size:14px;color:var(--aph-fg-subtle)}
 .aph-comp-list{display:flex;flex-direction:column;margin-top:4px}
 .aph-comp-row{display:flex;align-items:center;gap:12px;min-width:0;padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--aph-border) 55%,transparent)}
 .aph-comp-row:last-child{border-bottom:0}
 .aph-comp-icon{display:flex;align-items:center;justify-content:center;flex:none;width:28px;height:28px;border-radius:8px;background:var(--aph-surface);color:var(--aph-fg-subtle)}
 .aph-comp-body{display:flex;flex-direction:column;min-width:0;flex:1}
-.aph-comp-name{font-size:14px;font-weight:500;color:var(--aph-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.aph-comp-desc{margin-top:2px;font-size:14px;color:var(--aph-fg-subtle);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aph-comp-name{max-width:100%;font-size:14px;font-weight:500;color:var(--aph-fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aph-comp-desc{margin-top:2px;max-width:100%;font-size:14px;color:var(--aph-fg-subtle);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .aph-comp-side{display:flex;align-items:center;gap:8px;flex:none}
 .aph-info{display:flex;flex-direction:column;gap:10px}
 .aph-info-row{display:grid;grid-template-columns:128px minmax(0,1fr);gap:12px;align-items:baseline}
-.aph-info-label{font-size:14px;color:var(--aph-fg-subtle)}
+.aph-info-label{font-size:14px;color:var(--aph-fg-subtle);white-space:nowrap}
 .aph-info-value{font-size:14px;color:var(--aph-fg);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.aph-info-value a{color:var(--aph-fg);text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.aph-info-value a{color:var(--aph-fg);text-decoration:none;display:inline-flex;align-items:center;gap:4px;min-width:0;max-width:100%;overflow:hidden}
+.aph-info-value a>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aph-info-value a>svg{flex:none}
 .aph-info-value a:hover{color:var(--aph-fg);text-decoration:underline;text-underline-offset:2px}
 .aph-advanced{border-top:1px solid var(--aph-border);padding-top:16px}
-.aph-advanced summary{display:flex;align-items:center;gap:8px;list-style:none;cursor:pointer;font-size:14px;font-weight:500;color:var(--aph-fg-subtle)}
+.aph-advanced summary{display:flex;align-items:center;gap:8px;list-style:none;cursor:pointer;font-size:14px;font-weight:500;color:var(--aph-fg-subtle);overflow-wrap:anywhere}
 .aph-advanced summary::-webkit-details-marker{display:none}
 .aph-advanced summary:hover{color:var(--aph-fg)}
 .aph-advanced summary .aph-chev{transition:transform .15s ease}
@@ -459,37 +462,40 @@ window.__ModuleLoader__.load({
 .aph-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;color:var(--aph-fg-subtle);word-break:break-all}
 .aph-list-block{display:flex;flex-direction:column;gap:6px}
 .aph-list-title{font-size:12px;font-weight:500;color:var(--aph-fg-subtle)}
-.aph-list-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--aph-border);border-radius:8px;background:var(--aph-surface);font-size:13px}
+.aph-list-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0;padding:8px 10px;border:1px solid var(--aph-border);border-radius:8px;background:var(--aph-surface);font-size:13px;overflow-wrap:anywhere}
+.aph-list-row-main{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .aph-runtime{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px;color:var(--aph-fg-subtle);padding-top:8px}
-.aph-overlay-root{position:absolute;inset:0;z-index:30;pointer-events:none;font-size:14px;color:var(--aph-fg)}
+.aph-overlay-root{position:absolute;inset:0;z-index:30;pointer-events:none;font-size:14px;color:var(--aph-fg);overflow-wrap:break-word}
 .aph-overlay-mask{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.6);backdrop-filter:blur(2px);pointer-events:auto}
 .aph-dialog{width:min(480px,calc(100vw - 32px));max-height:calc(100vh - 80px);display:flex;flex-direction:column;gap:16px;padding:16px;border-radius:16px;border:1px solid var(--aph-border);background:var(--aph-card);box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);pointer-events:auto}
 .aph-dialog.narrow{width:min(420px,calc(100vw - 32px))}
 .aph-dialog-head{display:flex;align-items:center;gap:8px}
-.aph-dialog-title{margin:0;font-size:16px;font-weight:500;flex:1;min-width:0}
-.aph-dialog-body{display:flex;flex-direction:column;gap:12px;min-height:0;overflow-y:auto}
-.aph-dialog-foot{display:flex;justify-content:flex-end;gap:8px}
+.aph-dialog-title{margin:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px;font-weight:500}
+.aph-dialog-body{display:flex;flex-direction:column;gap:12px;min-height:0;overflow-y:auto;overflow-wrap:anywhere}
+.aph-dialog-foot{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
 .aph-field{display:flex;flex-direction:column;gap:6px}
 .aph-field-label{font-size:12px;color:var(--aph-fg-subtle)}
 .aph-input{width:100%;height:36px;padding:0 12px;border-radius:8px;border:1px solid var(--aph-border);background:var(--aph-input);color:var(--aph-fg);font:inherit;font-size:14px}
 .aph-input::placeholder{color:var(--aph-fg-subtlest)}
 .aph-input:hover{border-color:var(--aph-border-hover)}
 .aph-input:focus{outline:none;border-color:var(--aph-border-hover)}
-.aph-risk{display:flex;gap:8px;align-items:flex-start;padding:12px;border-radius:12px;background:var(--aph-warning-surface);color:var(--aph-warning);font-size:13px}
-.aph-check{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--aph-fg-subtle);cursor:pointer}
+.aph-risk{display:flex;gap:8px;align-items:flex-start;padding:12px;border-radius:12px;background:var(--aph-warning-surface);color:var(--aph-warning);font-size:13px;word-break:break-word}
+.aph-risk>span{min-width:0;overflow-wrap:anywhere}
+.aph-check{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--aph-fg-subtle);cursor:pointer;word-break:break-word}
+.aph-check>span{min-width:0;overflow-wrap:anywhere}
 .aph-check input{margin:3px 0 0;flex:none;accent-color:var(--aph-primary)}
 .aph-source-row{display:flex;align-items:center;gap:12px;padding:8px;border-radius:8px}
 .aph-source-row:hover{background:var(--aph-hover)}
 .aph-source-main{display:flex;flex-direction:column;min-width:0;flex:1}
 .aph-source-name{font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .aph-source-sub{font-size:12px;color:var(--aph-fg-subtle);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.aph-source-error{display:flex;align-items:flex-start;gap:4px;margin-top:4px;font-size:12px;color:var(--aph-danger);word-break:break-word}
+.aph-source-error{display:flex;align-items:flex-start;gap:4px;margin-top:4px;font-size:12px;color:var(--aph-danger);white-space:pre-wrap;word-break:break-word}
 .aph-toasts{position:absolute;right:20px;bottom:20px;display:flex;flex-direction:column;gap:8px;max-width:min(400px,calc(100vw - 40px));pointer-events:none}
 .aph-toast{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--aph-border);background:var(--aph-toast-bg);color:var(--aph-toast-fg);box-shadow:0 4px 12px rgba(0,0,0,.15);font-size:13px;pointer-events:auto;animation:aph-toast-in .18s ease}
 .aph-toast.success{border-color:color-mix(in srgb,var(--aph-success) 40%,transparent)}
 .aph-toast.warn{border-color:color-mix(in srgb,var(--aph-warning) 40%,transparent)}
 .aph-toast.error{border-color:color-mix(in srgb,var(--aph-danger) 40%,transparent)}
-.aph-toast-body{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word}
+.aph-toast-body{flex:1;min-width:0;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word}
 .aph-toast-close{flex:none;border:0;background:transparent;color:color-mix(in srgb,currentColor 65%,transparent);cursor:pointer;padding:2px;border-radius:4px;display:flex}
 .aph-toast-close:hover{color:currentColor}
 @keyframes aph-toast-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
@@ -1325,6 +1331,9 @@ window.__ModuleLoader__.load({
           { key: 'uninstall', icon: 'trash', label: t('menuUninstall'), danger: true, disabled: busy, onSelect: () => store.askUninstall(item) },
         ]
         : []
+      const versionText = `${t('version')} ${item.installedVersion || item.version || '—'}`
+      const marketText = item.market ? (item.market.title || item.market.name || '') : ''
+      const subTitle = [versionText, marketText, orphan ? t('sourceMissingShort') : ''].filter(Boolean).join(' · ')
       const activate = () => {
         if (installed || item.name) openDetail(item.key, item)
       }
@@ -1349,12 +1358,12 @@ window.__ModuleLoader__.load({
           updatable ? h('span', { className: 'aph-update-badge' }, h(Icon, { name: 'download', size: 12 }), t('updateBadge')) : null,
           orphan ? h(Badge, { tone: 'warn' }, t('sourceMissingShort')) : null),
         orphan
-          ? h('div', { className: 'aph-card-warning' }, h(Icon, { name: 'alert', size: 12 }), t('sourceMissing'))
-          : h('div', { className: 'aph-card-desc' }, display.description || t('noDescription')),
+          ? h('div', { className: 'aph-card-warning', title: t('sourceMissing') }, h(Icon, { name: 'alert', size: 12 }), t('sourceMissing'))
+          : h('div', { className: 'aph-card-desc', title: display.description || t('noDescription') }, display.description || t('noDescription')),
         management || installed
-          ? h('div', { className: 'aph-card-sub' },
-            `${t('version')} ${item.installedVersion || item.version || '—'}`,
-            item.market ? ` · ${item.market.title || item.market.name || ''}` : '',
+          ? h('div', { className: 'aph-card-sub', title: subTitle },
+            versionText,
+            marketText ? ` · ${marketText}` : '',
             orphan ? ` · ${t('sourceMissingShort')}` : '')
           : null),
       h('div', { className: 'aph-card-actions' },
@@ -1594,9 +1603,11 @@ window.__ModuleLoader__.load({
       } else {
         const sections = []
         const capBusyFor = (kind, name) => store.isCapBusy(key, kind, name)
-        const rowOf = (kind, name, body, side) => h('div', { key: `${kind}:${name}`, className: 'aph-comp-row' },
+        const rowOf = (kind, name, description, side) => h('div', { key: `${kind}:${name}`, className: 'aph-comp-row' },
           h('div', { className: 'aph-comp-icon' }, h(Icon, { name: kind === 'mcpServers' ? 'server' : kind === 'skills' ? 'wand' : kind === 'commands' ? 'terminal' : 'anchor', size: 16 })),
-          h('div', { className: 'aph-comp-body' }, body),
+          h('div', { className: 'aph-comp-body' },
+            h('span', { className: 'aph-comp-name', title: typeof name === 'string' ? name : undefined }, name),
+            description ? h('span', { className: 'aph-comp-desc', title: typeof description === 'string' ? description : undefined }, description) : null),
           h('div', { className: 'aph-comp-side' }, side))
         const switchOf = (kind, name, item) => (installedFlag && item.enabled !== undefined
           ? h(Switch, {
@@ -1607,27 +1618,19 @@ window.__ModuleLoader__.load({
           })
           : null)
         const skillRows = (capabilities.skills || []).map((item) => rowOf('skills', item.name,
-          h('span', { className: 'aph-comp-name' }, item.name),
-          [h('span', { className: 'aph-comp-desc', style: { flex: 1 } }, item.description || ''),
-            switchOf('skills', item.name, item)]))
-        const commandRows = (capabilities.commands || []).map((item) => rowOf('commands', item.name,
-          h('span', { className: 'aph-comp-name' }, `/${item.hostName || item.name}`),
-          [h('span', { className: 'aph-comp-desc', style: { flex: 1 } }, item.description || ''),
-            switchOf('commands', item.name, item)]))
+          item.description || '',
+          switchOf('skills', item.name, item)))
+        const commandRows = (capabilities.commands || []).map((item) => rowOf('commands', `/${item.hostName || item.name}`,
+          item.description || '',
+          switchOf('commands', item.name, item)))
         const hookRows = (capabilities.hooks || []).map((item) => rowOf('hooks', item.event,
-          h('div', { className: 'aph-comp-body' },
-            h('span', { className: 'aph-comp-name' }, item.event),
-            h('span', { className: 'aph-comp-desc' },
-              item.host ? `${t('hostEvent')}: ${item.host}${item.canBlock ? `（${t('canBlock')}）` : ''}` : t('hooksInactive', { reason: item.reason || t('componentsNotEffective') }))),
+          item.host ? `${t('hostEvent')}: ${item.host}${item.canBlock ? `（${t('canBlock')}）` : ''}` : t('hooksInactive', { reason: item.reason || t('componentsNotEffective') }),
           [item.effective
             ? h(Badge, { tone: 'success' }, t('componentsEffective'))
             : h(Badge, { tone: 'warn' }, t('componentsNotEffective')),
             switchOf('hooks', item.event, item)]))
         const mcpRows = (capabilities.mcpServers || []).map((item) => rowOf('mcpServers', item.name,
-          h('div', { className: 'aph-comp-body' },
-            h('span', { className: 'aph-comp-name' }, item.name),
-            h('span', { className: 'aph-comp-desc' },
-              [item.transport, item.command, ...(item.args || [])].filter(Boolean).join(' ') || item.url || t('componentsNotEffective'))),
+          [item.transport, item.command, ...(item.args || [])].filter(Boolean).join(' ') || item.url || t('componentsNotEffective'),
           [h(Badge, { tone: 'warn' }, t('componentsNotEffective')),
             switchOf('mcpServers', item.name, item)]))
         sections.push(h(ComponentSection, { key: 'mcp', t, title: t('sectionMcp'), icon: 'server', items: capabilities.mcpServers || [], renderRow: (item, index) => mcpRows[index] }))
@@ -1655,7 +1658,7 @@ window.__ModuleLoader__.load({
       const format = detail && detail.format
         ? detail.format
         : (installed ? installed.format : (catalogItem ? (catalogItem.format || (catalogItem.market && catalogItem.market.format)) : ''))
-      if (format) advanced.push(h('div', { key: 'format', className: 'aph-info-row' }, h('span', { className: 'aph-info-label' }, t('format')), h('span', { className: 'aph-info-value' }, format)))
+      if (format) advanced.push(h('div', { key: 'format', className: 'aph-info-row' }, h('span', { className: 'aph-info-label' }, t('format')), h('span', { className: 'aph-info-value', title: String(format) }, format)))
       if (installedFlag && installed && installed.installedPath) {
         advanced.push(h('div', { key: 'path', className: 'aph-list-block' },
           h('div', { className: 'aph-list-title' }, t('rootPath')),
@@ -1665,7 +1668,7 @@ window.__ModuleLoader__.load({
         ? h('div', { key: 'rollback', className: 'aph-list-block' },
           h('div', { className: 'aph-list-title' }, t('rollbackVersions')),
           (installed.previousVersions || []).map((version) => h('div', { key: version.version, className: 'aph-list-row' },
-            h('span', { style: { flex: 1 } }, `v${version.version}`, version.available ? '' : ` · ${t('sourceMissingShort')}`),
+            h('span', { className: 'aph-list-row-main', title: `v${version.version}${version.available ? '' : ` · ${t('sourceMissingShort')}`}` }, `v${version.version}`, version.available ? '' : ` · ${t('sourceMissingShort')}`),
             h(Button, {
               variant: 'secondary',
               disabled: busy || version.available === false,
@@ -1673,8 +1676,8 @@ window.__ModuleLoader__.load({
             }, h(Icon, { name: 'rotateCcw', size: 14 }), t('rollback')))))
         : null
       if (rollbackRows) advanced.push(rollbackRows)
-      if (detail && detail.hooksSource) advanced.push(h('div', { key: 'hooks-source', className: 'aph-info-row' }, h('span', { className: 'aph-info-label' }, t('hooksSource')), h('span', { className: 'aph-info-value' }, detail.hooksSource)))
-      if (detail && detail.mcpSource) advanced.push(h('div', { key: 'mcp-source', className: 'aph-info-row' }, h('span', { className: 'aph-info-label' }, t('mcpSource')), h('span', { className: 'aph-info-value' }, detail.mcpSource)))
+      if (detail && detail.hooksSource) advanced.push(h('div', { key: 'hooks-source', className: 'aph-info-row' }, h('span', { className: 'aph-info-label' }, t('hooksSource')), h('span', { className: 'aph-info-value', title: String(detail.hooksSource) }, detail.hooksSource)))
+      if (detail && detail.mcpSource) advanced.push(h('div', { key: 'mcp-source', className: 'aph-info-row' }, h('span', { className: 'aph-info-label' }, t('mcpSource')), h('span', { className: 'aph-info-value', title: String(detail.mcpSource) }, detail.mcpSource)))
       const warnings = (detail && detail.warnings) || []
       if (warnings.length > 0) {
         advanced.push(h('div', { key: 'warnings', className: 'aph-list-block' },
@@ -1703,7 +1706,7 @@ window.__ModuleLoader__.load({
             h('div', { className: 'aph-info', style: { marginTop: 12 } },
               infoRows.map((row) => h('div', { key: row.key, className: 'aph-info-row' },
                 h('span', { className: 'aph-info-label' }, row.label),
-                h('span', { className: 'aph-info-value' }, row.url ? h(ExternalValue, { t, url: row.url, label: row.label }) : row.value)))))
+                h('span', { className: 'aph-info-value', title: row.url ? undefined : String(row.value ?? '') }, row.url ? h(ExternalValue, { t, url: row.url, label: row.label }) : row.value)))))
           : null,
         advanced.length > 0
           ? h('details', { className: 'aph-advanced' },
@@ -1802,7 +1805,7 @@ window.__ModuleLoader__.load({
       } },
       h('div', { className: `aph-dialog${narrow ? ' narrow' : ''}`, role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
         h('div', { className: 'aph-dialog-head' },
-          h('h2', { className: 'aph-dialog-title' }, title),
+          h('h2', { className: 'aph-dialog-title', title }, title),
           onClose ? h('button', { type: 'button', className: 'aph-icon-btn', title: t('close'), 'aria-label': t('close'), onClick: onClose }, h(Icon, { name: 'x', size: 16 })) : null),
         h('div', { className: 'aph-dialog-body' }, children),
         footer ? h('div', { className: 'aph-dialog-foot' }, footer) : null))
@@ -1893,12 +1896,13 @@ window.__ModuleLoader__.load({
         : h('div', { style: { display: 'flex', flexDirection: 'column', gap: 2, maxHeight: 'min(420px, 60vh)', overflowY: 'auto' } },
           markets.map((market) => {
             const busyLabel = state.marketBusy[market.id] || ''
+            const nameText = market.title || market.name || market.id
+            const subText = t('sourcePluginCount', { count: market.pluginCount || 0 })
+              + (market.lastRefreshed ? ` · ${t('sourceUpdated', { time: formatTime(market.lastRefreshed) })}` : '')
             return h('div', { key: market.id, className: 'aph-source-row' },
               h('div', { className: 'aph-source-main' },
-                h('div', { className: 'aph-source-name' }, market.title || market.name || market.id),
-                h('div', { className: 'aph-source-sub' },
-                  t('sourcePluginCount', { count: market.pluginCount || 0 }),
-                  market.lastRefreshed ? ` · ${t('sourceUpdated', { time: formatTime(market.lastRefreshed) })}` : ''),
+                h('div', { className: 'aph-source-name', title: nameText }, nameText),
+                h('div', { className: 'aph-source-sub', title: subText }, subText),
                 market.refreshError
                   ? h('div', { className: 'aph-source-error' },
                     h(Icon, { name: 'alert', size: 12 }),

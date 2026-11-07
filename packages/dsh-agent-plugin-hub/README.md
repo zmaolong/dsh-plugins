@@ -1,6 +1,6 @@
 # dsh-agent-plugin-hub
 
-DSH 的**智能体插件**（Agent Plugins）运行时与市场，0.3.4 起带一个 **ZCode「插件市场」同构的商店面板**。
+DSH 的**智能体插件**（Agent Plugins）运行时与市场，0.3.5 起带一个 **ZCode「插件市场」同构的商店面板**。
 
 > 命名：本包托管的是 Claude Code / CodeBuddy / ZCode 等 Agent 的插件资产包。
 > “Agent”直译为“代理”不准确，译为“助手”又容易和通用助手混淆；单叫“插件”会与
@@ -12,6 +12,17 @@ DSH 的**智能体插件**（Agent Plugins）运行时与市场，0.3.4 起带�
 `mcpServers` 等能力。已知格式包括 Claude Code、CodeBuddy、ZCode；它们不是 DSH 插件
 （cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
+
+## 0.3.5 变更（换行与截断优化）
+
+- **组件行改为上下堆叠**：MCP / 技能 / 命令 / Hooks 行现在是「图标 + 名称 + 描述（单行截断）+ 右侧开关/徽标」，
+  描述不再放在开关前挤成一行，修复长描述导致的换行错乱（与 ZCode 组件行结构一致）。
+- **单行文本统一截断 + title 提示**：卡片标题/描述/副标题、来源名称与路径、组件名称/描述、
+  信息值（含外链）、回滚版本行、弹窗标题、菜单项；截断元素都补了 `title`，悬停可看全文。
+- **多行文本统一可换行**：详情描述（保留换行）、弹窗内容、Toast、错误/警告/风险条、占位文案、
+  高级信息值；长 URL/路径用 `overflow-wrap:anywhere`，不再溢出容器。
+- **窄宽度适配**：详情头部与按钮允许换行、信息行标签不换行、弹窗底部按钮可换行。
+- 新增 `test/layout.test.mjs`（3 个用例）锁定单行截断/多行换行/组件行结构；`npm test` 146/146。
 
 ## 0.3.4 变更（弹窗重影修复）
 
@@ -84,7 +95,7 @@ DSH 的技能、命令、hooks 与 MCP。
 `/agent-plugin` 是本包唯一的命令入口；已安装智能体插件自带的命令会注册成
 `/<插件名>-<命令名>`。
 
-## 首页左侧栏：智能体插件（0.3.4）
+## 首页左侧栏：智能体插件（0.3.5）
 
 位置：**首页左侧栏**，顺序为 **插件(0) → 智能体插件(5) → 自动化任务(10) → 上下文洞察(20)**。
 面板由 `client.js` 注册到 `sidebar.panellist`、`main`（key `agent-plugin`）与
@@ -264,7 +275,7 @@ home 解析：配置 `home` → `DSH_AGENT_PLUGIN_HUB_HOME` → `~/.dsh/agent-pl
 ```powershell
 cd packages\dsh-agent-plugin-hub
 npm run check   # node --check 全部 lib 文件与 client.js
-npm test        # node --test：143 个用例，零运行时依赖，不访问网络
+npm test        # node --test：146 个用例，零运行时依赖，不访问网络
 ```
 
 测试覆盖：三格式探测与优先级、marketplace 解析（含 listing 元数据）、市场自动识别各分支、
@@ -302,7 +313,7 @@ E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub
 
 ## 市场索引
 
-发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 0.3.4）。在 DSH 插件页 → 发现 → 添加索引源：
+发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 0.3.5）。在 DSH 插件页 → 发现 → 添加索引源：
 
 ```text
 https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json
