@@ -28,11 +28,11 @@ dsh-plugins/
 │   ├── build-index.mjs
 │   └── serve-index.mjs
 └── packages/
-    └── dsh-agent-plugin-hub/   # 智能体插件运行时与市场（0.2.3）
+    └── dsh-agent-plugin-hub/   # 智能体插件运行时与市场（0.2.4）
         ├── package.json
         ├── cordis.patch.yml
         ├── README.md
-        ├── client.js           # 插件页「智能体插件」Tab
+        ├── client.js           # 首页左侧栏「智能体插件」面板
         ├── locale/             # en / zh 展示元数据
         ├── docs/HOST-API.md    # 宿主 API 侦察结论
         ├── lib/                # 15 个 ES 模块，零运行时依赖
@@ -93,7 +93,7 @@ dsh --profile web
 
 | 包 | 作用 | 代码要点 |
 |---|---|---|
-| `dsh-agent-plugin-hub` | 在 DSH 里托管 Claude Code、CodeBuddy、ZCode 等**智能体插件**（Agent Plugins）：市场、安装/更新/回滚、能力注入与逐项启停 | 组合包 + `/agent-plugin` 命令 + 插件页「智能体插件」Tab；skills/commands/hooks 注入，MCP 清单标注；64 个 `node --test` 用例 |
+| `dsh-agent-plugin-hub` | 在 DSH 里托管 Claude Code、CodeBuddy、ZCode 等**智能体插件**（Agent Plugins）：市场、安装/更新/回滚、能力注入与逐项启停 | 组合包 + `/agent-plugin` 命令 + 首页左侧栏「智能体插件」面板；skills/commands/hooks 注入，MCP 清单标注；65 个 `node --test` 用例 |
 
 > 命名说明：Agent 直译“代理”不准确、“助手”易混淆；单叫“插件”会与 DSH 自身插件混淆。
 > 用**智能体插件**（英文 Agent Plugins）加限定词区分；代码里的包名与 `/agent-plugin` 命令不变。
@@ -240,7 +240,7 @@ node scripts\build-index.mjs
 ## 常见坑
 
 - **`not-a-bundle`**：包没声明 `dsh.bundle.patch`。
-- **`engines.dsh` / DSH peer 不匹配**：会在 pnpm 之前就被拒（当前宿主 `0.2.3-rc.1`）；不声明就不检查，别乱写范围。
+- **`engines.dsh` / DSH peer 不匹配**：会在 pnpm 之前就被拒（当前宿主 `0.2.4-rc.1`）；不声明就不检查，别乱写范围。
 - **改了代码不生效**：`cordis.patch.yml` 的改动约 1 秒热重载；`lib/index.js` 的改动一般要重启宿主（桌面端重启应用，CLI 重启 `dsh`）。
 - **索引看起来是旧的**：索引缓存 10 分钟，刷新发现页或重新添加源。
 - **想一次装完所有插件**：索引是逐个装的；真要"一装全装"，就做一个打包 bundle，在它的 `cordis.patch.yml` 里 insert 多行——但那样版本会绑在一起，不适合独立迭代。

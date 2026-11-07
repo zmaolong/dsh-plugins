@@ -13,7 +13,7 @@ DSH 的**智能体插件**（Agent Plugins）运行时与市场。
 （cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
 
-> 版本 0.2.3：在 0.1.0（市场 → 安装 → skills/commands 注入、hooks 映射）之上新增
+> 版本 0.2.4：在 0.1.0（市场 → 安装 → skills/commands 注入、hooks 映射）之上新增
 > 插件页「智能体插件」Tab：可视化增删市场、安装/更新/回滚/卸载插件，并逐项启停
 > 技能、命令、hooks 与 MCP 清单。MCP 仍受宿主接口限制，只解析展示并标注「未生效」
 > （见下文与 [`docs/HOST-API.md`](docs/HOST-API.md)）。
@@ -30,9 +30,13 @@ DSH 的技能、命令、hooks 与 MCP。
 `/agent-plugin` 是本包唯一的命令入口；已安装智能体插件自带的命令会注册成
 `/<插件名>-<命令名>`。
 
-## 插件页 UI：智能体插件 Tab（0.2.3）
+## 首页左侧栏：智能体插件面板（0.2.4）
 
-位置：**首页左边栏 → 插件 → 「已安装」Tab 右侧的「智能体插件」**（order 50，位于「已安装」与「市场」之间）。
+位置：**首页左侧栏**，顺序为 **插件(0) → 智能体插件(5) → 自动化任务(10) → 上下文洞察(20)**。
+点击左侧栏的「智能体插件」图标，中央主面板打开本插件的管理页（market / 已安装 / 能力管理）。
+
+> 早期版本位于「设置 → 插件 → 已安装」Tab 右侧；0.2.4 起改为左侧栏全局入口，
+> 设置页里的旧入口已移除（槽位 id / 面板 key 均为 `agent-plugin`）。
 
 - **市场**：添加 local / git / url 三种市场源，刷新、移除，浏览市场内插件并一键安装；
 - **已安装**：插件总开关（启用/禁用）、查看详情、更新、回滚、卸载；
@@ -42,8 +46,8 @@ DSH 的技能、命令、hooks 与 MCP。
   - hooks：按事件（PreToolUse/PostToolUse/Stop/…）启停，未映射到宿主的事件标注「未生效」；
   - MCP 清单：可启停，但宿主没有运行时挂载接口，条目固定标注「未生效」。
 
-首次安装/升级后：**Host 端需要重启一次 DSH** 才会加载新版插件代码；浏览器端如未出现 Tab，
-刷新一次页面即可（Client 代码由模块表加载）。若 Host API 不可用，Tab 内会显示原因。
+首次安装/升级后：**Host 端需要重启一次 DSH** 才会加载新版插件代码；浏览器端如未出现左侧栏图标，
+刷新一次页面即可（Client 代码由模块表加载）。若 Host API 不可用，面板内会显示原因。
 
 > 启动顺序：宿主按「服务可用性」驱动插件激活，本插件只硬依赖 `commands`；
 > `skills` / `webServer` / `subprocess` 可能在本插件 apply 之后才注册。因此技能 provider 与
@@ -51,7 +55,8 @@ DSH 的技能、命令、hooks 与 MCP。
 > 服务晚到也能自动恢复，不需要重启。
 
 数据通路：Host 端注册前缀路由 `/agent-plugin/api`（本机回环同源访问、POST 要求同源
-Origin + JSON），Client 端通过 `dsh.client` 清单注册到 `settings.plugins.tab` 槽位。
+Origin + JSON），Client 端通过 `dsh.client` 清单注册到左侧栏 `sidebar.panellist` 槽位
+（`id: agent-plugin`, order 5）与中央 `main` 面板（`key: agent-plugin`）。
 受安全门限制，**远端 Web UI 访问时该 Tab 的 API 会返回 403**（只允许 127.0.0.1 /
 localhost / [::1]），本地桌面端不受影响。
 

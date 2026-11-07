@@ -385,6 +385,27 @@ window.__ModuleLoader__.load({
       )
     }
 
+    /** 左侧栏全局面板图标（ownerProps：size / active）。 */
+    function PanelIcon({ size, active }) {
+      const edge = typeof size === 'number' ? size : 20
+      return h('svg', {
+        viewBox: '0 0 24 24',
+        width: edge,
+        height: edge,
+        fill: 'none',
+        stroke: 'currentColor',
+        strokeWidth: active === true ? 2 : 1.7,
+        strokeLinecap: 'round',
+        strokeLinejoin: 'round',
+        'aria-hidden': true,
+        style: { display: 'block' },
+      },
+        h('rect', { x: 3.5, y: 3.5, width: 17, height: 17, rx: 4.5 }),
+        h('circle', { cx: 12, cy: 11, r: 3.4 }),
+        h('path', { d: 'M12 14.4v3.1M8.6 11H5.4M18.6 11h-3.2' }),
+      )
+    }
+
     function Page({ t, locale }) {
       useLocaleVersion(locale)
       const [data, setData] = useState(null)
@@ -565,7 +586,7 @@ window.__ModuleLoader__.load({
         )
       }
 
-      return h('div', { style: { display: 'flex', flexDirection: 'column', gap: 12, padding: '4px 0 24px', color: COLOR.primary, fontSize: 13, minHeight: 320 } },
+      return h('div', { style: { display: 'flex', flexDirection: 'column', gap: 12, padding: '16px 20px 24px', color: COLOR.primary, fontSize: 13, height: '100%', boxSizing: 'border-box', overflowY: 'auto' } },
         header,
         error ? h('div', { style: { color: COLOR.error, fontSize: 12 } }, error) : null,
         notice ? h('div', { style: { color: COLOR.success, fontSize: 12 } }, notice) : null,
@@ -601,11 +622,19 @@ window.__ModuleLoader__.load({
             return ZH[key] ?? key
           }
         }
-        ctx.slots.inject('settings.plugins.tab', () => ctx.slots.register({
-          name: 'settings.plugins.tab',
+        // 首页左侧栏：全局面板图标（面板顺序 插件0 → 智能体插件5 → 自动化任务10 → 上下文洞察20）
+        ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({
+          name: 'sidebar.panellist',
           id: 'agent-plugin',
-          order: 50,
+          order: 5,
           label: () => t('tab'),
+          locale: NS,
+        }, (props) => h(PanelIcon, { size: props?.size, active: props?.active })))
+        // 中央主面板内容：key 与左侧栏入口 id 相同，由主面板按 id 分发。
+        ctx.slots.inject('main', () => ctx.slots.register({
+          name: 'main',
+          key: 'agent-plugin',
+          locale: NS,
         }, (props) => h(Page, Object.assign({}, props, { t, locale }))))
       },
     }

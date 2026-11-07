@@ -228,3 +228,18 @@ window.__ModuleLoader__.load({ id: 'dsh-agent-plugin-hub', factory(require) {
 
 结论：可选服务应当用 `ctx.inject` 等待而不是在 apply 里一次性 `ctx.get`；不要缓存「服务缺失」
 这一结论。
+
+### 左侧栏面板（0.2.4）
+
+主面板（中央区域）与左侧栏入口是一对**同 id 的槽位注册**：
+
+- `sidebar.panellist`（list）：`{ id, order?, label? }`，组件接收 ownerProps
+  `{ size: number, active: boolean }`（只画图标）；本插件 `id: 'agent-plugin'`、`order: 5`。
+- `main`（keyed）：`{ key }`，组件即面板内容；`key` 必须等于左侧栏入口的 `id`，
+  宿主按左侧栏选中项把该 key 派发到中央区域（无需自己调 `layout.selectPanel`）。
+- 实测占用者顺序：`plugins`(0) / `schedules`(10) / `dsh-context`(20)；登记 `order: 5`
+  即落在「插件」与「自动化任务」之间。
+- 参考实现：第三方插件 `dsh-context` 用同样的一对注册（`main` + `sidebar.panellist`），
+  面板 id 相同即可加入左侧栏，不需要改宿主。
+- 设置页 Tab（`settings.plugins.tab`）与左侧栏面板是两种不同位置；0.2.4 起改用左侧栏入口，
+  旧设置页 Tab 注册已移除。
