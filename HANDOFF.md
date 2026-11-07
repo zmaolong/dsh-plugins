@@ -8,11 +8,19 @@
 > 以及技能、命令、hooks、MCP 清单的逐项启停。Host 端加 `/agent-plugin/api` 前缀路由，
 > Client 端注册 `settings.plugins.tab` 槽位。升级后需**重启 DSH** 载入 Host 代码、**刷新页面**
 > 载入 Client 代码；Tab 位于 设置 → 插件 → Agent 插件。
+>
+> **当前 profile 的安装路径**：`dsh-agent-plugin-hub@0.2.0` 以 link 方式指向
+> `E:\workspace\dsh-agent-plugin-hub-runtime\0.2.0`（运行时副本）。原因：宿主机进程已缓存
+> 0.1.0 的 ESM 模块，直接重装同一路径会因「旧模块缓存 + 新模块导出」不匹配而导入失败；
+> 换成新路径可让宿主加载完整的新代码且无需重启。仓库源码仍是
+> `E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub`；下次重启 DSH 后可执行
+> `remove_bundle` + 从源码目录 `install_bundle` 恢复 link（之后改源码才会自动生效）。
 
 ## 30 秒速览
 
-- hub 已安装进 **桌面端当前 profile**（`~/.dsh/profiles/desktop`，以 `link` 方式指向
-  `E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub`）并处于启用状态。
+- hub 已安装进 **桌面端当前 profile**（`~/.dsh/profiles/desktop`，当前 link 指向
+  `E:\workspace\dsh-agent-plugin-hub-runtime\0.2.0`，见上方说明）并处于启用状态。
+- 插件页 Tab：**设置 → 插件 → Agent 插件**（已实测出现在「全部」与「市场」之间，order 50）。
 - 会话里用 `/agent-plugin`，常用三条：
 
 ```text
@@ -142,8 +150,9 @@ source.commit = 本分支生成索引时的 HEAD（与本文件更新提交一�
    的 0.0.1 版本标记，代码走 link 指向工作区，但仍建议重启一次以获得干净状态）。
 2. 重启后执行 `/agent-plugin status`，应看到：版本 `0.2.0`、0 插件 / 0 市场、技能 provider 已注册、
    commands 已注册、hooks 已挂载、MCP 未生效（带原因）。
-3. **刷新 Web 页面**后，设置 → 插件 里会出现「Agent 插件」Tab；若 Tab 显示 API 不可用，
-   说明 Host 版本尚未重启或页面不是本机回环访问。
+3. 设置 → 插件 里应出现「Agent 插件」Tab（order 50，位于「全部」与「市场」之间）；
+   Tab 内可增删市场、安装插件、查看技能/命令/hooks/MCP 并逐项启停。若没有出现，刷新一次页面
+   （Client 代码由浏览器加载；实测本机已自动出现）。
 4. 若当前会话技能目录里还能看到夹具技能 `greet`，那是清理前的缓存；重启后消失。
 5. 可选：在插件页「发现 → 添加索引源」填入上面的 `release-0.0.1` 索引 URL，即可一键安装本插件后续版本。
 6. 想立即试用真实 Agent 插件：

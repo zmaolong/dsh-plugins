@@ -36,8 +36,8 @@ DSH 的技能、命令、hooks 与 MCP。
   - hooks：按事件（PreToolUse/PostToolUse/Stop/…）启停，未映射到宿主的事件标注「未生效」；
   - MCP 清单：可启停，但宿主没有运行时挂载接口，条目固定标注「未生效」。
 
-首次安装/升级后：**Host 端需要重启一次 DSH** 才会加载新版插件代码；浏览器端刷新页面即可
-看到新增 Tab。若 Host API 不可用，Tab 内会显示原因。
+首次安装/升级后：**Host 端需要重启一次 DSH** 才会加载新版插件代码；浏览器端如未出现 Tab，
+刷新一次页面即可（Client 代码由模块表加载）。若 Host API 不可用，Tab 内会显示原因。
 
 数据通路：Host 端注册前缀路由 `/agent-plugin/api`（本机回环同源访问、POST 要求同源
 Origin + JSON），Client 端通过 `dsh.client` 清单注册到 `settings.plugins.tab` 槽位。
