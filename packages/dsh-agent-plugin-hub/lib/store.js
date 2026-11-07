@@ -27,8 +27,10 @@ import os from 'node:os'
 import path from 'node:path'
 
 import { normalizeDisabledCapabilities } from './capabilities.js'
+import { normalizeAuthor, normalizeEntryMeta, normalizeMarketDisplay, normalizeStringArray } from './manifest.js'
 
-export const STATE_SCHEMA = 1
+/** 当前持久化 schema。主代码只按该 schema 读取/写入；旧数据由 lib/migrate.js 迁移。 */
+export const STATE_SCHEMA = 2
 
 /** 阻塞式休眠（毫秒），用于锁重试。 */
 function sleepSync(ms) {
@@ -52,6 +54,76 @@ export function emptyState() {
 /** 空市场表。 */
 export function emptyMarkets() {
   return { schemaVersion: STATE_SCHEMA, updatedAt: new Date().toISOString(), markets: [] }
+}
+
+/**
+ * 按当前 schema 规整任意 state 原始对象（供 readState 与 lib/migrate.js 复用）。
+ *
+ * @param {unknown} raw
+ * @param {string[]} [warnings]
+ * @returns {{schemaVersion: number, updatedAt: string, plugins: object[]}}
+ */
+export function normalizeState(raw, warnings = []) {
+  if (!isObject(raw)) {
+    warnings.push('state 顶层必须是 JSON 对象，已按空表处理')
+    return emptyState()
+  }
+  if (raw.schemaVersion !== STATE_SCHEMA) {
+    warnings.push(`state.json 的 schemaVersion=${String(raw.schemaVersion)}（当前 ${STATE_SCHEMA}）；请先运行迁移`)
+  }
+  const plugins = []
+  const seen = new Set()
+  for (const record of Array.isArray(raw.plugins) ? raw.plugins : []) {
+    const normalized = normalizePluginRecord(record, warnings)
+    if (normalized === null) continue
+    if (seen.has(normalized.key)) {
+      warnings.push(`插件 ${normalized.key} 在 state 中重复，保留最后一条`)
+      const index = plugins.findIndex((item) => item.key === normalized.key)
+      if (index >= 0) plugins.splice(index, 1)
+    }
+    seen.add(normalized.key)
+    plugins.push(normalized)
+  }
+  return {
+    schemaVersion: STATE_SCHEMA,
+    updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : new Date().toISOString(),
+    plugins,
+  }
+}
+
+/**
+ * 按当前 schema 规整任意 marketplaces 原始对象（供 readMarkets 与 lib/migrate.js 复用）。
+ *
+ * @param {unknown} raw
+ * @param {string[]} [warnings]
+ * @returns {{schemaVersion: number, updatedAt: string, markets: object[]}}
+ */
+export function normalizeMarkets(raw, warnings = []) {
+  if (!isObject(raw)) {
+    warnings.push('marketplaces 顶层必须是 JSON 对象，已按空表处理')
+    return emptyMarkets()
+  }
+  if (raw.schemaVersion !== STATE_SCHEMA) {
+    warnings.push(`marketplaces.json 的 schemaVersion=${String(raw.schemaVersion)}（当前 ${STATE_SCHEMA}）；请先运行迁移`)
+  }
+  const markets = []
+  const ids = new Set()
+  for (const record of Array.isArray(raw.markets) ? raw.markets : []) {
+    const normalized = normalizeMarketRecord(record, warnings)
+    if (normalized === null) continue
+    if (ids.has(normalized.id)) {
+      warnings.push(`市场 id ${normalized.id} 重复，保留最后一条`)
+      const index = markets.findIndex((item) => item.id === normalized.id)
+      if (index >= 0) markets.splice(index, 1)
+    }
+    ids.add(normalized.id)
+    markets.push(normalized)
+  }
+  return {
+    schemaVersion: STATE_SCHEMA,
+    updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : new Date().toISOString(),
+    markets,
+  }
 }
 
 /** 规整 state 里的单条插件记录；字段不合法返回 null。 */
@@ -90,6 +162,25 @@ function normalizePluginRecord(record, warnings) {
   }
 }
 
+/** 规整已持久化的插件条目（meta 是白名单后的展示元数据，未知字段丢弃）。 */
+function normalizeStoredEntry(entry) {
+  const name = typeof entry.name === 'string' ? entry.name.trim() : ''
+  if (name === '') return null
+  const normalized = {
+    name,
+    version: typeof entry.version === 'string' ? entry.version.trim() : '',
+    description: typeof entry.description === 'string' ? entry.description.trim() : '',
+    source: isObject(entry.source) ? entry.source : { kind: 'unknown' },
+    installable: entry.installable !== false,
+    meta: normalizeEntryMeta(entry.meta),
+  }
+  const warning = typeof entry.warning === 'string' ? entry.warning.trim() : ''
+  if (warning !== '') normalized.warning = warning
+  const origin = typeof entry.origin === 'string' ? entry.origin.trim() : ''
+  if (origin !== '') normalized.origin = origin
+  return normalized
+}
+
 /** 规整 marketplaces 里的单条市场记录。 */
 function normalizeMarketRecord(record, warnings) {
   if (!isObject(record)) return null
@@ -98,17 +189,30 @@ function normalizeMarketRecord(record, warnings) {
     warnings.push('丢弃缺少 id 的市场记录')
     return null
   }
+  const name = typeof record.name === 'string' && record.name.trim() !== '' ? record.name.trim() : id
+  const title = typeof record.title === 'string' && record.title.trim() !== '' ? record.title.trim() : name
+  const display = normalizeMarketDisplay(record.display, title)
+  const owner = normalizeAuthor(record.owner) ?? display.owner ?? { name: '' }
+  display.owner = owner
+  const plugins = []
+  for (const entry of Array.isArray(record.plugins) ? record.plugins : []) {
+    if (!isObject(entry)) continue
+    const normalized = normalizeStoredEntry(entry)
+    if (normalized !== null) plugins.push(normalized)
+  }
   return {
     id,
-    name: typeof record.name === 'string' && record.name.trim() !== '' ? record.name.trim() : id,
+    name,
+    title,
     format: typeof record.format === 'string' ? record.format : 'claude',
     type: ['local', 'git', 'url'].includes(record.type) ? record.type : 'local',
     location: typeof record.location === 'string' ? record.location : '',
     addedAt: typeof record.addedAt === 'string' ? record.addedAt : new Date().toISOString(),
     lastRefreshed: typeof record.lastRefreshed === 'string' ? record.lastRefreshed : '',
-    plugins: Array.isArray(record.plugins)
-      ? record.plugins.filter((item) => isObject(item) && typeof item.name === 'string')
-      : [],
+    display,
+    owner,
+    featured: normalizeStringArray(record.featured),
+    plugins,
     refreshError: typeof record.refreshError === 'string' && record.refreshError !== '' ? record.refreshError : undefined,
     warnings: Array.isArray(record.warnings)
       ? record.warnings.filter((item) => typeof item === 'string')
@@ -198,35 +302,14 @@ export class HubStore {
   }
 
   /**
-   * 读取 state；损坏/字段异常时自检修复。
+   * 读取 state：只按当前 schema 规整字段；旧 schema 文件由 lib/migrate.js 在启动时迁移。
    * @returns {{state: object, warnings: string[]}}
    */
   readState() {
     const warnings = []
-    const raw = this.readJsonSafe(this.paths.state, emptyState, warnings) ?? emptyState()
-    let schemaVersion = raw.schemaVersion
-    if (schemaVersion !== STATE_SCHEMA) {
-      warnings.push(`state.json 的 schemaVersion=${String(schemaVersion)}，按 ${STATE_SCHEMA} 重建索引字段`)
-    }
-    const plugins = []
-    const seen = new Set()
-    for (const record of Array.isArray(raw.plugins) ? raw.plugins : []) {
-      const normalized = normalizePluginRecord(record, warnings)
-      if (normalized === null) continue
-      if (seen.has(normalized.key)) {
-        warnings.push(`插件 ${normalized.key} 在 state 中重复，保留最后一条`)
-        const index = plugins.findIndex((item) => item.key === normalized.key)
-        if (index >= 0) plugins.splice(index, 1)
-      }
-      seen.add(normalized.key)
-      plugins.push(normalized)
-    }
-    const state = {
-      schemaVersion: STATE_SCHEMA,
-      updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : new Date().toISOString(),
-      plugins,
-    }
-    return { state, warnings }
+    const raw = this.readJsonSafe(this.paths.state, emptyState, warnings)
+    if (raw === null) return { state: emptyState(), warnings }
+    return { state: normalizeState(raw, warnings), warnings }
   }
 
   /** 保存 state。 */
@@ -245,21 +328,9 @@ export class HubStore {
    */
   readMarkets() {
     const warnings = []
-    const raw = this.readJsonSafe(this.paths.marketplaces, emptyMarkets, warnings) ?? emptyMarkets()
-    const markets = []
-    const ids = new Set()
-    for (const record of Array.isArray(raw.markets) ? raw.markets : []) {
-      const normalized = normalizeMarketRecord(record, warnings)
-      if (normalized === null) continue
-      if (ids.has(normalized.id)) {
-        warnings.push(`市场 id ${normalized.id} 重复，保留最后一条`)
-        const index = markets.findIndex((item) => item.id === normalized.id)
-        if (index >= 0) markets.splice(index, 1)
-      }
-      ids.add(normalized.id)
-      markets.push(normalized)
-    }
-    return { markets: { schemaVersion: STATE_SCHEMA, markets }, warnings }
+    const raw = this.readJsonSafe(this.paths.marketplaces, emptyMarkets, warnings)
+    if (raw === null) return { markets: emptyMarkets(), warnings }
+    return { markets: normalizeMarkets(raw, warnings), warnings }
   }
 
   /** 保存市场表。 */

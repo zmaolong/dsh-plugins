@@ -1,8 +1,13 @@
 /**
- * Agent 插件清单解析：plugin.json / marketplace.json 的探测、校验与 source 解析。
+ * Agent 插件清单解析：plugin.json / marketplace.json 的探测、校验、元数据归一与 source 解析。
  *
- * 设计原则：必填字段严格（name、version），可选字段宽容（字符串/数组/对象都接受，
- * 原始 manifest 由调用方保存快照），未知字段原样保留，warnings 交给状态与日志。
+ * schema v2 约定：
+ * - marketplace.json 的 listing 元数据（displayName/category/author/homepage/icon/keywords…）
+ *   在解析时归一为条目 `meta`，市场级归一为 `display`；未知字段忽略，只收非空合法值；
+ * - 可选文本字段同时接受纯字符串或 `{en, zh-cn, zh, ...}` 多语言对象；
+ * - `plugin.json` 的展示字段由 `validatePluginManifest` 一并返回，供 UI 兜底。
+ *
+ * 必填字段严格（name、version），可选字段宽容；原始 manifest 由调用方决定是否留档。
  *
  * @module dsh-agent-plugin-hub/manifest
  */
@@ -45,8 +50,152 @@ export function isDirectory(dirPath) {
   }
 }
 
-function nonEmptyString(value) {
-  return typeof value === 'string' && value.trim() !== '' ? value.trim() : ''
+function isObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+/** 去空白后的非空字符串，否则空串。 */
+function textOf(value) {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+/**
+ * 文本字段归一：接受字符串或 `{en, zh-cn, zh}` 多语言对象。
+ *
+ * @param {unknown} value
+ * @returns {{ text: string, i18n: Record<string, string> | null }}
+ */
+export function normalizeLocalizedText(value) {
+  if (typeof value === 'string') {
+    return { text: value.trim(), i18n: null }
+  }
+  if (!isObject(value)) return { text: '', i18n: null }
+  const i18n = {}
+  for (const [rawKey, rawValue] of Object.entries(value)) {
+    const key = typeof rawKey === 'string' ? rawKey.trim().toLowerCase() : ''
+    const text = textOf(rawValue)
+    if (key !== '' && text !== '') i18n[key] = text
+  }
+  const keys = Object.keys(i18n)
+  if (keys.length === 0) return { text: '', i18n: null }
+  const text = i18n.default ?? i18n.en ?? i18n['zh-cn'] ?? i18n.zh ?? i18n[keys[0]]
+  return { text, i18n }
+}
+
+/**
+ * 作者归一：接受字符串或 `{name, email?, url?}`。
+ *
+ * @param {unknown} value
+ * @returns {{ name: string, email?: string, url?: string } | null}
+ */
+export function normalizeAuthor(value) {
+  if (typeof value === 'string') {
+    const name = value.trim()
+    return name === '' ? null : { name }
+  }
+  if (!isObject(value)) return null
+  const name = textOf(value.name)
+  if (name === '') return null
+  const author = { name }
+  const email = textOf(value.email)
+  const url = textOf(value.url) || textOf(value.homepage)
+  if (email !== '') author.email = email
+  if (url !== '') author.url = url
+  return author
+}
+
+/**
+ * 字符串数组归一：数组里去空去重；单个非空字符串视为一项。
+ *
+ * @param {unknown} value
+ * @returns {string[]}
+ */
+export function normalizeStringArray(value) {
+  const items = []
+  const push = (item) => {
+    const text = textOf(item)
+    if (text !== '') items.push(text)
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) push(item)
+  } else if (typeof value === 'string') {
+    push(value)
+  }
+  return [...new Set(items)]
+}
+
+/** 图标字段归一：只接受字符串（或 `{url}` 对象）形式的地址/路径。 */
+export function normalizeIconValue(value) {
+  if (typeof value === 'string') return value.trim()
+  if (isObject(value)) return textOf(value.url) || textOf(value.src) || textOf(value.path)
+  return ''
+}
+
+/**
+ * 把 marketplace.json 的条目（或持久化后的 meta）归一为 `meta`。
+ *
+ * 只保留非空合法值；未知字段忽略。字段集合（schema v2）：
+ * `displayName, displayNameI18n, descriptionI18n, icon, category, author,
+ * homepage, repository, license, keywords`；另保留 `description`（旧数据迁移
+ * 用旧 description 生成该键，UI 可当兜底描述）。
+ *
+ * @param {unknown} value
+ * @returns {object}
+ */
+export function normalizeEntryMeta(value) {
+  const source = isObject(value) ? value : {}
+  const meta = {}
+  const displayName = normalizeLocalizedText(source.displayName ?? source.title)
+  if (displayName.text !== '') meta.displayName = displayName.text
+  if (displayName.i18n !== null) meta.displayNameI18n = displayName.i18n
+  const description = normalizeLocalizedText(source.description)
+  if (description.text !== '') meta.description = description.text
+  if (description.i18n !== null) meta.descriptionI18n = description.i18n
+  const icon = normalizeIconValue(source.icon ?? source.logo)
+  if (icon !== '') meta.icon = icon
+  const category = textOf(source.category) || textOf(source.metadata?.category)
+  if (category !== '') meta.category = category
+  const author = normalizeAuthor(source.author)
+  if (author !== null) meta.author = author
+  const homepage = textOf(source.homepage)
+  if (homepage !== '') meta.homepage = homepage
+  const repository = textOf(source.repository)
+  if (repository !== '') meta.repository = repository
+  const license = textOf(source.license)
+  if (license !== '') meta.license = license
+  const keywords = normalizeStringArray(source.keywords ?? source.tags)
+  if (keywords.length > 0) meta.keywords = keywords
+  return meta
+}
+
+/**
+ * 市场级 display 归一（固定三字段：title / description / owner）。
+ *
+ * @param {unknown} value - 持久化后的 display 对象（或带 title/description/owner 的对象）
+ * @param {string} fallbackTitle
+ * @returns {{ title: string, description: string, owner: { name: string, email?: string, url?: string } }}
+ */
+export function normalizeMarketDisplay(value, fallbackTitle) {
+  const source = isObject(value) ? value : {}
+  const title = normalizeLocalizedText(source.title ?? source.displayName ?? source.name)
+  const description = normalizeLocalizedText(source.description)
+  const owner = normalizeAuthor(source.owner) ?? { name: '' }
+  return {
+    title: title.text || textOf(fallbackTitle),
+    description: description.text,
+    owner,
+  }
+}
+
+/**
+ * 从 marketplace.json 顶层清单构建市场级 display。
+ *
+ * @param {object} manifest
+ * @returns {object}
+ */
+export function buildMarketDisplay(manifest) {
+  const display = normalizeMarketDisplay(manifest, textOf(manifest?.name))
+  return display
 }
 
 /**
@@ -77,7 +226,7 @@ export function detectPluginManifest(root, options = {}) {
       }
     }
   }
-  const hint = nonEmptyString(options.hintFormat)
+  const hint = textOf(options.hintFormat)
   const fallbackFormat = hint && findFormat(hint) ? hint : 'claude'
   const fallback = findFormat(fallbackFormat)
   for (const relative of fallback.rootManifests) {
@@ -97,24 +246,34 @@ export function detectPluginManifest(root, options = {}) {
 }
 
 /**
- * 校验 plugin.json 必填字段并规整元数据。
+ * 校验 plugin.json 必填字段，并规整展示元数据。
  *
  * @param {object} manifest
  * @param {{format: string, manifestPath: string}} context
- * @returns {{name: string, version: string, description: string, warnings: string[]}}
+ * @returns {{name: string, version: string, description: string,
+ *            author: object | null, homepage: string | null, repository: string | null,
+ *            license: string | null, keywords: string[], icon: string | null,
+ *            category: string | null, warnings: string[]}}
  */
 export function validatePluginManifest(manifest, context) {
   const warnings = []
-  const name = nonEmptyString(manifest.name)
-  const version = nonEmptyString(manifest.version)
+  const name = textOf(manifest.name)
+  const version = textOf(manifest.version)
   if (name === '') throw new Error(`${context.manifestPath} 缺少必填字段 name`)
   if (version === '') throw new Error(`${context.manifestPath} 缺少必填字段 version`)
   if (!isSafePluginName(name)) {
     throw new Error(`${context.manifestPath} 的 name 不合法：${name}（只允许字母数字与 ._-，最长 64，且不得含 ..）`)
   }
   if (manifest.version.trim() !== version) warnings.push('version 含首尾空白，已规整')
-  const description = nonEmptyString(manifest.description)
-  return { name, version, description, warnings }
+  const description = textOf(manifest.description)
+  const author = normalizeAuthor(manifest.author)
+  const homepage = textOf(manifest.homepage) || null
+  const repository = textOf(manifest.repository) || null
+  const license = textOf(manifest.license) || null
+  const keywords = normalizeStringArray(manifest.keywords)
+  const icon = normalizeIconValue(manifest.icon) || null
+  const category = textOf(manifest.category) || textOf(manifest.metadata?.category) || null
+  return { name, version, description, author, homepage, repository, license, keywords, icon, category, warnings }
 }
 
 /** 在目录中探测 marketplace.json。 */
@@ -130,7 +289,7 @@ export function detectMarketplaceFile(root, options = {}) {
       }
     }
   }
-  const hint = nonEmptyString(options.hintFormat)
+  const hint = textOf(options.hintFormat)
   if (hint && findFormat(hint)) {
     const format = findFormat(hint)
     for (const relative of format.marketplaceFiles) {
@@ -197,12 +356,19 @@ export function normalizeSource(source, warnings = []) {
   }
 }
 
+function nonEmptyString(value) {
+  return typeof value === 'string' && value.trim() !== '' ? value.trim() : ''
+}
+
 /**
- * 解析 marketplace.json 顶层结构，返回规整后的插件条目。
+ * 解析 marketplace.json 顶层结构，返回规整后的插件条目（含 `meta` 展示元数据）。
+ *
+ * 返回：
+ * `{ name, owner, display, featured, plugins: [{ name, version, description, source, meta, warnings }], warnings }`
  *
  * @param {object} manifest
  * @param {{format: string, root: string, origin?: string}} context
- * @returns {{name: string, owner: string, plugins: object[], warnings: string[]}}
+ * @returns {{name: string, owner: string, display: object, featured: string[], plugins: object[], warnings: string[]}}
  */
 export function parseMarketplace(manifest, context) {
   const warnings = []
@@ -215,6 +381,16 @@ export function parseMarketplace(manifest, context) {
   if (!Array.isArray(pluginsRaw) || pluginsRaw.length === 0) {
     throw new Error('marketplace.json 的 plugins 必须是非空数组')
   }
+  const display = buildMarketDisplay(manifest)
+  const featured = []
+  const markFeatured = (pluginName) => {
+    if (!isSafePluginName(pluginName)) return
+    if (!featured.includes(pluginName)) featured.push(pluginName)
+  }
+  const explicitFeatured = typeof manifest.featured === 'string'
+    ? [manifest.featured]
+    : Array.isArray(manifest.featured) ? manifest.featured : []
+  for (const item of explicitFeatured) markFeatured(textOf(item))
   const plugins = []
   const seen = new Set()
   for (const [index, entry] of pluginsRaw.entries()) {
@@ -236,14 +412,16 @@ export function parseMarketplace(manifest, context) {
       continue
     }
     seen.add(pluginName)
+    if (entry.featured === true || entry.metadata?.featured === true) markFeatured(pluginName)
     const entryWarnings = []
     const source = normalizeSource(entry.source, entryWarnings)
+    const description = normalizeLocalizedText(entry.description)
     plugins.push({
       name: pluginName,
       version: nonEmptyString(entry.version),
-      description: nonEmptyString(entry.description),
+      description: description.text,
       source,
-      raw: entry,
+      meta: normalizeEntryMeta(entry),
       warnings: entryWarnings,
     })
     warnings.push(...entryWarnings.map((item) => `${pluginName}: ${item}`))
@@ -251,7 +429,9 @@ export function parseMarketplace(manifest, context) {
   if (plugins.length === 0) throw new Error('marketplace.json 没有可用插件条目')
   return {
     name,
-    owner: typeof manifest.owner === 'string' ? manifest.owner : manifest.owner?.name ?? '',
+    owner: display.owner.name,
+    display,
+    featured,
     plugins,
     warnings,
   }

@@ -160,3 +160,59 @@ test('git 市场：从本地 git 仓库浅克隆并安装', async (t) => {
   await hub.marketRefresh(market.id)
   assert.equal(existsSync(installed.record.installedPath), true)
 })
+
+test('update refresh:false：跳过市场刷新，仍能读取源清单升级', async (t) => {
+  const { hub, marketDir, market } = await setup(t)
+  await hub.install({ name: 'demo-claude', market: market.id })
+  const pluginJson = path.join(marketDir, 'plugins', 'demo-claude', '.claude-plugin', 'plugin.json')
+  const manifest = JSON.parse(readFileSync(pluginJson, 'utf8'))
+  manifest.version = '0.2.0'
+  writeFileSync(pluginJson, JSON.stringify(manifest, null, 2))
+
+  let refreshCalls = 0
+  const originalRefresh = hub.markets.refresh.bind(hub.markets)
+  hub.markets.refresh = async (id) => {
+    refreshCalls += 1
+    return await originalRefresh(id)
+  }
+  try {
+    const result = await hub.installer.update(hub.state, 'demo-claude', { refresh: false })
+    assert.equal(refreshCalls, 0, 'refresh:false 不应刷新市场')
+    assert.equal(result.changed, true)
+    assert.equal(result.record.version, '0.2.0')
+  } finally {
+    hub.markets.refresh = originalRefresh
+  }
+})
+
+test('update：不可比较版本判 unknown，不误报可更新也不安装', async (t) => {
+  const { hub, marketDir, market } = await setup(t)
+  await hub.install({ name: 'demo-claude', market: market.id })
+  hub.state.plugins[0].version = 'not-a-version'
+  const pluginJson = path.join(marketDir, 'plugins', 'demo-claude', '.claude-plugin', 'plugin.json')
+  const manifest = JSON.parse(readFileSync(pluginJson, 'utf8'))
+  manifest.version = '0.2.0'
+  writeFileSync(pluginJson, JSON.stringify(manifest, null, 2))
+
+  const result = await hub.installer.update(hub.state, 'demo-claude', { refresh: false })
+  assert.equal(result.changed, false)
+  assert.equal(result.updateState, 'unknown')
+  assert.match(result.message, /无法比较版本/)
+  assert.match(result.message, /未更新/)
+  assert.equal(hub.state.plugins[0].version, 'not-a-version', '不应安装新版本')
+})
+
+test('update：预发布版本按 SemVer 排序（beta.10 > beta.2，不降级）', async (t) => {
+  const { hub, marketDir, market } = await setup(t)
+  await hub.install({ name: 'demo-claude', market: market.id })
+  hub.state.plugins[0].version = '1.0.0-beta.10'
+  const pluginJson = path.join(marketDir, 'plugins', 'demo-claude', '.claude-plugin', 'plugin.json')
+  const manifest = JSON.parse(readFileSync(pluginJson, 'utf8'))
+  manifest.version = '1.0.0-beta.2'
+  writeFileSync(pluginJson, JSON.stringify(manifest, null, 2))
+
+  const result = await hub.installer.update(hub.state, 'demo-claude', { refresh: false })
+  assert.equal(result.changed, false)
+  assert.equal(result.updateState, 'installed-newer')
+  assert.match(result.message, /不高于已安装版本/)
+})

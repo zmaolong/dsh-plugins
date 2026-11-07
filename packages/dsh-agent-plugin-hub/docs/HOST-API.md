@@ -1,255 +1,537 @@
-# 宿主 API 侦察记录（DSH 桌面端）
+# 智能体插件 · 商店面板 Host API
 
-本文件记录 `dsh-agent-plugin-hub` 实现能力注入前对宿主接口的实测结论。所有结论都来自
-当前运行中的 DSH 宿主（`0.2.2-rc.1`，desktop profile），不是猜测；实现只使用这些接口。
+本文件是 `dsh-agent-plugin-hub` 对插件商店面板（`client.js`）暴露的 **HTTP 数据契约**，
+与 v0.3.0 的实现一一对应：路由表、请求/响应结构、错误码、并发语义与降级规则。
 
-侦察方式：
+- 前缀：`/agent-plugin/api`（由 `lib/ui-routes.js` 以 `prefix` 命名路由挂载到宿主 `webServer`）
+- 数据整形：`lib/ui-data.js`（`buildStoreSnapshot` / `buildDescribe` / `buildMarketSummary` /
+  `resolveStoreIconFile`）；运维动作编排：`lib/hub.js`
+- 客户端只读本文档定义的路由；v0.3.0 起**不再提供** `/state`、`/plugin`、`/markets`
+  （客户端与 Host 同步升级，不保留旧字段兼容层）
 
-1. `cordis_inspect_list` / `cordis_inspect_query`（Service / Event / Config 三个 Host Provider）
-   读取精确方法签名与类型声明；
-2. 只读查阅 `D:\Program Files\dsh\resources\app.asar` 内的 `@deepseek-ai/*` 包源码与类型
-   （`read` 工具能直接读 asar 内路径；不修改安装目录）；
-3. `plugin_manager list_plugins` 与 profile 文件观察（`%USERPROFILE%\.dsh\profiles\desktop`）。
+## 1. 通用约定
 
-## 结论速览
+### 1.1 信封
 
-| 能力 | 宿主接口 | 是否可用 | 本插件做法 |
-|---|---|---|---|
-| commands | `ctx.commands.register(CommandDefinition)` | ✅ | 注册 `/agent-plugin`；插件命令注册为 `<plugin>-<command>` |
-| skills | `ctx.skills.registerProvider(create)` | ✅ | 一个 provider 动态列出所有启用插件的技能 |
-| hooks | cordis 事件 + `ctx.subprocess` | ✅（工具类依赖 `tools` 服务） | Pre/PostToolUse、UserPromptSubmit、Stop 等映射到真实事件 |
-| MCP | `@deepseek-ai/dsh-mcp-client` 静态插件行 | ❌ 无运行时挂载接口 | 只解析/展示清单，标注「未生效」，不 spawn 进程 |
+成功：
 
-## commands 服务
-
-注册定义（来自 `@deepseek-ai/dsh-commands` 的类型与源码）：
-
-```ts
-ctx.commands.register(definition: {
-  name: string                      // 必须匹配 /^[a-z][a-z0-9_-]*$/（普通命令解析正则）
-  description: string
-  input?: { hint: string; attachments?: boolean }
-  handler: (invocation: {
-    commandId, agent, rawInput: string,
-    attachments, signal: AbortSignal,
-  }) => CommandResult | Promise<CommandResult>
-}): () => void                     // 返回注销 disposer
+```json
+{ "ok": true, "data": {} }
 ```
 
-`CommandResult` 只有两种：`{ kind: 'success', text?: string }` 与 `{ kind: 'error', text: string }`。
+失败：
 
-实测约束：
-
-- **命令名只允许小写字母、数字、`_`、`-`**；冒号、点、大写都会解析失败。因此任务书里
-  `agent-plugin:<plugin>:<command>` 与 `<plugin>:<command>` 在宿主上不可行，本实现退化为
-  `<plugin>-<command>`（见 `plugin-commands.js` 注释与 README）。
-- 同名命令在全局层注册会**同步抛错**（`command "x" is already registered`），所以注册必须
-  try/catch，冲突跳过并记录。
-- handler 返回值只是**一段文本**，没有把结果作为新用户消息注入会话的接口。命令实现渲染完整
-  Markdown 并提示「复制发送」，不自造注入通道。
-- `ctx.commands` 是 optional 服务：profile 未启用 `@deepseek-ai/dsh-commands` 时不可用
-  （desktop profile 默认启用）。
-
-## skills 服务
-
-```ts
-ctx.skills.registerProvider(create: (control: { signal, invalidate() }) => {
-  name: string
-  list(options: { cwd?, signal? }) => Promise<SkillCandidate[] | { candidates, complete }>
-  get(candidate, options) => Promise<SkillDefinition | undefined>
-}): () => void
+```json
+{ "ok": false, "error": "中文可读文案", "code": "machine_code", "details": { "operation": {} } }
 ```
 
-- `SkillCandidate` = `{ name, description, whenToUse?, invocation: { modelInvocable, userInvocable },
-  source, provider, rank, resourceBase?, path?, locator? }`
-- `SkillDefinition` = candidate 基础字段 + `content: string`（完整 Markdown 正文）。
-- `resourceBase` 支持 `{ kind: 'directory', path }`，本插件指向技能目录，让宿主能解析相对资源。
-- 插件注册发生在 `apply` 期间（同步）；`apply` 时服务已就绪（由 `inject: ['commands']` 保证）。
-- `control.invalidate()` 让宿主丢弃技能目录缓存；插件启停/安装后调用它。
-- 重复技能名：同一层内按 `rank` 决胜；本插件在 provider 内先去重并记录 warning。
+- `error` 始终是中文、可操作文案；`code` 供客户端分支；`details` 仅在需要时出现
+  （目前只有 `operation_in_progress` 附带 `details.operation`）。
 
-## hooks：宿主事件映射
+### 1.2 状态码与错误码
 
-`cordis_inspect_query(Event)` 列出的真实事件（与本插件相关的部分）：
+| HTTP | code | 场景 |
+|---|---|---|
+| 400 | `bad_request` | 请求体非法/缺字段、未知能力种类、请求体过大 |
+| 403 | `forbidden` | 非回环 Host、跨源 POST、非 JSON POST |
+| 404 | `not_found` | 未知路由、市场/插件/图标不存在 |
+| 405 | `method_not_allowed` | 路由存在但方法不支持 |
+| 409 | `conflict` | 市场已存在、同版本已安装、跨市场重名 |
+| 409 | `operation_in_progress` | 另一个写操作在途（见 §5） |
+| 409 | `market_unavailable` / `source_unavailable` | 市场不可用 / 来源无法解析 |
+| 422 | `version_invalid` | 版本号不合法或不可比较 |
+| 502 | `network_error` / `git_error` | 网络/ git 失败 |
+| 500 | `internal` | 未预期异常（兜底） |
 
-| Claude hook | 宿主事件 | 模式 | 能力 |
-|---|---|---|---|
-| PreToolUse | `tools/pre-execute` | waterfall | 可 deny，阻断工具调用 |
-| PostToolUse | `tools/result` | emit | 只观察，不能改写结果 |
-| UserPromptSubmit | `agent/inbox/inserted` | emit | 只观察，不能改写入参 |
-| Stop | `agent/turn-stopping` | serial | 可等待（有超时保护） |
-| SessionStart | `session/created` | emit | 只观察 |
-| SessionEnd | `agent/disposed` | emit | 只观察 |
-| Notification / SubagentStop / PreCompact 等 | 无 | — | 标注「未生效」 |
+### 1.3 访问控制
 
-监听方式（与宿主自带插件一致）：
+- `Host` 头必须是 `127.0.0.1` / `localhost` / `[::1]`（含端口），否则 403；
+- 非 GET/HEAD 请求额外要求：`Origin` 缺省或等于 `http://<Host 头>`，且
+  `Content-Type` 含 `application/json`（阻断跨站表单 CSRF）；
+- JSON 请求体上限 256 KiB；
+- 所有可能联网/写盘的动作只允许 POST；GET 一律只读。
 
-```js
-ctx.on('tools/pre-execute', async (exec, next) => {
-  // exec = { name, arguments, agent?, signal, ... }
-  // 返回 { kind: 'allow' | 'deny' | 'cancel' | 'ask' }
-  return next()
-})
-```
+### 1.4 标识符与入参
 
-`PreToolDecision` 的 `deny` 含 `{ kind: 'deny', reason: string }`。
+- 市场 id：`marketId`，形如 `local-<slug>-<hash8>`（由 `type + location` 推导，稳定）；
+- 插件 key：`<marketId>/<pluginName>`，与安装记录的 `key` 一致；商店、详情、已安装三处
+  用同一个 key；
+- 写接口同时接受 `key`（推荐）与 `market + name`；已安装插件动作接受 `key` 或唯一 `name`；
+- 时间字段为 ISO 8601 字符串；未知/未发生用 `null`（不使用空串）；
+- 联网边界：`GET /store`、`GET /describe`、`GET /icon` 零网络；仅
+  `POST /describe {fetch:true}` 允许刷新市场/克隆 git 源（用户点「重试/获取详情」时才用）。
 
-命令执行通道：`ctx.subprocess`（optional，desktop profile 默认加载
-`@deepseek-ai/dsh-subprocess-local`）：
+## 2. 数据结构
+
+### 2.1 StoreSnapshot（`GET /store`）
 
 ```ts
-ctx.subprocess.spawn({
-  argv: readonly string[], cwd: string,
-  stdio: { stdin: 'ignore' | 'pipe' | { data }, stdout: 'pipe'|'ignore'|{maxBytes}, stderr: ... },
-  graceMs: number, env?: ProcessEnv, signal?,
-}): {
-  stdin, stdout, stderr, collected: { stdout: { readFrom(offset) }, stderr: ... },
-  done: Promise<{ exitCode, signal }>, terminate(), waitForExit()
+{
+  version: string                        // hub 包版本
+  home: string                           // 存储根绝对路径
+  started: boolean
+  ui: { active: boolean, reason: string, path: string }   // HTTP 路由挂载状态
+  formats: Array<{ id, label, pluginManifests: string[], marketplaceFiles: string[] }>
+  runtime: {
+    skills:   { registered: boolean, skills: number, reason?: string }
+    commands: { available: boolean, registered: object[], reason?: string }
+    hooks:    { attached: boolean, enabled: boolean, reason: string, events: object[] }
+    mcp:      { available: false, hasResources: boolean, reason: string }
+  }
+  migrationError: string | null          // 启动时 schema 迁移失败原因
+  operations: Operation[]                // 在途写操作（通常 0 或 1 个）
+  markets: MarketSummary[]
+  items: CatalogItem[]                   // 所有可安装条目（含已安装的）
+  installed: InstalledItem[]             // 已安装项（含孤立项；孤立项只出现在这里）
+  stats: {
+    markets: number, items: number, installable: number, installed: number,
+    updatesAvailable: number, orphans: number, marketsWithError: number
+  }
+  warnings: string[]                     // hub 最近告警（最多 20 条）
 }
 ```
 
-`terminalEnvironment()` 给出 `{ platform: 'windows'|'posix', defaultShell }`；
-`resolveExecutable(name, env?, signal?)` 解析可执行文件。hook 命令按平台用
-`cmd /d /s /c <command>` 或 `sh -c <command>` 执行，stdin 传 JSON，stdout/stderr 收集
-（各 64 KiB 上限），超时后 `terminate()`。未知事件不执行任何外部命令。
+> `/store` **不含** `cache`（`cacheStats` 会递归 stat 全部安装文件，只保留给 CLI `status`）。
 
-## MCP：为什么只展示不挂载
+### 2.2 MarketSummary
 
-- 宿主安装目录里存在 `@deepseek-ai/dsh-mcp-client`（0.2.2-rc.1），但**当前 desktop profile
-  的组合里没有它的插件行**；`Config.listConfigs` 的 212 个 live 条目中没有 mcp-client。
-- 当前活跃的只有 `@deepseek-ai/dsh-mcp-resources`，服务是 `ctx.mcpResources.register(server,
-  provider)`——这是**资源读取**注册，不是「连接 MCP server」。
-- `dsh-mcp-client` 的实现是**一个插件行连一个 server**：`apply` 读插件配置里的
-  `transport/command/args/env`（stdio）或 `url/headers`（streamable-http），在 `ctx.tools`
-  上注册 `mcp__<server>__<tool>`。它没有运行时「新增 server」的服务方法。
-- 第三方 bundle 无法在运行时插入 Loader 插件行：`ctx.configEditor.edit()` 只能改既有 entry 的
-  overrides；`plugin_manager` 面向 DSH 插件/bundle 安装，不是 MCP server 注册。
-- 结论：按自动决策表，`mcpServers` 只解析、展示清单，`/agent-plugin info` 与 `status` 标注
-  「未生效」，并说明需要用户在 profile 中配置独立 MCP 插件行。**不自己 spawn 进程**。
-
-## 其它运行事实
-
-- 宿主插件入口：插件行 `name` 解析到包名，包 `package.json` 必须有
-  `dsh.bundle.patch` 指向 `cordis.patch.yml`，否则安装报 `not-a-bundle`。
-- 配置从 `cordis.patch.yml` 的 `config` 原样传入 `apply(ctx, config)`；本插件不导出 schemastery
-  Config，因此新增字段（`hooks`）对旧配置向后兼容。
-- `ctx.get(name)` 用于探测 optional 服务（commands/skills/subprocess/tools）；硬依赖只保留
-  `inject: ['commands']`，避免其他 profile 缺少服务时插件加载失败。
-- `ctx.effect?.(() => () => dispose())` 可用于注销技能 provider、命令与事件监听；宿主不支持时
-  降级为进程退出回收。
-- `@deepseek-ai/*` 是 peer 依赖且 profile 关闭 `autoInstallPeers`：第三方插件 import 这些包
-  会解析失败，因此本插件只用 Node 内置模块。
-
-## 未验证 / 限制
-
-- 命令结果注入会话：宿主无公开接口，未验证「自动发送」路径，按文本渲染处理。
-- hooks 在真实会话中的端到端行为：单元测试用假执行器覆盖了映射与决策；宿主冒烟只验证监听注册，
-  未在真实工具调用中触发 hook 命令（见 HANDOFF.md 证据与限制）。
-- Windows 下 `cmd /d /s /c` 的引号转义按 Claude Code 约定处理；复杂跨平台命令按宿主 shell 为准。
-
-## 插件页 Web UI（0.2.0 侦察补充）
-
-### 槽位
-
-`settings.plugins.tab`（Client Slots 目录）：`kind: list`，注册选项
-`{ id, order?, label?: string | (() => string) }`，由 Plugins 设置段落拥有；现有占用者
-`all`（order 10，宿主插件管理页）与 `dsh-market`（order 60，第三方市场插件）。
-贡献物以 React 组件形式挂载在对应 Tab 面板中。
-
-注册方式（浏览器端 `ctx.slots`）：
-
-```js
-ctx.slots.inject('settings.plugins.tab', () => ctx.slots.register({
-  name: 'settings.plugins.tab',
-  id: 'agent-plugin',
-  order: 50,
-  label: () => t('tab'),
-}, Component))
+```ts
+{
+  id: string
+  name: string                    // 用户别名（刷新不会被上游 name 覆盖）
+  title: string                   // 上游 marketplace.json 的 name（缺失回退 name）
+  type: 'local' | 'git' | 'url'
+  format: 'claude' | 'codebuddy' | 'zcode'
+  location: string
+  lastRefreshed: string | null
+  refreshError: string | null
+  pluginCount: number
+  display: { title: string, description: string | null, owner: Author | null }
+  health: { status: 'ok' | 'stale' | 'missing' | 'error', message: string }
+  refreshing: boolean
+}
 ```
 
-### Client 模块清单
+- `health.status`：`refreshError` 非空 → `error`；local 目录缺失 / git 克隆目录缺失 /
+  url 无本地快照 → `missing`；未刷新或超过 24h → `stale`；否则 `ok`；
+- `refreshing`：当前有 `market-refresh` 在途（或刷新全部）。
 
-`package.json`：
+### 2.3 CatalogItem（`items[]`）
+
+```ts
+{
+  key: string                     // marketId/name（= 安装后的 record.key）
+  name: string
+  version: string | null          // 市场声明版本（条目 version 字段）
+  versionValid: boolean           // 是否符合安装器目标目录规范（x.y.z）；无 version 视为 true
+  format: string                  // 取自 market.format
+  market: MarketRef
+  display: Display
+  source: SourceInfo
+  installable: boolean
+  blockedReason: string | null
+  installed: boolean
+  installedVersion: string | null
+  installedEnabled: boolean | null
+  update: UpdateInfo
+  warnings: string[]
+}
+```
+
+`MarketRef = { id, name, title, type, format }`。
+
+### 2.4 InstalledItem（`installed[]`）
+
+```ts
+{
+  key: string
+  name: string
+  version: string                 // 安装副本的实际版本（以清单为准）
+  format: string
+  market: MarketRef | null        // 来源市场已移除时为 null
+  marketId: string                // 记录里保留的原始市场 id（可能是已移除的市场）
+  enabled: boolean
+  installedAt: string
+  installedPath: string
+  capabilities: { skills: string[], commands: string[], hooks: string[], mcpServers: string[] }
+  disabledCapabilities: { skills: string[], commands: string[], hooks: string[], mcpServers: string[] }
+  previousVersions: Array<{ version: string, installedAt: string, available: boolean }>
+  display: Display
+  displaySource: 'market' | 'manifest' | 'record'
+  update: UpdateInfo
+  orphan: boolean                 // market === null 且安装记录指向已移除市场
+  health: { installedDirExists: boolean }
+}
+```
+
+- `previousVersions[].available` 用 `existsSync` 判定，客户端据此决定回滚按钮是否可点；
+- 孤立项只出现在 `installed`，`orphan:true` + `market:null`，更新入口应隐藏
+  （`update.state='unknown'`、`reason='来源市场已移除，无法检查更新'`）；
+- 孤立项仍可：查看详情、启停、逐项能力启停、回滚（本地缓存）、卸载；
+- 重新添加同一来源后（市场 id 稳定）按 key 自动恢复关联，`orphan` 变 `false`。
+
+### 2.5 Display
+
+```ts
+{
+  title: string
+  titleI18n: Record<string, string> | null
+  description: string | null
+  descriptionI18n: Record<string, string> | null
+  category: string | null
+  categories: string[]
+  author: { name: string, email: string | null, url: string | null } | null
+  homepage: string | null
+  repository: string | null
+  license: string | null
+  keywords: string[]
+  icon: { kind: 'none' | 'route' | 'http' | 'data', url: string | null, mime: string | null }
+  featured: boolean
+}
+```
+
+解析顺序：**市场条目 `meta`（listing）→ 已安装清单 `plugin.json` → record/name**；
+市场级 `display` 只提供标题/描述/作者的兜底。
+
+- `title`：`meta.displayName` → `titleI18n` 默认值（`default`/`en`/`zh-cn`/`zh`）→ 插件名；
+  多语言原对象原样放在 `titleI18n`，由客户端本地化；
+- `description`：`meta.description` → `meta.descriptionI18n` 默认值 → 条目 description →
+  清单 description → 市场 display；
+- `icon.kind`：
+  - `route`：市场根/安装根内的 raster 文件，`url` 指向
+    `/agent-plugin/api/icon?key=<key>&v=<version>`；
+  - `http`：条目里的 `https://` 地址，客户端直接加载（不代理）；
+  - `data`：`data:image/(png|jpeg|webp|gif);base64,...`，解码后 ≤32 KiB；
+  - `none`：缺省/越界/非白名单（SVG 一律不提供，避免同源脚本风险）。
+- 条目里缺失的可选展示字段（`publisherType` / `requiresPaidPlan` / `hero` /
+  `examplePrompts`）**不伪造**，当前直接不返回；客户端按「无值即隐藏」处理。
+
+### 2.6 SourceInfo / UpdateInfo / Operation
+
+```ts
+SourceInfo = {
+  kind: 'local' | 'github' | 'git' | 'npm' | 'unknown' | 'other' | 'installed'
+  label: string                  // source 原文（相对路径/仓库地址）或安装路径
+  resolved: boolean              // 是否已解析到本地目录
+  cloneRequired: boolean         // 安装/详情前是否需要 git 克隆（允许联网后才解析）
+  reason: string | null          // 不可解析的中文原因
+}
+
+UpdateInfo = {
+  state: 'none' | 'available' | 'current' | 'installed-newer' | 'unknown'
+  currentVersion: string | null  // 已安装版本（未安装为 null）
+  latestVersion: string | null   // 市场声明版本
+  checkedBy: 'declared' | 'none'
+  reason: string | null
+}
+
+Operation = {
+  id: string
+  kind: 'market-add' | 'market-refresh' | 'market-remove' | 'install' | 'uninstall'
+      | 'enable' | 'capability' | 'update' | 'update-all' | 'rollback' | 'describe'
+  key: string | null
+  marketId: string | null
+  startedAt: string
+  clientOpId: string | null
+}
+```
+
+- `update` 是**声明级**检测：市场条目 `version` vs 安装记录 `version`（`classifyUpdate`）；
+  缺 `version` 或不可比较 → `unknown`，**不得**当作可更新；
+- 未安装条目 `update.state='none'`；孤立已安装项 `checkedBy='none'` + `unknown`。
+
+### 2.7 DescribeResult（`GET|POST /describe`）
+
+```ts
+{
+  key: string
+  name: string
+  version: string | null
+  versionValid: boolean
+  format: string
+  market: MarketRef | null       // 孤立已安装项为 null
+  orphan: boolean
+  display: Display
+  source: SourceInfo
+  installable: boolean
+  blockedReason: string | null
+  installed: { installed: boolean, key: string | null, version: string | null, enabled: boolean | null }
+  update: UpdateInfo
+  manifest: {
+    name, version, description,
+    author: Author | null, homepage: string | null, repository: string | null,
+    license: string | null, keywords: string[], category: string | null,
+    icon: string | null,
+    rawKeys: string[]
+  } | null
+  capabilities: {
+    skills:     Array<{ name, description, enabled }>
+    commands:   Array<{ name, rawName, hostName, description, argumentHint, enabled }>
+    hooks:      Array<{ event, host: string|null, mode: string, canBlock: boolean,
+                        entries: number, enabled: boolean, effective: boolean, reason: string }>
+    mcpServers: Array<{ name, transport, command, args: string[], url: string,
+                        enabled: boolean, effective: false, reason: string }>
+  } | null                       // 来源无法解析时 null
+  hooksSource: string            // hooks 配置来源（plugin.json#hooks / hooks/hooks.json / ''）
+  mcpSource: string              // MCP 清单来源（plugin.json#mcpServers / .mcp.json / ''）
+  counts: { skills, commands, hooks, mcpServers }
+  warnings: string[]
+}
+```
+
+- 已安装项读**安装目录**；未安装项解析源目录（`resolvePluginSourceRoot`），
+  解析不到时 `capabilities:null` + `manifest:null` + 可读 `source.reason`/`blockedReason`；
+- 能力分区**剔除技能/命令正文**（只给 name/description/argumentHint）；
+- `hooks.effective`：事件已映射宿主 + hooks 运行时已挂载 + subprocess 可用，三者同时满足；
+  未映射事件给出宿主原因；`mcpServers.effective` 固定 `false` 并给宿主原因
+  （DSH 当前无 MCP 运行时挂载接口）。
+
+## 3. 路由表
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/store` | 商店整体快照（§2.1） |
+| GET | `/describe?key=` 或 `?market=&name=` | 详情，**不联网** |
+| POST | `/describe` | 详情；`{key?\|market?,name?,fetch?}`，`fetch:true` 才联网 |
+| GET | `/icon?key=&v=` | 图标二进制（raster） |
+| POST | `/market/add` | 添加市场（可自动识别来源类型） |
+| POST | `/market/refresh` | 刷新一个或全部市场 |
+| POST | `/market/remove` | 移除市场（允许保留已安装插件） |
+| POST | `/install` | 安装插件 |
+| POST | `/uninstall` | 卸载插件 |
+| POST | `/enable` | 启用/禁用插件 |
+| POST | `/update` | 更新单个插件 |
+| POST | `/update-all` | 全部更新 |
+| POST | `/rollback` | 回滚到上一版本 |
+| POST | `/capability` | 逐项能力启停 |
+
+已删除：`GET /state`、`GET /plugin`、`GET /markets`（客户端 v0.3.0 起只使用 `/store`）。
+
+### 3.1 GET /store
+
+无参数。返回 `{ok:true,data:StoreSnapshot}`。只读、零网络；已安装信息从内存 state 读取，
+每个已安装项额外读一次安装副本的 `plugin.json` 以生成 display 兜底。
+
+### 3.2 GET /describe · POST /describe
+
+请求：
+
+```json
+{ "market": "local-market-8d6d84e8", "name": "demo-claude", "fetch": false }
+```
+
+- `key` 优先；`name` 全局唯一时可由 host 推导；
+- `fetch:true`（仅 POST）：先刷新所属市场（按 id），再允许 git 源克隆；失败降级为
+  `warnings`/`source.reason`，不 500；
+- 该接口不安装、不写 `state.json`；`fetch:true` 最多写市场缓存（url 快照/git clone）。
+
+### 3.3 GET /icon
+
+- 只接受 `key`（`v` 仅用于缓存失效）；返回市场根或安装根内的 raster 文件；
+- 响应头：`Content-Type`（png/jpeg/webp/gif）、`X-Content-Type-Options: nosniff`、
+  `Cache-Control: public, max-age=300`；文件上限 256 KiB；
+- 不存在/越界/符号链接/非 raster（含 SVG）→ `404 {ok:false,error:'未找到图标',code:'not_found'}`；
+- 回环限制天然继承 §1.3。
+
+### 3.4 POST /market/add
+
+请求（`type` 可省略，省略时用 `detectSource` 自动识别）：
+
+```json
+{ "location": "E:\\my-market", "name": "可选别名", "format": "claude" }
+```
+
+响应：
 
 ```json
 {
-  "exports": { "./client": "./client.js", "./locale/*.json": "./locale/*.json", "./icon": "./icon.svg" },
-  "dsh": {
-    "client": {
-      "platform": "web",
-      "immediately": true,
-      "inject": ["@deepseek-ai/dsh-client-locale", "@deepseek-ai/dsh-client-ui-settings", "@deepseek-ai/dsh-client-ui-theme"]
-    }
-  }
+  "message": "市场已添加：fixture-claude-market",
+  "market": { "...": "MarketSummary" },
+  "detectedType": "local",
+  "format": "claude",
+  "pluginCount": 3,
+  "refreshError": null
 }
 ```
 
-`client.js` 在浏览器里向模块表自我注册（id 必须等于包名）：
+- 重复添加 → 409 `conflict`（文案「市场已存在：<id>」）；
+- 地址无法识别 → 400/404 + 中文原因；
+- 首次刷新失败：url 市场保留记录 + `refreshError`；local/git 首次失败回滚记录并返回错误
+  （与既有 CLI 行为一致，便于重试）。
 
-```js
-window.__ModuleLoader__.load({ id: 'dsh-agent-plugin-hub', factory(require) {
-  const React = require('react')
-  return { inject: ['slots', 'locale'], apply(ctx) { /* 注册槽位 */ } }
-} })
+### 3.5 POST /market/refresh
+
+请求 `{ "id": "可选；省略=全部" }`。响应：
+
+```json
+{
+  "message": "已刷新 2 个市场，1 个失败",
+  "refreshed": [ { "...": "MarketSummary" } ],
+  "failures": [ { "id": "git-…", "error": "git fetch 失败（退出码 1）：…", "code": "git_error" } ],
+  "stats": { "total": 3, "ok": 2, "failed": 1 }
+}
 ```
 
-只从模块表取 `react`（内置）。按宿主指引**不 import** 任何 `@deepseek-ai/dsh-client-*`；需要
-控件样式时使用主题 Token（`--dsw-alias-*`）或拷贝宿主控件标记，而不是依赖客户端组件包。
+- **部分失败仍 200**（含单 id 的失败：只看 `failures`）；未知 id → 404。
 
-### Host ↔ Client 数据面
+### 3.6 POST /market/remove
 
-宿主 `ctx.webServer.register({ kind: 'prefix', path: '/agent-plugin/api', handler })`：
+请求 `{ "id": "…" }`。响应：
 
-- 命名路由按「exact → 最长 prefix → fallback」匹配，prefix 路由不会被 SPA fallback 吞掉；
-- handler 拿到原生 `IncomingMessage/ServerResponse`，本插件自己解析 JSON 请求体并写 JSON 响应；
-- 命名路由不经过 `/api` 的鉴权栅栏，因此本插件自行实现访问控制：
-  - Host 头必须是 `127.0.0.1` / `localhost` / `[::1]`（本机回环）；
-  - 变更类请求（POST）要求 `Origin` 等于 `http://<Host>`，且 `Content-Type` 含
-    `application/json`（阻断跨站表单 CSRF 与浏览器预检之外的简单请求）；
-  - 否则 403，错误信息中文。
-- 远端 Web UI 访问时 Host 不是回环地址 → API 403（已知限制，见 README）。
+```json
+{ "message": "已移除市场：git-…", "orphaned": ["demo-claude"] }
+```
 
-未使用的替代方案：宿主生成的 `@Remote` 命名空间需要 `@deepseek-ai/*` 依赖（profile 关闭
-`autoInstallPeers`，第三方插件不能 import），因此选择 webServer 前缀路由 + 原生 fetch。
+- 允许移除仍有已安装插件的市场（ADR-0003）：安装副本、状态、启停与能力偏好全部保留，
+  插件转为孤立项；`orphaned` 返回将被孤立的插件名，供客户端提示/确认；
+- 不再返回「请先卸载」错误。
 
-### 启动顺序（0.2.3 修正）
+### 3.7 POST /install
 
-宿主 Loader 按「服务可用性」激活插件：插件行在 `inject` 声明的服务出现后即 apply，但**不保证**
-其它可选服务已经注册。实测一次冷启动中，本插件 apply 时 `ctx.get('webServer')` 返回 undefined，
-导致 API 路由没有挂载（`/agent-plugin/api` 404），技能 provider 也没有注册。
+请求（`key` 优先）：
 
-修正：
+```json
+{ "market": "local-market-8d6d84e8", "name": "demo-claude", "force": false, "refresh": true }
+```
 
-- 硬依赖只保留 `inject: ['commands']`；
-- `skills` 与 `webServer` 用 `ctx.inject(['skills'], cb)` / `ctx.inject(['webServer'], cb)`
-  延迟注册——服务出现时 callback 才执行，并用 `scope.effect` 绑定注销；
-- hooks 的事件监听不再依赖 `tools` 服务（监听不存在的宿主事件无害），`subprocess` 执行器
-  改为事件发生时懒探测（`probeExecutor()`），服务晚到后 hooks 自动恢复可用。
+响应：
 
-结论：可选服务应当用 `ctx.inject` 等待而不是在 apply 里一次性 `ctx.get`；不要缓存「服务缺失」
-这一结论。
+```json
+{
+  "message": "安装完成：demo-claude@0.1.0",
+  "installed": {
+    "key": "local-market-8d6d84e8/demo-claude", "name": "demo-claude", "version": "0.1.0",
+    "format": "claude", "market": "local-market-8d6d84e8", "enabled": true,
+    "installedAt": "…", "installedPath": "…",
+    "capabilities": { "skills": ["greet"], "commands": ["hello"], "hooks": [], "mcpServers": [] },
+    "previousVersions": []
+  },
+  "replaced": false,
+  "warnings": []
+}
+```
 
-### 左侧栏面板（0.2.4）
+- `refresh:false` 跳过「安装前刷新市场」（catalog 刚刷新过时用）；
+- 同版本已装且非 `force` → 409 `conflict`；清单 name 与条目不一致 → 409；
+- 来源不可安装 → 409 `source_unavailable` / 422 `version_invalid`（文案沿用 CLI）。
 
-主面板（中央区域）与左侧栏入口是一对**同 id 的槽位注册**：
+### 3.8 POST /uninstall · /enable · /rollback · /capability
 
-- `sidebar.panellist`（list）：`{ id, order?, label? }`，组件接收 ownerProps
-  `{ size: number, active: boolean }`（只画图标）；本插件 `id: 'agent-plugin'`、`order: 5`。
-- `main`（keyed）：`{ key }`，组件即面板内容；`key` 必须等于左侧栏入口的 `id`，
-  宿主按左侧栏选中项把该 key 派发到中央区域（无需自己调 `layout.selectPanel`）。
-- 实测占用者顺序：`plugins`(0) / `schedules`(10) / `dsh-context`(20)；登记 `order: 5`
-  即落在「插件」与「自动化任务」之间。
-- 参考实现：第三方插件 `dsh-context` 用同样的一对注册（`main` + `sidebar.panellist`），
-  面板 id 相同即可加入左侧栏，不需要改宿主。
-- 设置页 Tab（`settings.plugins.tab`）与左侧栏面板是两种不同位置；0.2.4 起改用左侧栏入口，
-  旧设置页 Tab 注册已移除。
+```json
+// /uninstall  { "key": "…" | "name": "…" }
+{ "message": "已卸载：demo-claude@0.1.0", "key": "local-market-8d6d84e8/demo-claude" }
 
-### Client locale 的语言 id（0.2.5 修正）
+// /enable     { "key": "…", "enabled": true }
+{ "message": "demo-claude 已启用", "key": "…", "enabled": true }
 
-`ctx.locale.getLocale().active` 的实测值是 **`zh`**（不是 `zh-cn`；`dsh-context` 也用
-`active === 'zh'` 判断中文）。只把字典注册到 `zh-cn` 时，`slot label` 会回退到英文
-（本插件曾因此在左侧栏显示 `Agent Plugins`）。
+// /rollback   { "key": "…" }
+{ "message": "已回滚 demo-claude：0.2.0 → 0.1.0", "key": "…", "version": "0.1.0", "previousVersion": "0.2.0" }
 
-正确做法：字典同时注册 `en` 与 `zh`（`zh-cn` 可一并注册），并在翻译函数里按
-`getLocale().active` 前缀选字典；图标/标签等 thunk 在每次投影时重新求值，语言切换后自动跟随。
-`locale/*.json` 展示元数据仍用 `zh.json`（与宿主自带包一致）。
+// /capability { "key": "…", "kind": "skills|commands|hooks|mcpServers", "capability": "…", "enabled": false }
+{ "message": "禁用 greet", "key": "…", "plugin": "…", "disabledCapabilities": {
+    "skills": ["greet"], "commands": [], "hooks": [], "mcpServers": [] } }
+```
+
+### 3.9 POST /update
+
+请求 `{ "key": "…", "force": false, "refresh": true }`。响应：
+
+```json
+{
+  "message": "已更新 demo-claude：0.1.0 → 0.2.0",
+  "changed": true,
+  "key": "local-market-8d6d84e8/demo-claude",
+  "previousVersion": "0.1.0",
+  "record": { "...": "同 install.installed" },
+  "warnings": []
+}
+```
+
+- 市场缺失 → 404/409「来源市场已不存在」；源不可解析 → 409；
+- 版本不高于当前且非 force → 200 `changed:false` + 中文文案；
+- `unknown` 不可比较时不得报「已是最新」，返回可读说明。
+
+### 3.10 POST /update-all
+
+请求 `{ "force": false, "keys": [] }`（`keys` 省略 = 全部已安装项）。服务端行为：
+
+1. 单写操作内执行（其它写请求 409）；
+2. 按插件所属市场**去重刷新一次**；
+3. 只对声明级 `update.state === 'available'` 的插件串行执行更新（`refresh:false` 复用刷新结果）；
+4. 单个失败不中断，聚合结果；
+5. 结束后**一次** `saveState` + `syncRuntimes`。
+
+响应：
+
+```json
+{
+  "message": "全部更新完成：更新 1 个，跳过 1 个，失败 1 个",
+  "succeeded": [ { "key": "…/a", "changed": true, "message": "已更新 a：0.1.0 → 0.2.0", "version": "0.2.0" } ],
+  "failed":    [ { "key": "…/c", "error": "插件目录不存在：…", "code": "not_found" } ],
+  "aborted": false,
+  "marketFailures": [ { "id": "…", "error": "…", "code": "git_error" } ],
+  "summary": { "total": 3, "updated": 1, "skipped": 1, "failed": 1, "markets": 2 }
+}
+```
+
+孤立插件（来源市场已移除）不进入候选，计入 `skipped`。
+
+## 4. 并发与操作态
+
+- **全局单写**：同一时刻只允许一个写操作；重复提交返回 `409`：
+
+```json
+{
+  "ok": false,
+  "code": "operation_in_progress",
+  "error": "另一个操作正在进行（update），请稍候重试",
+  "details": { "operation": { "id": "op-…", "kind": "update", "key": "…", "startedAt": "…" } }
+}
+```
+
+- 读接口（`/store`、`/describe` 非 fetch 分支、`/icon`）不加锁，看到的是上一次已提交状态；
+- `POST /describe {fetch:true}` 会登记 `describe` 操作（可能刷新市场/克隆源），期间其它写请求 409；
+- 在途操作通过 `StoreSnapshot.operations` 暴露，客户端可据此恢复 per-plugin loading；
+- 不提供取消：目录复制与 `spawnSync` git 无中断点，MVP 只给「进行中」提示与重试。
+
+## 5. 降级矩阵（实现约定）
+
+| 情况 | 表现 |
+|---|---|
+| 市场条目缺 `version` | `update.state='unknown'` + reason；不显示可更新 |
+| 版本不可比较（非 semver/带 v 前缀） | `versionValid` 相应为 false / `unknown`，不显示可更新 |
+| local 源目录缺失 | `source.resolved=false` + reason；`installable=false` + `blockedReason` |
+| github/git 源未缓存 | `source.cloneRequired=true`（describe `fetch:true` 才克隆） |
+| url 市场相对路径源 | `resolved=false`；describe `capabilities:null`；不可安装 |
+| 来源市场被移除（孤立） | `installed[].orphan=true`、`market=null`；隐藏更新入口；卸载/启停/回滚可用 |
+| 图标缺失/越界/非 raster/SVG | `icon.kind='none'` 或 `/icon` 404；客户端用占位块 |
+| `https://` 图标 | `icon.kind='http'`，客户端直接加载，失败回退占位 |
+| 未映射的 hooks 事件 | `effective=false` + 宿主原因 |
+| MCP | 清单展示但 `effective=false` + 「宿主无运行时挂载接口」 |
+| 迁移失败 | `/store.migrationError` 返回原因，读取继续（旧文件保留） |
+
+## 6. 存储 schema v2
+
+`state.json` 与 `marketplaces.json` 的 `schemaVersion` 均为 `2`。启动时
+`lib/migrate.js` 的 `runMigrations(store)` 在读取之前执行 1→2 迁移：
+
+- 迁移前把原文件备份到 `<home>/logs/migrations/v1-<time>/`；
+- 市场记录补齐 `title`（上游 name）、`display{title,description,owner}`，条目补齐 `meta`，
+  移除旧内存字段 `root`；
+- 已是 v2 跳过；未知 schemaVersion 抛错，由 hub 捕获为 `migrationError`（原文件不动）；
+- 不联网。
+
+`marketplaces.json` 的市场记录字段：`id/name/title/type/location/format/addedAt/
+lastRefreshed/display/owner/featured/plugins[]/refreshError/warnings`；
+`plugins[]` 字段：`name/version/description/source/installable/meta/warning?/origin?`。
+
+## 7. 宿主能力前提（实现依赖）
+
+| 能力 | 宿主接口 | 本插件用法 |
+|---|---|---|
+| commands | `ctx.commands.register` | `/agent-plugin` 运维命令 + 插件命令 `<plugin>-<command>` |
+| skills | `ctx.skills.registerProvider` | 动态列出启用插件的技能（`invalidate()` 刷新缓存） |
+| hooks | cordis 事件 + `ctx.subprocess` | Claude hooks 映射到 `tools/pre-execute` 等宿主事件 |
+| MCP | 无运行时挂载接口 | 只解析/展示清单并标注「未生效」，不 spawn 进程 |
+
+宿主服务是否就绪会反映在 `/store.runtime`；`StoreSnapshot.warnings` 保留最近错误。

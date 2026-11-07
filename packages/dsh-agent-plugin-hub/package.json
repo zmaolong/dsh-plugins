@@ -1,7 +1,7 @@
 {
   "name": "dsh-agent-plugin-hub",
-  "version": "0.2.7",
-  "description": "Agent Plugin Hub (智能体插件) for DSH: host Claude Code / CodeBuddy / ZCode agent plugins as DSH skills, commands, hooks and MCP, with a Plugins-page UI tab.",
+  "version": "0.3.0",
+  "description": "Agent Plugin Hub (智能体插件) for DSH: host Claude Code / CodeBuddy / ZCode agent plugins as DSH skills, commands, hooks and MCP, with a ZCode-style plugin store panel.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -24,7 +24,7 @@
     "package.json"
   ],
   "scripts": {
-    "check": "node --check client.js && node --check lib/index.js && node --check lib/hub.js && node --check lib/store.js && node --check lib/manifest.js && node --check lib/market.js && node --check lib/installer.js && node --check lib/capabilities.js && node --check lib/frontmatter.js && node --check lib/skills.js && node --check lib/plugin-commands.js && node --check lib/hooks.js && node --check lib/mcp.js && node --check lib/report.js && node --check lib/commands.js && node --check lib/formats.js && node --check lib/ui-data.js && node --check lib/ui-routes.js",
+    "check": "node --check client.js && node --check lib/index.js && node --check lib/hub.js && node --check lib/store.js && node --check lib/migrate.js && node --check lib/version.js && node --check lib/manifest.js && node --check lib/market.js && node --check lib/installer.js && node --check lib/capabilities.js && node --check lib/frontmatter.js && node --check lib/skills.js && node --check lib/plugin-commands.js && node --check lib/hooks.js && node --check lib/mcp.js && node --check lib/report.js && node --check lib/commands.js && node --check lib/formats.js && node --check lib/ui-data.js && node --check lib/ui-routes.js",
     "test": "node --test",
     "test:verbose": "node --test --test-reporter spec test/"
   },
@@ -57,8 +57,8 @@
         "zh-cn": "智能体插件"
       },
       "description": {
-        "en": "Host Claude Code / CodeBuddy / ZCode agent plugins in DSH: marketplaces, install/update/rollback, per-item capability toggles, and the Agent Plugins tab in the Plugins page.",
-        "zh-cn": "在 DSH 里托管 Claude Code / CodeBuddy / ZCode 等智能体插件：市场、安装/更新/回滚、能力逐项启停，以及插件页的「智能体插件」Tab。"
+        "en": "Host Claude Code / CodeBuddy / ZCode agent plugins in DSH: personal marketplaces, install/update/rollback, per-item capability toggles, and a ZCode-style plugin store panel.",
+        "zh-cn": "在 DSH 里托管 Claude Code / CodeBuddy / ZCode 等智能体插件：个人市场源、安装/更新/回滚、能力逐项启停，以及 ZCode 风格插件商店面板。"
       },
       "category": "tool",
       "keywords": [
@@ -66,7 +66,8 @@
         "claude",
         "codebuddy",
         "zcode",
-        "marketplace"
+        "marketplace",
+        "store"
       ]
     }
   }

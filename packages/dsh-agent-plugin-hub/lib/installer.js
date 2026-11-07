@@ -24,6 +24,7 @@ import path from 'node:path'
 import { scanCapabilities, emptyDisabledCapabilities, normalizeDisabledCapabilities } from './capabilities.js'
 import { isFormatId, isSafePluginName } from './formats.js'
 import { detectPluginManifest, isDirectory, validatePluginManifest } from './manifest.js'
+import { classifyUpdate, isInstallableVersion } from './version.js'
 
 /** 复制时跳过的目录（体积大且不应进入安装副本）。 */
 const SKIP_DIRS = new Set(['.git', 'node_modules', 'tmp', '.cache'])
@@ -50,27 +51,6 @@ export function copyDirectory(source, target) {
   }
   walk(source, target, 0)
   return count
-}
-
-/** 比较两个版本号（支持 `x.y.z[-pre]`）；返回 <0 / 0 / >0。 */
-export function compareVersions(left, right) {
-  const parse = (value) => {
-    const text = String(value ?? '').trim().replace(/^v/u, '')
-    const [main, pre = ''] = text.split('-', 2)
-    const parts = main.split('.').map((part) => Number.parseInt(part, 10) || 0)
-    return { parts, pre }
-  }
-  const a = parse(left)
-  const b = parse(right)
-  const length = Math.max(a.parts.length, b.parts.length)
-  for (let index = 0; index < length; index += 1) {
-    const diff = (a.parts[index] ?? 0) - (b.parts[index] ?? 0)
-    if (diff !== 0) return diff
-  }
-  if (a.pre === b.pre) return 0
-  if (a.pre === '') return 1
-  if (b.pre === '') return -1
-  return a.pre < b.pre ? -1 : 1
 }
 
 /** 判断目录里是否有一个版本号形式的子目录。 */
@@ -121,7 +101,7 @@ export class Installer {
     if (!isFormatId(format)) throw new Error(`未知插件格式：${format}`)
     if (!isSafePluginName(pluginName)) throw new Error(`插件名不合法：${pluginName}`)
     if (!isSafePluginName(marketId)) throw new Error(`市场 id 不合法：${marketId}`)
-    if (!/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/u.test(version)) {
+    if (!isInstallableVersion(version)) {
       throw new Error(`版本号不合法（应为 SemVer）：${version}`)
     }
     return path.join(this.store.paths.cache, format, marketId, pluginName, version)
@@ -260,27 +240,29 @@ export class Installer {
   /**
    * 更新到市场里的最新版本。
    *
-   * @returns {Promise<{record: object, changed: boolean, message: string, warnings: string[]}>}
+   * `refresh:false` 时跳过市场刷新（供 updateAll 按市场去重刷新后复用，避免重复联网）。
+   * 版本不可比较（unknown）时按"未更新"处理并给出可读文案，绝不误报可更新。
+   *
+   * @returns {Promise<{record: object, changed: boolean, message: string, warnings: string[],
+   *                    updateState: string}>}
    */
   async update(state, keyOrName, options = {}) {
     const record = this.findRecord(state, keyOrName)
     const market = this.markets.get(record.market)
     if (!market) throw new Error(`插件来源市场 ${record.market} 已不存在，请先添加该市场或改用回滚/卸载`)
-    await this.markets.refresh(market.id)
+    if (options.refresh !== false) await this.markets.refresh(market.id)
     const refreshed = this.markets.get(market.id)
     const sourceDir = this.markets.resolveInstallSource(refreshed, record.name)
     const detected = detectPluginManifest(sourceDir, { hintFormat: refreshed.format })
     const meta = validatePluginManifest(detected.manifest, detected)
-    const comparison = compareVersions(meta.version, record.version)
-    if (comparison <= 0 && !options.force) {
-      return {
-        record,
-        changed: false,
-        message: comparison === 0
-          ? `已是最新版本 ${record.version}`
-          : `市场版本 ${meta.version} 不高于已安装版本 ${record.version}，未更新`,
-        warnings: [],
-      }
+    const updateState = classifyUpdate(record.version, meta.version)
+    if (updateState !== 'available' && !options.force) {
+      const message = updateState === 'current'
+        ? `已是最新版本 ${record.version}`
+        : updateState === 'installed-newer'
+          ? `市场版本 ${meta.version} 不高于已安装版本 ${record.version}，未更新`
+          : `无法比较版本（已安装 ${record.version}，市场 ${meta.version || '未标注'}），未更新；如需强制覆盖请加 --force`
+      return { record, changed: false, message, warnings: [], updateState }
     }
     const result = this.install(state, {
       marketId: refreshed.id,
@@ -292,6 +274,7 @@ export class Installer {
       changed: true,
       message: `已更新 ${record.name}：${record.version} → ${result.record.version}`,
       warnings: result.warnings,
+      updateState,
     }
   }
 
