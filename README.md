@@ -28,13 +28,15 @@ dsh-plugins/
 │   ├── build-index.mjs
 │   └── serve-index.mjs
 └── packages/
-    └── dsh-agent-plugin-hub/   # Agent 插件运行时与市场（0.1.0）
+    └── dsh-agent-plugin-hub/   # 智能体扩展运行时与市场（0.2.1）
         ├── package.json
         ├── cordis.patch.yml
         ├── README.md
+        ├── client.js           # 插件页「智能体扩展」Tab
+        ├── locale/             # en / zh 展示元数据
         ├── docs/HOST-API.md    # 宿主 API 侦察结论
-        ├── lib/                # 12 个 ES 模块，零运行时依赖
-        └── test/               # node --test：fixtures + 53 个用例
+        ├── lib/                # 15 个 ES 模块，零运行时依赖
+        └── test/               # node --test：fixtures + 64 个用例
 ```
 
 ### 分支与发布
@@ -91,7 +93,10 @@ dsh --profile web
 
 | 包 | 作用 | 代码要点 |
 |---|---|---|
-| `dsh-agent-plugin-hub` | 在 DSH 里托管 Claude Code、CodeBuddy、ZCode 等 Agent 插件：市场、安装/更新/回滚与能力注入 | 组合包 + `/agent-plugin` 命令；skills/commands/hooks 注入，MCP 清单标注；`lib/` 12 个模块，53 个 `node --test` 用例 |
+| `dsh-agent-plugin-hub` | 在 DSH 里托管 Claude Code、CodeBuddy、ZCode 等**智能体扩展**（Agent Extensions）：市场、安装/更新/回滚、能力注入与逐项启停 | 组合包 + `/agent-plugin` 命令 + 插件页「智能体扩展」Tab；skills/commands/hooks 注入，MCP 清单标注；64 个 `node --test` 用例 |
+
+> 命名说明：Agent 直译“代理”不准确、“助手”易混淆，直接叫“插件”会与 DSH 自身插件冲突，
+> 用户界面统一使用**智能体扩展**（英文 Agent Extensions）；代码里的包名与 `/agent-plugin` 命令不变。
 
 包内细节见 [`packages/dsh-agent-plugin-hub/README.md`](packages/dsh-agent-plugin-hub/README.md)。
 

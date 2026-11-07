@@ -4,14 +4,16 @@
 > 提交作者与提交者统一为 `zmaolong <203504243+zmaolong@users.noreply.github.com>`；
 > 原 `release-0.1.0` 分支已删除，其内容全部并入 `release-0.0.1`。
 >
-> **2026-11-07 增补（0.2.0）**：新增插件页「Agent 插件」Tab——可视化市场/安装/更新/回滚/卸载，
+> **2026-11-07 增补（0.2.1）**：新增插件页「智能体扩展」Tab——可视化市场/安装/更新/回滚/卸载，
 > 以及技能、命令、hooks、MCP 清单的逐项启停。Host 端加 `/agent-plugin/api` 前缀路由，
 > Client 端注册 `settings.plugins.tab` 槽位。升级后需**重启 DSH** 载入 Host 代码、**刷新页面**
-> 载入 Client 代码；Tab 位于 设置 → 插件 → Agent 插件。
+> 载入 Client 代码；Tab 位于 设置 → 插件 → **智能体扩展**。
+> 中文命名：Agent 直译“代理”不准确、“助手”易混淆，直接叫“插件”会与 DSH 自身插件冲突；
+> 统一采用**智能体扩展**（英文 Agent Extensions），代码里的包名与 `/agent-plugin` 命令不改。
 >
-> **当前 profile 的安装路径**：`dsh-agent-plugin-hub@0.2.0` 以 link 方式指向
-> `E:\workspace\dsh-agent-plugin-hub-runtime\0.2.0`（运行时副本）。原因：宿主机进程已缓存
-> 0.1.0 的 ESM 模块，直接重装同一路径会因「旧模块缓存 + 新模块导出」不匹配而导入失败；
+> **当前 profile 的安装路径**：`dsh-agent-plugin-hub@0.2.1` 以 link 方式指向
+> `E:\workspace\dsh-agent-plugin-hub-runtime\0.2.1`（运行时副本）。原因：宿主机进程已缓存
+> 旧版 ESM 模块，直接重装同一路径会因「旧模块缓存 + 新模块导出」不匹配而导入失败；
 > 换成新路径可让宿主加载完整的新代码且无需重启。仓库源码仍是
 > `E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub`；下次重启 DSH 后可执行
 > `remove_bundle` + 从源码目录 `install_bundle` 恢复 link（之后改源码才会自动生效）。
@@ -19,8 +21,8 @@
 ## 30 秒速览
 
 - hub 已安装进 **桌面端当前 profile**（`~/.dsh/profiles/desktop`，当前 link 指向
-  `E:\workspace\dsh-agent-plugin-hub-runtime\0.2.0`，见上方说明）并处于启用状态。
-- 插件页 Tab：**设置 → 插件 → Agent 插件**（已实测出现在「全部」与「市场」之间，order 50）。
+  `E:\workspace\dsh-agent-plugin-hub-runtime\0.2.1`，见上方说明）并处于启用状态。
+- 插件页 Tab：**设置 → 插件 → 智能体扩展**（已实测出现在「已安装」与「市场」之间，order 50）。
 - 会话里用 `/agent-plugin`，常用三条：
 
 ```text
@@ -107,26 +109,31 @@ $ cd packages\dsh-agent-plugin-hub; npm test
 | 提交作者 | 全部作者与提交者统一为 `zmaolong <203504243+zmaolong@users.noreply.github.com>` |
 | 已删除分支 | `release-0.1.0`（本地与远端均已删除，内容并入 `release-0.0.1`） |
 
-线上索引验证（推送后执行，带 `?nocache=` 绕过缓存）：
+线上索引验证（0.1.0 发布时执行，带 `?nocache=` 绕过缓存）：
 
 ```text
 HTTP 200
 format=1  plugin=dsh-agent-plugin-hub  version=0.1.0
 path=packages/dsh-agent-plugin-hub
-title_zh=Agent 插件中心
-source.commit = 本分支生成索引时的 HEAD（与本文件更新提交一致）
+title_zh=Agent 插件中心   （0.1.0 时的旧标题；0.2.1 改名后重新发布索引会变为「智能体扩展」）
+source.commit = 该次生成索引时的 HEAD
 ```
 
 远端分支确认：`git ls-remote origin` 只应含 `refs/heads/main` 与 `refs/heads/release-0.0.1`。
 
+**0.2.1 尚未重新发布索引**：`index.json` 仍指向 0.1.0 的发布提交（可用，但装出来是 0.1.0）。
+需要发布 0.2.1 时：删除 `index.json` → `node scripts\build-index.mjs` → 提交并推送
+`release-0.0.1`，线上索引即更新为 0.2.1。
+
 索引由 `node scripts\build-index.mjs` 生成（先删除旧 `index.json` 以免合并历史条目）；
-条目 commit 指向生成索引时的发布分支 HEAD，版本 `0.1.0`，source 为
+条目 commit 指向生成索引时的发布分支 HEAD，版本取 `packages/*/package.json`，source 为
 `git+https://github.com/zmaolong/dsh-plugins#<commit>&path:packages/dsh-agent-plugin-hub`。
 
 ## 已知限制与自动决策记录
 
 | 情形 | 决策 | 说明 |
 |---|---|---|
+| UI 命名 | 中文「智能体扩展」（英文 Agent Extensions） | Agent→“代理”不准确、“助手”易混淆，“插件”与 DSH 自身 cordis 插件冲突；包名/`/agent-plugin` 命令保持不变 |
 | 宿主命令名不允许 `:` | 退化为 `<plugin>-<command>` | 任务书首选 `agent-plugin:<plugin>:<command>`，但宿主 `parseCommand` 只接受 `/^[a-z][a-z0-9_-]*$/`；README 已记录 |
 | 命令无法注入会话消息 | 返回渲染后的完整文本 + 「复制发送」提示 | 宿主 `CommandResult` 只有 text；不自造注入通道 |
 | 宿主无 MCP 运行时挂载接口 | 只解析/展示 `mcpServers`，标注「未生效」 | `dsh-mcp-client` 是「一插件行连一 server」的静态配置，未在当前 profile 加载；第三方插件无运行时注册服务；不自己 spawn 进程 |
@@ -139,23 +146,23 @@ source.commit = 本分支生成索引时的 HEAD（与本文件更新提交一�
 
 其它限制：
 
-- 安装副本跳过 `node_modules/`、`.git/`（体积与可重复性考虑），需要依赖安装的 Agent 插件需自带
+- 安装副本跳过 `node_modules/`、`.git/`（体积与可重复性考虑），需要依赖安装的智能体扩展需自带
   或在使用侧处理；
 - hooks 命令按 Claude Code 约定用平台 shell 执行，复杂引号行为以宿主 shell 为准；
 - skills/commands 的解析基于 Claude Code 公开格式，CodeBuddy/ZCode 采用最小兼容字段并宽松处理。
 
 ## 次日手动收尾（只有确实需要时才做）
 
-1. **重启 DSH 桌面端**后 `/agent-plugin` 才会加载 0.1.0 的最终代码（当前宿主进程里加载的是安装时
-   的 0.0.1 版本标记，代码走 link 指向工作区，但仍建议重启一次以获得干净状态）。
-2. 重启后执行 `/agent-plugin status`，应看到：版本 `0.2.0`、0 插件 / 0 市场、技能 provider 已注册、
+1. 当前宿主进程运行的是已安装的 **0.2.1** 运行时副本（含「智能体扩展」Tab），可直接使用；
+    `git pull` 得到的源码更新需重启 DSH 后、或换新运行时路径重装才会加载。
+2. 重启后执行 `/agent-plugin status`，应看到：版本 `0.2.1`、0 插件 / 0 市场、技能 provider 已注册、
    commands 已注册、hooks 已挂载、MCP 未生效（带原因）。
-3. 设置 → 插件 里应出现「Agent 插件」Tab（order 50，位于「全部」与「市场」之间）；
-   Tab 内可增删市场、安装插件、查看技能/命令/hooks/MCP 并逐项启停。若没有出现，刷新一次页面
+3. 设置 → 插件 里应出现「智能体扩展」Tab（order 50，位于「已安装」与「市场」之间）；
+   Tab 内可增删市场、安装智能体扩展、查看技能/命令/hooks/MCP 并逐项启停。若没有出现，刷新一次页面
    （Client 代码由浏览器加载；实测本机已自动出现）。
 4. 若当前会话技能目录里还能看到夹具技能 `greet`，那是清理前的缓存；重启后消失。
 5. 可选：在插件页「发现 → 添加索引源」填入上面的 `release-0.0.1` 索引 URL，即可一键安装本插件后续版本。
-6. 想立即试用真实 Agent 插件：
+6. 想立即试用真实智能体扩展：
 
 ```text
 /agent-plugin market add git https://github.com/<owner>/<claude-plugin-market>.git
