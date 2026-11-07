@@ -388,21 +388,27 @@ window.__ModuleLoader__.load({
     /** 左侧栏全局面板图标（ownerProps：size / active）。拼图块 = 插件/扩展的通用符号。 */
     function PanelIcon({ size, active }) {
       const edge = typeof size === 'number' ? size : 20
+      // 图形在 24 视框里原本只占 12×15，视觉上比宿主图标小；
+      // 这里绕中心放大 1.3 倍，并把描边按比例调细，保持与其他侧栏图标同等的视觉体量。
+      const scale = 1.3
       return h('svg', {
         viewBox: '0 0 24 24',
         width: edge,
         height: edge,
         fill: 'none',
-        stroke: 'currentColor',
-        strokeWidth: active === true ? 2 : 1.7,
-        strokeLinecap: 'round',
-        strokeLinejoin: 'round',
         'aria-hidden': true,
         style: { display: 'block' },
       },
-        // 拼图块：顶部凸榫 + 右侧凹槽，轮廓描边随主题色
-        h('path', { d: 'M6 6h4V4.6Q10 3 12 3t2 1.6V6h4v3q-1.6 0-1.6 2t1.6 2v5H6Z' }),
-      )
+        h('g', { transform: `translate(12 12) scale(${scale}) translate(-12 -12)` },
+          // 拼图块：顶部凸榫 + 右侧凹槽，轮廓描边随主题色
+          h('path', {
+            d: 'M6 6h4V4.6Q10 3 12 3t2 1.6V6h4v3q-1.6 0-1.6 2t1.6 2v5H6Z',
+            stroke: 'currentColor',
+            strokeWidth: (active === true ? 2 : 1.7) / scale,
+            strokeLinecap: 'round',
+            strokeLinejoin: 'round',
+            fill: 'none',
+          })))
     }
 
     function Page({ t, locale }) {

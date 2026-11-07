@@ -1,10 +1,10 @@
-# HANDOFF — dsh-agent-plugin-hub 0.2.6
+# HANDOFF — dsh-agent-plugin-hub 0.2.7
 
-> 状态：**0.1.0 已发布；0.2.6 为当前开发版（本机已安装运行）**。本文件在 `release-0.0.1` 分支提交（该分支承载当前全部代码）。
+> 状态：**0.1.0 已发布；0.2.7 为当前开发版（本机已安装运行）**。本文件在 `release-0.0.1` 分支提交（该分支承载当前全部代码）。
 > 提交作者与提交者统一为 `zmaolong <203504243+zmaolong@users.noreply.github.com>`；
 > 原 `release-0.1.0` 分支已删除，其内容全部并入 `release-0.0.1`。
 >
-> **2026-11-07 增补（0.2.6）**：新增**首页左侧栏面板**「智能体插件」——可视化市场/安装/更新/回滚/卸载，
+> **2026-11-07 增补（0.2.7）**：新增**首页左侧栏面板**「智能体插件」——可视化市场/安装/更新/回滚/卸载，
 > 以及技能、命令、hooks、MCP 清单的逐项启停。Host 端加 `/agent-plugin/api` 前缀路由，
 > Client 端注册 `sidebar.panellist`（icon, order 5）+ `main`（key `agent-plugin`）两个槽位；
 > 设置页里的旧 Tab 入口已移除。升级后需**重启 DSH** 载入 Host 代码、**刷新页面**载入 Client 代码；
@@ -14,12 +14,12 @@
 > `/agent-plugin` 命令不改。
 > **启动顺序修正**：宿主按服务可用性激活，skills/webServer/subprocess 可能晚于本插件；
 > 已改为 `ctx.inject` 延迟注册 + hooks 执行器懒探测，冷启动不再丢 API 路由/技能 provider。
-> **中文标签修正（0.2.6）**：DSH Client locale 的 active 语言 id 是 `zh`（不是 `zh-cn`）；
+> **中文标签修正（0.2.7）**：DSH Client locale 的 active 语言 id 是 `zh`（不是 `zh-cn`）；
 > 字典改为同时注册 `en` / `zh` / `zh-cn`，并按 `getLocale().active` 前缀选择字典，
 > 左侧栏与面板显示「智能体插件」，不再回退成英文 `Agent Plugins`。
 >
-> **当前 profile 的安装路径**：`dsh-agent-plugin-hub@0.2.6` 以 link 方式指向
-> `E:\workspace\dsh-agent-plugin-hub-runtime\0.2.6`（运行时副本）。原因：宿主机进程已缓存
+> **当前 profile 的安装路径**：`dsh-agent-plugin-hub@0.2.7` 以 link 方式指向
+> `E:\workspace\dsh-agent-plugin-hub-runtime\0.2.7`（运行时副本）。原因：宿主机进程已缓存
 > 旧版 ESM 模块，直接重装同一路径会因「旧模块缓存 + 新模块导出」不匹配而导入失败；
 > 换成新路径可让宿主加载完整的新代码且无需重启。仓库源码仍是
 > `E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub`；下次重启 DSH 后可执行
@@ -28,9 +28,9 @@
 ## 30 秒速览
 
 - hub 已安装进 **桌面端当前 profile**（`~/.dsh/profiles/desktop`，当前 link 指向
-  `E:\workspace\dsh-agent-plugin-hub-runtime\0.2.6`，见上方说明）并处于启用状态。
+  `E:\workspace\dsh-agent-plugin-hub-runtime\0.2.7`，见上方说明）并处于启用状态。
 - 左侧栏入口：**首页左侧栏的「智能体插件」图标**（order 5，位于「插件」与「自动化任务」之间），
-  点击后中央主面板打开管理页（早期版本在设置页 Tab，0.2.6 已迁走）。
+  点击后中央主面板打开管理页（早期版本在设置页 Tab，0.2.7 已迁走）。
 - 会话里用 `/agent-plugin`，常用三条：
 
 ```text
@@ -83,7 +83,7 @@ $ cd packages\dsh-agent-plugin-hub; npm test
 安装/重装 `--force`/禁用启用/更新/回滚/卸载、重启恢复、路径穿越与非法名拒绝、
 技能 provider、插件命令注册与冲突、hooks 事件映射与 deny 决策、命令处理器文本。
 
-### 宿主冒烟（DSH 桌面端 0.2.6-rc.1，desktop profile）
+### 宿主冒烟（DSH 桌面端 0.2.7-rc.1，desktop profile）
 
 1. `plugin_manager install_bundle` 安装本插件目录：`application: applied`、`enabled: true`、
    pnpm 退出码 0；profile `package.json` 出现 `"dsh-agent-plugin-hub": "link:E:/workspace/dsh-plugins/packages/dsh-agent-plugin-hub"`。
@@ -123,15 +123,15 @@ $ cd packages\dsh-agent-plugin-hub; npm test
 HTTP 200
 format=1  plugin=dsh-agent-plugin-hub  version=0.1.0
 path=packages/dsh-agent-plugin-hub
-title_zh=Agent 插件中心   （0.1.0 时的旧标题；0.2.6 改名后重新发布索引会变为「智能体插件」）
+title_zh=Agent 插件中心   （0.1.0 时的旧标题；0.2.7 改名后重新发布索引会变为「智能体插件」）
 source.commit = 该次生成索引时的 HEAD
 ```
 
 远端分支确认：`git ls-remote origin` 只应含 `refs/heads/main` 与 `refs/heads/release-0.0.1`。
 
-**0.2.6 尚未重新发布索引**：`index.json` 仍指向 0.1.0 的发布提交（可用，但装出来是 0.1.0）。
-需要发布 0.2.6 时：删除 `index.json` → `node scripts\build-index.mjs` → 提交并推送
-`release-0.0.1`，线上索引即更新为 0.2.6。
+**0.2.7 尚未重新发布索引**：`index.json` 仍指向 0.1.0 的发布提交（可用，但装出来是 0.1.0）。
+需要发布 0.2.7 时：删除 `index.json` → `node scripts\build-index.mjs` → 提交并推送
+`release-0.0.1`，线上索引即更新为 0.2.7。
 
 索引由 `node scripts\build-index.mjs` 生成（先删除旧 `index.json` 以免合并历史条目）；
 条目 commit 指向生成索引时的发布分支 HEAD，版本取 `packages/*/package.json`，source 为
@@ -161,9 +161,9 @@ source.commit = 该次生成索引时的 HEAD
 
 ## 次日手动收尾（只有确实需要时才做）
 
-1. 当前宿主进程运行的是已安装的 **0.2.6** 运行时副本（含「智能体插件」Tab），可直接使用；
+1. 当前宿主进程运行的是已安装的 **0.2.7** 运行时副本（含「智能体插件」Tab），可直接使用；
     `git pull` 得到的源码更新需重启 DSH 后、或换新运行时路径重装才会加载。
-2. 重启后执行 `/agent-plugin status`，应看到：版本 `0.2.6`、0 插件 / 0 市场、技能 provider 已注册、
+2. 重启后执行 `/agent-plugin status`，应看到：版本 `0.2.7`、0 插件 / 0 市场、技能 provider 已注册、
    commands 已注册、hooks 已挂载、MCP 未生效（带原因）。
 3. 首页左侧栏应出现「智能体插件」图标（order 5，位于「插件」与「自动化任务」之间），
    点击后中央面板可增删市场、安装智能体插件、查看技能/命令/hooks/MCP 并逐项启停。
