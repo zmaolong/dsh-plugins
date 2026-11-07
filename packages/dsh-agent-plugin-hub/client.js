@@ -385,7 +385,7 @@ window.__ModuleLoader__.load({
       )
     }
 
-    /** 左侧栏全局面板图标（ownerProps：size / active）。 */
+    /** 左侧栏全局面板图标（ownerProps：size / active）。拼图块 = 插件/扩展的通用符号。 */
     function PanelIcon({ size, active }) {
       const edge = typeof size === 'number' ? size : 20
       return h('svg', {
@@ -400,9 +400,8 @@ window.__ModuleLoader__.load({
         'aria-hidden': true,
         style: { display: 'block' },
       },
-        h('rect', { x: 3.5, y: 3.5, width: 17, height: 17, rx: 4.5 }),
-        h('circle', { cx: 12, cy: 11, r: 3.4 }),
-        h('path', { d: 'M12 14.4v3.1M8.6 11H5.4M18.6 11h-3.2' }),
+        // 拼图块：顶部凸榫 + 右侧凹槽，轮廓描边随主题色
+        h('path', { d: 'M6 6h4V4.6Q10 3 12 3t2 1.6V6h4v3q-1.6 0-1.6 2t1.6 2v5H6Z' }),
       )
     }
 
