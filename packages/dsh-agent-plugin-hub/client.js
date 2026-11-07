@@ -396,7 +396,7 @@ window.__ModuleLoader__.load({
 .aph-update-badge{display:inline-flex;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:999px;font-size:11px;line-height:1;white-space:nowrap;color:var(--aph-success);background:var(--aph-success-surface)}
 .aph-menu-wrap{position:relative;display:inline-flex}
 .aph-menu-backdrop{position:fixed;inset:0;z-index:40;background:transparent}
-.aph-menu{position:absolute;top:calc(100% + 4px);right:0;z-index:41;min-width:168px;padding:4px;border-radius:12px;border:1px solid var(--aph-border);background:var(--aph-card);box-shadow:0 10px 30px rgba(0,0,0,.28)}
+.aph-menu{position:absolute;top:calc(100% + 4px);right:0;z-index:41;min-width:168px;padding:4px;border-radius:12px;border:1px solid var(--aph-border);background:var(--aph-card);box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1)}
 .aph-menu-item{display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px;border:0;border-radius:8px;background:transparent;color:var(--aph-fg);font:inherit;font-size:14px;text-align:left;cursor:pointer}
 .aph-menu-item:hover{background:var(--aph-hover)}
 .aph-menu-item.danger{color:var(--aph-danger)}
@@ -462,8 +462,8 @@ window.__ModuleLoader__.load({
 .aph-list-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--aph-border);border-radius:8px;background:var(--aph-surface);font-size:13px}
 .aph-runtime{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px;color:var(--aph-fg-subtle);padding-top:8px}
 .aph-overlay-root{position:absolute;inset:0;z-index:30;pointer-events:none;font-size:14px;color:var(--aph-fg)}
-.aph-overlay-mask{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.5);backdrop-filter:blur(2px);pointer-events:auto}
-.aph-dialog{width:min(480px,calc(100vw - 32px));max-height:calc(100vh - 80px);display:flex;flex-direction:column;gap:16px;padding:16px;border-radius:16px;border:1px solid var(--aph-border);background:var(--aph-card);box-shadow:0 24px 64px rgba(0,0,0,.35);pointer-events:auto}
+.aph-overlay-mask{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.6);backdrop-filter:blur(2px);pointer-events:auto}
+.aph-dialog{width:min(480px,calc(100vw - 32px));max-height:calc(100vh - 80px);display:flex;flex-direction:column;gap:16px;padding:16px;border-radius:16px;border:1px solid var(--aph-border);background:var(--aph-card);box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);pointer-events:auto}
 .aph-dialog.narrow{width:min(420px,calc(100vw - 32px))}
 .aph-dialog-head{display:flex;align-items:center;gap:8px}
 .aph-dialog-title{margin:0;font-size:16px;font-weight:500;flex:1;min-width:0}
@@ -485,7 +485,7 @@ window.__ModuleLoader__.load({
 .aph-source-sub{font-size:12px;color:var(--aph-fg-subtle);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .aph-source-error{display:flex;align-items:flex-start;gap:4px;margin-top:4px;font-size:12px;color:var(--aph-danger);word-break:break-word}
 .aph-toasts{position:absolute;right:20px;bottom:20px;display:flex;flex-direction:column;gap:8px;max-width:min(400px,calc(100vw - 40px));pointer-events:none}
-.aph-toast{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--aph-border);background:var(--aph-toast-bg);color:var(--aph-toast-fg);box-shadow:0 12px 32px rgba(0,0,0,.28);font-size:13px;pointer-events:auto;animation:aph-toast-in .18s ease}
+.aph-toast{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--aph-border);background:var(--aph-toast-bg);color:var(--aph-toast-fg);box-shadow:0 4px 12px rgba(0,0,0,.15);font-size:13px;pointer-events:auto;animation:aph-toast-in .18s ease}
 .aph-toast.success{border-color:color-mix(in srgb,var(--aph-success) 40%,transparent)}
 .aph-toast.warn{border-color:color-mix(in srgb,var(--aph-warning) 40%,transparent)}
 .aph-toast.error{border-color:color-mix(in srgb,var(--aph-danger) 40%,transparent)}
@@ -1980,13 +1980,15 @@ window.__ModuleLoader__.load({
       const state = useStoreState(store)
       if (state.dialogs.length === 0 && state.toasts.length === 0) return null
       const toasts = h(Toasts, { store, t })
-      const dialogs = state.dialogs.map((dialog) => {
-        if (dialog.kind === 'add-source') return h(AddSourceDialog, { key: dialog.id, store, t, dialog })
-        if (dialog.kind === 'sources') return h(SourcesDialog, { key: dialog.id, store, t, dialog })
-        if (dialog.kind === 'confirm') return h(ConfirmDialog, { key: dialog.id, store, t, dialog })
-        return null
-      })
-      return h('div', { className: 'aph-overlay-root' }, dialogs, toasts)
+      // 只渲染栈顶弹窗：底层弹窗若同时渲染，会透过遮罩形成"重影/黑色阴影"。
+      const top = state.dialogs.length > 0 ? state.dialogs[state.dialogs.length - 1] : null
+      let dialog = null
+      if (top) {
+        if (top.kind === 'add-source') dialog = h(AddSourceDialog, { key: top.id, store, t, dialog: top })
+        else if (top.kind === 'sources') dialog = h(SourcesDialog, { key: top.id, store, t, dialog: top })
+        else if (top.kind === 'confirm') dialog = h(ConfirmDialog, { key: top.id, store, t, dialog: top })
+      }
+      return h('div', { className: 'aph-overlay-root' }, dialog, toasts)
     }
 
     /* ---------------------------------------------------------------------- *

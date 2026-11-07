@@ -1,7 +1,10 @@
-# HANDOFF — dsh-agent-plugin-hub 0.3.3
+# HANDOFF — dsh-agent-plugin-hub 0.3.4
 
-> 状态：**0.3.3 已开发完成，安装进桌面端 desktop profile（link 指向运行时副本）并通过 Host API E2E**。
+> 状态：**0.3.4 已开发完成，安装进桌面端 desktop profile（link 指向运行时副本）并通过 Host API E2E**。
 > 本文件随 `release-0.0.1` 分支提交；提交作者与提交者统一为 `zmaolong <203504243+zmaolong@users.noreply.github.com>`。
+>
+> **0.3.4 主题**：修复弹窗重影——浮层只渲染栈顶弹窗（底层弹窗不再透过遮罩显示），
+> 弹窗/菜单阴影对齐 ZCode `shadow-md`，遮罩改为 `black/60` + blur 2px。
 >
 > **0.3.3 主题**：把面板调色板从宿主语义色切换为 **ZCode ZaiLight / ZaiDark 显式调色板**，
 > 修复暗色「一片灰」的问题；图标改为 ZCode 的 lucide 形状（Store / Blocks / Puzzle / RotateCcw 等），
@@ -20,13 +23,28 @@
 
 ## 30 秒速览
 
-- 安装形态：`dsh-agent-plugin-hub@0.3.3`，link 到 `E:\workspace\dsh-agent-plugin-hub-runtime\0.3.3`（运行时副本）。
+- 安装形态：`dsh-agent-plugin-hub@0.3.4`，link 到 `E:\workspace\dsh-agent-plugin-hub-runtime\0.3.4`（运行时副本）。
   仓库源码：`E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub`。
 - 左侧栏入口：**首页左侧栏「智能体插件」图标**（order 5，位于「插件」与「自动化任务」之间），
   点击后中央面板打开 ZCode 风格商店。
 - 升级后需要 **刷新页面** 才载入新 Client；Host 端本次通过新运行时路径热加载（无需重启）。
 - 会话命令仍是 `/agent-plugin`，子命令与以前一致。
-- 自测：`cd packages\dsh-agent-plugin-hub; npm run check && npm test` → **142/142 通过，零网络**。
+- 自测：`cd packages\dsh-agent-plugin-hub; npm run check && npm test` → **143/143 通过，零网络**。
+
+## 0.3.4 修复：弹窗重影 / 阴影偏移
+
+原因有两个：
+1. `OverlayHost` 把 `state.dialogs` 数组里的弹窗全部渲染。在「市场源」弹窗上打开「确认移除」时，
+   底层弹窗仍会渲染并透过半透明遮罩显示，形成与当前弹窗不对齐的黑色重影。
+2. 弹窗阴影是 `0 24px 64px rgba(0,0,0,.35)`（菜单 `0 10px 30px`），偏移大、颜色重，看起来像一块
+   没和弹窗对齐的黑影；ZCode `DialogContent` 用的是 `shadow-md`。
+
+修复：
+- `OverlayHost` 只渲染 `dialogs[length - 1]` 这一个栈顶弹窗；关闭后自动回到底层弹窗，状态栈不变。
+- 弹窗/菜单阴影改为 ZCode `shadow-md`：`0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1)`；
+  Toast 改为 `0 4px 12px rgba(0,0,0,.15)`；遮罩按 ZCode DialogOverlay 用 `rgba(0,0,0,.6)` + `blur(2px)`。
+- `client.test.mjs` 的 OverlayHost 用例改为断言「只渲染栈顶、关闭后回落」；`dark-theme.test.mjs`
+  增加 shadow-md 断言；`npm test` 143/143。
 
 ## 0.3.3 修复：暗色调色板与图标对齐 ZCode
 
@@ -148,8 +166,8 @@
 $ cd packages/dsh-agent-plugin-hub
 $ npm run check     # 全部 lib + client.js 语法通过
 $ npm test
-ℹ tests 142
-ℹ pass 142
+ℹ tests 143
+ℹ pass 143
 ℹ fail 0
 ```
 
@@ -167,7 +185,7 @@ Client 模块注册 / 纯函数 / store / 组件冒烟（32 个 client 用例）
 
 同时验证：
 
-- `GET /store` 返回 `version=0.3.3`、`ui.active=true`。
+- `GET /store` 返回 `version=0.3.4`、`ui.active=true`。
 - 真实 git 市场（重启前 `refreshError` 为旧的 path TypeError）刷新成功：
   `mattpocock` 插件条目出现，市场 `display.owner/description` 解析正确——P0 修复现场确认。
 - 迁移日志：`存储 schema 已迁移：v1 → v2`；真实 home 的 `state.json` / `marketplaces.json` 均升为 v2。
@@ -190,8 +208,8 @@ Client 模块注册 / 纯函数 / store / 组件冒烟（32 个 client 用例）
 
 ## 当前安装状态与手工步骤
 
-1. 运行中的 Host 已加载 0.3.3：`plugin_manager install_bundle` 的结果为 `application: applied`，
-   profile `package.json` 依赖为 `"dsh-agent-plugin-hub": "link:E:/workspace/dsh-agent-plugin-hub-runtime/0.3.3"`。
+1. 运行中的 Host 已加载 0.3.4：`plugin_manager install_bundle` 的结果为 `application: applied`，
+   profile `package.json` 依赖为 `"dsh-agent-plugin-hub": "link:E:/workspace/dsh-agent-plugin-hub-runtime/0.3.4"`。
 2. **请刷新一次桌面端页面**：Client 代码由浏览器模块表加载，刷新后商店面板与 `shell.overlay` 生效。
 3. 打开「智能体插件」后应看到：
    - 标题「智能体插件」+ 刷新/市场源/添加/插件管理；「个人」分段；搜索；
@@ -241,14 +259,14 @@ Client 模块注册 / 纯函数 / store / 组件冒烟（32 个 client 用例）
 | `lib/capabilities.js` / `skills.js` / `plugin-commands.js` / `hooks.js` / `mcp.js` | 能力扫描与注入 |
 | `lib/commands.js` / `report.js` | `/agent-plugin` 命令与文本渲染 |
 | `docs/HOST-API.md` | 当前 HTTP API、数据结构、错误码与并发语义 |
-| `test/` | `node --test`：142 个用例（含迁移、来源识别、/store、Client） |
+| `test/` | `node --test`：143 个用例（含迁移、来源识别、/store、Client） |
 
 ## 分支 / 提交 / 索引
 
 | 项目 | 值 |
 |---|---|
 | 发布分支 | `release-0.0.1` |
-| 包版本 | `0.3.3` |
+| 包版本 | `0.3.4` |
 | 索引 URL | `https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json` |
 | 索引重新生成 | 代码提交后执行 `node scripts\build-index.mjs`，再提交 `index.json`（使其 commit 指向代码提交） |
 | 提交作者 | `zmaolong <203504243+zmaolong@users.noreply.github.com>`（无 Co-Authored-By） |

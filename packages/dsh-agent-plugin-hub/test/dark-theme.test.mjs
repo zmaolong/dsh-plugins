@@ -66,6 +66,15 @@ test('Toast / hover：使用 ZCode surface 与调色板变量', () => {
   }
 })
 
+test('弹窗阴影对齐 ZCode shadow-md，避免偏移的大黑影', () => {
+  const dialog = source.match(/\.aph-dialog\{[^}]+\}/u)?.[0] ?? ''
+  assert.ok(dialog.includes('box-shadow:0 4px 6px -1px rgba(0,0,0,.1)'), '弹窗应使用 ZCode shadow-md')
+  assert.equal(dialog.includes('0 24px 64px'), false, '弹窗不应再使用 24px 偏移的大黑影')
+  const menu = source.match(/\.aph-menu\{[^}]+\}/u)?.[0] ?? ''
+  assert.equal(menu.includes('0 10px 30px'), false, '菜单不应再使用 10px 偏移的大黑影')
+  assert.ok(source.includes("className: 'aph-overlay-root' } , dialog, toasts") || /h\('div', \{ className: 'aph-overlay-root' \}, dialog, toasts\)/u.test(source), '浮层应只渲染栈顶弹窗')
+})
+
 test('图标：使用 ZCode 的 lucide 形状（Store / Blocks / Puzzle / RotateCcw）', () => {
   assert.ok(source.includes("store: ['M2 7l4.41-4.41A2 2 0 0 1 7.83 2h8.34"), 'Store 应为 lucide 店铺图标')
   assert.equal(source.includes("'M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z'"), false, '不应再用购物袋图标')

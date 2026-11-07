@@ -897,7 +897,7 @@ test('components.DetailView：loading 与 error 降级分支', () => {
   assert.ok(failed.includes('componentsRetry'), '错误态提供重试入口')
 })
 
-test('components.OverlayHost：三类弹窗 + toast 均能组装且返回非空', () => {
+test('components.OverlayHost：只渲染栈顶弹窗（避免重影）+ toast', () => {
   const api = testApi()
   const store = api.createStore(makeT(), () => 'zh')
   store.set({
@@ -916,11 +916,20 @@ test('components.OverlayHost：三类弹窗 + toast 均能组装且返回非空'
     ],
     toasts: [{ id: 1, kind: 'success', message: 'done' }],
   })
-  const element = api.components.OverlayHost({ store, t: makeT(), locale: { subscribe: () => () => {} } })
+  const locale = { subscribe: () => () => {} }
+  const element = api.components.OverlayHost({ store, t: makeT(), locale })
   assert.ok(element)
   assert.equal(element.args[1].className, 'aph-overlay-root')
-  assert.equal(element.args[2].length, 3, '应组装三个弹窗')
+  const topDialog = element.args[2]
+  assert.ok(!Array.isArray(topDialog), '同一时刻只应渲染一个弹窗（避免叠影）')
+  assert.ok(json(topDialog).includes('"kind":"confirm"'), '应渲染栈顶 confirm 弹窗')
   assert.ok(element.args[3], '应组装 toast 容器')
+  store.closeDialog('dialog-3')
+  const afterConfirm = api.components.OverlayHost({ store, t: makeT(), locale })
+  assert.ok(json(afterConfirm.args[2]).includes('"kind":"sources"'), '关闭栈顶后应回落到 sources 弹窗')
+  store.closeDialog('dialog-2')
+  const afterSources = api.components.OverlayHost({ store, t: makeT(), locale })
+  assert.ok(json(afterSources.args[2]).includes('"kind":"add-source"'), '再关闭后应回落到 add-source 弹窗')
   assert.equal(api.components.OverlayHost({ store: api.createStore(makeT(), () => 'zh'), t: makeT(), locale: null }), null, '无弹窗/toast 时返回 null')
 })
 

@@ -1,6 +1,6 @@
 # dsh-agent-plugin-hub
 
-DSH 的**智能体插件**（Agent Plugins）运行时与市场，0.3.3 起带一个 **ZCode「插件市场」同构的商店面板**。
+DSH 的**智能体插件**（Agent Plugins）运行时与市场，0.3.4 起带一个 **ZCode「插件市场」同构的商店面板**。
 
 > 命名：本包托管的是 Claude Code / CodeBuddy / ZCode 等 Agent 的插件资产包。
 > “Agent”直译为“代理”不准确，译为“助手”又容易和通用助手混淆；单叫“插件”会与
@@ -12,6 +12,16 @@ DSH 的**智能体插件**（Agent Plugins）运行时与市场，0.3.3 起带�
 `mcpServers` 等能力。已知格式包括 Claude Code、CodeBuddy、ZCode；它们不是 DSH 插件
 （cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
+
+## 0.3.4 变更（弹窗重影修复）
+
+- **只渲染栈顶弹窗**：`OverlayHost` 现在只渲染 `dialogs` 栈顶的弹窗。此前在「市场源」弹窗上再打开
+  「确认移除」时，底层弹窗仍会渲染并透过遮罩显示，形成与当前弹窗不对齐的黑色重影；关闭确认弹窗后
+  自动回到底层弹窗。
+- **阴影对齐 ZCode `shadow-md`**：弹窗与菜单从 24/10px 偏移的大黑影改为 ZCode 的
+  `0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -2px rgba(0,0,0,.1)`；Toast 阴影改为 `0 4px 12px rgba(0,0,0,.15)`；
+  模态遮罩按 ZCode 用 `rgba(0,0,0,.6)` + `blur(2px)`。
+- 测试：新增「只渲染栈顶弹窗」与「弹窗/菜单使用 shadow-md」断言；`npm test` 143/143。
 
 ## 0.3.3 变更（暗色调色板与图标对齐 ZCode）
 
@@ -74,7 +84,7 @@ DSH 的技能、命令、hooks 与 MCP。
 `/agent-plugin` 是本包唯一的命令入口；已安装智能体插件自带的命令会注册成
 `/<插件名>-<命令名>`。
 
-## 首页左侧栏：智能体插件（0.3.3）
+## 首页左侧栏：智能体插件（0.3.4）
 
 位置：**首页左侧栏**，顺序为 **插件(0) → 智能体插件(5) → 自动化任务(10) → 上下文洞察(20)**。
 面板由 `client.js` 注册到 `sidebar.panellist`、`main`（key `agent-plugin`）与
@@ -254,7 +264,7 @@ home 解析：配置 `home` → `DSH_AGENT_PLUGIN_HUB_HOME` → `~/.dsh/agent-pl
 ```powershell
 cd packages\dsh-agent-plugin-hub
 npm run check   # node --check 全部 lib 文件与 client.js
-npm test        # node --test：142 个用例，零运行时依赖，不访问网络
+npm test        # node --test：143 个用例，零运行时依赖，不访问网络
 ```
 
 测试覆盖：三格式探测与优先级、marketplace 解析（含 listing 元数据）、市场自动识别各分支、
@@ -292,7 +302,7 @@ E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub
 
 ## 市场索引
 
-发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 0.3.3）。在 DSH 插件页 → 发现 → 添加索引源：
+发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 0.3.4）。在 DSH 插件页 → 发现 → 添加索引源：
 
 ```text
 https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json
