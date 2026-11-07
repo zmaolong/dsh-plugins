@@ -36,12 +36,12 @@
     {
       "name": "dsh-agent-plugin-hub",
       "title": {
-        "en": "Agent Plugin Hub",
-        "zh-cn": "Agent 插件中心"
+        "en": "Agent Plugins",
+        "zh-cn": "智能体插件"
       },
       "description": {
-        "en": "Host Claude Code / CodeBuddy / ZCode Agent plugins in DSH: markets, install/update/rollback, and skills/commands/hooks/MCP capability injection.",
-        "zh-cn": "在 DSH 里托管 Claude Code / CodeBuddy / ZCode 等 Agent 插件：市场、安装/更新/回滚，以及技能、命令、hooks、MCP 能力注入。"
+        "en": "Host Claude Code / CodeBuddy / ZCode agent plugins in DSH: personal marketplaces, install/update/rollback, per-item capability toggles, and a ZCode-style plugin store panel.",
+        "zh-cn": "在 DSH 里托管 Claude Code / CodeBuddy / ZCode 等智能体插件：个人市场源、安装/更新/回滚、能力逐项启停，以及 ZCode 风格插件商店面板。"
       },
       "metadata": {
         "category": "tool",
@@ -50,17 +50,18 @@
           "claude",
           "codebuddy",
           "zcode",
-          "marketplace"
+          "marketplace",
+          "store"
         ]
       },
       "versions": [
         {
-          "version": "0.1.0",
-          "publishTimestamp": 1794009059,
+          "version": "0.3.0",
+          "publishTimestamp": 1794070228,
           "source": {
             "type": "git",
             "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "5736bf765963c8ce0e54ebbef75dde3c7dd3d933",
+            "commit": "57e5fbd07f8108cd0076ec6e616bbd34f0e4e9f8",
             "path": "packages/dsh-agent-plugin-hub"
           }
         }
