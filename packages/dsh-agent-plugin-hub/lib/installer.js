@@ -21,7 +21,7 @@ import {
 } from 'node:fs'
 import path from 'node:path'
 
-import { scanCapabilities } from './capabilities.js'
+import { scanCapabilities, emptyDisabledCapabilities, normalizeDisabledCapabilities } from './capabilities.js'
 import { isFormatId, isSafePluginName } from './formats.js'
 import { detectPluginManifest, isDirectory, validatePluginManifest } from './manifest.js'
 
@@ -191,6 +191,10 @@ export class Installer {
       enabled: existing ? existing.enabled : true,
       installedAt: new Date().toISOString(),
       capabilities: scan.summary,
+      // 逐项启停是用户偏好，升级/重装时保留；新安装为空表。
+      disabledCapabilities: existing
+        ? normalizeDisabledCapabilities(existing.disabledCapabilities)
+        : emptyDisabledCapabilities(),
       previousVersions: previousVersions.slice(-5),
     }
     const others = state.plugins.filter((plugin) => plugin.key !== key)

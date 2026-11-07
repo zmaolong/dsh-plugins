@@ -16,7 +16,7 @@
  * @module dsh-agent-plugin-hub/hooks
  */
 
-import { readHooksConfig, normalizeHooks } from './capabilities.js'
+import { isCapabilityDisabled, readHooksConfig, normalizeHooks } from './capabilities.js'
 
 /** 事件映射表；`host` 为 null 表示宿主没有对应事件。 */
 export const HOOK_EVENT_MAP = Object.freeze({
@@ -264,6 +264,7 @@ export class HookRuntime {
   groupsFor(hookEvent) {
     const groups = []
     for (const plugin of this.getEnabledPlugins()) {
+      if (isCapabilityDisabled(plugin, 'hooks', hookEvent)) continue
       const hooks = readHooksConfig(plugin.installedPath, plugin.format, {})
       const normalized = normalizeHooks(hooks.config)
       for (const warning of normalized.warnings) {

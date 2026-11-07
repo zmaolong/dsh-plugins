@@ -9,7 +9,7 @@
  * @module dsh-agent-plugin-hub/skills
  */
 
-import { parseSkillFile, scanSkills } from './capabilities.js'
+import { isCapabilityDisabled, parseSkillFile, scanSkills } from './capabilities.js'
 
 export const SKILL_PROVIDER_NAME = 'agent-plugin-hub'
 
@@ -71,6 +71,7 @@ export class SkillRuntime {
       const scan = scanSkills(plugin.installedPath, plugin.format)
       for (const warning of scan.warnings) warnings.push(`${plugin.name}: ${warning}`)
       for (const skill of scan.skills) {
+        if (isCapabilityDisabled(plugin, 'skills', skill.name)) continue
         if (seen.has(skill.name)) {
           warnings.push(`技能名冲突：${skill.name}（${plugin.name}），后者跳过`)
           continue

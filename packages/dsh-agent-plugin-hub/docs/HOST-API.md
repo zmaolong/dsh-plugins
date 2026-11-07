@@ -145,4 +145,69 @@ ctx.subprocess.spawn({
 - 命令结果注入会话：宿主无公开接口，未验证「自动发送」路径，按文本渲染处理。
 - hooks 在真实会话中的端到端行为：单元测试用假执行器覆盖了映射与决策；宿主冒烟只验证监听注册，
   未在真实工具调用中触发 hook 命令（见 HANDOFF.md 证据与限制）。
-- Windows 下 `cmd /d /s /c` 的引号转义按 Claude Code 约定处理；复杂跨平台命令以宿主 shell 为准。
+- Windows 下 `cmd /d /s /c` 的引号转义按 Claude Code 约定处理；复杂跨平台命令按宿主 shell 为准。
+
+## 插件页 Web UI（0.2.0 侦察补充）
+
+### 槽位
+
+`settings.plugins.tab`（Client Slots 目录）：`kind: list`，注册选项
+`{ id, order?, label?: string | (() => string) }`，由 Plugins 设置段落拥有；现有占用者
+`all`（order 10，宿主插件管理页）与 `dsh-market`（order 60，第三方市场插件）。
+贡献物以 React 组件形式挂载在对应 Tab 面板中。
+
+注册方式（浏览器端 `ctx.slots`）：
+
+```js
+ctx.slots.inject('settings.plugins.tab', () => ctx.slots.register({
+  name: 'settings.plugins.tab',
+  id: 'agent-plugin',
+  order: 50,
+  label: () => t('tab'),
+}, Component))
+```
+
+### Client 模块清单
+
+`package.json`：
+
+```json
+{
+  "exports": { "./client": "./client.js", "./locale/*.json": "./locale/*.json", "./icon": "./icon.svg" },
+  "dsh": {
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": ["@deepseek-ai/dsh-client-locale", "@deepseek-ai/dsh-client-ui-settings", "@deepseek-ai/dsh-client-ui-theme"]
+    }
+  }
+}
+```
+
+`client.js` 在浏览器里向模块表自我注册（id 必须等于包名）：
+
+```js
+window.__ModuleLoader__.load({ id: 'dsh-agent-plugin-hub', factory(require) {
+  const React = require('react')
+  return { inject: ['slots', 'locale'], apply(ctx) { /* 注册槽位 */ } }
+} })
+```
+
+只从模块表取 `react`（内置）。按宿主指引**不 import** 任何 `@deepseek-ai/dsh-client-*`；需要
+控件样式时使用主题 Token（`--dsw-alias-*`）或拷贝宿主控件标记，而不是依赖客户端组件包。
+
+### Host ↔ Client 数据面
+
+宿主 `ctx.webServer.register({ kind: 'prefix', path: '/agent-plugin/api', handler })`：
+
+- 命名路由按「exact → 最长 prefix → fallback」匹配，prefix 路由不会被 SPA fallback 吞掉；
+- handler 拿到原生 `IncomingMessage/ServerResponse`，本插件自己解析 JSON 请求体并写 JSON 响应；
+- 命名路由不经过 `/api` 的鉴权栅栏，因此本插件自行实现访问控制：
+  - Host 头必须是 `127.0.0.1` / `localhost` / `[::1]`（本机回环）；
+  - 变更类请求（POST）要求 `Origin` 等于 `http://<Host>`，且 `Content-Type` 含
+    `application/json`（阻断跨站表单 CSRF 与浏览器预检之外的简单请求）；
+  - 否则 403，错误信息中文。
+- 远端 Web UI 访问时 Host 不是回环地址 → API 403（已知限制，见 README）。
+
+未使用的替代方案：宿主生成的 `@Remote` 命名空间需要 `@deepseek-ai/*` 依赖（profile 关闭
+`autoInstallPeers`，第三方插件不能 import），因此选择 webServer 前缀路由 + 原生 fetch。

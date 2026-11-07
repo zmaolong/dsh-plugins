@@ -1,22 +1,30 @@
 {
   "name": "dsh-agent-plugin-hub",
-  "version": "0.1.0",
-  "description": "Agent Plugin Hub for DSH: host Claude Code / CodeBuddy / ZCode Agent plugins as DSH skills, commands, hooks and MCP.",
+  "version": "0.2.0",
+  "description": "Agent Plugin Hub for DSH: host Claude Code / CodeBuddy / ZCode Agent plugins as DSH skills, commands, hooks and MCP, with a Plugins-page UI tab.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",
+    "./client": "./client.js",
     "./cordis.patch.yml": "./cordis.patch.yml",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
     "./package.json": "./package.json"
   },
+  "icon": "./icon.svg",
   "files": [
     "lib",
+    "client.js",
     "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "docs",
     "README.md",
     "package.json"
   ],
   "scripts": {
-    "check": "node --check lib/index.js && node --check lib/hub.js && node --check lib/store.js && node --check lib/manifest.js && node --check lib/market.js && node --check lib/installer.js && node --check lib/capabilities.js && node --check lib/frontmatter.js && node --check lib/skills.js && node --check lib/plugin-commands.js && node --check lib/hooks.js && node --check lib/mcp.js && node --check lib/report.js && node --check lib/commands.js && node --check lib/formats.js",
+    "check": "node --check client.js && node --check lib/index.js && node --check lib/hub.js && node --check lib/store.js && node --check lib/manifest.js && node --check lib/market.js && node --check lib/installer.js && node --check lib/capabilities.js && node --check lib/frontmatter.js && node --check lib/skills.js && node --check lib/plugin-commands.js && node --check lib/hooks.js && node --check lib/mcp.js && node --check lib/report.js && node --check lib/commands.js && node --check lib/formats.js && node --check lib/ui-data.js && node --check lib/ui-routes.js",
     "test": "node --test",
     "test:verbose": "node --test --test-reporter spec test/"
   },
@@ -27,11 +35,21 @@
     "claude",
     "codebuddy",
     "zcode",
-    "marketplace"
+    "marketplace",
+    "web-ui"
   ],
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-theme"
+      ]
     },
     "market": {
       "title": {
@@ -39,8 +57,8 @@
         "zh-cn": "Agent 插件中心"
       },
       "description": {
-        "en": "Host Claude Code / CodeBuddy / ZCode Agent plugins in DSH: markets, install/update/rollback, and skills/commands/hooks/MCP capability injection.",
-        "zh-cn": "在 DSH 里托管 Claude Code / CodeBuddy / ZCode 等 Agent 插件：市场、安装/更新/回滚，以及技能、命令、hooks、MCP 能力注入。"
+        "en": "Host Claude Code / CodeBuddy / ZCode Agent plugins in DSH: markets, install/update/rollback, capability toggles, and the Agent Plugin tab in the Plugins page.",
+        "zh-cn": "在 DSH 里托管 Claude Code / CodeBuddy / ZCode 等 Agent 插件：市场、安装/更新/回滚、能力逐项启停，以及插件页的 Agent Plugin Tab。"
       },
       "category": "tool",
       "keywords": [

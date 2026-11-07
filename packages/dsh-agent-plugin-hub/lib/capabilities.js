@@ -16,6 +16,37 @@ import { parseFrontmatter } from './frontmatter.js'
 /** 单次能力扫描允许的最大文件数，防止异常插件拖垮启动。 */
 const MAX_FILES = 2000
 
+/** 可单独启停的能力种类。 */
+export const CAPABILITY_KINDS = Object.freeze(['skills', 'commands', 'hooks', 'mcpServers'])
+
+/** 空的“逐项禁用”表。 */
+export function emptyDisabledCapabilities() {
+  return { skills: [], commands: [], hooks: [], mcpServers: [] }
+}
+
+/**
+ * 规整 state 里的逐项启停表：未知种类与非法值丢弃。
+ *
+ * @param {unknown} value
+ * @returns {{skills: string[], commands: string[], hooks: string[], mcpServers: string[]}}
+ */
+export function normalizeDisabledCapabilities(value) {
+  const result = emptyDisabledCapabilities()
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return result
+  for (const kind of CAPABILITY_KINDS) {
+    const list = value[kind]
+    if (!Array.isArray(list)) continue
+    result[kind] = [...new Set(list.filter((item) => typeof item === 'string' && item.trim() !== '').map((item) => item.trim()))]
+  }
+  return result
+}
+
+/** 某一项能力是否被单独禁用。 */
+export function isCapabilityDisabled(record, kind, name) {
+  const disabled = record?.disabledCapabilities?.[kind]
+  return Array.isArray(disabled) && disabled.includes(name)
+}
+
 /** 递归列出匹配文件（跳过符号链接与隐藏的 .git 目录）。 */
 function findFiles(root, { match, limit = MAX_FILES, warnings = [] } = {}) {
   const results = []

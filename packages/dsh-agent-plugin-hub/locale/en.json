@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Agent Plugin",
+    "description": "Add Agent plugin marketplaces, install Claude Code plugins, and toggle their skills, commands, hooks and MCP servers."
+  }
+}

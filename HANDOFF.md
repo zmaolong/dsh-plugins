@@ -3,6 +3,11 @@
 > 状态：**主功能可用，已发布 0.1.0**。本文件在 `release-0.0.1` 分支提交（该分支承载当前全部代码）。
 > 提交作者与提交者统一为 `zmaolong <203504243+zmaolong@users.noreply.github.com>`；
 > 原 `release-0.1.0` 分支已删除，其内容全部并入 `release-0.0.1`。
+>
+> **2026-11-07 增补（0.2.0）**：新增插件页「Agent 插件」Tab——可视化市场/安装/更新/回滚/卸载，
+> 以及技能、命令、hooks、MCP 清单的逐项启停。Host 端加 `/agent-plugin/api` 前缀路由，
+> Client 端注册 `settings.plugins.tab` 槽位。升级后需**重启 DSH** 载入 Host 代码、**刷新页面**
+> 载入 Client 代码；Tab 位于 设置 → 插件 → Agent 插件。
 
 ## 30 秒速览
 
@@ -135,11 +140,13 @@ source.commit = 本分支生成索引时的 HEAD（与本文件更新提交一�
 
 1. **重启 DSH 桌面端**后 `/agent-plugin` 才会加载 0.1.0 的最终代码（当前宿主进程里加载的是安装时
    的 0.0.1 版本标记，代码走 link 指向工作区，但仍建议重启一次以获得干净状态）。
-2. 重启后执行 `/agent-plugin status`，应看到：版本 `0.1.0`、0 插件 / 0 市场、技能 provider 已注册、
+2. 重启后执行 `/agent-plugin status`，应看到：版本 `0.2.0`、0 插件 / 0 市场、技能 provider 已注册、
    commands 已注册、hooks 已挂载、MCP 未生效（带原因）。
-3. 若当前会话技能目录里还能看到夹具技能 `greet`，那是清理前的缓存；重启后消失。
-4. 可选：在插件页「发现 → 添加索引源」填入上面的 `release-0.0.1` 索引 URL，即可一键安装本插件后续版本。
-5. 想立即试用真实 Agent 插件：
+3. **刷新 Web 页面**后，设置 → 插件 里会出现「Agent 插件」Tab；若 Tab 显示 API 不可用，
+   说明 Host 版本尚未重启或页面不是本机回环访问。
+4. 若当前会话技能目录里还能看到夹具技能 `greet`，那是清理前的缓存；重启后消失。
+5. 可选：在插件页「发现 → 添加索引源」填入上面的 `release-0.0.1` 索引 URL，即可一键安装本插件后续版本。
+6. 想立即试用真实 Agent 插件：
 
 ```text
 /agent-plugin market add git https://github.com/<owner>/<claude-plugin-market>.git

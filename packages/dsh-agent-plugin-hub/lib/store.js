@@ -26,6 +26,8 @@ import {
 import os from 'node:os'
 import path from 'node:path'
 
+import { normalizeDisabledCapabilities } from './capabilities.js'
+
 export const STATE_SCHEMA = 1
 
 /** 阻塞式休眠（毫秒），用于锁重试。 */
@@ -83,6 +85,7 @@ function normalizePluginRecord(record, warnings) {
     enabled: record.enabled !== false,
     installedAt: typeof record.installedAt === 'string' ? record.installedAt : new Date().toISOString(),
     capabilities: isObject(record.capabilities) ? record.capabilities : {},
+    disabledCapabilities: normalizeDisabledCapabilities(record.disabledCapabilities),
     previousVersions,
   }
 }

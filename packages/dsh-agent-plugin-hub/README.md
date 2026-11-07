@@ -7,9 +7,10 @@ Agent 插件指跨 Harness 的插件资产包：`plugin.json` 加 `skills/`、`c
 （cordis bundle）。本包自己才是 DSH 插件，负责把 Agent 插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
 
-> 版本 0.1.0：市场 → 安装 → skills/commands 注入链路可用；hooks 映射到宿主真实事件；
-> MCP 受宿主接口限制，只解析展示并标注「未生效」（见下文与
-> [`docs/HOST-API.md`](docs/HOST-API.md)）。
+> 版本 0.2.0：在 0.1.0（市场 → 安装 → skills/commands 注入、hooks 映射）之上新增
+> 插件页「Agent 插件」Tab：可视化增删市场、安装/更新/回滚/卸载插件，并逐项启停
+> 技能、命令、hooks 与 MCP 清单。MCP 仍受宿主接口限制，只解析展示并标注「未生效」
+> （见下文与 [`docs/HOST-API.md`](docs/HOST-API.md)）。
 
 ## 快速开始
 
@@ -20,8 +21,28 @@ DSH 的技能、命令、hooks 与 MCP。
 /agent-plugin info demo-plugin
 ```
 
-`/agent-plugin` 是本包唯一的运维入口；已安装 Agent 插件自带的命令会注册成
+`/agent-plugin` 是本包唯一的命令入口；已安装 Agent 插件自带的命令会注册成
 `/<插件名>-<命令名>`。
+
+## 插件页 UI：Agent 插件 Tab（0.2.0）
+
+位置：**设置 → 插件 → Agent 插件**（与「全部」「市场」标签并列，order 50）。
+
+- **市场**：添加 local / git / url 三种市场源，刷新、移除，浏览市场内插件并一键安装；
+- **已安装**：插件总开关（启用/禁用）、查看详情、更新、回滚、卸载；
+- **插件详情**：按技能 / 命令 / hooks / MCP 清单分组展示，每一项都有独立开关：
+  - 技能：禁用后立即从 DSH 技能目录移除，启用后恢复；
+  - 命令：禁用后对应 `/插件名-命令名` 立即从宿主注销；
+  - hooks：按事件（PreToolUse/PostToolUse/Stop/…）启停，未映射到宿主的事件标注「未生效」；
+  - MCP 清单：可启停，但宿主没有运行时挂载接口，条目固定标注「未生效」。
+
+首次安装/升级后：**Host 端需要重启一次 DSH** 才会加载新版插件代码；浏览器端刷新页面即可
+看到新增 Tab。若 Host API 不可用，Tab 内会显示原因。
+
+数据通路：Host 端注册前缀路由 `/agent-plugin/api`（本机回环同源访问、POST 要求同源
+Origin + JSON），Client 端通过 `dsh.client` 清单注册到 `settings.plugins.tab` 槽位。
+受安全门限制，**远端 Web UI 访问时该 Tab 的 API 会返回 403**（只允许 127.0.0.1 /
+localhost / [::1]），本地桌面端不受影响。
 
 ## 功能
 
@@ -76,7 +97,7 @@ hook 命令按 Claude Code 约定执行：工作目录为插件根，stdin 传 J
 `hookSpecificOutput.permissionDecision: "deny"` 表示阻断（仅 PreToolUse 可阻断）。
 宿主没有对应事件的 hooks（Notification / SubagentStop / PreCompact 等）只保留清单。
 
-### 运维命令
+### 运维命令（与插件页 Tab 等价）
 
 ```text
 /agent-plugin status                    总体状态
@@ -96,6 +117,8 @@ hook 命令按 Claude Code 约定执行：工作目录为插件根，stdin 传 J
 /agent-plugin rollback <插件名|key>
 /agent-plugin help
 ```
+
+逐项启停能力只在插件页 Tab 暴露（HTTP API 同样支持：`POST /agent-plugin/api/capability`）。
 
 ## 存储
 
@@ -122,7 +145,9 @@ home 解析：配置 `home` → `DSH_AGENT_PLUGIN_HUB_HOME` → `~/.dsh/agent-pl
 - 路径白名单：市场相对 source 必须落在市场根内；安装目标必须在 hub cache 内；复制跳过符号链接；
 - 缓存只读：安装副本是复制而非引用市场目录；卸载只删 cache 内目录；
 - 包名冲突检测：市场条目名与插件清单 `name` 不一致时拒绝安装；命令/技能重名跳过并报告；
-- hooks 命令通过宿主 `ctx.subprocess` 执行，超时/中止受宿主管理；未知事件不执行外部命令。
+- hooks 命令通过宿主 `ctx.subprocess` 执行，超时/中止受宿主管理；未知事件不执行外部命令；
+- 插件页 API 只允许本机回环同源访问（Host 白名单 + POST 同源 Origin + JSON），
+  防止远端页面或跨站表单触发安装/卸载。
 
 ## 配置
 
@@ -140,13 +165,14 @@ home 解析：配置 `home` → `DSH_AGENT_PLUGIN_HUB_HOME` → `~/.dsh/agent-pl
 
 ```powershell
 cd packages\dsh-agent-plugin-hub
-npm run check   # node --check 全部 lib 文件
-npm test        # node --test：53 个用例，零运行时依赖，不访问网络
+npm run check   # node --check 全部 lib 文件与 client.js
+npm test        # node --test：63 个用例，零运行时依赖，不访问网络
 ```
 
 测试覆盖：三格式探测与优先级、marketplace 解析、市场添加/刷新/移除、安装/重装/禁用启用/
 更新/回滚/卸载、重启恢复、state 损坏自检、路径穿越与非法名拒绝、技能 provider、插件命令、
-hooks 事件映射与阻断决策、本地 git 市场、URL 市场失败降级。
+hooks 事件映射与阻断决策、本地 git 市场、URL 市场失败降级；以及插件页 API 的结构化数据、
+逐项启停（skills/commands/hooks/MCP）与访问控制（回环 Host、跨源、非法 JSON）。
 
 宿主 API 侦察结论见 [`docs/HOST-API.md`](docs/HOST-API.md)。
 
@@ -158,7 +184,10 @@ hooks 事件映射与阻断决策、本地 git 市场、URL 市场失败降级�
 - **MCP 未生效**：宿主没有第三方可用的运行时 MCP 挂载接口，不自己 spawn 进程；
 - **npm 源不支持**：明确报错，留扩展点；
 - **URL 市场的相对路径插件不能安装**：请改用 Git 市场或 github source；
-- 不做 Web 管理页、签名/审计与完整信任模型（结构已留扩展点）。
+- **插件页 Tab 需刷新页面**：Client 代码由浏览器加载，安装/升级插件后刷新一次页面即可；
+  Host API 更新需重启 DSH；
+- **远端 Web UI 下插件页 API 返回 403**：本机回环安全门限制，桌面端本地访问不受影响；
+- 不做签名/审计与完整信任模型（结构已留扩展点）。
 
 ## 安装（开发期）
 
@@ -172,7 +201,7 @@ E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub
 
 ## 市场索引
 
-发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 0.1.0）。在 DSH 插件页 → 发现 → 添加索引源：
+发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 0.2.0）。在 DSH 插件页 → 发现 → 添加索引源：
 
 ```text
 https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json

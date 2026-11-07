@@ -12,6 +12,7 @@
 
 import { registerHubCommand } from './commands.js'
 import { AgentPluginHub, HUB_VERSION } from './hub.js'
+import { mountUiRoutes } from './ui-routes.js'
 
 /** Cordis 插件名，用于日志与加载器识别。 */
 export const name = 'agent-plugin-hub'
@@ -41,9 +42,24 @@ export function apply(ctx, config = {}) {
   } catch {
     /* 宿主不支持 effect 时忽略；进程退出由宿主回收 */
   }
+  // 插件页「Agent Plugin」Tab 的 HTTP 数据面；宿主没有 webServer 时只记录原因。
+  let uiRoutes = { dispose: () => {} }
+  try {
+    uiRoutes = mountUiRoutes(ctx, hub)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    hub.uiRoutes = { active: false, reason: `挂载插件页 API 失败：${message}`, path: '/agent-plugin/api' }
+    hub.store.log('error', hub.uiRoutes.reason)
+  }
+  try {
+    ctx.effect?.(() => () => uiRoutes.dispose())
+  } catch {
+    /* 同上 */
+  }
   console.log(
     `[dsh-agent-plugin-hub] v${HUB_VERSION} 已加载；home=${hub.home}；`
-    + `已安装 ${hub.state.plugins.length} 个 Agent 插件，市场 ${hub.markets.list().length} 个`,
+    + `已安装 ${hub.state.plugins.length} 个 Agent 插件，市场 ${hub.markets.list().length} 个；`
+    + `插件页 API：${hub.uiRoutes.active ? '已挂载' : hub.uiRoutes.reason}`,
   )
   return hub
 }

@@ -10,7 +10,7 @@
  * @module dsh-agent-plugin-hub/plugin-commands
  */
 
-import { scanCommands } from './capabilities.js'
+import { isCapabilityDisabled, scanCommands } from './capabilities.js'
 import { toCommandName } from './formats.js'
 import { renderCommandTemplate } from './frontmatter.js'
 
@@ -69,6 +69,7 @@ export class PluginCommandRuntime {
       const scan = scanCommands(plugin.installedPath, plugin.format)
       for (const warning of scan.warnings) this.store.log('warn', `${plugin.name}: ${warning}`)
       for (const command of scan.commands) {
+        if (isCapabilityDisabled(plugin, 'commands', command.name)) continue
         const name = PluginCommandRuntime.commandName(plugin.name, command.name)
         if (this.disposers.has(name)) {
           this.conflicts.push({ name, plugin: plugin.key, reason: '同一插件内命令重名' })

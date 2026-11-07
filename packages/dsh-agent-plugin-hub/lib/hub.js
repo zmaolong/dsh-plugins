@@ -10,7 +10,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
-import { scanCapabilities } from './capabilities.js'
+import { scanCapabilities, CAPABILITY_KINDS, normalizeDisabledCapabilities } from './capabilities.js'
 import { FORMATS, findFormat } from './formats.js'
 import { HookRuntime } from './hooks.js'
 import { Installer } from './installer.js'
@@ -56,6 +56,8 @@ export class AgentPluginHub {
     this.state = { schemaVersion: 1, plugins: [] }
     this.warnings = []
     this.started = false
+    /** 插件页 Web UI 的 HTTP 路由状态，由 index.js 在挂载后回填。 */
+    this.uiRoutes = { active: false, reason: '未挂载' }
     this.skills = null
     this.pluginCommands = null
     this.hooks = null
@@ -199,6 +201,7 @@ export class AgentPluginHub {
       commands: this.pluginCommands?.stats() ?? { available: false, registered: [] },
       hooks: this.hooks?.stats() ?? { attached: false, events: [] },
       mcp: mcpAvailability(this.ctx),
+      ui: { ...this.uiRoutes },
       cache: this.installer.cacheStats(this.state),
       warnings: this.warnings.slice(-20),
     }
@@ -304,6 +307,29 @@ export class AgentPluginHub {
       const record = this.installer.setEnabled(this.state, name, enabled)
       this.store.saveState(this.state)
       this.syncRuntimes()
+      return record
+    })
+  }
+
+  /** 启用/禁用插件里的单项能力（技能、命令、hooks 事件、MCP server 清单）。 */
+  setCapabilityEnabled(keyOrName, kind, name, enabled) {
+    if (!CAPABILITY_KINDS.includes(kind)) {
+      throw new Error(`未知能力种类：${String(kind)}（可选 ${CAPABILITY_KINDS.join(' / ')}）`)
+    }
+    const capability = String(name ?? '').trim()
+    if (capability === '') throw new Error('请提供能力名称')
+    return this.store.withLock(() => {
+      const record = this.findRecord(keyOrName)
+      if (!record.disabledCapabilities) record.disabledCapabilities = normalizeDisabledCapabilities()
+      const normalized = normalizeDisabledCapabilities(record.disabledCapabilities)
+      record.disabledCapabilities = normalized
+      const list = normalized[kind]
+      const index = list.indexOf(capability)
+      if (enabled === true && index >= 0) list.splice(index, 1)
+      if (enabled !== true && index < 0) list.push(capability)
+      this.store.saveState(this.state)
+      this.syncRuntimes()
+      this.store.log('info', `${enabled === true ? '启用' : '禁用'} ${record.key} 的能力 ${kind}:${capability}`)
       return record
     })
   }
