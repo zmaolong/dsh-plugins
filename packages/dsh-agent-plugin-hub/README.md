@@ -1,6 +1,6 @@
 # dsh-agent-plugin-hub
 
-DSH 的**智能体插件**（Agent Plugins）运行时与市场，0.3.0 起带一个 **ZCode「插件市场」同构的商店面板**。
+DSH 的**智能体插件**（Agent Plugins）运行时与市场，0.3.1 起带一个 **ZCode「插件市场」同构的商店面板**。
 
 > 命名：本包托管的是 Claude Code / CodeBuddy / ZCode 等 Agent 的插件资产包。
 > “Agent”直译为“代理”不准确，译为“助手”又容易和通用助手混淆；单叫“插件”会与
@@ -12,6 +12,15 @@ DSH 的**智能体插件**（Agent Plugins）运行时与市场，0.3.0 起带�
 `mcpServers` 等能力。已知格式包括 Claude Code、CodeBuddy、ZCode；它们不是 DSH 插件
 （cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
+
+## 0.3.1 变更（0.3.0 + 暗色适配修复）
+
+- **暗色按钮修复**：主色按钮文字改用宿主 `--dsw-alias-label-primary-foreground`（亮色近白、暗色近黑），
+  背景/hover 改用 `--dsw-alias-button-primary-fill/-hover`；开关滑块改用 `--dsw-alias-switch-thumb`
+  （暗色为中性灰、不再与近白主色混在一起）；Toast 改用 `--dsw-alias-toast-bg/-label`；卡片/菜单/
+  分段等 hover 与选中态改用 `--dsw-alias-interactive-bg-hover/-active`，不再自造明暗两套混色。
+  修复前暗色下「插件管理」「添加」提交等主色按钮是白底白字不可见。
+- 新增 `test/dark-theme.test.mjs` 回归：禁止主色按钮硬编码白字、开关滑块硬编码白底、hover 自造混色。
 
 ## 0.3.0 变更
 
@@ -43,7 +52,7 @@ DSH 的技能、命令、hooks 与 MCP。
 `/agent-plugin` 是本包唯一的命令入口；已安装智能体插件自带的命令会注册成
 `/<插件名>-<命令名>`。
 
-## 首页左侧栏：智能体插件（0.3.0）
+## 首页左侧栏：智能体插件（0.3.1）
 
 位置：**首页左侧栏**，顺序为 **插件(0) → 智能体插件(5) → 自动化任务(10) → 上下文洞察(20)**。
 面板由 `client.js` 注册到 `sidebar.panellist`、`main`（key `agent-plugin`）与
@@ -223,7 +232,7 @@ home 解析：配置 `home` → `DSH_AGENT_PLUGIN_HUB_HOME` → `~/.dsh/agent-pl
 ```powershell
 cd packages\dsh-agent-plugin-hub
 npm run check   # node --check 全部 lib 文件与 client.js
-npm test        # node --test：137 个用例，零运行时依赖，不访问网络
+npm test        # node --test：140 个用例，零运行时依赖，不访问网络
 ```
 
 测试覆盖：三格式探测与优先级、marketplace 解析（含 listing 元数据）、市场自动识别各分支、
@@ -261,7 +270,7 @@ E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub
 
 ## 市场索引
 
-发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 0.3.0）。在 DSH 插件页 → 发现 → 添加索引源：
+发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 0.3.1）。在 DSH 插件页 → 发现 → 添加索引源：
 
 ```text
 https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json

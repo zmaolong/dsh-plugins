@@ -1,7 +1,10 @@
-# HANDOFF — dsh-agent-plugin-hub 0.3.0
+# HANDOFF — dsh-agent-plugin-hub 0.3.1
 
-> 状态：**0.3.0 已开发完成，安装进桌面端 desktop profile（link 指向运行时副本）并通过 Host API E2E**。
+> 状态：**0.3.1 已开发完成，安装进桌面端 desktop profile（link 指向运行时副本）并通过 Host API E2E**。
 > 本文件随 `release-0.0.1` 分支提交；提交作者与提交者统一为 `zmaolong <203504243+zmaolong@users.noreply.github.com>`。
+>
+> **0.3.1 主题**：在 0.3.0 的 ZCode 风格商店之上修复暗色模式按钮适配——主色按钮文字、开关滑块、
+> Toast、hover/选中态全部改用宿主主题 token，不再硬编码 `#fff` 或自造明暗混色。
 >
 > **0.3.0 主题**：把「智能体插件」面板完全按 ZCode「插件市场」重做——只保留**个人插件**分段、
 > 市场源**按输入路径自动识别**、商店列表 / 详情 / 管理 / 市场源 / 添加弹窗 / Toast 全部对齐
@@ -9,13 +12,32 @@
 
 ## 30 秒速览
 
-- 安装形态：`dsh-agent-plugin-hub@0.3.0`，link 到 `E:\workspace\dsh-agent-plugin-hub-runtime\0.3.0`（运行时副本）。
+- 安装形态：`dsh-agent-plugin-hub@0.3.1`，link 到 `E:\workspace\dsh-agent-plugin-hub-runtime\0.3.1`（运行时副本）。
   仓库源码：`E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub`。
 - 左侧栏入口：**首页左侧栏「智能体插件」图标**（order 5，位于「插件」与「自动化任务」之间），
   点击后中央面板打开 ZCode 风格商店。
 - 升级后需要 **刷新页面** 才载入新 Client；Host 端本次通过新运行时路径热加载（无需重启）。
 - 会话命令仍是 `/agent-plugin`，子命令与以前一致。
-- 自测：`cd packages\dsh-agent-plugin-hub; npm run check && npm test` → **137/137 通过，零网络**。
+- 自测：`cd packages\dsh-agent-plugin-hub; npm run check && npm test` → **140/140 通过，零网络**。
+
+## 0.3.1 修复：暗色模式按钮适配
+
+原因：DSH 的 `--dsw-alias-brand-primary` 亮色约等于 `neutral-bluish-1000`（近黑）、**暗色约等于
+`neutral-bluish-50`（近白）**；旧样式在主色按钮上硬编码 `color:#fff`，暗色下变成「白底白字」，
+开关滑块 `#fff` 也与近白主色混在一起。
+
+修复（全部走宿主 token，已从 DSH 主题源码核对亮/暗值）：
+
+| 部位 | 修复后 token |
+|---|---|
+| 主色按钮背景 / hover | `--dsw-alias-button-primary-fill` / `--dsw-alias-button-primary-hover` |
+| 主色按钮文字 | `--dsw-alias-label-primary-foreground`（亮 `neutral-bluish-00` / 暗 `neutral-bluish-1000`） |
+| 开关滑块 | `--dsw-alias-switch-thumb`（亮 `neutral-bluish-00` / 暗 `neutral-bluish-400`） |
+| Toast 背景 / 文字 | `--dsw-alias-toast-bg` / `--dsw-alias-toast-label` |
+| 卡片/菜单/分段等 hover | `--dsw-alias-interactive-bg-hover` / `-active` |
+
+新增 `test/dark-theme.test.mjs`（3 个用例）防止回归：主色按钮不得硬编码白字、开关滑块不得硬编码
+白底、hover 不得再自造 `color-mix` 混色。
 
 ## 0.3.0 变更清单
 
@@ -81,8 +103,8 @@
 $ cd packages/dsh-agent-plugin-hub
 $ npm run check     # 全部 lib + client.js 语法通过
 $ npm test
-ℹ tests 137
-ℹ pass 137
+ℹ tests 140
+ℹ pass 140
 ℹ fail 0
 ```
 
@@ -100,7 +122,7 @@ Client 模块注册 / 纯函数 / store / 组件冒烟（32 个 client 用例）
 
 同时验证：
 
-- `GET /store` 返回 `version=0.3.0`、`ui.active=true`。
+- `GET /store` 返回 `version=0.3.1`、`ui.active=true`。
 - 真实 git 市场（重启前 `refreshError` 为旧的 path TypeError）刷新成功：
   `mattpocock` 插件条目出现，市场 `display.owner/description` 解析正确——P0 修复现场确认。
 - 迁移日志：`存储 schema 已迁移：v1 → v2`；真实 home 的 `state.json` / `marketplaces.json` 均升为 v2。
@@ -123,8 +145,8 @@ Client 模块注册 / 纯函数 / store / 组件冒烟（32 个 client 用例）
 
 ## 当前安装状态与手工步骤
 
-1. 运行中的 Host 已加载 0.3.0：`plugin_manager install_bundle` 的结果为 `application: applied`，
-   profile `package.json` 依赖为 `"dsh-agent-plugin-hub": "link:E:/workspace/dsh-agent-plugin-hub-runtime/0.3.0"`。
+1. 运行中的 Host 已加载 0.3.1：`plugin_manager install_bundle` 的结果为 `application: applied`，
+   profile `package.json` 依赖为 `"dsh-agent-plugin-hub": "link:E:/workspace/dsh-agent-plugin-hub-runtime/0.3.1"`。
 2. **请刷新一次桌面端页面**：Client 代码由浏览器模块表加载，刷新后商店面板与 `shell.overlay` 生效。
 3. 打开「智能体插件」后应看到：
    - 标题「智能体插件」+ 刷新/市场源/添加/插件管理；「个人」分段；搜索；
@@ -174,14 +196,14 @@ Client 模块注册 / 纯函数 / store / 组件冒烟（32 个 client 用例）
 | `lib/capabilities.js` / `skills.js` / `plugin-commands.js` / `hooks.js` / `mcp.js` | 能力扫描与注入 |
 | `lib/commands.js` / `report.js` | `/agent-plugin` 命令与文本渲染 |
 | `docs/HOST-API.md` | 当前 HTTP API、数据结构、错误码与并发语义 |
-| `test/` | `node --test`：137 个用例（含迁移、来源识别、/store、Client） |
+| `test/` | `node --test`：140 个用例（含迁移、来源识别、/store、Client） |
 
 ## 分支 / 提交 / 索引
 
 | 项目 | 值 |
 |---|---|
 | 发布分支 | `release-0.0.1` |
-| 包版本 | `0.3.0` |
+| 包版本 | `0.3.1` |
 | 索引 URL | `https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json` |
 | 索引重新生成 | 代码提交后执行 `node scripts\build-index.mjs`，再提交 `index.json`（使其 commit 指向代码提交） |
 | 提交作者 | `zmaolong <203504243+zmaolong@users.noreply.github.com>`（无 Co-Authored-By） |
