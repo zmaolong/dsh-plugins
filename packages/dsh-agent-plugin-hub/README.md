@@ -1,6 +1,6 @@
 # dsh-agent-plugin-hub
 
-DSH 的**智能体插件**（Agent Plugins）运行时与市场，0.3.1 起带一个 **ZCode「插件市场」同构的商店面板**。
+DSH 的**智能体插件**（Agent Plugins）运行时与市场，0.3.2 起带一个 **ZCode「插件市场」同构的商店面板**。
 
 > 命名：本包托管的是 Claude Code / CodeBuddy / ZCode 等 Agent 的插件资产包。
 > “Agent”直译为“代理”不准确，译为“助手”又容易和通用助手混淆；单叫“插件”会与
@@ -12,6 +12,14 @@ DSH 的**智能体插件**（Agent Plugins）运行时与市场，0.3.1 起带�
 `mcpServers` 等能力。已知格式包括 Claude Code、CodeBuddy、ZCode；它们不是 DSH 插件
 （cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
+
+## 0.3.2 变更（启停开关对齐宿主 Switch）
+
+- 启停开关按宿主 `Switch` 原语对齐：选中滑轨 `--dsw-alias-brand-primary`，**选中滑块
+  `--dsw-alias-label-primary-foreground`（暗色近黑）**；未选中滑轨 `--dsw-alias-border-l3`、
+  滑块 `--dsw-alias-switch-thumb`。修复暗色下「滑块偏灰、不够黑」的观感。
+- `test/dark-theme.test.mjs` 增加断言：选中滑块必须走 `label-primary-foreground`，
+  未选中滑块必须走 `switch-thumb`。
 
 ## 0.3.1 变更（0.3.0 + 暗色适配修复）
 
@@ -52,7 +60,7 @@ DSH 的技能、命令、hooks 与 MCP。
 `/agent-plugin` 是本包唯一的命令入口；已安装智能体插件自带的命令会注册成
 `/<插件名>-<命令名>`。
 
-## 首页左侧栏：智能体插件（0.3.1）
+## 首页左侧栏：智能体插件（0.3.2）
 
 位置：**首页左侧栏**，顺序为 **插件(0) → 智能体插件(5) → 自动化任务(10) → 上下文洞察(20)**。
 面板由 `client.js` 注册到 `sidebar.panellist`、`main`（key `agent-plugin`）与
@@ -270,7 +278,7 @@ E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub
 
 ## 市场索引
 
-发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 0.3.1）。在 DSH 插件页 → 发现 → 添加索引源：
+发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 0.3.2）。在 DSH 插件页 → 发现 → 添加索引源：
 
 ```text
 https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json

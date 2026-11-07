@@ -26,8 +26,14 @@ test('暗色适配：主色按钮使用 button-primary 与 label-primary-foregro
 })
 
 test('暗色适配：开关滑块与 Toast 使用宿主 token，不硬编码白色', () => {
-  assert.ok(source.includes('--dsw-alias-switch-thumb'), '开关滑块必须走 switch-thumb')
+  assert.ok(source.includes('--dsw-alias-switch-thumb'), '未选中开关滑块必须走 switch-thumb')
   assert.equal(/\.aph-switch\[aria-checked="true"\]::after\{[^}]*background:#fff/u.test(source), false, '开关滑块不得硬编码白色')
+  assert.match(
+    source,
+    /\.aph-switch\[aria-checked="true"\]::after\{[^}]*background:var\(--dsw-alias-label-primary-foreground\)/u,
+    '选中态滑块必须走 label-primary-foreground（暗色近黑，才不会出现灰圆不够黑）',
+  )
+  assert.match(source, /\.aph-switch::after\{[^}]*background:var\(--dsw-alias-switch-thumb\)/u, '未选中态滑块走 switch-thumb')
   assert.ok(source.includes('--dsw-alias-toast-bg'), 'Toast 背景必须走 toast-bg')
   assert.ok(source.includes('--dsw-alias-toast-label'), 'Toast 文字必须走 toast-label')
 })

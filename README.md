@@ -28,7 +28,7 @@ dsh-plugins/
 │   ├── build-index.mjs
 │   └── serve-index.mjs
 └── packages/
-    └── dsh-agent-plugin-hub/   # 智能体插件运行时与市场（0.3.1，ZCode 风格商店面板）
+    └── dsh-agent-plugin-hub/   # 智能体插件运行时与市场（0.3.2，ZCode 风格商店面板）
         ├── package.json
         ├── cordis.patch.yml
         ├── README.md
@@ -44,7 +44,7 @@ dsh-plugins/
 | 分支 | 内容 |
 |---|---|
 | `main` | 文档与仓库说明（本 README） |
-| `release-0.0.1` | 当前全部插件代码、脚本、`HANDOFF.md` 与生成的 `index.json`；市场索引从该分支读取（分支名沿用首个发布版本，包版本为 0.3.1） |
+| `release-0.0.1` | 当前全部插件代码、脚本、`HANDOFF.md` 与生成的 `index.json`；市场索引从该分支读取（分支名沿用首个发布版本，包版本为 0.3.2） |
 
 当前发布分支为 `release-0.0.1`。在 DSH 插件页 → **发现** → **添加索引源** 时填：
 

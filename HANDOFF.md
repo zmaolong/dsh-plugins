@@ -1,7 +1,11 @@
-# HANDOFF — dsh-agent-plugin-hub 0.3.1
+# HANDOFF — dsh-agent-plugin-hub 0.3.2
 
-> 状态：**0.3.1 已开发完成，安装进桌面端 desktop profile（link 指向运行时副本）并通过 Host API E2E**。
+> 状态：**0.3.2 已开发完成，安装进桌面端 desktop profile（link 指向运行时副本）并通过 Host API E2E**。
 > 本文件随 `release-0.0.1` 分支提交；提交作者与提交者统一为 `zmaolong <203504243+zmaolong@users.noreply.github.com>`。
+>
+> **0.3.2 主题**：对齐宿主 `Switch` 原语修正启停开关——选中态滑轨用品牌色、**滑块用
+> `label-primary-foreground`（暗色近黑）**；未选中态滑轨用 `border-l3`、滑块用 `switch-thumb`。
+> 修复暗色下「滑块是灰色圆圈、不够黑」的观感。
 >
 > **0.3.1 主题**：在 0.3.0 的 ZCode 风格商店之上修复暗色模式按钮适配——主色按钮文字、开关滑块、
 > Toast、hover/选中态全部改用宿主主题 token，不再硬编码 `#fff` 或自造明暗混色。
@@ -12,13 +16,26 @@
 
 ## 30 秒速览
 
-- 安装形态：`dsh-agent-plugin-hub@0.3.1`，link 到 `E:\workspace\dsh-agent-plugin-hub-runtime\0.3.1`（运行时副本）。
+- 安装形态：`dsh-agent-plugin-hub@0.3.2`，link 到 `E:\workspace\dsh-agent-plugin-hub-runtime\0.3.2`（运行时副本）。
   仓库源码：`E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub`。
 - 左侧栏入口：**首页左侧栏「智能体插件」图标**（order 5，位于「插件」与「自动化任务」之间），
   点击后中央面板打开 ZCode 风格商店。
 - 升级后需要 **刷新页面** 才载入新 Client；Host 端本次通过新运行时路径热加载（无需重启）。
 - 会话命令仍是 `/agent-plugin`，子命令与以前一致。
 - 自测：`cd packages\dsh-agent-plugin-hub; npm run check && npm test` → **140/140 通过，零网络**。
+
+## 0.3.2 修复：启停开关滑块颜色
+
+对齐宿主 `Switch` 原语（已从 `dsh-web-frontend/dist/assets/index-*.css` 核对）：
+
+```text
+滑轨：默认 --dsw-alias-border-l3；[aria-checked=true] → --dsw-alias-brand-primary
+滑块：默认 --dsw-alias-switch-thumb（未选中）；
+      [aria-checked=true] → --dsw-alias-label-primary-foreground（暗色近黑）
+```
+
+此前 0.3.1 把选中态滑块也用了 `switch-thumb`（暗色为中性灰 `neutral-bluish-400`），
+在近白的选中滑轨上偏灰、不够黑。现在选中态滑块随文字前景翻转：亮色白、暗色近黑。
 
 ## 0.3.1 修复：暗色模式按钮适配
 
@@ -32,7 +49,8 @@
 |---|---|
 | 主色按钮背景 / hover | `--dsw-alias-button-primary-fill` / `--dsw-alias-button-primary-hover` |
 | 主色按钮文字 | `--dsw-alias-label-primary-foreground`（亮 `neutral-bluish-00` / 暗 `neutral-bluish-1000`） |
-| 开关滑块 | `--dsw-alias-switch-thumb`（亮 `neutral-bluish-00` / 暗 `neutral-bluish-400`） |
+| 开关滑块（选中） | `--dsw-alias-label-primary-foreground`（0.3.2 起；暗色近黑） |
+| 开关滑块（未选中） | `--dsw-alias-switch-thumb` |
 | Toast 背景 / 文字 | `--dsw-alias-toast-bg` / `--dsw-alias-toast-label` |
 | 卡片/菜单/分段等 hover | `--dsw-alias-interactive-bg-hover` / `-active` |
 
@@ -122,7 +140,7 @@ Client 模块注册 / 纯函数 / store / 组件冒烟（32 个 client 用例）
 
 同时验证：
 
-- `GET /store` 返回 `version=0.3.1`、`ui.active=true`。
+- `GET /store` 返回 `version=0.3.2`、`ui.active=true`。
 - 真实 git 市场（重启前 `refreshError` 为旧的 path TypeError）刷新成功：
   `mattpocock` 插件条目出现，市场 `display.owner/description` 解析正确——P0 修复现场确认。
 - 迁移日志：`存储 schema 已迁移：v1 → v2`；真实 home 的 `state.json` / `marketplaces.json` 均升为 v2。
@@ -145,8 +163,8 @@ Client 模块注册 / 纯函数 / store / 组件冒烟（32 个 client 用例）
 
 ## 当前安装状态与手工步骤
 
-1. 运行中的 Host 已加载 0.3.1：`plugin_manager install_bundle` 的结果为 `application: applied`，
-   profile `package.json` 依赖为 `"dsh-agent-plugin-hub": "link:E:/workspace/dsh-agent-plugin-hub-runtime/0.3.1"`。
+1. 运行中的 Host 已加载 0.3.2：`plugin_manager install_bundle` 的结果为 `application: applied`，
+   profile `package.json` 依赖为 `"dsh-agent-plugin-hub": "link:E:/workspace/dsh-agent-plugin-hub-runtime/0.3.2"`。
 2. **请刷新一次桌面端页面**：Client 代码由浏览器模块表加载，刷新后商店面板与 `shell.overlay` 生效。
 3. 打开「智能体插件」后应看到：
    - 标题「智能体插件」+ 刷新/市场源/添加/插件管理；「个人」分段；搜索；
@@ -203,7 +221,7 @@ Client 模块注册 / 纯函数 / store / 组件冒烟（32 个 client 用例）
 | 项目 | 值 |
 |---|---|
 | 发布分支 | `release-0.0.1` |
-| 包版本 | `0.3.1` |
+| 包版本 | `0.3.2` |
 | 索引 URL | `https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json` |
 | 索引重新生成 | 代码提交后执行 `node scripts\build-index.mjs`，再提交 `index.json`（使其 commit 指向代码提交） |
 | 提交作者 | `zmaolong <203504243+zmaolong@users.noreply.github.com>`（无 Co-Authored-By） |
