@@ -56,12 +56,12 @@
       },
       "versions": [
         {
-          "version": "0.3.3",
-          "publishTimestamp": 1794072674,
+          "version": "0.3.4",
+          "publishTimestamp": 1794073714,
           "source": {
             "type": "git",
             "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "f72d828d6d7b6cbf1195cb5c3eef49f04d0c0427",
+            "commit": "a6872b5ebf26b07b6db3e755dccc2ae22b4e1596",
             "path": "packages/dsh-agent-plugin-hub"
           }
         }
