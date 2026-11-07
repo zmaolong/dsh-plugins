@@ -1,6 +1,6 @@
 # dsh-agent-plugin-hub
 
-DSH 的**智能体插件**（Agent Plugins）运行时与市场，0.3.2 起带一个 **ZCode「插件市场」同构的商店面板**。
+DSH 的**智能体插件**（Agent Plugins）运行时与市场，0.3.3 起带一个 **ZCode「插件市场」同构的商店面板**。
 
 > 命名：本包托管的是 Claude Code / CodeBuddy / ZCode 等 Agent 的插件资产包。
 > “Agent”直译为“代理”不准确，译为“助手”又容易和通用助手混淆；单叫“插件”会与
@@ -12,6 +12,20 @@ DSH 的**智能体插件**（Agent Plugins）运行时与市场，0.3.2 起带�
 `mcpServers` 等能力。已知格式包括 Claude Code、CodeBuddy、ZCode；它们不是 DSH 插件
 （cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
+
+## 0.3.3 变更（暗色调色板与图标对齐 ZCode）
+
+- **调色板改为 ZCode ZaiLight / ZaiDark**：不再借用宿主 `--dsw-alias-*` 语义色（暗色下偏灰），改为显式两套值，按 `body[data-ds-dark-theme]` 切换：
+  背景 `#f8f8f8` / `#161616`，卡片与输入框 `#ffffff` / `#2b2b2b`，次级按钮 `#e6e6e6` / `#363636`，
+  主色 `#000000` / `#ffffff`，前景 `neutral-800` / `neutral-300`，边框 10%、悬停 5%、选中 10%，
+  success `#1e8a3e` / `#46bf72`，warning `#e07b00` / `#ff8a30`，danger `#e03131` / `#ff5c5c`，
+  Toast 卡片 `#ffffff` / `#2b2b2b`。
+- **按钮对齐 ZCode `Button`**：primary（主色底 + primary-foreground 字 + hover 80%）、secondary（secondary 底）、
+  destructive（红底白字）、ghost；搜索框/输入框对齐 ZCode `Input`（input 底色 + border + 聚焦 border）。
+- **开关对齐 ZCode `Switch`**：选中滑轨 `primary`、未选中 `primary` 30% 透明，滑块始终 `primary-foreground`。
+- **图标对齐 ZCode lucide**：`Store`（店铺）、`Blocks`（无图标回退，三块拼图）、`Puzzle`（侧栏入口）、
+  `RotateCcw`（回滚）；去掉安装按钮上多余的 Download（ZCode 安装按钮无图标）；图标统一 `stroke=2`。
+- `test/dark-theme.test.mjs` 扩展到 5 个用例，覆盖两套调色板、按钮/开关/Toast/hover 与图标形状；`npm test` 142/142。
 
 ## 0.3.2 变更（启停开关对齐宿主 Switch）
 
@@ -60,7 +74,7 @@ DSH 的技能、命令、hooks 与 MCP。
 `/agent-plugin` 是本包唯一的命令入口；已安装智能体插件自带的命令会注册成
 `/<插件名>-<命令名>`。
 
-## 首页左侧栏：智能体插件（0.3.2）
+## 首页左侧栏：智能体插件（0.3.3）
 
 位置：**首页左侧栏**，顺序为 **插件(0) → 智能体插件(5) → 自动化任务(10) → 上下文洞察(20)**。
 面板由 `client.js` 注册到 `sidebar.panellist`、`main`（key `agent-plugin`）与
@@ -240,7 +254,7 @@ home 解析：配置 `home` → `DSH_AGENT_PLUGIN_HUB_HOME` → `~/.dsh/agent-pl
 ```powershell
 cd packages\dsh-agent-plugin-hub
 npm run check   # node --check 全部 lib 文件与 client.js
-npm test        # node --test：140 个用例，零运行时依赖，不访问网络
+npm test        # node --test：142 个用例，零运行时依赖，不访问网络
 ```
 
 测试覆盖：三格式探测与优先级、marketplace 解析（含 listing 元数据）、市场自动识别各分支、
@@ -278,7 +292,7 @@ E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub
 
 ## 市场索引
 
-发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 0.3.2）。在 DSH 插件页 → 发现 → 添加索引源：
+发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 0.3.3）。在 DSH 插件页 → 发现 → 添加索引源：
 
 ```text
 https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json
