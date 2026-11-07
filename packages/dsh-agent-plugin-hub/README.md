@@ -1,9 +1,9 @@
 # dsh-agent-plugin-hub
 
-> **试验性预览版（`0.0.1-preview.0`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
+> **试验性预览版（`0.0.1-preview.1`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
 > npm 上只发布 `preview` dist-tag（`latest` 暂不指向本版本）。
 > 需要安装时请锁定精确版本：
-> `dsh plugin --profile web add dsh-agent-plugin-hub@0.0.1-preview.0`。
+> `dsh plugin --profile web add dsh-agent-plugin-hub@0.0.1-preview.1`。
 > 版本说明：仓库内 `0.3.x` 是开发期版本号；npm 公开线从 `0.0.1-preview.N` 起步，首个正式版定为 `1.0.0`。
 
 DSH 的**智能体插件**（Agent Plugins）运行时与市场，0.3.6 起带一个 **ZCode「插件市场」同构的商店面板**。
@@ -326,7 +326,7 @@ E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub
 
 ## 市场索引
 
-发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 `0.0.1-preview.0`）。在 DSH 插件页 → 发现 → 添加索引源：
+发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 `0.0.1-preview.1`）。在 DSH 插件页 → 发现 → 添加索引源：
 
 ```text
 https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json
