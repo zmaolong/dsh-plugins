@@ -61,6 +61,17 @@ test('换行：多行文本允许断行且不溢出', () => {
   assert.ok(source.includes('.aph-info-value a>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'), '外链值内部也要截断')
 })
 
+test('页面内容列：与 ZCode Settings 一致，max-w-4xl 居中且左右留空', () => {
+  const page = source.match(/\.aph-page\{[^}]+\}/u)?.[0] ?? ''
+  assert.ok(page.includes('max-width:896px'), '内容列应与 ZCode max-w-4xl（896px）一致')
+  assert.ok(page.includes('margin:0 auto'), '内容列应水平居中，左右留空')
+  assert.ok(page.includes('padding:20px 16px 32px'), '默认左右留白 16px')
+  assert.ok(
+    source.includes('@container (min-width:1024px){.aph-page{padding-left:32px;padding-right:32px}}'),
+    '宽容器左右留白应提升到 32px（ZCode lg:px-8）',
+  )
+})
+
 test('组件行：名称与描述堆叠在同一 comp-body，不再嵌套 comp-body', () => {
   assert.equal(source.includes("h('div', { className: 'aph-comp-body' }, body)"), false, '组件行不应再嵌套 body')
   assert.ok(source.includes("h('div', { className: 'aph-comp-body' },\n            h('span', { className: 'aph-comp-name'"), '名称与描述应同处 body')
