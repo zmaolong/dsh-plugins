@@ -600,27 +600,47 @@ window.__ModuleLoader__.load({
       inject: ['slots', 'locale'],
       apply(ctx) {
         const locale = ctx.locale
-        for (const [id, dict] of Object.entries({ en: EN, 'zh-cn': ZH })) {
+        // DSH Client locale 的 active 语言 id 是 `zh`（不是 `zh-cn`，dsh-context 也以
+        // getLocale().active === 'zh' 判断）。两个 id 都注册，并以 active 前缀选字典，
+        // 避免绑定器在缺字典时回退英文。
+        for (const [id, dict] of Object.entries({ en: EN, zh: ZH, 'zh-cn': ZH })) {
           try {
             locale?.register?.(NS, id, dict)
           } catch {
-            /* 注册失败不影响页面（翻译回退到 key） */
+            /* 未知 locale id 忽略；页面仍可用显式字典渲染 */
           }
         }
-        let translate = (key) => (ZH[key] ?? key)
+        let bound = null
         try {
-          const bound = locale?.bind?.(NS)
-          if (typeof bound === 'function') translate = bound
+          bound = typeof locale?.bind === 'function' ? locale.bind(NS) : null
         } catch {
-          /* 保持回退实现 */
+          bound = null
+        }
+        const activeId = () => {
+          try {
+            return String(locale?.getLocale?.()?.active ?? '').toLowerCase()
+          } catch {
+            return ''
+          }
+        }
+        const dictFor = () => {
+          const active = activeId()
+          if (active.startsWith('zh')) return ZH
+          if (active === '') return ZH
+          return EN
         }
         const t = (key) => {
-          try {
-            const value = translate(key)
-            return typeof value === 'string' && value !== '' ? value : (ZH[key] ?? key)
-          } catch {
-            return ZH[key] ?? key
+          const dict = dictFor()
+          if (typeof dict[key] === 'string' && dict[key] !== '') return dict[key]
+          if (typeof bound === 'function') {
+            try {
+              const value = bound(key)
+              if (typeof value === 'string' && value !== '' && value !== key) return value
+            } catch {
+              /* 回退到静态字典 */
+            }
           }
+          return EN[key] ?? ZH[key] ?? key
         }
         // 首页左侧栏：全局面板图标（面板顺序 插件0 → 智能体插件5 → 自动化任务10 → 上下文洞察20）
         ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({

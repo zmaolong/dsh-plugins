@@ -66,6 +66,7 @@ test('client.js：注册左侧栏入口与主面板、locale 字典', () => {
   const locales = []
   const registrations = []
   const injectedSlots = []
+  let activeLocale = 'zh'
   const ctx = {
     locale: {
       register(namespace, localeId, dict) {
@@ -76,6 +77,9 @@ test('client.js：注册左侧栏入口与主面板、locale 字典', () => {
       },
       subscribe() {
         return () => {}
+      },
+      getLocale() {
+        return { active: activeLocale }
       },
     },
     slots: {
@@ -99,9 +103,11 @@ test('client.js：注册左侧栏入口与主面板、locale 字典', () => {
   assert.equal(sidebar.options.id, 'agent-plugin')
   assert.equal(typeof sidebar.options.order, 'number')
   assert.ok(sidebar.options.order < 10, '应排在“自动化任务”(10) 之前')
-  const label = sidebar.options.label()
-  assert.equal(typeof label, 'string')
-  assert.ok(label.length > 0)
+  // locale 解析：DSH 的 active id 是 `zh`，必须显示中文而不是英文回退
+  assert.equal(sidebar.options.label(), '智能体插件')
+  activeLocale = 'en'
+  assert.equal(sidebar.options.label(), 'Agent Plugins')
+  activeLocale = 'zh'
   const icon = sidebar.component({ size: 20, active: false })
   assert.ok(icon, '图标组件应可渲染')
 
@@ -112,7 +118,7 @@ test('client.js：注册左侧栏入口与主面板、locale 字典', () => {
   assert.ok(page, '主面板组件应可渲染')
 
   const localeIds = locales.map((item) => item.localeId).sort()
-  assert.deepEqual(localeIds, ['en', 'zh-cn'])
+  assert.deepEqual(localeIds, ['en', 'zh', 'zh-cn'])
   for (const item of locales) {
     assert.equal(item.namespace, 'agentPluginHub')
     assert.equal(typeof item.dict.tab, 'string')

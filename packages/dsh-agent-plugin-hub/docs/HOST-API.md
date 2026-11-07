@@ -243,3 +243,13 @@ window.__ModuleLoader__.load({ id: 'dsh-agent-plugin-hub', factory(require) {
   面板 id 相同即可加入左侧栏，不需要改宿主。
 - 设置页 Tab（`settings.plugins.tab`）与左侧栏面板是两种不同位置；0.2.4 起改用左侧栏入口，
   旧设置页 Tab 注册已移除。
+
+### Client locale 的语言 id（0.2.5 修正）
+
+`ctx.locale.getLocale().active` 的实测值是 **`zh`**（不是 `zh-cn`；`dsh-context` 也用
+`active === 'zh'` 判断中文）。只把字典注册到 `zh-cn` 时，`slot label` 会回退到英文
+（本插件曾因此在左侧栏显示 `Agent Plugins`）。
+
+正确做法：字典同时注册 `en` 与 `zh`（`zh-cn` 可一并注册），并在翻译函数里按
+`getLocale().active` 前缀选字典；图标/标签等 thunk 在每次投影时重新求值，语言切换后自动跟随。
+`locale/*.json` 展示元数据仍用 `zh.json`（与宿主自带包一致）。

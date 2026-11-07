@@ -28,7 +28,7 @@ dsh-plugins/
 │   ├── build-index.mjs
 │   └── serve-index.mjs
 └── packages/
-    └── dsh-agent-plugin-hub/   # 智能体插件运行时与市场（0.2.4）
+    └── dsh-agent-plugin-hub/   # 智能体插件运行时与市场（0.2.5）
         ├── package.json
         ├── cordis.patch.yml
         ├── README.md
@@ -240,7 +240,7 @@ node scripts\build-index.mjs
 ## 常见坑
 
 - **`not-a-bundle`**：包没声明 `dsh.bundle.patch`。
-- **`engines.dsh` / DSH peer 不匹配**：会在 pnpm 之前就被拒（当前宿主 `0.2.4-rc.1`）；不声明就不检查，别乱写范围。
+- **`engines.dsh` / DSH peer 不匹配**：会在 pnpm 之前就被拒（当前宿主 `0.2.5-rc.1`）；不声明就不检查，别乱写范围。
 - **改了代码不生效**：`cordis.patch.yml` 的改动约 1 秒热重载；`lib/index.js` 的改动一般要重启宿主（桌面端重启应用，CLI 重启 `dsh`）。
 - **索引看起来是旧的**：索引缓存 10 分钟，刷新发现页或重新添加源。
 - **想一次装完所有插件**：索引是逐个装的；真要"一装全装"，就做一个打包 bundle，在它的 `cordis.patch.yml` 里 insert 多行——但那样版本会绑在一起，不适合独立迭代。
