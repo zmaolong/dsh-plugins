@@ -1,19 +1,20 @@
 # dsh-agent-plugin-hub
 
-DSH 的**智能体扩展**（Agent Extensions）运行时与市场。
+DSH 的**智能体插件**（Agent Plugins）运行时与市场。
 
-> 命名：本包托管的是 Claude Code / CodeBuddy / ZCode 等 Agent 的扩展资产包。
-> “Agent”直译为“代理”不准确，译为“助手”又容易和通用助手混淆；直接叫“插件”会与
-> DSH 自身的 cordis 插件冲突。因此用户界面统一使用**智能体扩展**（Agent Extensions），
-> 代码里的包名、命令名（`/agent-plugin`）与目录结构保持不变。
+> 命名：本包托管的是 Claude Code / CodeBuddy / ZCode 等 Agent 的插件资产包。
+> “Agent”直译为“代理”不准确，译为“助手”又容易和通用助手混淆；单叫“插件”会与
+> DSH 自身的 cordis 插件混淆。加上“智能体”限定词后，用户界面统一使用**智能体插件**
+> （英文 Agent Plugins），既贴近 Agent Plugin 原意，又能和 DSH 插件区分；代码里的
+> 包名、命令名（`/agent-plugin`）与目录结构保持不变。
 
-智能体扩展指跨 Harness 的扩展资产包：`plugin.json` 加 `skills/`、`commands/`、`hooks/`、
+智能体插件指跨 Harness 的插件资产包：`plugin.json` 加 `skills/`、`commands/`、`hooks/`、
 `mcpServers` 等能力。已知格式包括 Claude Code、CodeBuddy、ZCode；它们不是 DSH 插件
-（cordis bundle）。本包自己才是 DSH 插件，负责把智能体扩展装进 DSH，并把能力注册成
+（cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
 
-> 版本 0.2.1：在 0.1.0（市场 → 安装 → skills/commands 注入、hooks 映射）之上新增
-> 插件页「智能体扩展」Tab：可视化增删市场、安装/更新/回滚/卸载扩展，并逐项启停
+> 版本 0.2.2：在 0.1.0（市场 → 安装 → skills/commands 注入、hooks 映射）之上新增
+> 插件页「智能体插件」Tab：可视化增删市场、安装/更新/回滚/卸载插件，并逐项启停
 > 技能、命令、hooks 与 MCP 清单。MCP 仍受宿主接口限制，只解析展示并标注「未生效」
 > （见下文与 [`docs/HOST-API.md`](docs/HOST-API.md)）。
 
@@ -26,12 +27,12 @@ DSH 的技能、命令、hooks 与 MCP。
 /agent-plugin info demo-plugin
 ```
 
-`/agent-plugin` 是本包唯一的命令入口；已安装智能体扩展自带的命令会注册成
+`/agent-plugin` 是本包唯一的命令入口；已安装智能体插件自带的命令会注册成
 `/<插件名>-<命令名>`。
 
-## 插件页 UI：智能体扩展 Tab（0.2.1）
+## 插件页 UI：智能体插件 Tab（0.2.2）
 
-位置：**首页左边栏 → 插件 → 「已安装」Tab 右侧的「智能体扩展」**（order 50，位于「已安装」与「市场」之间）。
+位置：**首页左边栏 → 插件 → 「已安装」Tab 右侧的「智能体插件」**（order 50，位于「已安装」与「市场」之间）。
 
 - **市场**：添加 local / git / url 三种市场源，刷新、移除，浏览市场内插件并一键安装；
 - **已安装**：插件总开关（启用/禁用）、查看详情、更新、回滚、卸载；

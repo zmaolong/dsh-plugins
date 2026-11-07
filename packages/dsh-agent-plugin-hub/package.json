@@ -1,7 +1,7 @@
 {
   "name": "dsh-agent-plugin-hub",
-  "version": "0.2.1",
-  "description": "Agent Extensions Hub (智能体扩展) for DSH: host Claude Code / CodeBuddy / ZCode agent extensions as DSH skills, commands, hooks and MCP, with a Plugins-page UI tab.",
+  "version": "0.2.2",
+  "description": "Agent Plugin Hub (智能体插件) for DSH: host Claude Code / CodeBuddy / ZCode agent plugins as DSH skills, commands, hooks and MCP, with a Plugins-page UI tab.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -53,12 +53,12 @@
     },
     "market": {
       "title": {
-        "en": "Agent Extensions",
-        "zh-cn": "智能体扩展"
+        "en": "Agent Plugins",
+        "zh-cn": "智能体插件"
       },
       "description": {
-        "en": "Host Claude Code / CodeBuddy / ZCode agent extensions in DSH: marketplaces, install/update/rollback, per-item capability toggles, and the Agent Extensions tab in the Plugins page.",
-        "zh-cn": "在 DSH 里托管 Claude Code / CodeBuddy / ZCode 等智能体扩展：市场、安装/更新/回滚、能力逐项启停，以及插件页的「智能体扩展」Tab。"
+        "en": "Host Claude Code / CodeBuddy / ZCode agent plugins in DSH: marketplaces, install/update/rollback, per-item capability toggles, and the Agent Plugins tab in the Plugins page.",
+        "zh-cn": "在 DSH 里托管 Claude Code / CodeBuddy / ZCode 等智能体插件：市场、安装/更新/回滚、能力逐项启停，以及插件页的「智能体插件」Tab。"
       },
       "category": "tool",
       "keywords": [
