@@ -1,6 +1,6 @@
 {
   "name": "dsh-agent-plugin-hub",
-  "version": "0.3.6",
+  "version": "0.0.1-preview.0",
   "description": "Agent Plugin Hub (智能体插件) for DSH: host Claude Code / CodeBuddy / ZCode agent plugins as DSH skills, commands, hooks and MCP, with a ZCode-style plugin store panel.",
   "type": "module",
   "main": "lib/index.js",
@@ -29,6 +29,19 @@
     "test:verbose": "node --test --test-reporter spec test/"
   },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zmaolong/dsh-plugins.git",
+    "directory": "packages/dsh-agent-plugin-hub"
+  },
+  "homepage": "https://github.com/zmaolong/dsh-plugins/tree/release-0.0.1/packages/dsh-agent-plugin-hub",
+  "bugs": {
+    "url": "https://github.com/zmaolong/dsh-plugins/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "preview"
+  },
   "keywords": [
     "dsh-plugin",
     "agent-plugin",

@@ -28,7 +28,7 @@ dsh-plugins/
 │   ├── build-index.mjs
 │   └── serve-index.mjs
 └── packages/
-    └── dsh-agent-plugin-hub/   # 智能体插件运行时与市场（0.3.6，ZCode 风格商店面板）
+    └── dsh-agent-plugin-hub/   # 智能体插件运行时与市场（0.0.1-preview.0，ZCode 风格商店面板）
         ├── package.json
         ├── cordis.patch.yml
         ├── README.md
@@ -44,7 +44,7 @@ dsh-plugins/
 | 分支 | 内容 |
 |---|---|
 | `main` | 文档与仓库说明（本 README） |
-| `release-0.0.1` | 当前全部插件代码、脚本、`HANDOFF.md` 与生成的 `index.json`；市场索引从该分支读取（分支名沿用首个发布版本，包版本为 0.3.6） |
+| `release-0.0.1` | 当前全部插件代码、脚本、`HANDOFF.md` 与生成的 `index.json`；市场索引从该分支读取（分支名沿用首个发布版本，包版本为 `0.0.1-preview.0`） |
 
 当前发布分支为 `release-0.0.1`。在 DSH 插件页 → **发现** → **添加索引源** 时填：
 
@@ -218,6 +218,10 @@ node scripts\build-index.mjs
 | 私有 Git | 代码不公开 | 安装走本机 git 凭据；但索引本身仍要匿名可读 |
 
 > 索引**没有签名**：条目里的包名、版本只是索引的声明，最终装的是什么由被装包的 manifest 决定。所以自建源只放自己的插件，别把它当审核机制。
+
+> **npm 首发策略（试验期）**：先以 `0.0.1-preview.0` 试验版发布（`0.0.1-preview.N` 为试验线），
+> `publishConfig.tag` 固定为 `preview`，`latest` 暂不指向任何版本；此阶段不推广、不进索引。
+> 首个正式版定为 `1.0.0`，届时 `npm publish --tag latest`，然后 `DSH_PLUGINS_SOURCE=npm` 重新生成索引。
 
 ---
 
