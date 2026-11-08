@@ -1701,6 +1701,7 @@ window.__ModuleLoader__.load({
 				snapshot: null,
 				view: "store",
 				storeTab: "sources",
+				storeSourceFilter: "",
 				detailReturn: "store",
 				marketDetail: null,
 				marketPluginKey: null,
@@ -1998,6 +1999,9 @@ window.__ModuleLoader__.load({
 				},
 				setStoreTab(storeTab) {
 					set({ storeTab });
+				},
+				setStoreSourceFilter(storeSourceFilter) {
+					set({ storeSourceFilter });
 				},
 				setLocaleId(localeId) {
 					set({ localeId });
@@ -3266,8 +3270,10 @@ window.__ModuleLoader__.load({
 			const items = snapshot.items ?? [];
 			const query = state.query;
 			const searching = query.trim() !== "";
-			const groups = searching ? [] : groupItemsByMarket(items, markets);
-			const searchResults = searching ? items.filter((item) => matchQuery(item, query, localeId)) : [];
+			const sourceFilter = state.storeSourceFilter;
+			const filteredItems = sourceFilter === "" ? items : items.filter((item) => (item.market ?? {}).id === sourceFilter);
+			const groups = searching ? [] : groupItemsByMarket(filteredItems, markets);
+			const searchResults = searching ? filteredItems.filter((item) => matchQuery(item, query, localeId)) : [];
 			let content;
 			if (searching) content = /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
 				className: panel_module_css_default.section,
@@ -3305,7 +3311,7 @@ window.__ModuleLoader__.load({
 					children: t("addMarketplace")
 				})
 			});
-			else if (items.length === 0) content = /* @__PURE__ */ (0, react_jsx_runtime.jsx)(EmptyBlock, { description: t("catalogEmpty") });
+			else if (filteredItems.length === 0) content = /* @__PURE__ */ (0, react_jsx_runtime.jsx)(EmptyBlock, { description: t("catalogEmpty") });
 			else content = /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				style: columnGap(32),
 				children: groups.map((group) => {
@@ -3398,13 +3404,35 @@ window.__ModuleLoader__.load({
 						onChange: actions.setStoreTab,
 						t
 					}),
-					state.storeTab === "sources" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+					state.storeTab === "sources" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: panel_module_css_default.toolbar,
-						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SearchBox, {
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(SearchBox, {
 							value: query,
 							onChange: actions.setQuery,
 							placeholder: t("searchPlaceholder")
-						})
+						}), markets.length > 1 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							className: panel_module_css_default.segmented,
+							role: "group",
+							"aria-label": t("allSources"),
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+								type: "button",
+								className: panel_module_css_default.segment,
+								"aria-pressed": sourceFilter === "",
+								onClick: () => actions.setStoreSourceFilter(""),
+								children: t("allSources")
+							}), markets.map((market) => {
+								const id = String(market.id ?? "");
+								const title = String(market.title || market.name || market.id);
+								return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+									type: "button",
+									className: panel_module_css_default.segment,
+									"aria-pressed": sourceFilter === id,
+									title,
+									onClick: () => actions.setStoreSourceFilter(id),
+									children: title
+								}, id);
+							})]
+						}) : null]
 					}) : null,
 					state.error !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: panel_module_css_default.errorBanner,

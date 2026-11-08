@@ -286,6 +286,38 @@ describe('StoreView', () => {
     expect(within(row).getByText(t('addedBadge'))).toBeTruthy()
     expect(within(row).queryByRole('button', { name: t('add') })).toBeNull()
   })
+
+  it('多个市场源时提供来源筛选，分组与搜索都按源过滤', () => {
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const setStoreSourceFilter = vi.spyOn(controller.actions, 'setStoreSourceFilter')
+    const snapshot = {
+      markets: [
+        { id: 'm1', name: 'one', title: '市场一' },
+        { id: 'm2', name: 'two', title: '市场二' },
+      ],
+      items: [
+        { key: 'm1/a', name: 'alpha', market: { id: 'm1' }, display: { title: 'Alpha' } },
+        { key: 'm2/b', name: 'beta', market: { id: 'm2' }, display: { title: 'Beta' } },
+      ],
+      installed: [],
+    }
+    const { useHub } = stubHub(readyState({ localeId: 'zh', snapshot }))
+    render(<StoreView useHub={useHub} actions={controller.actions} t={t} />)
+    const group = screen.getByRole('group', { name: t('allSources') })
+    expect(within(group).getByRole('button', { name: '全部来源' }).getAttribute('aria-pressed')).toBe('true')
+    fireEvent.click(within(group).getByRole('button', { name: '市场二' }))
+    expect(setStoreSourceFilter).toHaveBeenCalledWith('m2')
+
+    // 选中市场二后的实际渲染：只显示 Beta；搜索也被限定在该源内
+    const filteredState = controller.store.getSnapshot()
+    void filteredState
+    const filtered = { ...readyState({ localeId: 'zh', snapshot }), storeSourceFilter: 'm2', query: '' }
+    cleanup()
+    render(<StoreView useHub={stubHub(filtered).useHub} actions={controller.actions} t={t} />)
+    expect(screen.getByText('Beta')).toBeTruthy()
+    expect(screen.queryByText('Alpha')).toBeNull()
+    expect(within(screen.getByRole('group', { name: t('allSources') })).getByRole('button', { name: '市场二' }).getAttribute('aria-pressed')).toBe('true')
+  })
 })
 
 describe('OverlayHost', () => {

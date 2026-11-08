@@ -163,8 +163,13 @@ export function StoreView({ useHub, actions, t }: ViewProps): ReactNode {
   const items = (snapshot.items as JsonRecord[] | undefined) ?? []
   const query = state.query
   const searching = query.trim() !== ''
-  const groups = searching ? [] : groupItemsByMarket(items, markets)
-  const searchResults = searching ? items.filter(item => matchQuery(item, query, localeId)) : []
+  const sourceFilter = state.storeSourceFilter
+  // The source filter scopes both the grouped grid and the search results.
+  const filteredItems = sourceFilter === ''
+    ? items
+    : items.filter(item => ((item.market as JsonRecord | undefined) ?? {}).id === sourceFilter)
+  const groups = searching ? [] : groupItemsByMarket(filteredItems, markets)
+  const searchResults = searching ? filteredItems.filter(item => matchQuery(item, query, localeId)) : []
 
   let content: ReactNode
   if (searching) {
@@ -186,7 +191,7 @@ export function StoreView({ useHub, actions, t }: ViewProps): ReactNode {
         action={<Button variant="primary" icon="plus" onClick={actions.openAddSource}>{t('addMarketplace')}</Button>}
       />
     )
-  } else if (items.length === 0) {
+  } else if (filteredItems.length === 0) {
     content = <EmptyBlock description={t('catalogEmpty')} />
   } else {
     content = (
@@ -249,6 +254,36 @@ export function StoreView({ useHub, actions, t }: ViewProps): ReactNode {
               onChange={actions.setQuery}
               placeholder={t('searchPlaceholder')}
             />
+            {markets.length > 1
+              ? (
+                <div className={css.segmented} role="group" aria-label={t('allSources')}>
+                  <button
+                    type="button"
+                    className={css.segment}
+                    aria-pressed={sourceFilter === ''}
+                    onClick={() => actions.setStoreSourceFilter('')}
+                  >
+                    {t('allSources')}
+                  </button>
+                  {markets.map(market => {
+                    const id = String(market.id ?? '')
+                    const title = String(market.title || market.name || market.id)
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        className={css.segment}
+                        aria-pressed={sourceFilter === id}
+                        title={title}
+                        onClick={() => actions.setStoreSourceFilter(id)}
+                      >
+                        {title}
+                      </button>
+                    )
+                  })}
+                </div>
+              )
+              : null}
           </div>
         )
         : null}

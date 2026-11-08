@@ -140,6 +140,15 @@ describe('store tabs and recommended sources', () => {
     expect(controller.store.getSnapshot().storeTab).toBe('sources')
   })
 
+  it('switches the sources-tab market filter', () => {
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    expect(controller.store.getSnapshot().storeSourceFilter).toBe('')
+    controller.actions.setStoreSourceFilter('m1')
+    expect(controller.store.getSnapshot().storeSourceFilter).toBe('m1')
+    controller.actions.setStoreSourceFilter('')
+    expect(controller.store.getSnapshot().storeSourceFilter).toBe('')
+  })
+
   it('adds a recommended source with a success toast and clears busy', async () => {
     const bodies: unknown[] = []
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {

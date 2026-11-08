@@ -56,6 +56,8 @@ export interface HubState {
   snapshot: JsonRecord | null
   view: 'store' | 'manage' | 'market' | 'detail'
   storeTab: 'sources' | 'recommended'
+  /** Sources-tab market filter: '' shows every market, otherwise a market id. */
+  storeSourceFilter: string
   /** Where the detail view was opened from (back navigation). */
   detailReturn: 'store' | 'market'
   marketDetail: MarketDetailState | null
@@ -123,6 +125,7 @@ export function initialHubState(): HubState {
     snapshot: null,
     view: 'store',
     storeTab: 'sources',
+    storeSourceFilter: '',
     detailReturn: 'store',
     marketDetail: null,
     marketPluginKey: null,
@@ -169,6 +172,7 @@ export interface HubActions {
   setManageQuery(query: string): void
   setManageFilter(filter: HubState['manageFilter']): void
   setStoreTab(tab: HubState['storeTab']): void
+  setStoreSourceFilter(marketId: string): void
   addRecommendedSource(entry: JsonRecord): void
   setLocaleId(localeId: string): void
   toggleCollapse(groupKey: string): void
@@ -444,6 +448,9 @@ export function createHubController(options: HubControllerOptions): HubControlle
     },
     setStoreTab(storeTab: HubState['storeTab']) {
       set({ storeTab })
+    },
+    setStoreSourceFilter(storeSourceFilter: string) {
+      set({ storeSourceFilter })
     },
     setLocaleId(localeId: string) {
       set({ localeId })
