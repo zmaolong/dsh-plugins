@@ -3,6 +3,17 @@
 > 本文件面向所有在本仓库工作的 AI Agent / Harness（Claude Code、CodeBuddy、ZCode、Cursor、Codex 等）。
 > **开工前必读**：DSH 插件开发规范 [`docs/PLUGIN-DEV.md`](docs/PLUGIN-DEV.md)（权威）；仓库结构与市场索引格式见 [`README.md`](README.md)。
 
+## 权威资料与知识来源
+
+- **官方（冲突时以官方为准）**：
+  - 仓库 https://github.com/deepseek-ai/deepseek-harness
+  - 文档站 https://deepseek-harness.github.io/deepseek-harness/
+  - 关键文档：`docs/architecture.md`、`docs/development.md`、`docs/cordis-primer.md`、`docs/cookbook/adding-a-package.md`（插件展示元数据）、`docs/user/guide/plugin-market.zh.md`（**索引 format 1 权威规范**）、`docs/testing.md`、`docs/web-styling.md`
+- **来源分级**：`docs/PLUGIN-DEV.md` 中每条规则标注了 🟢 官方 / 🟡 本机实测 / 🟠 经验推断。改代码前先看该条目的等级与 §0 时效声明。
+- **提示词与文档的关系**：规则来自官方文档 + 本机实测（安装/发布/报错/profile 结构），**不是**来自某个提示词；提示词只给需求与约束。`docs/PLUGIN-DEV.md` §0.2 记录了完整证据链。
+- **版本时效**：DSH 是 developer preview，官方明确会有兼容性破坏性变更；🟡/🟠 条目在宿主升级后必须复核（复核方法见 `docs/PLUGIN-DEV.md` §10）。
+- **官方仓库 `AGENTS.md` 的约束只适用于给官方仓库贡献包**，不适用于本仓库的第三方插件包（包名、tsconfig、pnpm 门禁等）。
+
 ## 硬性规则（违反会导致插件装不上、跑不起来或发不出去）
 
 1. **组合包**：插件的 `package.json` 必须有 `dsh.bundle.patch` 指向本包 `cordis.patch.yml`，否则安装报 `not-a-bundle`。
@@ -17,6 +28,7 @@
 10. **版本线**：预览 `X.Y.Z-preview.N`（dist-tag `preview`），正式 `X.Y.Z`（dist-tag `latest`）；预览与正式同核心。
 11. **禁止整包 `npm unpublish`**：会触发 24 小时冷却且名字裸奔；已发布版本号不可复用。要隐藏版本用 `npm deprecate`。
 12. **索引由生成器产出**：不要手改 `index.json` 的版本/来源字段；跑 `node scripts\build-index.mjs`。
+13. **展示元数据双写**：官方读取 `locale/*.json` 的 `meta.title/description`（另有 `package.json.icon`）；本仓库生成器读取 `package.json` 的 `dsh.market`。两处必须保持一致，改一处就要同步另一处。
 
 ## 工作流程
 

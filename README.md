@@ -18,6 +18,20 @@
 
 索引本身不存代码，只存"有哪些插件、从哪个 npm 包 / Git 提交的哪个子目录装、怎么展示"。插件代码永远在各自的包里。
 
+## 官方文档与知识来源
+
+本仓库所有插件规则都以 **DSH 官方资料**为准：
+
+- 官方仓库：https://github.com/deepseek-ai/deepseek-harness （MIT，`docs/` 下有完整文档）
+- 官方文档站：https://deepseek-harness.github.io/deepseek-harness/
+- 插件索引 format 1 权威规范：https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/guide/plugin-market.zh.md
+- 插件展示元数据（`locale/*.json` 的 `meta.title/description`）：https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/cookbook/adding-a-package.md
+- 插件运行时契约（cordis `name/inject/apply`）：https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/cordis-primer.md
+
+> 本仓库的 [`docs/PLUGIN-DEV.md`](docs/PLUGIN-DEV.md) 是面向本仓库的实践版规范，**每条规则都标注了来源等级**：🟢 官方 / 🟡 本机实测 / 🟠 经验推断，并记录了完整证据链与时效声明（§0）。冲突时以官方为准。
+>
+> 注意：DSH 处于 developer preview，官方明确会有兼容性破坏性变更；标注 🟡/🟠 的条目在宿主升级后需要复核。
+
 ```
 dsh-plugins/
 ├── index.json                  # 生成物，需要提交
@@ -113,7 +127,7 @@ dsh --profile web
 > 完整规范（骨架、宿主端/客户端契约、安装调试、版本发布、市场索引）见 [`docs/PLUGIN-DEV.md`](docs/PLUGIN-DEV.md)；下面是速查。
 
 1. 参考 `packages/dsh-agent-plugin-hub` 的骨架，复制成你的包名目录。
-2. 改 `package.json`：`name`、`version`、`description`、`dsh.market` 展示信息。
+2. 改 `package.json`：`name`、`version`、`description`；改 `locale/en.json`、`locale/zh.json` 的 `meta.title` / `meta.description`（**DSH 运行时读取的官方展示元数据**）；本仓库再在 `package.json` 的 `dsh.market` 里维护一份供 `scripts/build-index.mjs` 生成索引用，两处保持一致。
 3. 改 `cordis.patch.yml`：`id` 换成本插件独有的行 id，`name` 换成**自己的包名**。
 4. 改 `lib/index.js`：`export const name` 和 `apply` 里的逻辑。
 5. 跑 `node scripts\build-index.mjs` 重新生成索引。
@@ -234,30 +248,37 @@ node scripts\build-index.mjs
 
 ## 字段速查
 
-顶层：`format`（必填，只能是 `1`）、`title`（必填，字符串或带 `en` 的多语言对象）、`description`（可选）、`metadata`（可选，声明分类/标签/排序键）。
+> 字段的**权威定义**以官方 [插件索引规范](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/guide/plugin-market.zh.md) 为准；下面只是速查。
+
+顶层：`format`（必填，只能是 `1`）、`title`（必填，字符串或带 `en` 的多语言对象）、`description`（可选）、`metadata`（可选，声明分类/标签/排序键）；索引 UTF-8、默认 ≤ 128 MiB、2xx 且不重定向。
 
 > 多语言对象的语言 id 必须**小写**：`zh-cn`、`en`。写成 `zh-CN` 会被校验器拒绝（这是最容易踩的一条，本仓库的 `build-index.mjs` 会自动把 key 转小写）。
 
-`plugins[]`：`name`（必填，合法 npm 包名，全局唯一）、`title`、`description`、`icon`、`author`、`homepage`、`repository`、`metadata`（`category` / `labels` / `sortKeys` / `keywords`）、`versions`（必填，非空）。
+`plugins[]`：`name`（必填，合法 npm 包名，索引内唯一）、`title`、`description`、`icon`、`author`、`homepage`、`repository`（`{ url, directory? }`）、`metadata`（`category` / `labels` / `sortKeys`）、`versions`（必填，非空）。
 
 `versions[]`：`version`（必填，精确 SemVer）、`publishTimestamp`（必填，Unix 秒整数）、`engines`（可选，`{ dsh: "<SemVer range>" }`）、`source`（必填）。
 
 `source`：`{"type":"npm","registry"?}` 或 `{"type":"git","url":"https://…","commit":"<40 位小写 hex>","path"?: "相对目录"}`。
 
-`icon` 相对于索引 URL 解析，必须落到 https 或与索引同源；也可以用 `data:` 内联图片（解码后 ≤ 32 KiB）。
+`icon`：内联 `data:` URL（SVG/PNG/JPEG/WebP，≤ 32 KiB）或 URL；**相对 icon 相对索引 URL 解析**（与网页图片一致）；跨源绝对 URL 必须 `https:`。
+
+> 推荐版本规则（官方）：与当前 DSH 兼容、**非预发布**的最高版本；若没有非预发布版本，取兼容的最高预发布版本。
+
+> 插件的**卡片标题/描述/图标**在 DSH 运行时来自包内 `locale/*.json` 的 `meta.title`/`meta.description` 与 `package.json` 的 `icon`；本仓库另在 `package.json` 的 `dsh.market` 里维护一份供 `scripts/build-index.mjs` 生成索引用。两处要同步。
 
 ---
 
 ## 常见坑
 
 - **`not-a-bundle`**：包没声明 `dsh.bundle.patch`。
-- **`engines.dsh` / DSH peer 不匹配**：会在 pnpm 之前就被拒（当前宿主 `0.2.7-rc.1`）；不声明就不检查，别乱写范围。
+- **`engines.dsh` / DSH peer 不匹配**：写了 `engines.dsh` 就会严格校验，版本不匹配会在 pnpm 之前被拒；不声明就不检查，但会按 `@deepseek-ai/dsh*` peer 依赖检查（没有 peer 依赖的包视为兼容）。
 - **改了代码不生效**：`cordis.patch.yml` 的改动约 1 秒热重载；`lib/index.js` 的改动一般要重启宿主（桌面端重启应用，CLI 重启 `dsh`）。
-- **索引看起来是旧的**：索引缓存 10 分钟，刷新发现页或重新添加源。
+- **索引看起来是旧的**：索引缓存约 10 分钟，刷新发现页或重新添加源。
 - **想一次装完所有插件**：索引是逐个装的；真要"一装全装"，就做一个打包 bundle，在它的 `cordis.patch.yml` 里 insert 多行——但那样版本会绑在一起，不适合独立迭代。
-- **图标不显示**：图标必须 https 或与索引同源，别写 http 图床。
+- **图标不显示**：bundle 图标支持 SVG/PNG/JPEG/WebP（≤ 256 KiB，自包含）；索引图标内联 ≤ 32 KiB、相对路径或 https 跨源，别写 http 图床。
 - **同一个包名重复**：索引内不允许重复，改包名前先看看索引生成有没有报错。
-- **索引加不进去**：先看发现页「索引源」里对应源下方的错误；最常见的是语言 id 写成 `zh-CN`、URL 有重定向或带查询串。
+- **索引加不进去**：先看发现页「索引源」里对应源下方的错误；最常见的是语言 id 写成 `zh-CN`、URL 有重定向/凭据/查询串/片段，或索引未匿名可读。
+- **发现页没有索引入口**：DSH **不内置索引源**，需要先在 插件 → 实验性插件 → **自定义插件索引** 打开开关。
 
 ---
 
