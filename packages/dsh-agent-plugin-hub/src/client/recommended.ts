@@ -23,7 +23,7 @@ export interface RecommendedSource {
   }
 }
 
-/** The curated list (first entry: Anthropic's official Claude plugin marketplace). */
+/** The curated list: Anthropic's official marketplace plus popular community collections. */
 export const RECOMMENDED_SOURCES: readonly RecommendedSource[] = Object.freeze([
   {
     id: 'claude-plugins-official',
@@ -37,6 +37,34 @@ export const RECOMMENDED_SOURCES: readonly RecommendedSource[] = Object.freeze([
       descriptionI18n: {
         zh: 'Anthropic 官方维护的高质量 Claude 插件目录，持续更新。',
         en: 'Anthropic’s officially maintained catalog of high-quality Claude plugins.',
+      },
+    },
+  },
+  {
+    id: 'superpowers',
+    location: 'https://github.com/obra/superpowers',
+    format: 'claude',
+    display: {
+      title: 'Superpowers Skills',
+      titleI18n: { zh: 'Superpowers 技能合集', en: 'Superpowers Skills' },
+      description: 'The popular community skills collection for Claude Code by obra.',
+      descriptionI18n: {
+        zh: '社区热门的 Claude 技能合集（obra/superpowers），为 Claude Code 注入超能力。',
+        en: 'The popular community skills collection for Claude Code by obra.',
+      },
+    },
+  },
+  {
+    id: 'mattpocock-skills',
+    location: 'https://github.com/mattpocock/skills',
+    format: 'claude',
+    display: {
+      title: 'Matt Pocock’s Skills',
+      titleI18n: { zh: 'Matt Pocock 技能市场', en: 'Matt Pocock’s Skills' },
+      description: 'A Claude skills marketplace maintained by TypeScript educator Matt Pocock.',
+      descriptionI18n: {
+        zh: '由 TypeScript 教育者 Matt Pocock 维护的 Claude 技能市场。',
+        en: 'A Claude skills marketplace maintained by TypeScript educator Matt Pocock.',
       },
     },
   },

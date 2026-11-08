@@ -234,8 +234,11 @@ describe('StoreView', () => {
     render(<StoreView useHub={useHub} actions={controller.actions} t={t} />)
     expect(screen.getByRole('tabpanel')).toBeTruthy()
     expect(screen.getByText('Anthropic 官方插件市场')).toBeTruthy()
+    expect(screen.getByText('Superpowers 技能合集')).toBeTruthy()
+    expect(screen.getByText('Matt Pocock 技能市场')).toBeTruthy()
     expect(screen.queryByPlaceholderText(t('searchPlaceholder'))).toBeNull()
-    fireEvent.click(within(screen.getByRole('tabpanel')).getByRole('button', { name: t('add') }))
+    const row = within(screen.getByRole('tabpanel')).getByRole('button', { name: /claude-plugins-official/u })
+    fireEvent.click(within(row).getByRole('button', { name: t('add') }))
     expect(addRecommendedSource).toHaveBeenCalledWith({
       id: 'claude-plugins-official',
       location: 'https://github.com/anthropics/claude-plugins-official',
@@ -253,8 +256,9 @@ describe('StoreView', () => {
       },
     }))
     render(<StoreView useHub={useHub} actions={controller.actions} t={t} />)
-    expect(screen.getByText(t('addedBadge'))).toBeTruthy()
-    expect(within(screen.getByRole('tabpanel')).queryByRole('button', { name: t('add') })).toBeNull()
+    const row = within(screen.getByRole('tabpanel')).getByRole('button', { name: /claude-plugins-official/u })
+    expect(within(row).getByText(t('addedBadge'))).toBeTruthy()
+    expect(within(row).queryByRole('button', { name: t('add') })).toBeNull()
   })
 })
 
