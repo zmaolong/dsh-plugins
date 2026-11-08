@@ -30,6 +30,12 @@
 12. **索引由生成器产出**：不要手改 `index.json` 的版本/来源字段；跑 `node scripts\build-index.mjs`。
 13. **展示元数据双写**：官方读取 `locale/*.json` 的 `meta.title/description`（另有 `package.json.icon`）；本仓库生成器读取 `package.json` 的 `dsh.market`。两处必须保持一致，改一处就要同步另一处。
 
+## 修改原则（每次改动前先读）
+
+- **简洁与官方风格优先**：每次修改以「代码更简洁、更贴近官方风格」为首要目标；风格基准是 deepseek-harness 官方实现（`packages/client/ui-*` 包、`ui-primitives`、`docs/web-styling.md`、`cordis-plugin-development` skill 模板），拿不准就先对照官方再动手。
+- **允许破坏性重构**：预览期不为旧形态保留兼容层、死代码或注释掉的历史实现；重构直接删除，并同步更新测试与文档。
+- **数据自动迁移**：凡改动涉及用户磁盘数据（`state.json` / `marketplaces.json` / 安装 cache 等格式），必须随包提供自动迁移（沿用/扩展包内 migrate 机制），用户更新后自动完成；不得要求手工步骤，不得静默丢弃数据。
+
 ## 工作流程
 
 1. 读 [`docs/PLUGIN-DEV.md`](docs/PLUGIN-DEV.md) 与 [`README.md`](README.md)；
