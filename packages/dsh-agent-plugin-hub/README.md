@@ -1,10 +1,12 @@
 # dsh-agent-plugin-hub
 
-> **试验性预览版（`0.0.1-preview.5`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
+> **试验性预览版（`0.1.0-preview.1`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
 > npm 上只发布 `preview` dist-tag（`latest` 暂不指向本版本）。
 > 需要安装时请锁定精确版本：
-> `dsh plugin --profile web add dsh-agent-plugin-hub@0.0.1-preview.5`。
-> 版本说明：仓库内 `0.3.x` 是开发期版本号；npm 公开线从 `0.0.1-preview.N` 起步，首个正式版定为 `0.0.1`（预览线的稳定版）。
+> `dsh plugin --profile web add dsh-agent-plugin-hub@0.1.0-preview.1`。
+> 版本说明：npm 公开线从 `0.0.1-preview.N` 起步；`0.1.0-preview.1` 起为官方化工具链重构线
+> （TypeScript + JSX + CSS Modules + tsdown + vitest，对齐官方插件形态，破坏性重构、不做旧版兼容），
+> 首个正式版定为 `0.1.0`。
 
 DSH 的**智能体插件**（Agent Plugins）运行时与市场，带一个 **ZCode「插件市场」同构的商店面板**。
 
@@ -18,6 +20,33 @@ DSH 的**智能体插件**（Agent Plugins）运行时与市场，带一个 **ZC
 `mcpServers` 等能力。已知格式包括 Claude Code、CodeBuddy、ZCode；它们不是 DSH 插件
 （cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
+
+## 0.1.0-preview.1 变更（对齐 DeepSeek Harness 官方插件形态的全量重构）
+
+- **工具链官方化**：TypeScript + JSX + CSS Modules + tsdown 构建 + vitest，全部进
+  `devDependencies`（`dependencies` 保持为空，react 与宿主服务由宿主注入）；源码在
+  `src/`（服务端 `*.ts` 函数插件形 + 客户端 `client/*.tsx` 组件），构建产物 `lib/`
+  入库（`lib/index.js` ESM 宿主半 + `lib/client.js` CJS 浏览器工厂闭包，构建行为
+  逐项对齐官方 `packages/client/tsdown.client.ts` 预设）；
+- **客户端重写**：废弃 2300 行手写 `h = createElement` 单文件、内联 CSS 与内联字典，
+  改为纯 props 组件 + `*.module.css`（只消费 `--dsw-alias-*` token，删除自带
+  `--aph-*` 调色板；`:hover` 包 `@media (hover: hover)`；遮罩不加 blur；elevated
+  面 `border:0` + `--dsw-elevation-*`；全圆形状全部配 `corner-shape: round`）；
+  Switch 对齐官方 `ui-primitives`（36×20、关闭态滑块恒亮 token）；
+- **词典补齐官方 8 语言**（zh/en/ja/es/fr/de/ru/pt，153 键同集），locale 注册包进
+  `ctx.effect`；`locale/*.json` 只保留 `meta.title/description` 供市场索引；
+- **错误处理**：`HubError` 保留，全部 throw 站点显式 `code`，废除中文猜码
+  `guessCode`；未知异常统一归 `internal`；
+- **日志**：诊断统一走 `ctx.logger`（`dsh-agent-plugin-hub: ` 前缀），`hub.log`
+  落盘双写保留；
+- **访问控制**：`isAdmitted` 补齐 `sec-fetch-site: cross-site` 拒绝（对齐官方
+  fence；回环、同源 Origin、null 拒绝此前已具备）；
+- **测试**：node:test 全量迁 vitest（150 个离线用例），客户端组件用
+  `@vitest-environment jsdom` + @testing-library/react 按用户可见行为断言；
+  旧 client.js vm 冒烟与 CSS 字符串探针的**意图**以新形态重写
+  （corner-shape 配对回归、hover 门控、无 blur、无本地调色板、产物工厂闭包形态）；
+- **破坏性变更**：`exports["./client"]` 改指 `lib/client.js`；HTTP API 契约与
+  磁盘数据（state/marketplaces v2、安装 cache 布局）保持不变，旧数据自动可读。
 
 ## 0.3.10 变更（修复全圆形状被宿主 superellipse 压方）
 
@@ -163,8 +192,8 @@ DSH 的技能、命令、hooks 与 MCP。
 ## 首页左侧栏：智能体插件（0.3.6）
 
 位置：**首页左侧栏**，顺序为 **插件(0) → 智能体插件(5) → 自动化任务(10) → 上下文洞察(20)**。
-面板由 `client.js` 注册到 `sidebar.panellist`、`main`（key `agent-plugin`）与
-`shell.overlay`（弹窗 / Toast 框架级浮层）。
+面板由 `src/client/index.ts`（构建产物 `lib/client.js`）注册到 `sidebar.panellist`、
+`main`（key `agent-plugin`）与 `shell.overlay`（弹窗 / Toast 框架级浮层）。
 
 - **商店列表**：来源分段只有「个人」；按市场源分组（组间按最近刷新倒序）、组内双列卡片；
   >6 张显示「收起」/「查看 A、B，以及另外 N 个」；搜索按名称/显示名/描述/分类/作者/
@@ -333,21 +362,25 @@ home 解析：配置 `home` → `DSH_AGENT_PLUGIN_HUB_HOME` → `~/.dsh/agent-pl
     hooks: true    # 设为 false 时只保留 hooks 清单，不执行外部命令
 ```
 
-`cordis.patch.yml` 的改动约 1 秒热重载；`lib/*.js` 的改动需要重启宿主。
+`cordis.patch.yml` 的改动约 1 秒热重载；`lib/` 构建产物的改动需要重启宿主（改源码后先 `npm run build`）。
 
 ## 开发
 
 ```powershell
 cd packages\dsh-agent-plugin-hub
-npm run check   # node --check 全部 lib 文件与 client.js
-npm test        # node --test：147 个用例，零运行时依赖，不访问网络
+npm run check   # tsc --noEmit（node + client 双 tsconfig）
+npm test        # vitest run：150 个离线用例，零运行时依赖，不访问网络
+npm run build   # tsdown：lib/index.js（ESM 宿主半）+ lib/client.js（CJS 浏览器工厂，产物入库）
 ```
 
 测试覆盖：三格式探测与优先级、marketplace 解析（含 listing 元数据）、市场自动识别各分支、
 市场添加/刷新/移除（含移除后孤立）、安装/重装/禁用启用/更新/回滚/卸载、重启恢复、state
 损坏自检、路径穿越与非法名拒绝、git 市场重启回归、版本比较与更新判定、schema v1→v2 迁移、
 技能 provider、插件命令、hooks 事件映射与阻断、MCP 清单、`/store` / `/describe` / `/icon`
-与访问控制、单写互斥与批量更新；以及 Client 模块注册、纯函数与组件冒烟。
+与访问控制（含 `sec-fetch-site` fence）、单写互斥与批量更新；客户端侧 presentation 纯函数、
+控制器（加载/竞态守卫/串行队列/Toast/弹窗）、Switch/Menu/弹窗/卡片/面板/浮层组件行为
+（jsdom）、样式回归守卫（corner-shape 配对、hover 门控、无 blur、无本地调色板）与构建产物
+工厂闭包形态。
 
 Host API 契约与数据结构见 [`docs/HOST-API.md`](docs/HOST-API.md)。
 

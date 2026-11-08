@@ -1,0 +1,12 @@
+{
+  // Host half: server modules (src/*.ts) and the node-side specs that drive
+  // them. Runs under plain node after tsdown emits lib/index.js.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2024"],
+    "types": ["node"],
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts", "tests/**/*.ts", "tsdown.config.ts", "vitest.config.ts"],
+  "exclude": ["src/client", "tests/**/*.client.spec.ts", "tests/**/*.client.spec.tsx"]
+}

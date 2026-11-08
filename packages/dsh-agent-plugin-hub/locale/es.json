@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Plugins de agente",
+    "description": "Añade mercados de plugins de agente, instala plugins de formato Claude Code y activa o desactiva sus skills, comandos, hooks y servidores MCP uno por uno."
+  }
+}

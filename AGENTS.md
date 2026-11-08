@@ -22,13 +22,14 @@
 4. **禁止 `import '@deepseek-ai/*'`**：profile 的 `autoInstallPeers: false`，peer 不会安装；宿主能力一律走 `ctx.*`，确需助手函数就写进 `dependencies` 并与宿主版本对齐。
 5. **不写多余的 `engines.dsh`**：写了会严格校验，版本不匹配直接拒装。
 6. **服务就绪**：`skills` / `webServer` / `subprocess` 可能晚到，用 `ctx.inject([...], cb)` 延迟注册；清理用 `ctx.effect(() => () => …)`。
-7. **客户端插件**：`dsh.client` 声明 `platform/inject`，`exports` 暴露 `"./client"`，入口用 `window.__ModuleLoader__.load({ id, factory(require) { … } })`；样式不得污染全局，主题走宿主 CSS 变量。
+7. **客户端插件**：`dsh.client` 声明 `platform/inject`，`exports` 暴露 `"./client"` 指向**构建产物** `lib/client.js`（tsdown 产出 CJS 工厂闭包，banner 注入 `window.__ModuleLoader__.load({ id, factory(require){…} })`）；样式一律 CSS Modules（`*.module.css`，构建链编译成 `<style data-plugin-css>` 注入），不得污染全局，主题只消费 `--dsw-alias-*` token。
 8. **locale 语言 id 小写**：`en`、`zh`、`zh-cn`（写成 `zh-CN` 会被索引校验拒绝）。
-9. **离线测试**：每个改动都要保证 `npm run check` 与 `npm test` 通过；测试不访问网络、不依赖真实宿主。
+9. **离线测试**：每个改动都要保证 `npm run check`（tsc 双程序）与 `npm test`（vitest）通过；测试不访问网络、不依赖真实宿主。
 10. **版本线**：预览 `X.Y.Z-preview.N`（dist-tag `preview`），正式 `X.Y.Z`（dist-tag `latest`）；预览与正式同核心。
 11. **禁止整包 `npm unpublish`**：会触发 24 小时冷却且名字裸奔；已发布版本号不可复用。要隐藏版本用 `npm deprecate`。
 12. **索引由生成器产出**：不要手改 `index.json` 的版本/来源字段；跑 `node scripts\build-index.mjs`。
 13. **展示元数据双写**：官方读取 `locale/*.json` 的 `meta.title/description`（另有 `package.json.icon`）；本仓库生成器读取 `package.json` 的 `dsh.market`。两处必须保持一致，改一处就要同步另一处。
+14. **构建产物入库**：git 源安装直接取仓库文件，`lib/` 是 tsdown 构建产物且**必须提交**；源码在 `src/`（服务端 `*.ts` + 客户端 `client/*.tsx`），改完源码必须 `npm run build` 再提交。
 
 ## 修改原则（每次改动前先读）
 
@@ -39,10 +40,10 @@
 ## 工作流程
 
 1. 读 [`docs/PLUGIN-DEV.md`](docs/PLUGIN-DEV.md) 与 [`README.md`](README.md)；
-2. 改代码（保持零运行时依赖、无构建链优先）；
-3. 在包目录跑 `npm run check && npm test`；
+2. 改代码（TypeScript + JSX + CSS Modules；保持零运行时依赖，工具链全在 devDependencies）；
+3. 在包目录跑 `npm run check && npm test && npm run build`（tsc 双程序 + vitest 离线 + tsdown 产物）；
 4. 若涉及包版本/展示元数据：`node scripts\build-index.mjs`；
-5. `git commit`（**禁止添加 Co-Authored-By 类作者信息**）；
+5. `git commit`（**禁止添加 Co-Authored-By 类作者信息**；`lib/` 产物与源码同提交）；
 6. `git push origin release-0.0.1`；
 7. 涉及 npm 发布时按 §8 执行，并 `npm view <pkg> versions dist-tags` 验证。
 
@@ -50,20 +51,21 @@
 
 ```powershell
 cd packages\dsh-agent-plugin-hub
-npm run check        # node --check 全部源文件
-npm test             # node --test（离线）
+npm run check        # tsc --noEmit（node + client 双 tsconfig）
+npm test             # vitest run（离线）
+npm run build        # tsdown：lib/index.js（ESM 宿主半）+ lib/client.js（CJS 浏览器半）
 
-cd E:\workspace\dsh-plugins
+cd F:\workspace\dsh-plugins
 node scripts\build-index.mjs            # 生成 index.json
 node scripts\serve-index.mjs            # 本地起索引服务（http://127.0.0.1:8231/index.json）
 ```
 
 ## 仓库现状（以文件为准）
 
-- 插件包：`packages/dsh-agent-plugin-hub`，版本见其 `package.json`；
+- 插件包：`packages/dsh-agent-plugin-hub`，版本见其 `package.json`（当前 `0.1.0-preview.1`，官方化工具链重构线：TypeScript + JSX + CSS Modules + tsdown + vitest）；
 - 发布分支：`release-0.0.1`（市场索引从该分支的 `index.json` 读取）；
 - 索引源：Git（`DSH_PLUGINS_SOURCE` 可切 npm）；
-- 发布线：`0.0.1-preview.N`（`preview`）→ 正式 `0.0.1`（`latest`）。
+- 发布线：`0.1.0-preview.N`（`preview`）→ 正式 `0.1.0`（`latest`）。
 
 ## 沟通与提交约定
 

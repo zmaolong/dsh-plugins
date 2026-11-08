@@ -1,12 +1,12 @@
 {
   "name": "dsh-agent-plugin-hub",
-  "version": "0.0.1-preview.5",
+  "version": "0.1.0-preview.1",
   "description": "Agent Plugin Hub (智能体插件) for DSH: host Claude Code / CodeBuddy / ZCode agent plugins as DSH skills, commands, hooks and MCP, with a ZCode-style plugin store panel.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
     ".": "./lib/index.js",
-    "./client": "./client.js",
+    "./client": "./lib/client.js",
     "./cordis.patch.yml": "./cordis.patch.yml",
     "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.svg",
@@ -15,7 +15,6 @@
   "icon": "./icon.svg",
   "files": [
     "lib",
-    "client.js",
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",
@@ -24,9 +23,26 @@
     "package.json"
   ],
   "scripts": {
-    "check": "node --check client.js && node --check lib/index.js && node --check lib/hub.js && node --check lib/store.js && node --check lib/migrate.js && node --check lib/version.js && node --check lib/manifest.js && node --check lib/market.js && node --check lib/installer.js && node --check lib/capabilities.js && node --check lib/frontmatter.js && node --check lib/skills.js && node --check lib/plugin-commands.js && node --check lib/hooks.js && node --check lib/mcp.js && node --check lib/report.js && node --check lib/commands.js && node --check lib/formats.js && node --check lib/ui-data.js && node --check lib/ui-routes.js",
-    "test": "node --test",
-    "test:verbose": "node --test --test-reporter spec test/"
+    "check": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.client.json --noEmit",
+    "build": "tsdown",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^22.20.1",
+    "@types/react": "~18.3.1",
+    "@types/react-dom": "~18.3.0",
+    "@vitest/coverage-v8": "^4.1.11",
+    "clsx": "^2.1.1",
+    "jsdom": "29.1.1",
+    "lightningcss": "^1.33.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tsdown": "^0.22.2",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.11"
   },
   "license": "MIT",
   "repository": {

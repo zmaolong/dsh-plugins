@@ -1,0 +1,16 @@
+/* Overlay root inside the shell.overlay slot: frames the mask/toasts without
+ * intercepting clicks itself. */
+
+.overlayRoot {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  font-size: 14px;
+  color: var(--dsw-alias-label-primary);
+  overflow-wrap: break-word;
+  pointer-events: none;
+}
+
+.overlayRoot > * {
+  pointer-events: none;
+}

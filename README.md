@@ -45,15 +45,15 @@ dsh-plugins/
 │   ├── build-index.mjs
 │   └── serve-index.mjs
 └── packages/
-    └── dsh-agent-plugin-hub/   # 智能体插件运行时与市场（0.0.1-preview.1，ZCode 风格商店面板）
-        ├── package.json
+    └── dsh-agent-plugin-hub/   # 智能体插件运行时与市场（0.1.0-preview.1，ZCode 风格商店面板）
+        ├── package.json        # devDependencies 工具链（TS/tsdown/vitest），dependencies 为空
         ├── cordis.patch.yml
         ├── README.md
-        ├── client.js           # 商店面板：sidebar.panellist / main / shell.overlay
-        ├── locale/             # en / zh 展示元数据
+        ├── src/                # 源码：服务端 *.ts（函数插件形）+ client/*.tsx（组件 + *.module.css）
+        ├── locale/             # 8 语言展示元数据（en/zh/ja/es/fr/de/ru/pt）
         ├── docs/HOST-API.md    # 宿主 API 侦察结论与当前接口
-        ├── lib/                # 19 个 ES 模块，零运行时依赖（含 migrate/version）
-        └── test/               # node --test：fixtures + 147 个用例
+        ├── lib/                # tsdown 构建产物（入库）：lib/index.js ESM 宿主半 + lib/client.js 浏览器工厂
+        └── tests/              # vitest：fixtures + 150 个离线用例（*.spec / *.client.spec）
 ```
 
 ### 分支与发布
@@ -61,7 +61,7 @@ dsh-plugins/
 | 分支 | 内容 |
 |---|---|
 | `main` | 文档与仓库说明（本 README） |
-| `release-0.0.1` | 当前全部插件代码、脚本、`HANDOFF.md` 与生成的 `index.json`；市场索引从该分支读取（分支名沿用首个发布版本，包版本为 `0.0.1-preview.1`） |
+| `release-0.0.1` | 当前全部插件代码、脚本与生成的 `index.json`；市场索引从该分支读取（分支名沿用首个发布版本，当前包版本为 `0.1.0-preview.1`） |
 
 当前发布分支为 `release-0.0.1`。在 DSH 插件页 → **发现** → **添加索引源** 时填：
 
@@ -110,7 +110,7 @@ dsh --profile web
 
 | 包 | 作用 | 代码要点 |
 |---|---|---|
-| `dsh-agent-plugin-hub` | 在 DSH 里托管 Claude Code、CodeBuddy、ZCode 等**智能体插件**（Agent Plugins）：个人市场、安装/更新/回滚、能力注入与逐项启停，以及 ZCode 风格商店面板 | 组合包 + `/agent-plugin` 命令 + 首页左侧栏商店面板（个人分段 / 按市场分组 / 详情 / 管理 / 市场源 / 自动识别来源）；schema v2 自动迁移；skills/commands/hooks 注入，MCP 清单标注；147 个 `node --test` 用例 |
+| `dsh-agent-plugin-hub` | 在 DSH 里托管 Claude Code、CodeBuddy、ZCode 等**智能体插件**（Agent Plugins）：个人市场、安装/更新/回滚、能力注入与逐项启停，以及 ZCode 风格商店面板 | 组合包 + `/agent-plugin` 命令 + 首页左侧栏商店面板（个人分段 / 按市场分组 / 详情 / 管理 / 市场源 / 自动识别来源）；schema v2 自动迁移；skills/commands/hooks 注入，MCP 清单标注；TypeScript + tsdown + vitest 官方化工具链，150 个离线用例 |
 
 > 命名说明：Agent 直译“代理”不准确、“助手”易混淆；单叫“插件”会与 DSH 自身插件混淆。
 > 用**智能体插件**（英文 Agent Plugins）加限定词区分；代码里的包名与 `/agent-plugin` 命令不变。
@@ -126,9 +126,9 @@ dsh --profile web
 > 完整规范（骨架、宿主端/客户端契约、安装调试、版本发布、市场索引）见 [`docs/PLUGIN-DEV.md`](docs/PLUGIN-DEV.md)；下面是速查。
 
 1. 参考 `packages/dsh-agent-plugin-hub` 的骨架，复制成你的包名目录。
-2. 改 `package.json`：`name`、`version`、`description`；改 `locale/en.json`、`locale/zh.json` 的 `meta.title` / `meta.description`（**DSH 运行时读取的官方展示元数据**）；本仓库再在 `package.json` 的 `dsh.market` 里维护一份供 `scripts/build-index.mjs` 生成索引用，两处保持一致。
+2. 改 `package.json`：`name`、`version`、`description`；改 `locale/en.json`、`locale/zh.json` 等 8 语言文件的 `meta.title` / `meta.description`（**DSH 运行时读取的官方展示元数据**）；本仓库再在 `package.json` 的 `dsh.market` 里维护一份供 `scripts/build-index.mjs` 生成索引用，两处保持一致。
 3. 改 `cordis.patch.yml`：`id` 换成本插件独有的行 id，`name` 换成**自己的包名**。
-4. 改 `lib/index.js`：`export const name` 和 `apply` 里的逻辑。
+4. 改 `src/index.ts`：`export const name` 和 `apply` 里的逻辑；客户端改 `src/client/`，然后 `npm run build`（`lib/` 产物与源码一起提交）。
 5. 跑 `node scripts\build-index.mjs` 重新生成索引。
 
 骨架要求（缺一个都装不上）：
@@ -238,10 +238,10 @@ node scripts\build-index.mjs
 
 > 索引**没有签名**：条目里的包名、版本只是索引的声明，最终装的是什么由被装包的 manifest 决定。所以自建源只放自己的插件，别把它当审核机制。
 
-> **npm 首发策略（试验期）**：`0.0.1-preview.N` 为试验线（当前 `0.0.1-preview.1`），
+> **npm 首发策略（试验期）**：`0.1.0-preview.N` 为试验线（当前 `0.1.0-preview.1`，官方化工具链重构后的版本线），
 > `publishConfig.tag` 固定为 `preview`，`latest` 暂不指向任何版本。
 > 市场索引与包版本保持同步（git 源），因此 `index.json` 里的版本号始终等于 `packages/*/package.json`。
-> 首个正式版定为 `0.0.1`（即 `0.0.1-preview.N` 的稳定版），届时 `npm publish --tag latest`，再切 `DSH_PLUGINS_SOURCE=npm` 重新生成索引。
+> 首个正式版定为 `0.1.0`，届时 `npm publish --tag latest`，再切 `DSH_PLUGINS_SOURCE=npm` 重新生成索引。
 
 ---
 
@@ -271,7 +271,7 @@ node scripts\build-index.mjs
 
 - **`not-a-bundle`**：包没声明 `dsh.bundle.patch`。
 - **`engines.dsh` / DSH peer 不匹配**：写了 `engines.dsh` 就会严格校验，版本不匹配会在 pnpm 之前被拒；不声明就不检查，但会按 `@deepseek-ai/dsh*` peer 依赖检查（没有 peer 依赖的包视为兼容）。
-- **改了代码不生效**：`cordis.patch.yml` 的改动约 1 秒热重载；`lib/index.js` 的改动一般要重启宿主（桌面端重启应用，CLI 重启 `dsh`）。
+- **改了代码不生效**：`cordis.patch.yml` 的改动约 1 秒热重载；`lib/index.js` 的改动一般要重启宿主（桌面端重启应用，CLI 重启 `dsh`）；改源码后记得 `npm run build`（`lib/` 是入库产物）。
 - **索引看起来是旧的**：索引缓存约 10 分钟，刷新发现页或重新添加源。
 - **想一次装完所有插件**：索引是逐个装的；真要"一装全装"，就做一个打包 bundle，在它的 `cordis.patch.yml` 里 insert 多行——但那样版本会绑在一起，不适合独立迭代。
 - **图标不显示**：bundle 图标支持 SVG/PNG/JPEG/WebP（≤ 256 KiB，自包含）；索引图标内联 ≤ 32 KiB、相对路径或 https 跨源，别写 http 图床。

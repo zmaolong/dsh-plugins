@@ -48,6 +48,8 @@
 - `Host` 头必须是 `127.0.0.1` / `localhost` / `[::1]`（含端口），否则 403；
 - 非 GET/HEAD 请求额外要求：`Origin` 缺省或等于 `http://<Host 头>`，且
   `Content-Type` 含 `application/json`（阻断跨站表单 CSRF）；
+- 浏览器发送的 `sec-fetch-site: cross-site` 一律拒绝（GET/HEAD 除外）——跨站上下文
+  发起的请求无论 Origin 如何都不放行（0.1.0 起新增）；
 - JSON 请求体上限 256 KiB；
 - 所有可能联网/写盘的动作只允许 POST；GET 一律只读。
 

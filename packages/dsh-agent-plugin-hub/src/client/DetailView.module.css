@@ -1,0 +1,266 @@
+/* Detail view: header, capability sections, information block, advanced
+ * disclosure. Shares the page-frame classes from panel.module.css. */
+
+.detail {
+  gap: 32px;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px;
+  min-width: 0;
+}
+
+.headMain {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.titleLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  min-width: 0;
+  word-break: break-word;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--dsw-alias-label-primary);
+}
+
+.desc {
+  margin: 0;
+  font-size: 14px;
+  color: var(--dsw-alias-label-secondary);
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.warningLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  color: var(--dsw-alias-state-warn-primary);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.compHead {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 0.5px solid var(--dsw-alias-border-l2);
+}
+
+.compTitle {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary);
+}
+
+.compCount {
+  font-size: 14px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.compList {
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+}
+
+.compRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 0;
+  border-bottom: 0.5px solid color-mix(in srgb, var(--dsw-alias-border-l2) 55%, transparent);
+}
+
+.compRow:last-child {
+  border-bottom: 0;
+}
+
+.compIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--dsw-radius-sm);
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-secondary);
+}
+
+.compBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.compName {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--dsw-alias-label-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compDesc {
+  max-width: 100%;
+  margin-top: 2px;
+  overflow: hidden;
+  font-size: 14px;
+  color: var(--dsw-alias-label-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compSide {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.compSideStack {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.infoRow {
+  display: grid;
+  grid-template-columns: 128px minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+}
+
+.infoLabel {
+  font-size: 14px;
+  color: var(--dsw-alias-label-secondary);
+  white-space: nowrap;
+}
+
+.infoValue {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px;
+  color: var(--dsw-alias-label-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.infoValue a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--dsw-alias-label-primary);
+  text-decoration: none;
+}
+
+.infoValue a > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.infoValue a > svg {
+  flex: none;
+}
+
+@media (hover: hover) {
+  .infoValue a:hover {
+    color: var(--dsw-alias-link);
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-underline-offset: 3px;
+  }
+}
+
+.advanced {
+  border-top: 0.5px solid var(--dsw-alias-border-l2);
+  padding-top: 16px;
+}
+
+.advanced summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--dsw-alias-label-secondary);
+  list-style: none;
+  cursor: pointer;
+}
+
+.advanced summary::-webkit-details-marker {
+  display: none;
+}
+
+.advanced summary:focus-visible {
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .advanced summary:hover {
+    color: var(--dsw-alias-label-primary);
+  }
+}
+
+.chev {
+  display: inline-flex;
+  transition: transform 0.15s ease;
+}
+
+.advanced[open] .chev {
+  transform: rotate(90deg);
+}
+
+.advancedBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}

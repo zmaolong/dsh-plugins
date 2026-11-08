@@ -241,18 +241,19 @@ defer(ctx, ['skills'], (scope) => {
 ```
 
 - `inject` 里列的是宿主提供的客户端模块名（`require` 时可用）；不使用的不要列；
-- 官方仓库的 client 包用 tsdown 共享 preset 构建（🟢 官方约定，仅官方仓库）；**第三方插件无构建链、直接发布 ESM 也可以工作**（🟡 本仓库实测）。
+- 官方仓库的 client 包用 tsdown 共享 preset 构建（🟢 官方约定）；**本仓库同样采用 TypeScript + tsdown 构建链**（🟡 本仓库 0.1.0 起的形态，见 §4.2）：源码写在 `src/client/`（TSX + CSS Modules），`npm run build` 产出 `lib/client.js`。纯 ESM 手写单文件仍是官方允许的替代路径，但不再被本仓库采用。
 
 ### 4.2 入口与模块加载 🟡
 
-`client.js` 是**纯 ESM、无构建步骤**，通过全局模块加载器注册：
+源码入口 `src/client/index.ts` 导出 `apply(ctx)`；**浏览器产物 `lib/client.js` 由 tsdown 生成**：CJS 工厂闭包，banner/footer 注入 `window.__ModuleLoader__.load({ id, factory(require){…} })`，`react` 等基线模块走 loader 的 `require`（external），CSS Modules 编译为 `<style data-plugin-css>` 注入并导出哈希类名表。构建行为对齐官方 `packages/client/tsdown.client.ts` 预设（本仓库自研配置 `tsdown.config.ts`，不 import 官方内部包）。
+
+等价的手写形态（理解产物用，本仓库不再手写）：
 
 ```js
 window.__ModuleLoader__.load({
   id: 'my-dsh-plugin',            // 建议 = 包名
   factory(require) {
     const React = require('react') // 宿主提供
-    const h = React.createElement
 
     return {
       inject: ['slots', 'locale'],
@@ -299,32 +300,30 @@ ctx.slots.inject('shell.overlay', () => ctx.slots.register({
 
 - 客户端不直连外部服务；数据由**宿主端 HTTP 路由**提供，浏览器 `fetch` 前缀地址；
 - 路由挂载用 `ctx.webServer`（可能晚到，用 `ctx.inject(['webServer'], …)`）；
-- 默认只允许本机回环访问；写操作要校验同源 `Origin` 与 JSON body，防止跨站触发（🟡 本仓库实现验证）；
+- 默认只允许本机回环访问；写操作要校验同源 `Origin` 与 JSON body，并拒绝浏览器声明的 `sec-fetch-site: cross-site`，防止跨站触发（🟡 本仓库实现验证）；
 - 路由前缀自定义（如 `/my-plugin/api`），不要占用别人的前缀。
 
 ### 4.5 主题与样式 🟢/🟡
 
-- 优先用宿主 CSS 变量 / 主题 token（如 `--dsw-alias-*`），暗色用 `body[data-ds-dark-theme]` 区分；
-- 官方样式规范见 `docs/web-styling.md`（§0.1）；本仓库实测可用上述变量；
-- 样式注入用 `<style data-plugin="…">` 并注册清理；**避免全局选择器**污染宿主 UI；
+- 组件样式一律 **CSS Modules**（`*.module.css` 与组件同目录），构建链编译并注入 `<style data-plugin-css>`；**避免全局选择器**污染宿主 UI；
+- 只消费宿主 `--dsw-alias-*` 语义 token，不自带调色板、不写主题选择器（暗色由 token 自动切换）；
+- 官方样式规范见 `docs/web-styling.md`（§0.1），本仓库实测要点：`:hover` 包 `@media (hover: hover)`；弹窗遮罩不加 blur；elevated 面 `border:0` + `--dsw-elevation-*` 阴影；中性边框 0.5px hairline；**全圆形状（999px/50%）必须配 `corner-shape: round`** 退出宿主全局 superellipse；
 - 图标、颜色等展示元数据放 `locale/`，不要写死在中英文文案里。
 
 ### 4.6 locale 🟢
 
-```js
-const locale = ctx.locale
-locale?.register?.('myPlugin', 'en', EN_DICT)
-locale?.register?.('myPlugin', 'zh', ZH_DICT)
-locale?.register?.('myPlugin', 'zh-cn', ZH_DICT)
+```ts
+// src/client/index.ts — 一次注册全语言（键集一致），由 ctx.effect 管生命周期
+ctx.effect(() => ctx.locale.register('myPlugin', { zh, en, ja, es, fr, de, ru, pt }), 'my-plugin: dictionaries')
 ```
 
-语言 id 必须**小写**：`en`、`zh`、`zh-cn`（官方索引规范同此要求）。
+语言 id 必须**小写**：`en`、`zh`、`zh-cn`（官方索引规范同此要求）；词典补齐官方 8 语言（zh/en/ja/es/fr/de/ru/pt）。
 
 ### 4.7 热更新 🟡
 
 - `cordis.patch.yml` 改动约 1 秒热重载；
-- 宿主端 `lib/*` 改动一般需重启宿主（桌面端重启应用，CLI 重启 `dsh`）；
-- 客户端 `client.js` 改动刷新页面即可（开发时可用 HMR）。
+- 宿主端 `lib/*` 改动一般需重启宿主（桌面端重启应用，CLI 重启 `dsh`）；改源码后先 `npm run build`；
+- 客户端 `lib/client.js` 重新构建后刷新页面即可（开发时可用 HMR）。
 
 ---
 
@@ -374,7 +373,7 @@ cd packages/my-dsh-plugin
 npm pack --dry-run
 ```
 
-- 运行时零依赖最佳（本仓库参考实现零运行时依赖、零构建链）。
+- 运行时零依赖最佳（`dependencies` 保持为空；react 与宿主服务由宿主注入，工具链全在 `devDependencies`）。
 
 ---
 
@@ -480,15 +479,17 @@ node scripts\build-index.mjs
 
 ```powershell
 cd packages/my-dsh-plugin
-npm run check   # node --check 全部源文件
-npm test        # node --test，零网络、零依赖
+npm run check   # tsc --noEmit（node + client 双 tsconfig）
+npm test        # vitest run，零网络、零真实宿主
+npm run build   # tsdown 产物（lib/ 入库）
 ```
 
 规则：
 
-- 测试**必须离线可跑**（不访问网络、不依赖真实宿主），fixture 放 `test/fixtures/`；
-- 每个功能点补测试；改动不应降低用例数；
+- 测试**必须离线可跑**（不访问网络、不依赖真实宿主），fixture 放 `tests/fixtures/`；服务端用例 `*.spec.ts`（node 环境），客户端组件用例 `*.client.spec.tsx`（首行 `// @vitest-environment jsdom` + @testing-library/react，断言用户可见行为而非类名）；
+- 每个功能点补测试；改动不应降低用例数；每个 registry/resource 补 dispose（HMR-safety）用例；
 - 受限沙箱里 Node 子进程 / Git spawn 可能被拒（`EPERM`），涉及 git 的用例要在本机完整权限下跑；
+- 仓库 `core.autocrlf=true`：对源码做字符串探针的测试先归一化 `\r\n`（优先用行为断言）；
 - 质量门通过后再提交。
 
 **如何复核本文档的 🟡/🟠 条目**（给下一个 Agent）：
@@ -523,10 +524,10 @@ npm test        # node --test，零网络、零依赖
 每次改动前后逐项确认：
 
 - [ ] `package.json` 有 `dsh.bundle.patch`；`cordis.patch.yml` 行 `name` = 包名
-- [ ] `files` 覆盖全部运行时文件；`npm pack --dry-run` 内容正确
-- [ ] 没有 `import '@deepseek-ai/*'`；没有多余的 `engines.dsh`
+- [ ] `files` 覆盖全部运行时文件（含 `lib/` 产物）；`npm pack --dry-run` 内容正确
+- [ ] 没有 `import '@deepseek-ai/*'`；没有多余的 `engines.dsh`；`dependencies` 为空
 - [ ] 宿主端服务用 `ctx.inject` 延迟获取；清理用 `ctx.effect`
-- [ ] 客户端样式不污染全局；locale id 小写
+- [ ] 客户端样式不污染全局（CSS Modules）；locale id 小写；`npm run build` 已跑且 `lib/` 与源码同提交
 - [ ] 展示元数据在 `locale/*.json` 的 `meta.title/description`（官方）与本仓库 `dsh.market`（生成器）之间保持一致
 - [ ] `npm run check` 与 `npm test` 通过（离线）
 - [ ] 版本号符合发布线（`-preview.N` / 正式）
