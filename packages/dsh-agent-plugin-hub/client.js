@@ -358,14 +358,14 @@ window.__ModuleLoader__.load({
 .aph-btn.icon:hover:not(:disabled){background:var(--aph-hover)}
 .aph-btn.primary{background:var(--aph-primary);border-color:transparent;color:var(--aph-primary-fg)}
 .aph-btn.primary:hover:not(:disabled){background:color-mix(in srgb,var(--aph-primary) 80%,transparent);color:var(--aph-primary-fg)}
-.aph-btn.pill{border-radius:999px}
+.aph-btn.pill{border-radius:999px;corner-shape:round}
 .aph-btn.danger{background:var(--aph-danger);border-color:transparent;color:var(--aph-danger-fg)}
 .aph-btn.danger:hover:not(:disabled){background:color-mix(in srgb,var(--aph-danger) 90%,transparent)}
 .aph-btn.secondary-icon{width:32px;padding:0;border:1px solid transparent;background:var(--aph-secondary);color:var(--aph-fg)}
 .aph-btn.secondary-icon:hover:not(:disabled){color:var(--aph-fg);background:color-mix(in srgb,var(--aph-secondary) 80%,transparent)}
 .aph-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px}
 .aph-seg{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px}
-.aph-seg-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;border:0;background:transparent;color:var(--aph-fg-subtle);font:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .12s ease,color .12s ease}
+.aph-seg-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;corner-shape:round;border:0;background:transparent;color:var(--aph-fg-subtle);font:inherit;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;transition:background .12s ease,color .12s ease}
 .aph-seg-pill:hover{background:var(--aph-hover);color:var(--aph-fg)}
 .aph-seg-pill[aria-pressed="true"]{background:var(--aph-active);color:var(--aph-fg)}
 .aph-seg-pill:focus-visible{outline:2px solid var(--aph-focus);outline-offset:1px}
@@ -404,12 +404,12 @@ window.__ModuleLoader__.load({
 .aph-card .aph-menu-wrap{opacity:0;transition:opacity .12s ease}
 .aph-card:hover .aph-menu-wrap,.aph-card:focus-within .aph-menu-wrap,.aph-card .aph-menu[data-open="true"]{opacity:1}
 @media (hover:none){.aph-card .aph-menu-wrap{opacity:1}}
-.aph-badge{display:inline-flex;flex:none;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:999px;font-size:11px;line-height:1;white-space:nowrap;color:var(--aph-fg-subtle);border:1px solid var(--aph-border)}
+.aph-badge{display:inline-flex;flex:none;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:999px;corner-shape:round;font-size:11px;line-height:1;white-space:nowrap;color:var(--aph-fg-subtle);border:1px solid var(--aph-border)}
 .aph-badge.success{color:var(--aph-success);border-color:transparent;background:var(--aph-success-surface)}
 .aph-badge.warn{color:var(--aph-warning);border-color:transparent;background:var(--aph-warning-surface)}
 .aph-badge.error{color:var(--aph-danger);border-color:transparent;background:color-mix(in srgb,var(--aph-danger) 12%,transparent)}
 .aph-badge.plain{border-color:transparent;background:var(--aph-surface-hover)}
-.aph-update-badge{display:inline-flex;flex:none;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:999px;font-size:11px;line-height:1;white-space:nowrap;color:var(--aph-success);background:var(--aph-success-surface)}
+.aph-update-badge{display:inline-flex;flex:none;align-items:center;gap:4px;height:20px;padding:0 8px;border-radius:999px;corner-shape:round;font-size:11px;line-height:1;white-space:nowrap;color:var(--aph-success);background:var(--aph-success-surface)}
 .aph-menu-wrap{position:relative;display:inline-flex}
 .aph-menu-backdrop{position:fixed;inset:0;z-index:40;background:transparent}
 .aph-menu{position:absolute;top:calc(100% + 4px);right:0;z-index:41;min-width:168px;padding:4px;border-radius:12px;border:1px solid var(--aph-border);background:var(--aph-card);box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1)}
@@ -418,9 +418,11 @@ window.__ModuleLoader__.load({
 .aph-menu-item.danger{color:var(--aph-danger)}
 .aph-menu-sep{height:1px;margin:4px 6px;background:var(--aph-border)}
 /* 开关对齐宿主 ui-primitives Switch：36×20 轨道 + 2px 内边距，16px 滑块用 transform 位移；
-   关闭态滑块读 --aph-switch-thumb（两主题恒亮），开启态读前景色与品牌轨道形成对比。 */
-.aph-switch{position:relative;display:inline-flex;flex:none;width:36px;height:20px;border-radius:999px;border:0;background:var(--aph-switch-track);padding:2px;cursor:pointer;transition:background .15s ease}
-.aph-switch::after{content:"";display:block;flex:none;width:16px;height:16px;border-radius:50%;background:var(--aph-switch-thumb);transition:transform .12s ease,background .12s ease}
+   关闭态滑块读 --aph-switch-thumb（两主题恒亮），开启态读前景色与品牌轨道形成对比。
+   宿主全局给所有元素套 superellipse(1.5)，全圆形状必须配 corner-shape:round 退出，
+   否则滑块被压成方圆、胶囊两端被削方（见宿主 corner-shape.css 的配对规范）。 */
+.aph-switch{position:relative;display:inline-flex;flex:none;width:36px;height:20px;border-radius:999px;corner-shape:round;border:0;background:var(--aph-switch-track);padding:2px;cursor:pointer;transition:background .15s ease}
+.aph-switch::after{content:"";display:block;flex:none;width:16px;height:16px;border-radius:50%;corner-shape:round;background:var(--aph-switch-thumb);transition:transform .12s ease,background .12s ease}
 .aph-switch[aria-checked="true"]{background:var(--aph-primary)}
 .aph-switch[aria-checked="true"]::after{background:var(--aph-primary-fg);transform:translateX(16px)}
 .aph-switch:disabled{opacity:.5;cursor:not-allowed}
@@ -438,7 +440,7 @@ window.__ModuleLoader__.load({
 .aph-warning{border:1px solid color-mix(in srgb,var(--aph-warning) 35%,transparent);background:var(--aph-warning-surface);color:var(--aph-warning);padding:10px 12px;border-radius:10px;font-size:13px;display:flex;align-items:flex-start;gap:8px;word-break:break-word}
 .aph-warning>span{min-width:0;overflow-wrap:anywhere}
 .aph-warning .aph-inline-btn{margin-left:auto}
-.aph-spinner{display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid color-mix(in srgb,currentColor 30%,transparent);border-top-color:currentColor;animation:aph-spin .8s linear infinite;flex:none}
+.aph-spinner{display:inline-block;width:14px;height:14px;border-radius:50%;corner-shape:round;border:2px solid color-mix(in srgb,currentColor 30%,transparent);border-top-color:currentColor;animation:aph-spin .8s linear infinite;flex:none}
 .aph-spinner.large{width:20px;height:20px;border-width:2.5px}
 @keyframes aph-spin{to{transform:rotate(360deg)}}
 .aph-back{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 8px;margin-left:-8px;border:0;border-radius:8px;background:transparent;color:var(--aph-fg-subtle);font:inherit;font-size:14px;cursor:pointer;width:fit-content;white-space:nowrap}

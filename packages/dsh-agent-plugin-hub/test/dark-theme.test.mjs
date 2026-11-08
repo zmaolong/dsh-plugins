@@ -89,3 +89,17 @@ test('图标：使用 ZCode 的 lucide 形状（Store / Blocks / Puzzle / Rotate
   assert.ok(source.includes('puzzle: ['), '侧栏图标应为 lucide Puzzle')
   assert.ok(source.includes('rotateCcw: ['), '回滚图标应为 lucide RotateCcw')
 })
+
+test('全圆形状：宿主全局 superellipse 下，999px/50% 圆角必须配 corner-shape:round', () => {
+  // 宿主 ui-theme 对所有元素与伪元素套 superellipse(1.5)；规范要求全圆形状
+  // （胶囊 999px / 圆 50%）在自己的规则里配 corner-shape:round 退出，否则
+  // 滑块被压成方圆、胶囊两端被削方。
+  const rules = source.match(/[^{}]+\{[^}]*\}/gu) ?? []
+  let checkedRules = 0
+  for (const rule of rules) {
+    if (!/border-radius:(999px|50%)/u.test(rule)) continue
+    checkedRules += 1
+    assert.ok(rule.includes('corner-shape:round'), `全圆形状须配 corner-shape:round：${rule.slice(0, 80)}`)
+  }
+  assert.ok(checkedRules >= 7, `应覆盖全部全圆形状（开关/滑块/胶囊按钮/徽标/分段/加载圈），实得 ${checkedRules}`)
+})

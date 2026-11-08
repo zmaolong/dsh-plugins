@@ -1,9 +1,9 @@
 # dsh-agent-plugin-hub
 
-> **试验性预览版（`0.0.1-preview.4`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
+> **试验性预览版（`0.0.1-preview.5`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
 > npm 上只发布 `preview` dist-tag（`latest` 暂不指向本版本）。
 > 需要安装时请锁定精确版本：
-> `dsh plugin --profile web add dsh-agent-plugin-hub@0.0.1-preview.4`。
+> `dsh plugin --profile web add dsh-agent-plugin-hub@0.0.1-preview.5`。
 > 版本说明：仓库内 `0.3.x` 是开发期版本号；npm 公开线从 `0.0.1-preview.N` 起步，首个正式版定为 `0.0.1`（预览线的稳定版）。
 
 DSH 的**智能体插件**（Agent Plugins）运行时与市场，带一个 **ZCode「插件市场」同构的商店面板**。
@@ -18,6 +18,16 @@ DSH 的**智能体插件**（Agent Plugins）运行时与市场，带一个 **ZC
 `mcpServers` 等能力。已知格式包括 Claude Code、CodeBuddy、ZCode；它们不是 DSH 插件
 （cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
+
+## 0.3.10 变更（修复全圆形状被宿主 superellipse 压方）
+
+- 宿主 ui-theme 对所有元素与伪元素全局套 `corner-shape: superellipse(1.5)`，
+  其规范要求全圆形状（胶囊 999px / 圆 50%）在自己的规则里配 `corner-shape: round`
+  退出；面板此前未退出，导致开关滑块被压成方圆、胶囊两端被削方（「不够圆」）；
+- 为全部 7 处全圆形状补齐配对：开关轨道、开关滑块、胶囊按钮、分段 pill、
+  徽标、可更新徽标、加载圈；
+- 新增回归测试：逐条检查 CSS 规则，凡 `border-radius: 999px/50%` 必须配
+  `corner-shape: round`；`npm test` 162/162。
 
 ## 0.3.9 变更（启停开关对齐宿主原生 Switch）
 
@@ -368,7 +378,7 @@ E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub
 
 ## 市场索引
 
-发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 `0.0.1-preview.4`）。在 DSH 插件页 → 发现 → 添加索引源：
+发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 `0.0.1-preview.5`）。在 DSH 插件页 → 发现 → 添加索引源：
 
 ```text
 https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json
