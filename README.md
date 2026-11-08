@@ -23,7 +23,11 @@ dsh-plugins/
 ├── index.json                  # 生成物，需要提交
 ├── market.config.json
 ├── package.json
+├── AGENTS.md                   # AI Agent / Harness 工作规范（Claude Code / CodeBuddy / ZCode / Cursor / Codex 等）
+├── CLAUDE.md                   # Claude Code 入口（指向 AGENTS.md）
 ├── README.md
+├── docs/
+│   └── PLUGIN-DEV.md           # DSH 插件开发规范（权威）
 ├── scripts/
 │   ├── build-index.mjs
 │   └── serve-index.mjs
@@ -105,6 +109,8 @@ dsh --profile web
 ---
 
 ## 新建一个插件
+
+> 完整规范（骨架、宿主端/客户端契约、安装调试、版本发布、市场索引）见 [`docs/PLUGIN-DEV.md`](docs/PLUGIN-DEV.md)；下面是速查。
 
 1. 参考 `packages/dsh-agent-plugin-hub` 的骨架，复制成你的包名目录。
 2. 改 `package.json`：`name`、`version`、`description`、`dsh.market` 展示信息。
