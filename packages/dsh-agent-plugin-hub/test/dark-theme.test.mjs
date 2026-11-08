@@ -25,6 +25,10 @@ test('ZCode 调色板：亮/暗两套 Zai token，且不再依赖宿主别名', 
   assert.ok(dark.includes('--aph-primary-fg:#000000'), '暗色主色前景应取 #000000')
   assert.ok(dark.includes('--aph-fg:#d4d4d4'), '暗色前景应取 neutral-300')
   assert.ok(dark.includes('--aph-border:rgba(255,255,255,.1)'), '暗色边框应取白色 10%')
+  assert.ok(light.includes('--aph-switch-track:rgba(13,13,13,.12)'), '亮色关闭轨道应取宿主 border-l3 同款')
+  assert.ok(light.includes('--aph-switch-thumb:#ffffff'), '亮色关闭滑块应为纯白')
+  assert.ok(dark.includes('--aph-switch-track:rgba(255,255,255,.16)'), '暗色关闭轨道应取宿主 border-l3 同款')
+  assert.ok(dark.includes('--aph-switch-thumb:#adb2b8'), '暗色关闭滑块应取宿主 neutral-bluish-400（比轨道亮、不刺眼）')
   assert.equal(source.includes('--dsw-alias-'), false, '样式不应再依赖宿主别名 token')
 })
 
@@ -37,13 +41,16 @@ test('主色按钮：ZCode primary 语义，暗色白底黑字、亮色黑底白
   assert.ok(hover.includes('color-mix(in srgb,var(--aph-primary) 80%,transparent)'), 'primary hover 应取 primary/80')
 })
 
-test('开关：ZCode Switch（选中 primary、未选中 primary/30、滑块 primary-foreground）', () => {
+test('开关：宿主 ui-primitives Switch 同款（36×20 轨道、关闭态滑块恒亮、开启态前景色滑块）', () => {
   const track = source.match(/\.aph-switch\{[^}]+\}/u)?.[0] ?? ''
-  assert.ok(track.includes('color-mix(in srgb,var(--aph-primary) 30%,transparent)'), '未选中滑轨应为 primary/30')
+  assert.ok(track.includes('width:36px;height:20px'), '轨道应为宿主 Switch 的 36×20')
+  assert.ok(track.includes('background:var(--aph-switch-track)'), '关闭态轨道应为专用 token（明暗各自半透明）')
   const thumb = source.match(/\.aph-switch::after\{[^}]+\}/u)?.[0] ?? ''
-  assert.ok(thumb.includes('background:var(--aph-primary-fg)'), '滑块应为 primary-foreground（暗色近黑）')
+  assert.ok(thumb.includes('background:var(--aph-switch-thumb)'), '关闭态滑块应为专用 token（两主题恒亮）')
   const checked = source.match(/\.aph-switch\[aria-checked="true"\]\{[^}]+\}/u)?.[0] ?? ''
   assert.ok(checked.includes('background:var(--aph-primary)'), '选中滑轨应为 primary')
+  const checkedThumb = source.match(/\.aph-switch\[aria-checked="true"\]::after\{[^}]+\}/u)?.[0] ?? ''
+  assert.ok(checkedThumb.includes('background:var(--aph-primary-fg)'), '选中滑块应为前景色，与品牌轨道对比')
   assert.equal(/\.aph-switch\[aria-checked="true"\]::after\{[^}]*background:#fff/u.test(source), false, '开关滑块不得硬编码白色')
 })
 

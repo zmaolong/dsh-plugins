@@ -1,9 +1,9 @@
 # dsh-agent-plugin-hub
 
-> **试验性预览版（`0.0.1-preview.3`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
+> **试验性预览版（`0.0.1-preview.4`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
 > npm 上只发布 `preview` dist-tag（`latest` 暂不指向本版本）。
 > 需要安装时请锁定精确版本：
-> `dsh plugin --profile web add dsh-agent-plugin-hub@0.0.1-preview.3`。
+> `dsh plugin --profile web add dsh-agent-plugin-hub@0.0.1-preview.4`。
 > 版本说明：仓库内 `0.3.x` 是开发期版本号；npm 公开线从 `0.0.1-preview.N` 起步，首个正式版定为 `0.0.1`（预览线的稳定版）。
 
 DSH 的**智能体插件**（Agent Plugins）运行时与市场，带一个 **ZCode「插件市场」同构的商店面板**。
@@ -18,6 +18,16 @@ DSH 的**智能体插件**（Agent Plugins）运行时与市场，带一个 **ZC
 `mcpServers` 等能力。已知格式包括 Claude Code、CodeBuddy、ZCode；它们不是 DSH 插件
 （cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
+
+## 0.3.9 变更（启停开关对齐宿主原生 Switch）
+
+- 开关样式整体对齐宿主 `ui-primitives` Switch：轨道 36×20（原 32×18）、16px 滑块
+  以 transform 位移；
+- 新增开关专用 token `--aph-switch-track` / `--aph-switch-thumb`（取宿主
+  `border-l3` 与 `switch-thumb` 同款值）：关闭态滑块在两种主题下**恒为亮色**
+  （暗色 #adb2b8），修复此前暗色关闭态「亮轨道 + 黑色滑块」的怪异观感；
+- 开启态滑块改读前景色（`--aph-primary-fg`），与品牌色轨道形成对比；
+- dark-theme 测试同步更新并锁定两枚新 token 的明暗取值；`npm test` 161/161。
 
 ## 0.3.8 变更（图标与开关视觉修正）
 
@@ -358,7 +368,7 @@ E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub
 
 ## 市场索引
 
-发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 `0.0.1-preview.3`）。在 DSH 插件页 → 发现 → 添加索引源：
+发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 `0.0.1-preview.4`）。在 DSH 插件页 → 发现 → 添加索引源：
 
 ```text
 https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json
