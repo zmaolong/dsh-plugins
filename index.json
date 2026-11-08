@@ -43,6 +43,10 @@
         "en": "Host Claude Code / CodeBuddy / ZCode agent plugins in DSH: personal marketplaces, install/update/rollback, per-item capability toggles, and a ZCode-style plugin store panel.",
         "zh-cn": "在 DSH 里托管 Claude Code / CodeBuddy / ZCode 等智能体插件：个人市场源、安装/更新/回滚、能力逐项启停，以及 ZCode 风格插件商店面板。"
       },
+      "homepage": "https://github.com/zmaolong/dsh-plugins/tree/release-0.0.1/packages/dsh-agent-plugin-hub",
+      "repository": {
+        "url": "https://github.com/zmaolong/dsh-plugins"
+      },
       "metadata": {
         "category": "tool",
         "keywords": [
@@ -56,12 +60,12 @@
       },
       "versions": [
         {
-          "version": "0.3.6",
-          "publishTimestamp": 1794074500,
+          "version": "0.0.1-preview.1",
+          "publishTimestamp": 1794095515,
           "source": {
             "type": "git",
             "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "f8df6ade1b84253a50c67ffafa40b6deca367bdf",
+            "commit": "b8d14f4ddfc7b6870964c5276f9b19982b3829df",
             "path": "packages/dsh-agent-plugin-hub"
           }
         }

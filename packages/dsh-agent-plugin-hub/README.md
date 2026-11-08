@@ -6,7 +6,7 @@
 > `dsh plugin --profile web add dsh-agent-plugin-hub@0.0.1-preview.1`。
 > 版本说明：仓库内 `0.3.x` 是开发期版本号；npm 公开线从 `0.0.1-preview.N` 起步，首个正式版定为 `1.0.0`。
 
-DSH 的**智能体插件**（Agent Plugins）运行时与市场，0.3.6 起带一个 **ZCode「插件市场」同构的商店面板**。
+DSH 的**智能体插件**（Agent Plugins）运行时与市场，带一个 **ZCode「插件市场」同构的商店面板**。
 
 > 命名：本包托管的是 Claude Code / CodeBuddy / ZCode 等 Agent 的插件资产包。
 > “Agent”直译为“代理”不准确，译为“助手”又容易和通用助手混淆；单叫“插件”会与
