@@ -1,11 +1,11 @@
 {
   "title": {
-    "en": "My DSH plugins",
-    "zh-cn": "我的 DSH 插件集"
+    "en": "zmaolong's DSH Plugin Registry",
+    "zh-cn": "zmaolong 的 DSH 插件源"
   },
   "description": {
-    "en": "A self-hosted plugin index for my own DeepSeek Harness plugins.",
-    "zh-cn": "我自己的一组 DSH 插件索引。"
+    "en": "Curated DeepSeek Harness plugins maintained by zmaolong. Currently includes Agent Plugin Hub, which hosts Claude Code, CodeBuddy and ZCode agent plugins as native DSH skills, commands, hooks and MCP servers.",
+    "zh-cn": "由 zmaolong 维护的 DeepSeek Harness 插件源，目前收录智能体插件中心（Agent Plugin Hub）：在 DSH 内托管 Claude Code、CodeBuddy、ZCode 等智能体插件，并将其能力映射为 DSH 技能、命令、hooks 与 MCP。"
   },
   "categories": {
     "tool": {
@@ -15,8 +15,9 @@
       "title": { "en": "Skills", "zh-cn": "技能" }
     },
     "ui": {
-      "title": { "en": "Interface", "zh-cn": "界面" }
+      "title": { "en": "User Interface", "zh-cn": "界面" }
     }
   },
-  "labels": {}
+  "labels": {},
+  "sortKeys": {}
 }
