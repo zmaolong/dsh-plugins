@@ -10,6 +10,7 @@ import { test } from 'node:test'
 
 import { AgentPluginHub } from '../lib/hub.js'
 import { registerHubCommand } from '../lib/commands.js'
+import { matcherMatches } from '../lib/hooks.js'
 import {
   cleanup,
   copyFixture,
@@ -311,4 +312,16 @@ test('/agent-plugin market 命令文案不回归：add/list/refresh/remove', asy
   const empty = await command.handler({ rawInput: 'market list' })
   assert.match(empty.text, /还没有添加市场/)
   assert.equal(hub.markets.list().length, 0)
+})
+
+test('matcherMatches：超长 matcher 按字面比较（ReDoS 缓解），短正则不受影响', () => {
+  assert.equal(matcherMatches('', 'Bash'), true, '空 matcher 匹配全部')
+  assert.equal(matcherMatches('*', 'Bash'), true)
+  assert.equal(matcherMatches('Bash', 'Bash'), true)
+  assert.equal(matcherMatches('^Ba', 'Bash'), true, '短正则仍按正则求值')
+
+  const bomb = `(a+)+$${'a'.repeat(300)}`
+  assert.equal(bomb.length > 256, true)
+  assert.equal(matcherMatches(bomb, bomb), true, '超长 matcher 字面相等时匹配')
+  assert.equal(matcherMatches(bomb, 'Bash'), false, '超长 matcher 不再编译正则，只做字面比较')
 })

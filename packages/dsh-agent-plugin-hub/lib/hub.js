@@ -1158,11 +1158,11 @@ export class AgentPluginHub {
     ))
   }
 
-  /** 回滚插件。 */
-  rollback(keyOrName) {
+  /** 回滚插件（targetVersion 省略时回滚到最新可用历史版本）。 */
+  rollback(keyOrName, targetVersion) {
     return this.runOperation('rollback', { key: this.keyOf(keyOrName) }, () => (
       this.store.withLock(() => {
-        const result = this.installer.rollback(this.state, keyOrName)
+        const result = this.installer.rollback(this.state, keyOrName, targetVersion)
         this.store.saveState(this.state)
         this.syncRuntimes()
         return result

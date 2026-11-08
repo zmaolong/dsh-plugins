@@ -63,7 +63,7 @@ export function isAdmitted(request) {
   const method = String(request.method ?? 'GET').toUpperCase()
   if (method === 'GET' || method === 'HEAD') return true
   const origin = request.headers?.origin
-  if (origin !== undefined && origin !== `http://${hostHeader}`) return false
+  if (origin !== undefined && origin !== `http://${hostHeader}` && origin !== `https://${hostHeader}`) return false
   const contentType = String(request.headers?.['content-type'] ?? '').toLowerCase()
   return contentType.includes('application/json')
 }
@@ -372,7 +372,8 @@ async function dispatch(hub, route, body = {}) {
       }
     }
     case '/rollback': {
-      const result = await hub.rollback(keyOrNameOf(body))
+      const targetVersion = typeof body.version === 'string' && body.version.trim() !== '' ? body.version.trim() : undefined
+      const result = await hub.rollback(keyOrNameOf(body), targetVersion)
       return {
         message: `已回滚 ${result.record.name}：${result.previousVersion} → ${result.record.version}`,
         key: result.record.key,

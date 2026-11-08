@@ -10,7 +10,8 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 const PACKAGE_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const source = readFileSync(path.join(PACKAGE_DIR, 'client.js'), 'utf8')
+// Windows 下 core.autocrlf=true 检出会带 CRLF；统一成 LF 让探针字符串与检出方式无关。
+const source = readFileSync(path.join(PACKAGE_DIR, 'client.js'), 'utf8').replace(/\r\n/gu, '\n')
 
 test('截断：单行文本有 ellipsis，可截断元素带 title 提示', () => {
   const singleLineRules = [

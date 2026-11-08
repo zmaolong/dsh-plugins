@@ -27,7 +27,6 @@ window.__ModuleLoader__.load({
     const EN = {
       tab: 'Agent Plugins',
       title: 'Agent Plugins',
-      segmentPersonal: 'Personal',
       refresh: 'Refresh',
       refreshing: 'Refreshing…',
       sources: 'Marketplace sources',
@@ -44,6 +43,7 @@ window.__ModuleLoader__.load({
       marketEmpty: 'This marketplace lists no plugins.',
       viewMore: 'See {names}, and {count} more',
       viewMoreFew: 'See {names}',
+      andMore: 'and {count} more',
       showLess: 'Show less',
       install: 'Install',
       installing: 'Installing…',
@@ -102,6 +102,8 @@ window.__ModuleLoader__.load({
       componentsLoading: 'Loading components…',
       componentsError: 'Couldn’t load the component list. Showing available info only.',
       componentsRetry: 'Retry',
+      fetchDetail: 'Fetch details online',
+      fetchDetailHint: 'Details aren’t cached locally yet. Fetch them online from the marketplace source.',
       componentsEmpty: 'This plugin doesn’t declare components, or they couldn’t be read.',
       componentsNotEffective: 'Not effective',
       componentsEffective: 'Effective',
@@ -140,20 +142,25 @@ window.__ModuleLoader__.load({
       noInstalled: 'No plugins are installed in this scope.',
       noInstalledTitle: 'No plugins installed',
       noInstalledDescription: 'Browse the store and install plugins to add MCP, skills, commands and hooks.',
-      filterLabel: 'Status filter',
       filterAll: 'All',
       filterEnabled: 'Enabled',
       filterDisabled: 'Disabled',
       version: 'Version',
-      statusFilter: 'Status filter',
       updatesAvailable: '{count} updates available',
       operationBusy: 'Another operation is in progress. Try again shortly.',
+      errorForbidden: 'Request rejected: only local loopback pages may call this API.',
+      errorNotFound: 'Not found. The plugin or marketplace may have been removed; refresh and retry.',
+      errorConflict: 'State conflict: the target already exists or has changed. Refresh and retry.',
+      errorSourceUnavailable: 'The marketplace source is unavailable right now; refresh it and retry.',
+      errorVersionInvalid: 'The version number is not valid.',
+      errorNetwork: 'Network request failed. Check the connection and retry.',
+      errorGit: 'Git operation failed. Check the repository URL and your network.',
+      errorInternal: 'Internal error. See the hub logs for details.',
       apiUnavailable: 'Agent Plugins API unavailable',
       apiHint: 'This page is not served over the loopback origin, or the host has not loaded the current plugin code. Refresh the page and retry.',
       migrationError: 'Data migration failed: {message}. Your original data is preserved under the hub logs directory.',
       retry: 'Retry',
       unknownError: 'Unknown error',
-      loading: 'Loading…',
       runtimeSkills: 'Skills',
       runtimeCommands: 'Commands',
       runtimeHooks: 'Hooks',
@@ -175,7 +182,6 @@ window.__ModuleLoader__.load({
     const ZH = {
       tab: '智能体插件',
       title: '智能体插件',
-      segmentPersonal: '个人',
       refresh: '刷新',
       refreshing: '刷新中…',
       sources: '市场源',
@@ -192,6 +198,7 @@ window.__ModuleLoader__.load({
       marketEmpty: '该市场里没有插件条目。',
       viewMore: '查看 {names}，以及另外 {count} 个',
       viewMoreFew: '查看 {names}',
+      andMore: '等 {count} 个',
       showLess: '收起',
       install: '安装',
       installing: '安装中…',
@@ -250,6 +257,8 @@ window.__ModuleLoader__.load({
       componentsLoading: '正在加载组件…',
       componentsError: '组件清单加载失败，仅展示可得信息。',
       componentsRetry: '重试',
+      fetchDetail: '联网获取详情',
+      fetchDetailHint: '详情尚未缓存到本地，可联网从市场源获取。',
       componentsEmpty: '该插件未声明组件，或组件无法读取。',
       componentsNotEffective: '未生效',
       componentsEffective: '已生效',
@@ -288,20 +297,25 @@ window.__ModuleLoader__.load({
       noInstalled: '当前范围尚未安装插件。',
       noInstalledTitle: '尚未安装插件',
       noInstalledDescription: '浏览市场并安装插件，以添加 MCP、技能、命令与 hooks 能力。',
-      filterLabel: '启用状态',
       filterAll: '全部',
       filterEnabled: '已启用',
       filterDisabled: '未启用',
       version: '版本',
-      statusFilter: '启用状态',
       updatesAvailable: '{count} 个可更新',
       operationBusy: '另一个操作正在进行，请稍后重试。',
+      errorForbidden: '请求被拒绝：插件 API 只允许本机回环页面访问。',
+      errorNotFound: '目标不存在，插件或市场可能已被移除；请刷新后重试。',
+      errorConflict: '状态冲突：目标已存在或已被变更；请刷新后重试。',
+      errorSourceUnavailable: '市场源当前不可用，请刷新该市场后重试。',
+      errorVersionInvalid: '版本号不合法。',
+      errorNetwork: '网络请求失败，请检查网络后重试。',
+      errorGit: 'Git 操作失败，请检查仓库地址与网络。',
+      errorInternal: '内部错误，请查看 hub 日志。',
       apiUnavailable: '智能体插件 API 不可用',
       apiHint: '当前页面不是通过本机回环访问，或宿主尚未加载新版插件代码。刷新页面后重试。',
       migrationError: '数据迁移失败：{message}。原始数据仍保留在 hub 日志目录中。',
       retry: '重试',
       unknownError: '未知错误',
-      loading: '加载中…',
       runtimeSkills: '技能',
       runtimeCommands: '命令',
       runtimeHooks: 'hooks',
@@ -575,6 +589,31 @@ window.__ModuleLoader__.load({
       return String(error)
     }
 
+    /** Host 稳定错误码 → 文案 key（lib/hub.js 的 STATUS_BY_CODE；bad_request 保留原文细节）。 */
+    const ERROR_MESSAGE_KEYS = {
+      forbidden: 'errorForbidden',
+      not_found: 'errorNotFound',
+      conflict: 'errorConflict',
+      operation_in_progress: 'operationBusy',
+      market_unavailable: 'errorSourceUnavailable',
+      source_unavailable: 'errorSourceUnavailable',
+      version_invalid: 'errorVersionInvalid',
+      network_error: 'errorNetwork',
+      git_error: 'errorGit',
+      internal: 'errorInternal',
+    }
+
+    /** 按 code 本地化错误文案；未知 code / 未映射 code 回退服务端原文。 */
+    function errorMessageFor(error, t) {
+      const code = error && typeof error.code === 'string' ? error.code : ''
+      const key = ERROR_MESSAGE_KEYS[code]
+      if (key && typeof t === 'function') {
+        const text = t(key)
+        if (typeof text === 'string' && text !== '' && text !== key) return text
+      }
+      return errorMessage(error)
+    }
+
     function pad2(value) {
       return String(value).padStart(2, '0')
     }
@@ -770,6 +809,7 @@ window.__ModuleLoader__.load({
           busy: {},
           capBusy: {},
           marketBusy: {},
+          loading: false,
           refreshing: false,
           updatingAll: false,
           dialogs: [],
@@ -866,18 +906,21 @@ window.__ModuleLoader__.load({
             try {
               await task()
             } catch (error) {
-              store.toast('error', errorMessage(error))
+              store.toast('error', errorMessageFor(error, t))
             }
           })
           return store.queue
         },
         async load() {
           if (!store.state.snapshot) store.set({ status: 'loading' })
+          store.set({ loading: true })
           try {
             const snapshot = await api('/store')
             store.set({ snapshot, status: 'ready', error: '' })
           } catch (error) {
-            store.set({ status: store.state.snapshot ? 'ready' : 'error', error: errorMessage(error) })
+            store.set({ status: store.state.snapshot ? 'ready' : 'error', error: errorMessageFor(error, t) })
+          } finally {
+            store.set({ loading: false })
           }
         },
         init() {
@@ -907,16 +950,24 @@ window.__ModuleLoader__.load({
             let data
             if (installed) {
               data = await api(`/describe?key=${encodeURIComponent(key)}`, { timeoutMs: 60000 })
+            } else if (force === true && item) {
+              // 「联网获取」：服务端可为未缓存的 Git 市场条目联网克隆后再描述。
+              const market = item.market ? item.market.id : ''
+              data = await api('/describe', {
+                method: 'POST',
+                body: { market, name: item.name, fetch: true },
+                timeoutMs: 180000,
+              })
             } else if (item) {
               const market = item.market ? item.market.id : ''
               data = await api(`/describe?market=${encodeURIComponent(market)}&name=${encodeURIComponent(item.name)}`, { timeoutMs: 60000 })
             } else {
               throw new Error(t('unknownError'))
             }
+            // 仅当用户仍停留在该详情页时回填，避免竞态覆盖新打开的详情。
             if (store.state.detailKey === key) store.set({ detail: data, detailStatus: 'ready' })
-            if (force === true) store.set({ detailStatus: 'ready' })
           } catch (error) {
-            if (store.state.detailKey === key) store.set({ detailStatus: 'error', detailError: errorMessage(error) })
+            if (store.state.detailKey === key) store.set({ detailStatus: 'error', detailError: errorMessageFor(error, t) })
           }
         },
         setQuery(query) {
@@ -950,7 +1001,7 @@ window.__ModuleLoader__.load({
               store.toast('warn', t('refreshPartial', { count: failures.length }))
             }
           } catch (error) {
-            store.toast('error', errorMessage(error))
+            store.toast('error', errorMessageFor(error, t))
           } finally {
             store.set({ refreshing: false })
           }
@@ -1000,10 +1051,15 @@ window.__ModuleLoader__.load({
               if (result && result.aborted === true) {
                 store.toast('warn', t('updateAllAborted', { count: succeeded.length }))
               } else if (failed.length > 0) {
+                // 失败列表只展示前 3 个，避免长列表塞爆 toast。
+                const failedNames = failed.map((entry) => entry.key)
+                const plugins = failedNames.length > 3
+                  ? `${failedNames.slice(0, 3).join('、')} ${t('andMore', { count: failedNames.length - 3 })}`
+                  : failedNames.join('、')
                 store.toast('warn', t('updateAllPartial', {
                   succeeded: succeeded.length,
                   failed: failed.length,
-                  plugins: failed.map((entry) => entry.key).join('、'),
+                  plugins,
                 }))
               } else {
                 store.toast('success', t('updateAllDone', { count: succeeded.length }))
@@ -1044,9 +1100,12 @@ window.__ModuleLoader__.load({
             },
           })
         },
-        askRollback(record) {
+        askRollback(record, targetVersion) {
           const versions = (record && record.previousVersions) || []
-          const target = versions.filter((item) => item.available).slice(-1)[0]
+          const wanted = typeof targetVersion === 'string' ? targetVersion : ''
+          const target = wanted !== ''
+            ? versions.find((item) => item.version === wanted && item.available !== false)
+            : versions.filter((item) => item.available).slice(-1)[0]
           if (!target) return
           const name = displayOf(record, store.localeId()).title
           store.openConfirm({
@@ -1055,7 +1114,7 @@ window.__ModuleLoader__.load({
             confirmLabel: t('rollback'),
             danger: false,
             onConfirm: async () => {
-              await api('/rollback', { method: 'POST', body: { name: record.key } })
+              await api('/rollback', { method: 'POST', body: { name: record.key, version: target.version } })
               await store.load()
               await store.loadDetail(false)
               store.toast('success', t('rollbackToast', { name, version: target.version }))
@@ -1256,11 +1315,42 @@ window.__ModuleLoader__.load({
     /* ---------------------------------------------------------------------- *
      * 菜单
      * ---------------------------------------------------------------------- */
+    /** 打开期间监听 Escape 关闭（捕获阶段，避免宿主全局快捷键重复响应）。 */
+    function useEscapeClose(open, onClose) {
+      useEffect(() => {
+        if (!open || typeof onClose !== 'function') return undefined
+        if (typeof document === 'undefined' || typeof document.addEventListener !== 'function') return undefined
+        const onKeyDown = (event) => {
+          if (event.key === 'Escape') {
+            event.stopPropagation()
+            onClose()
+          }
+        }
+        document.addEventListener('keydown', onKeyDown, true)
+        return () => document.removeEventListener('keydown', onKeyDown, true)
+      }, [open, onClose])
+    }
+
+    /** 关闭后把焦点还原到触发元素（只在 open → closed 的跳变时执行）。 */
+    function useFocusRestore(triggerRef, open) {
+      const wasOpen = useRef(false)
+      useEffect(() => {
+        if (wasOpen.current && !open && triggerRef.current && typeof triggerRef.current.focus === 'function') {
+          triggerRef.current.focus()
+        }
+        wasOpen.current = open
+      }, [open])
+    }
+
     function Menu({ t, items, busy, triggerVariant }) {
       const [open, setOpen] = useState(false)
+      const triggerRef = useRef(null)
+      useEscapeClose(open, () => setOpen(false))
+      useFocusRestore(triggerRef, open)
       return h('div', { className: 'aph-menu-wrap' },
         h('button', {
           type: 'button',
+          ref: triggerRef,
           className: 'aph-icon-btn',
           title: t('moreActions'),
           'aria-label': t('moreActions'),
@@ -1409,7 +1499,10 @@ window.__ModuleLoader__.load({
      * ---------------------------------------------------------------------- */
     function AddMenu({ t, onAdd }) {
       const [open, setOpen] = useState(false)
-      return h('div', { className: 'aph-menu-wrap' },
+      const wrapRef = useRef(null)
+      useEscapeClose(open, () => setOpen(false))
+      useFocusRestore(wrapRef, open)
+      return h('div', { className: 'aph-menu-wrap', ref: wrapRef, tabIndex: -1 },
         h(Button, {
           variant: 'secondary',
           onClick: (event) => {
@@ -1498,8 +1591,6 @@ window.__ModuleLoader__.load({
             h(AddMenu, { t, onAdd: () => store.openAddSource() }),
             h(Button, { variant: 'primary', onClick: () => store.openManage() }, t('manage')))),
         h('div', { className: 'aph-toolbar' },
-          h('div', { className: 'aph-seg' },
-            h('button', { type: 'button', className: 'aph-seg-pill', 'aria-pressed': true }, t('segmentPersonal'))),
           h(SearchBox, {
             value: query,
             onChange: (value) => store.setQuery(value),
@@ -1549,6 +1640,7 @@ window.__ModuleLoader__.load({
         ? detail.installed.enabled === true
         : Boolean(installed && installed.enabled)
       const capabilities = detail ? detail.capabilities : null
+      const runtime = snapshot.runtime || {}
 
       const back = () => store.openStore()
       const actionMenu = installedFlag
@@ -1585,20 +1677,24 @@ window.__ModuleLoader__.load({
             ? h(Button, {
               variant: 'primary',
               pill: true,
-              disabled: busy || (catalogItem && (catalogItem.installable === false || catalogItem.blockedReason)),
-              title: catalogItem && catalogItem.blockedReason ? catalogItem.blockedReason : undefined,
-              onClick: () => store.install(catalogItem || { key, name: title, market }),
+              // 安装必须有市场条目（name + market）；条目缺失时禁用并提示，不发注定 404 的请求。
+              disabled: busy || !catalogItem || catalogItem.installable === false || Boolean(catalogItem.blockedReason),
+              title: catalogItem ? (catalogItem.blockedReason || undefined) : t('sourceMissing'),
+              onClick: () => store.install(catalogItem),
             }, busy ? h(Spinner, null) : null, t('install'))
             : null))
 
       let components
-      if (!detail || state.detailStatus === 'loading') {
-        components = h(LoadingBlock, { text: t('componentsLoading') })
-      } else if (state.detailStatus === 'error') {
+      // 错误态优先：首次描述失败（detail 尚为 null）也要给出重试/联网获取入口，不能停在加载块。
+      if (state.detailStatus === 'error') {
+        // 未安装条目的「联网获取」走 POST /describe {fetch:true}，服务端可为未缓存条目联网克隆。
+        const canFetch = !installedFlag && Boolean(catalogItem)
         components = h('div', { className: 'aph-warning' },
           h(Icon, { name: 'alert', size: 14 }),
-          h('span', { style: { flex: 1 } }, t('componentsError')),
-          h('button', { type: 'button', className: 'aph-btn', onClick: () => store.loadDetail(true) }, h(Icon, { name: 'refresh', size: 14 }), t('componentsRetry')))
+          h('span', { style: { flex: 1 } }, canFetch ? t('fetchDetailHint') : t('componentsError')),
+          h('button', { type: 'button', className: 'aph-btn', onClick: () => store.loadDetail(true) }, h(Icon, { name: 'refresh', size: 14 }), canFetch ? t('fetchDetail') : t('componentsRetry')))
+      } else if (!detail || state.detailStatus === 'loading') {
+        components = h(LoadingBlock, { text: t('componentsLoading') })
       } else if (!capabilities) {
         components = h(EmptyBlock, { description: (detail && detail.blockedReason) || t('componentsEmpty') })
       } else {
@@ -1673,7 +1769,7 @@ window.__ModuleLoader__.load({
             h(Button, {
               variant: 'secondary',
               disabled: busy || version.available === false,
-              onClick: () => store.askRollback(installed),
+              onClick: () => store.askRollback(installed, version.version),
             }, h(Icon, { name: 'rotateCcw', size: 14 }), t('rollback')))))
         : null
       if (rollbackRows) advanced.push(rollbackRows)
@@ -1693,7 +1789,7 @@ window.__ModuleLoader__.load({
             h(Badge, null, `${t('runtimeSkills')} ${(installed.capabilities && installed.capabilities.skills ? installed.capabilities.skills.length : 0)}`),
             h(Badge, null, `${t('runtimeCommands')} ${(installed.capabilities && installed.capabilities.commands ? installed.capabilities.commands.length : 0)}`),
             h(Badge, null, `${t('runtimeHooks')} ${(installed.capabilities && installed.capabilities.hooks ? installed.capabilities.hooks.length : 0)}`),
-            h(Badge, null, `${t('runtimeMcp')} ${t('runtimeNotEffective')}`))))
+            h(Badge, null, `${t('runtimeMcp')} ${runtime.mcp && runtime.mcp.available ? t('runtimeEffective') : t('runtimeNotEffective')}`))))
       }
 
       return h('div', { className: 'aph-page aph-detail' },
@@ -1751,7 +1847,13 @@ window.__ModuleLoader__.load({
                 onClick: () => store.updateAll(),
               }, state.updatingAll ? h(Spinner, null) : h(Icon, { name: 'download', size: 14 }), t('updateAll', { count: updates }))
               : null,
-            h(IconButton, { icon: 'refresh', title: t('refresh'), onClick: () => store.load() }),
+            h(IconButton, {
+              icon: 'refresh',
+              title: state.loading ? t('refreshing') : t('refresh'),
+              busy: state.loading,
+              disabled: state.loading,
+              onClick: () => store.load(),
+            }),
             h(Button, { variant: 'secondary', onClick: () => store.openStore() }, t('browseMarketplace')),
             h(AddMenu, { t, onAdd: () => store.openAddSource() }))),
         h('div', { className: 'aph-toolbar' },
@@ -1771,6 +1873,7 @@ window.__ModuleLoader__.load({
             clearable: true,
             clearLabel: t('clearSearch'),
           })),
+        state.error ? h('div', { className: 'aph-error' }, state.error) : null,
         h('div', { style: { display: 'flex', flexDirection: 'column', gap: 32 } },
           groups.map((group) => h('section', { key: group.key, className: 'aph-section' },
             h('div', { className: 'aph-section-head' },
@@ -1801,10 +1904,21 @@ window.__ModuleLoader__.load({
      * 弹窗（挂到 shell.overlay）
      * ---------------------------------------------------------------------- */
     function DialogShell({ t, title, children, footer, narrow, onClose }) {
-      return h('div', { className: 'aph-overlay-mask', onMouseDown: (event) => {
+      const dialogRef = useRef(null)
+      // 挂载时把焦点移入弹窗，卸载时还原到打开前的元素（vm 测试桩不执行 effect，自动跳过）。
+      useEffect(() => {
+        if (typeof document === 'undefined') return undefined
+        const previous = document.activeElement && typeof document.activeElement.focus === 'function' ? document.activeElement : null
+        if (dialogRef.current && typeof dialogRef.current.focus === 'function') dialogRef.current.focus()
+        return () => {
+          if (previous && typeof previous.focus === 'function') previous.focus()
+        }
+      }, [])
+      useEscapeClose(true, onClose)
+      return h('div', { className: 'aph-overlay-mask', onClick: (event) => {
         if (event.target === event.currentTarget && onClose) onClose()
       } },
-      h('div', { className: `aph-dialog${narrow ? ' narrow' : ''}`, role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
+      h('div', { className: `aph-dialog${narrow ? ' narrow' : ''}`, role: 'dialog', 'aria-modal': 'true', 'aria-label': title, tabIndex: -1, ref: dialogRef },
         h('div', { className: 'aph-dialog-head' },
           h('h2', { className: 'aph-dialog-title', title }, title),
           onClose ? h('button', { type: 'button', className: 'aph-icon-btn', title: t('close'), 'aria-label': t('close'), onClick: onClose }, h(Icon, { name: 'x', size: 16 })) : null),
@@ -1840,7 +1954,7 @@ window.__ModuleLoader__.load({
           }))
           close()
         } catch (submitError) {
-          setError(errorMessage(submitError))
+          setError(errorMessageFor(submitError, t))
         } finally {
           setBusy(false)
         }
@@ -1946,7 +2060,7 @@ window.__ModuleLoader__.load({
           await dialog.onConfirm()
           store.closeDialog(dialog.id)
         } catch (confirmError) {
-          setError(errorMessage(confirmError))
+          setError(errorMessageFor(confirmError, t))
         } finally {
           setBusy(false)
         }
@@ -2021,7 +2135,7 @@ window.__ModuleLoader__.load({
 
       let body
       if (state.status === 'loading' && !state.snapshot) {
-        body = h('div', { className: 'aph-page' }, h(LoadingBlock, { text: t('loading') }))
+        body = h('div', { className: 'aph-page' }, h(LoadingBlock, { text: t('catalogLoading') }))
       } else if (!state.snapshot) {
         body = h('div', { className: 'aph-page' },
           h('div', { className: 'aph-placeholder column' },
@@ -2179,6 +2293,7 @@ window.__ModuleLoader__.load({
         displayOf,
         iconSrc,
         httpsUrl,
+        errorMessageFor,
         createStore,
         components: {
           Panel,

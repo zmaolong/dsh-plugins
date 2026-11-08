@@ -584,6 +584,27 @@ test('POST /update：声明级升级 + 回滚（previousVersion 与 rollback）'
   assert.equal(hub.findRecord(record.key).version, '0.1.0')
 })
 
+test('POST /rollback：支持指定目标版本，未知版本报 not_found', async (t) => {
+  const { route, hub, market, marketDir } = await setup(t)
+  await hub.install({ market: market.id, name: 'demo-claude' })
+  patchMarketplace(marketDir, (manifest) => {
+    manifest.plugins[0].version = '0.2.0'
+  })
+  patchPluginManifest(marketDir, 'demo-claude', (manifest) => {
+    manifest.version = '0.2.0'
+  })
+  await post(route, 'update', { key: 'demo-claude' })
+
+  const rolled = await post(route, 'rollback', { key: 'demo-claude', version: '0.1.0' })
+  assert.equal(rolled.status, 200, JSON.stringify(rolled.body))
+  assert.equal(rolled.body.data.version, '0.1.0')
+  assert.equal(hub.findRecord('demo-claude').version, '0.1.0')
+
+  const bad = await post(route, 'rollback', { key: 'demo-claude', version: '9.9.9' })
+  assert.equal(bad.status, 404)
+  assert.equal(bad.body.code, 'not_found')
+})
+
 test('POST /update-all：按市场去重刷新一次、部分失败不中断、一次 saveState', async (t) => {
   const { route, hub, market, work } = await setup(t)
   const marketB = path.join(work, 'claude-market-b')
@@ -675,6 +696,24 @@ test('访问控制与错误码：403 / 404 / 405 / 400', async (t) => {
     body: '{}',
   })
   assert.equal(crossOrigin.status, 403)
+
+  // https 同源（宿主 webServer 以 https 提供时）同样放行：到达路由层后按 404 报未知接口。
+  const httpsOrigin = await callRoute(route, {
+    method: 'POST',
+    url: `${API}/nope`,
+    headers: { host: '127.0.0.1:9271', origin: 'https://127.0.0.1:9271', 'content-type': 'application/json' },
+    body: '{}',
+  })
+  assert.equal(httpsOrigin.status, 404, 'https 同源 Origin 应被放行（404 而非 403）')
+  assert.equal(httpsOrigin.body.code, 'not_found')
+
+  const nullOrigin = await callRoute(route, {
+    method: 'POST',
+    url: `${API}/market/add`,
+    headers: { host: '127.0.0.1:9271', origin: 'null', 'content-type': 'application/json' },
+    body: '{}',
+  })
+  assert.equal(nullOrigin.status, 403, 'sandbox iframe 的 Origin: null 仍应拒绝')
 
   const plain = await callRoute(route, {
     method: 'POST',

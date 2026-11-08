@@ -302,7 +302,7 @@ Operation = {
 | POST | `/enable` | 启用/禁用插件 |
 | POST | `/update` | 更新单个插件 |
 | POST | `/update-all` | 全部更新 |
-| POST | `/rollback` | 回滚到上一版本 |
+| POST | `/rollback` | 回滚到上一版本或指定历史版本 |
 | POST | `/capability` | 逐项能力启停 |
 
 已删除：`GET /state`、`GET /plugin`、`GET /markets`（客户端 v0.3.0 起只使用 `/store`）。
@@ -424,7 +424,8 @@ Operation = {
 // /enable     { "key": "…", "enabled": true }
 { "message": "demo-claude 已启用", "key": "…", "enabled": true }
 
-// /rollback   { "key": "…" }
+// /rollback   { "key": "…" }          省略 version：回滚到最新可用历史版本
+// /rollback   { "key": "…", "version": "0.1.0" }   指定目标历史版本（必须在 previousVersions 中）
 { "message": "已回滚 demo-claude：0.2.0 → 0.1.0", "key": "…", "version": "0.1.0", "previousVersion": "0.2.0" }
 
 // /capability { "key": "…", "kind": "skills|commands|hooks|mcpServers", "capability": "…", "enabled": false }

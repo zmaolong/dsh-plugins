@@ -141,15 +141,34 @@ export class Installer {
     }
     const tmpDir = path.join(this.store.paths.tmp, `install-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
     mkdirSync(path.dirname(tmpDir), { recursive: true })
+    // 覆盖既有目录时先把它 rename 到备份位，新目录就位后再删备份；
+    // 中途失败原样恢复，避免出现「先删后改名」窗口导致新旧目录同时丢失。
+    const backupDir = existsSync(targetDir)
+      ? path.join(this.store.paths.tmp, `replace-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
+      : ''
     try {
       const files = copyDirectory(sourceDir, tmpDir)
       if (files === 0) throw new Error(`插件源目录没有可复制的文件：${sourceDir}`)
       mkdirSync(path.dirname(targetDir), { recursive: true })
-      if (existsSync(targetDir)) rmSync(targetDir, { force: true, recursive: true })
+      if (backupDir) renameSync(targetDir, backupDir)
       renameSync(tmpDir, targetDir)
     } catch (error) {
+      if (backupDir && existsSync(backupDir) && !existsSync(targetDir)) {
+        try {
+          renameSync(backupDir, targetDir)
+        } catch {
+          // 恢复失败时保留备份目录，等待人工排查。
+        }
+      }
       rmSync(tmpDir, { force: true, recursive: true })
       throw error
+    }
+    if (backupDir) {
+      try {
+        rmSync(backupDir, { force: true, recursive: true })
+      } catch {
+        this.store.log('warn', `清理旧版本备份失败（可手动删除）：${backupDir}`)
+      }
     }
     const scan = scanCapabilities(targetDir, detected.format, detected.manifest)
     warnings.push(...scan.warnings)
@@ -278,34 +297,56 @@ export class Installer {
     }
   }
 
-  /** 回滚到上一个版本。 */
-  rollback(state, keyOrName) {
+  /**
+   * 回滚到历史版本。
+   *
+   * @param {object} state - 当前 state（会被原地修改）
+   * @param {string} keyOrName - 插件 key 或名称
+   * @param {string} [targetVersion] - 目标版本号；省略时取最新可用历史版本
+   * @returns {{record: object, previousVersion: string, warnings: string[]}}
+   */
+  rollback(state, keyOrName, targetVersion) {
     const record = this.findRecord(state, keyOrName)
     if (record.previousVersions.length === 0) {
       throw new Error(`插件 ${record.name} 没有可回滚的历史版本`)
     }
+    // 先选定目标并验证清单/能力，全部成功后才交换记录；失败不丢任何历史版本。
     let target = null
-    while (record.previousVersions.length > 0) {
-      const candidate = record.previousVersions.pop()
-      if (existsSync(candidate.installedPath)) {
-        target = candidate
-        break
+    const wanted = String(targetVersion ?? '').trim()
+    if (wanted !== '') {
+      const candidate = record.previousVersions.find((item) => item.version === wanted)
+      if (!candidate) {
+        const known = record.previousVersions.map((item) => item.version).join('、')
+        throw new Error(`插件 ${record.name} 未找到历史版本 ${wanted}（可用：${known || '无'}）`)
+      }
+      target = candidate
+    } else {
+      for (let index = record.previousVersions.length - 1; index >= 0; index -= 1) {
+        if (existsSync(record.previousVersions[index].installedPath)) {
+          target = record.previousVersions[index]
+          break
+        }
       }
     }
     if (!target) throw new Error(`插件 ${record.name} 的历史版本目录都已被清理，无法回滚`)
+    if (!existsSync(target.installedPath)) {
+      throw new Error(`插件 ${record.name} 的历史版本 ${target.version} 目录已被清理，无法回滚`)
+    }
+    const detected = detectPluginManifest(target.installedPath, { hintFormat: record.format })
+    const scan = scanCapabilities(target.installedPath, record.format, detected.manifest)
+
     const oldVersion = record.version
     const oldPath = record.installedPath
+    const history = record.previousVersions.filter((item) => item !== target)
     record.version = target.version
     record.installedPath = target.installedPath
     record.installedAt = new Date().toISOString()
-    const detected = detectPluginManifest(target.installedPath, { hintFormat: record.format })
-    const scan = scanCapabilities(target.installedPath, record.format, detected.manifest)
     record.capabilities = scan.summary
     record.format = detected.format
     if (existsSync(oldPath)) {
-      record.previousVersions.push({ version: oldVersion, installedPath: oldPath, installedAt: new Date().toISOString() })
-      record.previousVersions = record.previousVersions.slice(-5)
+      history.push({ version: oldVersion, installedPath: oldPath, installedAt: new Date().toISOString() })
     }
+    record.previousVersions = history.slice(-5)
     this.pruneVersionDirs(record)
     this.store.log('info', `回滚 ${record.key}：${oldVersion} → ${record.version}`)
     return { record, previousVersion: oldVersion, warnings: scan.warnings }

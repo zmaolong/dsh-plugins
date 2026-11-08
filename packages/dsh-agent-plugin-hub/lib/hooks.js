@@ -56,15 +56,20 @@ function messageText(message) {
     .join('\n')
 }
 
+/** matcher 正则字符串的长度上限；超长按字面比较，避免恶意长正则拖垮宿主。 */
+const MAX_MATCHER_LENGTH = 256
+
 /** 判断 matcher（正则字符串）是否匹配。空 matcher 表示匹配全部。 */
 export function matcherMatches(matcher, value) {
   const text = String(matcher ?? '').trim()
   if (text === '' || text === '*') return true
   if (text === value) return true
+  const target = String(value ?? '')
+  if (text.length > MAX_MATCHER_LENGTH) return text === target
   try {
-    return new RegExp(text, 'u').test(String(value ?? ''))
+    return new RegExp(text, 'u').test(target)
   } catch {
-    return text === String(value ?? '')
+    return text === target
   }
 }
 

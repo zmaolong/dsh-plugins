@@ -996,3 +996,121 @@ test('components.StoreCard：未安装显示安装胶囊，已安装显示更新
   assert.ok(json(installed).includes('updateBadge'), '已安装且可更新应渲染可更新角标')
   assert.ok(json(installed).includes('version 1.2.0'), '管理行第二行应显示版本')
 })
+
+/* -------------------------------------------------------------------------- *
+ * 5. 本轮回归：错误文案按 code 本地化、详情兜底安装、管理页状态、竞态守卫
+ * -------------------------------------------------------------------------- */
+
+test('errorMessageFor：按 code 本地化，未映射 code / 无 code 回退原文', () => {
+  const { errorMessageFor } = testApi()
+  const t = (key) => ({
+    errorNotFound: '目标不存在',
+    operationBusy: '另一个操作正在进行，请稍后重试。',
+    errorGit: 'Git 操作失败',
+  }[key] ?? key)
+  assert.equal(errorMessageFor({ code: 'not_found', message: '市场 m 里没有插件 x' }, t), '目标不存在')
+  assert.equal(errorMessageFor({ code: 'operation_in_progress', message: 'x' }, t), '另一个操作正在进行，请稍后重试。')
+  assert.equal(errorMessageFor({ code: 'git_error', message: 'git clone 失败' }, t), 'Git 操作失败')
+  assert.equal(errorMessageFor({ code: 'bad_request', message: '请提供插件名' }, t), '请提供插件名', 'bad_request 未映射，保留原文细节')
+  assert.equal(errorMessageFor({ message: 'no code here' }, t), 'no code here')
+  assert.equal(errorMessageFor('plain string', t), 'plain string')
+  assert.equal(errorMessageFor({ code: 'not_found', message: 'x' }, null), 'x', 't 缺失时回退原文')
+})
+
+test('store.load：请求期间置 loading，结束后清除（管理页刷新指示）', async () => {
+  const { createStore } = testApi()
+  const { sandbox } = client()
+  let resolveFetch
+  sandbox.fetch = () => new Promise((resolve) => {
+    resolveFetch = resolve
+  })
+  const store = createStore(makeT(), () => 'zh')
+  const pending = store.load()
+  assert.equal(store.state.loading, true)
+  resolveFetch(successResponse({ markets: [], items: [], installed: [] }))
+  await pending
+  assert.equal(store.state.loading, false)
+})
+
+test('store.loadDetail：陈旧响应不得覆盖已切换详情（force 也不置 ready）', async () => {
+  const { createStore } = testApi()
+  const { sandbox } = client()
+  let resolveFetch
+  sandbox.fetch = () => new Promise((resolve) => {
+    resolveFetch = resolve
+  })
+  const store = createStore(makeT(), () => 'zh')
+  store.set({
+    snapshot: fakeSnapshot(),
+    status: 'ready',
+    view: 'detail',
+    detailKey: 'beta@m1',
+    detail: null,
+    detailStatus: 'loading',
+  })
+  const stale = store.loadDetail(true)
+  // 用户在请求返回前切到另一插件：新详情进入 loading
+  store.set({ detailKey: 'alpha@m1', detail: null, detailStatus: 'loading' })
+  resolveFetch(successResponse(fakeDetail()))
+  await stale
+  assert.equal(store.state.detailStatus, 'loading', '陈旧响应不得把新详情置为 ready')
+  assert.equal(json(store.state.detail), json(null))
+})
+
+test('components.ManageView：state.error 渲染错误条（与商店页一致）', () => {
+  const api = testApi()
+  const store = api.createStore(makeT(), () => 'zh')
+  store.set({ snapshot: fakeSnapshot(), status: 'ready', error: 'boom' })
+  const tree = json(api.components.ManageView({ store, t: makeT(), localeId: 'zh' }))
+  assert.ok(tree.includes('aph-error'), '管理页也应渲染错误条')
+})
+
+test('components.DetailView：错误态区分「联网获取」（未安装条目）与「重试」（已安装）', () => {
+  const api = testApi()
+  const store = api.createStore(makeT(), () => 'zh')
+  store.set({
+    snapshot: fakeSnapshot(),
+    status: 'ready',
+    view: 'detail',
+    detailKey: 'alpha@m1',
+    detail: null,
+    detailStatus: 'error',
+  })
+  const fetchable = json(api.components.DetailView({ store, t: makeT(), localeId: 'zh' }))
+  assert.ok(fetchable.includes('fetchDetailHint'), '未安装条目错误态提示可联网获取')
+  assert.ok(fetchable.includes('fetchDetail'), '未安装条目错误态按钮为联网获取')
+
+  store.set({ detailKey: 'beta@m1' })
+  const installedFailed = json(api.components.DetailView({ store, t: makeT(), localeId: 'zh' }))
+  assert.ok(installedFailed.includes('componentsError'), '已安装条目错误态保持原提示')
+  assert.ok(installedFailed.includes('componentsRetry'), '已安装条目错误态保持重试按钮')
+})
+
+test('components.DetailView：MCP 运行时徽标按 runtime.mcp.available 渲染', () => {
+  const api = testApi()
+  const store = api.createStore(makeT(), () => 'zh')
+  store.set({
+    snapshot: fakeSnapshot(),
+    status: 'ready',
+    view: 'detail',
+    detailKey: 'beta@m1',
+    detail: fakeDetail(),
+    detailStatus: 'ready',
+  })
+  const unavailable = json(api.components.DetailView({ store, t: makeT(), localeId: 'zh' }))
+  assert.ok(unavailable.includes('runtimeNotEffective'), 'mcp 不可用时显示未生效')
+
+  store.set({ snapshot: Object.assign({}, fakeSnapshot(), { runtime: Object.assign({}, fakeSnapshot().runtime, { mcp: { available: true } }) }) })
+  const available = json(api.components.DetailView({ store, t: makeT(), localeId: 'zh' }))
+  assert.ok(available.includes('runtimeEffective'), 'mcp 可用时显示就绪')
+})
+
+test('DetailView：安装按钮不再把展示标题当插件名兜底', () => {
+  const source = readFileSync(path.join(PACKAGE_DIR, 'client.js'), 'utf8').replace(/\r\n/gu, '\n')
+  assert.equal(
+    source.includes("store.install(catalogItem || { key, name: title, market })"),
+    false,
+    '不应再用展示标题兜底安装',
+  )
+  assert.ok(source.includes('onClick: () => store.install(catalogItem)'), '安装按钮必须传市场条目')
+})

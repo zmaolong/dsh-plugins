@@ -1,9 +1,9 @@
 # dsh-agent-plugin-hub
 
-> **试验性预览版（`0.0.1-preview.1`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
+> **试验性预览版（`0.0.1-preview.2`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
 > npm 上只发布 `preview` dist-tag（`latest` 暂不指向本版本）。
 > 需要安装时请锁定精确版本：
-> `dsh plugin --profile web add dsh-agent-plugin-hub@0.0.1-preview.1`。
+> `dsh plugin --profile web add dsh-agent-plugin-hub@0.0.1-preview.2`。
 > 版本说明：仓库内 `0.3.x` 是开发期版本号；npm 公开线从 `0.0.1-preview.N` 起步，首个正式版定为 `0.0.1`（预览线的稳定版）。
 
 DSH 的**智能体插件**（Agent Plugins）运行时与市场，带一个 **ZCode「插件市场」同构的商店面板**。
@@ -18,6 +18,26 @@ DSH 的**智能体插件**（Agent Plugins）运行时与市场，带一个 **ZC
 `mcpServers` 等能力。已知格式包括 Claude Code、CodeBuddy、ZCode；它们不是 DSH 插件
 （cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
+
+## 0.3.7 变更（商店交互修复与可达性）
+
+- 修复详情页兜底安装把展示标题当插件名导致 404：市场条目缺失时改为禁用按钮并提示来源缺失；
+- 修复回滚交互：历史版本行可回滚到**所选版本**（Host `/rollback` 新增可选 `version` 字段），
+  不再对任意行都回滚到最新可用版本；
+- 详情描述失败不再停在加载块：错误态区分「联网获取详情」（`POST /describe {fetch:true}`）
+  与「重试」，未缓存的 Git 市场条目可在线拉取详情；
+- 陈旧详情响应不再覆盖用户已切换的详情（竞态守卫）；
+- 错误 toast 按 Host 稳定错误码本地化（`not_found` / `conflict` / `operation_in_progress` 等），
+  未映射错误码回退服务端原文；
+- 插件管理页补错误条与刷新忙碌指示；首屏加载态显示「正在加载插件…」，与空态区分；
+- 键盘可达性：菜单与弹窗支持 Escape 关闭、关闭后焦点还原到触发元素；弹窗遮罩改为
+  click 关闭（拖拽选中文本不再误关）；「全部更新」失败列表只展示前 3 个；
+- 服务端：覆盖安装改为「备份-换位-清理」原子替换，消除「先删后改名」窗口导致的插件丢失；
+  回滚先校验目标版本与清单、全部成功后才交换记录，失败不丢历史版本；hooks matcher
+  长度上限 256（超长按字面比较）缓解 ReDoS；API Origin 校验兼容 https 同源；
+- 清理死 UI/死代码：移除占位「个人」分段 pill 与未引用文案 key；详情页 MCP 徽标按
+  runtime 数据渲染；layout 测试对 CRLF 检出鲁棒；
+- `npm test` 159/159（新增 12 个回归用例）。
 
 ## 0.3.6 变更（内容列居中，左右留空）
 
@@ -326,7 +346,7 @@ E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub
 
 ## 市场索引
 
-发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 `0.0.1-preview.1`）。在 DSH 插件页 → 发现 → 添加索引源：
+发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 `0.0.1-preview.2`）。在 DSH 插件页 → 发现 → 添加索引源：
 
 ```text
 https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json

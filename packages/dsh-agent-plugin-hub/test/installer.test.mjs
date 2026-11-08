@@ -4,7 +4,7 @@
 
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
 
@@ -44,6 +44,19 @@ test('重复安装同版本需 --force', async (t) => {
   await assert.rejects(hub.install({ name: 'demo-claude', market: market.id }), /已安装/)
   const forced = await hub.install({ name: 'demo-claude', market: market.id, force: true })
   assert.equal(forced.replaced, true)
+})
+
+test('安装 --force：旧目录原子替换，不残留 replace-* 备份', async (t) => {
+  const { hub, market } = await setup(t)
+  await hub.install({ name: 'demo-claude', market: market.id })
+  const forced = await hub.install({ name: 'demo-claude', market: market.id, force: true })
+  assert.equal(existsSync(forced.record.installedPath), true)
+  const tmpEntries = readdirSync(hub.store.paths.tmp)
+  assert.equal(
+    tmpEntries.filter((name) => name.startsWith('replace-')).length,
+    0,
+    '覆盖安装成功后不应残留 replace-* 备份目录',
+  )
 })
 
 test('安装 npm / 缺目录插件报错', async (t) => {
@@ -107,6 +120,58 @@ test('没有历史版本时回滚报错', async (t) => {
   const { hub, market } = await setup(t)
   await hub.install({ name: 'demo-claude', market: market.id })
   assert.throws(() => hub.rollback('demo-claude'), /没有可回滚的历史版本/)
+})
+
+test('回滚：可指定目标版本，当前版本转入历史', async (t) => {
+  const { hub, marketDir, market } = await setup(t)
+  await hub.install({ name: 'demo-claude', market: market.id })
+  const pluginJson = path.join(marketDir, 'plugins', 'demo-claude', '.claude-plugin', 'plugin.json')
+  const bump = (version) => {
+    const manifest = JSON.parse(readFileSync(pluginJson, 'utf8'))
+    manifest.version = version
+    writeFileSync(pluginJson, JSON.stringify(manifest, null, 2))
+  }
+  bump('0.2.0')
+  await hub.marketRefresh(market.id)
+  await hub.update('demo-claude', true)
+  bump('0.3.0')
+  await hub.marketRefresh(market.id)
+  await hub.update('demo-claude', true)
+
+  const record = hub.findRecord('demo-claude')
+  assert.equal(record.version, '0.3.0')
+  assert.deepEqual(record.previousVersions.map((item) => item.version), ['0.1.0', '0.2.0'])
+
+  const rolled = hub.rollback('demo-claude', '0.1.0')
+  assert.equal(rolled.record.version, '0.1.0')
+  assert.equal(rolled.previousVersion, '0.3.0')
+  const after = hub.findRecord('demo-claude')
+  assert.deepEqual(after.previousVersions.map((item) => item.version), ['0.2.0', '0.3.0'])
+})
+
+test('回滚：指定不存在或目录已被清理的版本时报错，历史版本不丢', async (t) => {
+  const { hub, marketDir, market } = await setup(t)
+  await hub.install({ name: 'demo-claude', market: market.id })
+  const pluginJson = path.join(marketDir, 'plugins', 'demo-claude', '.claude-plugin', 'plugin.json')
+  const manifest = JSON.parse(readFileSync(pluginJson, 'utf8'))
+  manifest.version = '0.2.0'
+  writeFileSync(pluginJson, JSON.stringify(manifest, null, 2))
+  await hub.marketRefresh(market.id)
+  await hub.update('demo-claude', true)
+
+  const record = hub.findRecord('demo-claude')
+  const historyLength = record.previousVersions.length
+  const historyPath = record.previousVersions[0].installedPath
+  assert.equal(historyLength, 1)
+
+  assert.throws(() => hub.rollback('demo-claude', '9.9.9'), /未找到历史版本 9\.9\.9/u)
+  assert.equal(hub.findRecord('demo-claude').previousVersions.length, historyLength, '报错不得丢历史版本')
+
+  rmSync(historyPath, { force: true, recursive: true })
+  assert.throws(() => hub.rollback('demo-claude', '0.1.0'), /目录已被清理/u)
+  const after = hub.findRecord('demo-claude')
+  assert.equal(after.version, '0.2.0', '失败回滚不得改动当前版本')
+  assert.equal(after.previousVersions.length, historyLength, '报错不得丢历史版本')
 })
 
 test('卸载：删除安装副本与状态', async (t) => {
