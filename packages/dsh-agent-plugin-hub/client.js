@@ -417,9 +417,9 @@ window.__ModuleLoader__.load({
 .aph-menu-item.danger{color:var(--aph-danger)}
 .aph-menu-sep{height:1px;margin:4px 6px;background:var(--aph-border)}
 .aph-switch{position:relative;display:inline-flex;flex:none;width:32px;height:18px;border-radius:999px;border:0;background:color-mix(in srgb,var(--aph-primary) 30%,transparent);padding:0;cursor:pointer;transition:background .15s ease}
-.aph-switch::after{content:"";position:absolute;top:1px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--aph-primary-fg);transition:left .15s ease,background .15s ease}
+.aph-switch::after{content:"";position:absolute;top:1px;left:1px;width:16px;height:16px;border-radius:50%;background:var(--aph-primary-fg);transition:left .15s ease,background .15s ease}
 .aph-switch[aria-checked="true"]{background:var(--aph-primary)}
-.aph-switch[aria-checked="true"]::after{left:16px}
+.aph-switch[aria-checked="true"]::after{left:15px}
 .aph-switch:disabled{opacity:.5;cursor:not-allowed}
 .aph-switch:focus-visible{outline:2px solid var(--aph-focus);outline-offset:2px}
 .aph-collapse-row{display:flex;align-items:center;gap:8px;width:100%;margin-top:8px;padding:8px 8px;border:0;border-radius:12px;background:transparent;color:var(--aph-fg-subtle);font:inherit;font-size:14px;text-align:left;white-space:nowrap;cursor:pointer}
@@ -536,7 +536,7 @@ window.__ModuleLoader__.load({
       arrowRight: ['M5 12h14', 'm12 5 7 7-7 7'],
       more: [[5, 12, 1.4], [12, 12, 1.4], [19, 12, 1.4]],
       download: ['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4', 'M7 10l5 5 5-5', 'M12 15V3'],
-      search: [[11, 11, 8], 'm21 21-4.3-4.3'],
+      search: [{ circle: [11, 11, 8] }, 'm21 21-4.3-4.3'],
       x: ['M18 6 6 18', 'm6 6 12 12'],
       external: ['M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6', 'M15 3h6v6', 'M10 14 21 3'],
       power: ['M12 2v10', 'M18.4 6.6a9 9 0 1 1-12.77.04'],
@@ -548,9 +548,9 @@ window.__ModuleLoader__.load({
       server: [{ rect: [2, 2, 20, 8, 2] }, { rect: [2, 14, 20, 8, 2] }, 'M6 6h.01', 'M6 18h.01'],
       wand: ['m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72', 'm14 7 3 3', 'M5 6v4', 'M19 14v4', 'M10 2v2', 'M7 8H3', 'M21 16h-3', 'M14 22v-2'],
       terminal: ['m4 17 6-6-6-6', 'M12 19h8'],
-      anchor: [[12, 5, 3], 'M12 8v14', 'M5 12H2a10 10 0 0 0 20 0h-3'],
+      anchor: [{ circle: [12, 5, 3] }, 'M12 8v14', 'M5 12H2a10 10 0 0 0 20 0h-3'],
       check: ['M20 6 9 17l-5-5'],
-      info: [[12, 12, 10], 'M12 16v-4', 'M12 8h.01'],
+      info: [{ circle: [12, 12, 10] }, 'M12 16v-4', 'M12 8h.01'],
       folder: ['M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z'],
     }
 
@@ -572,6 +572,11 @@ window.__ModuleLoader__.load({
         if (Array.isArray(part.rect)) {
           const [x, y, width, height, rx] = part.rect
           return h('rect', { key: index, x, y, width, height, rx })
+        }
+        if (part && Array.isArray(part.circle)) {
+          // 描边圆（lucide 原版形态，如 search / info / anchor），继承 currentColor 描边。
+          const [cx, cy, r] = part.circle
+          return h('circle', { key: index, cx, cy, r })
         }
         return h('circle', { key: index, cx: part[0], cy: part[1], r: part[2], fill: 'currentColor', stroke: 'none' })
       }))
@@ -1284,10 +1289,11 @@ window.__ModuleLoader__.load({
     function Avatar({ display, item, large }) {
       const src = iconSrc(display.icon)
       const [failed, setFailed] = useState(false)
-      const fallback = display.title ? display.title.slice(0, 1).toUpperCase() : ''
       useEffect(() => {
         setFailed(false)
       }, [src])
+      // 缺图/加载失败降级为中性 Blocks 图标（ZCode PluginIcon 同款）：与真实图标外层
+      // 形态一致，避免首字母兜底带来的装饰感与视觉跳变。
       return h('div', { className: `aph-avatar${large ? ' large' : ''}` },
         src !== '' && !failed
           ? h('img', {
@@ -1296,9 +1302,7 @@ window.__ModuleLoader__.load({
             loading: 'lazy',
             onError: () => setFailed(true),
           })
-          : fallback !== ''
-            ? h('span', { style: { fontSize: large ? 22 : 15, fontWeight: 600 } }, fallback)
-            : h(Icon, { name: 'blocks', size: large ? 24 : 16 }))
+          : h(Icon, { name: 'blocks', size: large ? 24 : 16 }))
     }
 
     function EmptyBlock({ title, description, action }) {
@@ -2164,12 +2168,13 @@ window.__ModuleLoader__.load({
       return h('div', { className: 'aph-root', ref: scrollRef }, body)
     }
 
-    /** 左侧栏全局面板图标（ownerProps：size / active）。lucide Puzzle = 插件/扩展的通用符号。 */
+    /** 左侧栏全局面板图标（ownerProps：size / active）。lucide Puzzle = 插件/扩展的通用符号。
+     * 尺寸按宿主下发的 size 原样渲染，不放大，与相邻面板图标保持一致。 */
     function PanelIcon({ size, active }) {
       const edge = typeof size === 'number' ? size : 20
       return h(Icon, {
         name: 'puzzle',
-        size: Math.round(edge * 1.12),
+        size: Math.round(edge),
         strokeWidth: active === true ? 2 : 1.7,
       })
     }

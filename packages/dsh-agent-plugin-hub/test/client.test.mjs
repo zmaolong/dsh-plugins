@@ -1114,3 +1114,17 @@ test('DetailView：安装按钮不再把展示标题当插件名兜底', () => {
   )
   assert.ok(source.includes('onClick: () => store.install(catalogItem)'), '安装按钮必须传市场条目')
 })
+
+test('图标：search/info/anchor 圆环用描边 circle（lucide 形态），more 保持实心圆点', () => {
+  const source = readFileSync(path.join(PACKAGE_DIR, 'client.js'), 'utf8').replace(/\r\n/gu, '\n')
+  assert.ok(source.includes('search: [{ circle: [11, 11, 8] }'), '搜索放大镜应为描边圆环')
+  assert.ok(source.includes('info: [{ circle: [12, 12, 10] }'), 'info 圆环应为描边')
+  assert.ok(source.includes('anchor: [{ circle: [12, 5, 3] }'), 'anchor 圆环应为描边')
+  assert.ok(source.includes('more: [[5, 12, 1.4]'), 'more 省略号应为实心圆点')
+})
+
+test('Avatar：缺图降级为中性 Blocks 图标，不再用首字母兜底', () => {
+  const source = readFileSync(path.join(PACKAGE_DIR, 'client.js'), 'utf8').replace(/\r\n/gu, '\n')
+  assert.equal(source.includes('slice(0, 1).toUpperCase()'), false, '不应再用首字母兜底')
+  assert.ok(source.includes("h(Icon, { name: 'blocks', size: large ? 24 : 16 })"), '缺图降级为 Blocks 图标')
+})
