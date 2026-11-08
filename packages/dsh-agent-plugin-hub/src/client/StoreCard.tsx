@@ -11,7 +11,7 @@ import { Avatar, Badge, Button, Spinner, UpdateBadge } from './controls.tsx'
 import { Icon } from './icons.tsx'
 import { Menu, type MenuItem } from './Menu.tsx'
 import { Switch } from './Switch.tsx'
-import type { HubActions, UseHub } from './store.ts'
+import { identity, type HubActions, type UseHub } from './store.ts'
 import { displayOf, updateAvailable, type JsonRecord, type Translate } from './presentation.ts'
 import css from './StoreCard.module.css'
 
@@ -29,7 +29,7 @@ export interface StoreCardProps {
 
 /** Render one plugin card. */
 export function StoreCard({ item, useHub, actions, t, localeId, management = false, onOpenDetail }: StoreCardProps): ReactNode {
-  const state = useHub()
+  const state = useHub(identity)
   const display = displayOf(item, localeId)
   const installed = item.installed === true
   const orphan = item.orphan === true

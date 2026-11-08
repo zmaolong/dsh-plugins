@@ -8,7 +8,7 @@
 import type { ReactNode } from 'react'
 import { Toasts } from './Toasts.tsx'
 import { AddSourceDialog, ConfirmDialog, SourcesDialog } from './dialogs.tsx'
-import type { HubActions, HubState, UseHub } from './store.ts'
+import { identity, type HubActions, type HubState, type UseHub } from './store.ts'
 import type { Translate } from './presentation.ts'
 import css from './overlay.module.css'
 
@@ -21,7 +21,7 @@ export interface OverlayHostProps {
 
 /** Render the overlay host (null while no dialog and no toast is active). */
 export function OverlayHost({ useHub, actions, t }: OverlayHostProps): ReactNode {
-  const state: HubState = useHub()
+  const state: HubState = useHub(identity)
   if (state.dialogs.length === 0 && state.toasts.length === 0) return null
   const toasts = <Toasts useHub={useHub} actions={actions} t={t} />
   const top = state.dialogs.length > 0 ? state.dialogs[state.dialogs.length - 1] : null

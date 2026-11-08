@@ -9,7 +9,7 @@ import type { ReactNode } from 'react'
 import { Avatar, Button, EmptyBlock, IconButton, SearchBox, columnGap } from './controls.tsx'
 import { AddMenu } from './AddMenu.tsx'
 import { StoreCard } from './StoreCard.tsx'
-import type { HubActions, HubState, UseHub } from './store.ts'
+import { identity, type HubActions, type HubState, type UseHub } from './store.ts'
 import {
   displayNames,
   displayOf,
@@ -53,7 +53,7 @@ function CollapseRow({ hidden, localeId, onExpand, t }: {
 
 /** Render the store view. */
 export function StoreView({ useHub, actions, t, localeId }: ViewProps): ReactNode {
-  const state: HubState = useHub()
+  const state: HubState = useHub(identity)
   const snapshot = state.snapshot ?? {}
   const markets = (snapshot.markets as JsonRecord[] | undefined) ?? []
   const items = (snapshot.items as JsonRecord[] | undefined) ?? []

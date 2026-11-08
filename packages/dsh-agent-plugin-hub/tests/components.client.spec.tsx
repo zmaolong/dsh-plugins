@@ -31,7 +31,9 @@ const t = (key: string, vars?: Record<string, unknown>): string => {
 }
 
 function stubHub(state: HubState): { useHub: UseHub } {
-  const useHub = ((selector?: (s: HubState) => unknown) => (selector === undefined ? state : selector(state))) as UseHub
+  // The host binds use<Name> hooks straight onto useSyncExternalStoreWithSelector,
+  // whose selector is REQUIRED; mirror that so a no-arg call fails here too.
+  const useHub = ((selector: (s: HubState) => unknown) => selector(state)) as UseHub
   return { useHub }
 }
 

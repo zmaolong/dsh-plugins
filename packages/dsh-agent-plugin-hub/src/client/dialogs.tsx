@@ -11,7 +11,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Button, IconButton, Spinner } from './controls.tsx'
 import { Icon } from './icons.tsx'
 import { useEscapeClose } from './overlay-hooks.ts'
-import type { DialogState, HubActions, HubState, UseHub } from './store.ts'
+import { identity, type DialogState, type HubActions, type HubState, type UseHub } from './store.ts'
 import { formatTime, errorMessageFor, orderMarkets, type JsonRecord, type Translate } from './presentation.ts'
 import css from './dialogs.module.css'
 
@@ -156,7 +156,7 @@ export function SourcesDialog({ useHub, store, t }: {
   store: { actions: HubActions }
   t: Translate
 }): ReactNode {
-  const state: HubState = useHub()
+  const state: HubState = useHub(identity)
   const snapshot = state.snapshot ?? {}
   const markets = orderMarkets<JsonRecord>((snapshot.markets as JsonRecord[] | undefined) ?? [])
   const dialog = state.dialogs.find(entry => entry.kind === 'sources') ?? { id: '' }

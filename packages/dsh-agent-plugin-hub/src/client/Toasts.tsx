@@ -7,7 +7,7 @@
 
 import type { ReactNode } from 'react'
 import { Icon } from './icons.tsx'
-import type { HubActions, HubState, UseHub } from './store.ts'
+import { identity, type HubActions, type HubState, type UseHub } from './store.ts'
 import type { Translate } from './presentation.ts'
 import css from './Toasts.module.css'
 
@@ -17,7 +17,7 @@ export function Toasts({ useHub, actions, t }: {
   actions: HubActions
   t: Translate
 }): ReactNode {
-  const state: HubState = useHub()
+  const state: HubState = useHub(identity)
   if (state.toasts.length === 0) return null
   return (
     <div className={css.toasts} role="status" aria-live="polite">

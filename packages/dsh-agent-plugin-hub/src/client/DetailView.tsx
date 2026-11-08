@@ -11,7 +11,7 @@ import { Avatar, Badge, Button, EmptyBlock, LoadingBlock, Spinner, columnGap } f
 import { Icon } from './icons.tsx'
 import { Menu, type MenuItem } from './Menu.tsx'
 import { Switch } from './Switch.tsx'
-import type { HubState } from './store.ts'
+import { identity, type HubState } from './store.ts'
 import {
   canonicalTitle,
   displayOf,
@@ -63,7 +63,7 @@ interface InfoRow {
 
 /** Render the detail view. */
 export function DetailView({ useHub, actions, t, localeId }: ViewProps): ReactNode {
-  const state: HubState = useHub()
+  const state: HubState = useHub(identity)
   const snapshot = (state.snapshot ?? {}) as JsonRecord
   const key = state.detailKey ?? ''
   const installedList = (snapshot.installed as JsonRecord[] | undefined) ?? []

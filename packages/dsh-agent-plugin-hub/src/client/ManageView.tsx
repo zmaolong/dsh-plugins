@@ -10,14 +10,14 @@ import { Badge, Button, EmptyBlock, IconButton, SearchBox, Spinner, columnGap } 
 import { Icon } from './icons.tsx'
 import { AddMenu } from './AddMenu.tsx'
 import { StoreCard } from './StoreCard.tsx'
-import type { HubState } from './store.ts'
+import { identity, type HubState } from './store.ts'
 import { displayOf, updateAvailable, type JsonRecord } from './presentation.ts'
 import css from './panel.module.css'
 import type { ViewProps } from './StoreView.tsx'
 
 /** Render the management view. */
 export function ManageView({ useHub, actions, t, localeId }: ViewProps): ReactNode {
-  const state: HubState = useHub()
+  const state: HubState = useHub(identity)
   const snapshot = state.snapshot ?? {}
   const installed = (snapshot.installed as JsonRecord[] | undefined) ?? []
   const query = state.manageQuery

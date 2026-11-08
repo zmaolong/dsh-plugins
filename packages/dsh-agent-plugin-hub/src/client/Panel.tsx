@@ -12,7 +12,7 @@ import { Icon } from './icons.tsx'
 import { StoreView } from './StoreView.tsx'
 import { ManageView } from './ManageView.tsx'
 import { DetailView } from './DetailView.tsx'
-import type { HubActions, HubState, UseHub } from './store.ts'
+import { identity, type HubActions, type HubState, type UseHub } from './store.ts'
 import type { JsonRecord, Translate } from './presentation.ts'
 import css from './panel.module.css'
 
@@ -26,7 +26,7 @@ export interface PanelProps {
 
 /** Render the main panel. */
 export function Panel({ useHub, actions, t, localeId }: PanelProps): ReactNode {
-  const state: HubState = useHub()
+  const state: HubState = useHub(identity)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const listScroll = useRef(0)
   const lastView = useRef<HubState['view']>(state.view)

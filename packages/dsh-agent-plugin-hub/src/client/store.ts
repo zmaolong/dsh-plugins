@@ -170,6 +170,16 @@ export interface HubController {
 /** Selector hook bound from the registration's `hooks.hub` compartment. */
 export type UseHub = <S = HubState>(selector?: (state: HubState) => S) => S
 
+/**
+ * Identity selector. The host binds `use<Name>` hooks straight onto
+ * `useSyncExternalStoreWithSelector`, whose selector is required — a no-arg
+ * call crashes with "selector is not a function", so whole-snapshot
+ * subscriptions pass this explicitly.
+ */
+export function identity<T>(state: T): T {
+  return state
+}
+
 /** Create the panel controller (one per apply; disposed with the plugin). */
 export function createHubController(options: HubControllerOptions): HubController {
   const { translate: t, getLocaleId } = options

@@ -1543,6 +1543,15 @@ window.__ModuleLoader__.load({
 				toasts: []
 			};
 		}
+		/**
+		* Identity selector. The host binds `use<Name>` hooks straight onto
+		* `useSyncExternalStoreWithSelector`, whose selector is required — a no-arg
+		* call crashes with "selector is not a function", so whole-snapshot
+		* subscriptions pass this explicitly.
+		*/
+		function identity(state) {
+			return state;
+		}
 		/** Create the panel controller (one per apply; disposed with the plugin). */
 		function createHubController(options) {
 			const { translate: t, getLocaleId } = options;
@@ -2618,7 +2627,7 @@ window.__ModuleLoader__.load({
 		// src/client/StoreCard.tsx
 		/** Render one plugin card. */
 		function StoreCard({ item, useHub, actions, t, localeId, management = false, onOpenDetail }) {
-			const state = useHub();
+			const state = useHub(identity);
 			const display = displayOf(item, localeId);
 			const installed = item.installed === true;
 			const orphan = item.orphan === true;
@@ -2827,7 +2836,7 @@ window.__ModuleLoader__.load({
 		}
 		/** Render the store view. */
 		function StoreView({ useHub, actions, t, localeId }) {
-			const state = useHub();
+			const state = useHub(identity);
 			const snapshot = state.snapshot ?? {};
 			const markets = snapshot.markets ?? [];
 			const items = snapshot.items ?? [];
@@ -2979,7 +2988,7 @@ window.__ModuleLoader__.load({
 		// src/client/ManageView.tsx
 		/** Render the management view. */
 		function ManageView({ useHub, actions, t, localeId }) {
-			const state = useHub();
+			const state = useHub(identity);
 			const snapshot = state.snapshot ?? {};
 			const installed = snapshot.installed ?? [];
 			const query = state.manageQuery;
@@ -3231,7 +3240,7 @@ window.__ModuleLoader__.load({
 		}
 		/** Render the detail view. */
 		function DetailView({ useHub, actions, t, localeId }) {
-			const state = useHub();
+			const state = useHub(identity);
 			const snapshot = state.snapshot ?? {};
 			const key = state.detailKey ?? "";
 			const installedList = snapshot.installed ?? [];
@@ -3682,7 +3691,7 @@ window.__ModuleLoader__.load({
 		*/
 		/** Render the main panel. */
 		function Panel({ useHub, actions, t, localeId }) {
-			const state = useHub();
+			const state = useHub(identity);
 			const scrollRef = (0, react.useRef)(null);
 			const listScroll = (0, react.useRef)(0);
 			const lastView = (0, react.useRef)(state.view);
@@ -3793,7 +3802,7 @@ window.__ModuleLoader__.load({
 		// src/client/Toasts.tsx
 		/** Render the toast stack (null when empty). */
 		function Toasts({ useHub, actions, t }) {
-			const state = useHub();
+			const state = useHub(identity);
 			if (state.toasts.length === 0) return null;
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				className: Toasts_module_css_default.toasts,
@@ -4041,7 +4050,7 @@ window.__ModuleLoader__.load({
 		}
 		/** Marketplace sources dialog: list with per-market refresh/remove. */
 		function SourcesDialog({ useHub, store, t }) {
-			const state = useHub();
+			const state = useHub(identity);
 			const markets = orderMarkets((state.snapshot ?? {}).markets ?? []);
 			const dialog = state.dialogs.find((entry) => entry.kind === "sources") ?? { id: "" };
 			const list = markets.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
@@ -4179,7 +4188,7 @@ window.__ModuleLoader__.load({
 		// src/client/OverlayHost.tsx
 		/** Render the overlay host (null while no dialog and no toast is active). */
 		function OverlayHost({ useHub, actions, t }) {
-			const state = useHub();
+			const state = useHub(identity);
 			if (state.dialogs.length === 0 && state.toasts.length === 0) return null;
 			const toasts = /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Toasts, {
 				useHub,
