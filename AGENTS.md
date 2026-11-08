@@ -42,17 +42,18 @@
 1. 读 [`docs/PLUGIN-DEV.md`](docs/PLUGIN-DEV.md) 与 [`README.md`](README.md)；
 2. 改代码（TypeScript + JSX + CSS Modules；保持零运行时依赖，工具链全在 devDependencies）；
 3. 在包目录跑 `npm run check && npm test && npm run build`（tsc 双程序 + vitest 离线 + tsdown 产物）；
-4. 若涉及包版本/展示元数据：`node scripts\build-index.mjs`；
-5. `git commit`（**禁止添加 Co-Authored-By 类作者信息**；`lib/` 产物与源码同提交）；
-6. `git push origin release-0.0.1`；
-7. 涉及 npm 发布时按 §8 执行，并 `npm view <pkg> versions dist-tags` 验证。
+4. **真实宿主自测（必做，见下方「调试交接」）**：离线全绿 ≠ 宿主可用——凡改了客户端 slots、宿主契约或 UI 的改动，先装进 `zdebug` 用浏览器实测通过再继续；
+5. 若涉及包版本/展示元数据：`node scripts\build-index.mjs`；
+6. `git commit`（**禁止添加 Co-Authored-By 类作者信息**；`lib/` 产物与源码同提交）；
+7. `git push origin release-0.0.1`；
+8. 涉及 npm 发布时按 §8 执行，并 `npm view <pkg> versions dist-tags` 验证。
 
-## 调试交接（开发完成后）
+## 调试交接（开发完成后、交付验收前，Agent 必做）
 
-插件不能脱离 DSH 宿主单独调试。开发完成后按下面收尾，把包交到可调试状态：
+插件不能脱离 DSH 宿主单独调试。**离线测试全绿 ≠ 宿主可用**（测试桩可能偏离宿主契约；实测教训：slots 注入 hook 的 selector 必填、inject 面成员逐个到 props，都只在真实宿主才炸）。开发完成后先按下流程**自测通过**，再向用户交付验收：
 
 1. 质量门与构建：`npm run check && npm test && npm run build`（下面的脚本会自动跑）；
-2. 装进调试 profile 并启动，默认 `zdebug`：首次按官方 `web` 模板创建，浏览器调试与宿主终端日志都可用：
+2. 装进调试 profile 并启动，默认 `zdebug`：首次按官方 `web` 模板创建（装依赖较慢，可能超 10 分钟），浏览器调试与宿主终端日志都可用：
 
    ```powershell
    powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\dsh-agent-plugin-hub
@@ -64,9 +65,14 @@
    powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\dsh-agent-plugin-hub -Profile desktop -NoBoot
    ```
 
-3. 交接信息必须包含：包路径、profile、浏览器入口 URL、宿主日志路径、本次改动点；
-4. **不要手改 `~/.dsh/profiles/**`**：安装只走脚本、`dsh plugin` 或应用内插件页；
-5. 脚本使用桌面安装自带的 CLI（`resources\runtime\cli\bin\dsh.cmd`，允许管理 `desktop` profile；普通 `dsh` 会拒绝）。link 安装要创建 junction，**DSH 沙箱内的 shell 会被拒绝**（EPERM），请在 ZCode 等普通终端里运行。
+3. **浏览器实测（playwright-cli）**：打开脚本打印的入口 URL 后依次——
+   - `console error` 必须为 0；有报错先修再继续；
+   - 逐视图驱动：侧栏入口 → 各视图/弹窗/开关，用 `snapshot`/`find` 断言用户可见行为，`screenshot` 核对渲染；
+   - 用 curl 打插件 API（如 `/agent-plugin/api/store`）复核数据与版本；
+   - **不要被无关 404 迷惑**：如 `/plugins/<pkg>/client.js` 404 只是路径猜错，client bundle 由宿主 manifest 体系下发，页面正常即没问题。
+4. 交接信息必须包含：包路径、profile、浏览器入口 URL、宿主日志路径、本次改动点，以及停止调试宿主的 `taskkill /PID …` 命令；调试宿主可留给用户复验，桌面环境由用户自己装；
+5. **不要手改 `~/.dsh/profiles/**`**：安装只走脚本、`dsh plugin` 或应用内插件页；
+6. 脚本使用桌面安装自带的 CLI（`resources\runtime\cli\bin\dsh.cmd`，允许管理 `desktop` profile；普通 `dsh` 会拒绝）。link 安装要创建 junction，**DSH 沙箱内的 shell 会被拒绝**（EPERM），请在 ZCode 等普通终端里运行。
 
 ## 常用命令
 

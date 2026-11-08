@@ -500,6 +500,8 @@ npm run build   # tsdown 产物（lib/ 入库）
 - 仓库 `core.autocrlf=true`：对源码做字符串探针的测试先归一化 `\r\n`（优先用行为断言）；
 - 质量门通过后再提交。
 
+**真实宿主自测（质量门之后、交付之前）🟡**：离线全绿 ≠ 宿主可用——测试桩可能偏离宿主契约（实测教训：slots 注入 hook 的 selector 必填、inject 面成员逐个到 props，都只在真实宿主才暴露）。凡改了客户端 slots、宿主契约或 UI 的改动，用 `scripts/dev-debug.ps1` 装进 `zdebug` profile 起真实宿主，再以 playwright-cli 驱动浏览器逐视图验证（控制台零报错、用户可见行为、截图核对、curl 插件 API 复核），全绿才交付。完整流程与交接格式见仓库根 [`AGENTS.md`](../AGENTS.md) 的「调试交接」节。
+
 **如何复核本文档的 🟡/🟠 条目**（给下一个 Agent）：
 
 1. 在 web profile 真实安装一次插件，记录报错文本；
@@ -538,6 +540,7 @@ npm run build   # tsdown 产物（lib/ 入库）
 - [ ] 客户端样式不污染全局（CSS Modules）；locale id 小写；`npm run build` 已跑且 `lib/` 与源码同提交
 - [ ] 展示元数据在 `locale/*.json` 的 `meta.title/description`（官方）与本仓库 `dsh.market`（生成器）之间保持一致
 - [ ] `npm run check` 与 `npm test` 通过（离线）
+- [ ] 改了客户端 slots / 宿主契约 / UI 时，已按 AGENTS.md「调试交接」在 zdebug 真实宿主自测通过（控制台零报错 + 逐视图驱动）
 - [ ] 版本号符合发布线（`-preview.N` / 正式）
 - [ ] 涉及包版本或展示元数据时，已重跑 `node scripts\build-index.mjs`
 - [ ] commit 信息清晰（**不要加 Co-Authored-By**）；完成后 push 到发布分支
