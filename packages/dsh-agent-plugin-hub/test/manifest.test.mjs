@@ -50,11 +50,11 @@ test('只有根级 plugin.json 时按提示格式兜底并给出 warning', () =>
   assert.ok(detected.warnings.length > 0)
 })
 
-test('缺少 name/version 时报中文错误', () => {
+test('缺少 name 时报中文错误；version 缺省按 0.0.0（对齐 ZCode/Claude 生态）', () => {
   const fakeDetected = { format: 'claude', manifestPath: 'x/plugin.json' }
   assert.throws(() => validatePluginManifest({ version: '1.0.0' }, fakeDetected), /缺少必填字段 name/)
-  assert.throws(() => validatePluginManifest({ name: 'ok' }, fakeDetected), /缺少必填字段 version/)
   assert.throws(() => validatePluginManifest({ name: '../evil', version: '1.0.0' }, fakeDetected), /name 不合法/)
+  assert.equal(validatePluginManifest({ name: 'ok' }, fakeDetected).version, '0.0.0')
 })
 
 test('marketplace.json 解析：相对路径 / npm / 未知字段', () => {

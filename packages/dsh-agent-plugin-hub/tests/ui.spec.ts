@@ -194,7 +194,7 @@ describe('商店面板 Host API', () => {
   })
 
   /** 基础环境：临时 home + 本地 claude 市场 + 假 ctx/webServer + 已挂载路由。 */
-  async function setup(): Promise<{
+  async function setup(fixture = 'claude-market'): Promise<{
     work: string
     marketDir: string
     ctx: ReturnType<typeof createFakeCtx>
@@ -205,7 +205,7 @@ describe('商店面板 Host API', () => {
   }> {
     const work = tempHome('hub-ui-')
     tempDirs.push(work)
-    const marketDir = copyFixture('claude-market', work)
+    const marketDir = copyFixture(fixture, work)
     const webServer = createFakeWebServer()
     const ctx = createFakeCtx({ webServer })
     const hub = new AgentPluginHub({
@@ -453,6 +453,18 @@ describe('商店面板 Host API', () => {
     const noFetch = await post(route, 'describe', { market: market.id, name: 'demo-claude', fetch: false })
     expect(noFetch.status).toBe(200)
     expect(refreshes, 'fetch:false 不得刷新').toBe(1)
+  })
+
+  it('POST /describe：无 version 的插件返回 manifest 与组件（不再读取清单失败）', async () => {
+    const { route, market } = await setup('versionless-market')
+    const result = await post(route, 'describe', { market: market.id, name: 'demo-versionless', fetch: false })
+    expect(result.status, JSON.stringify(result.body)).toBe(200)
+    const data = result.body.data
+    expect(data.manifest.name).toBe('demo-versionless')
+    expect(data.version).toBe('0.0.0')
+    expect(data.capabilities.skills.map((item: AnyJson) => item.name)).toEqual(['greet'])
+    const warnings = (data.warnings ?? []) as string[]
+    expect(warnings.some((warning: string) => warning.includes('读取插件清单失败'))).toBe(false)
   })
 
   it('GET /describe：未知/歧义/缺参的错误码', async () => {

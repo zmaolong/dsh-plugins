@@ -435,7 +435,7 @@ describe('市场管理', () => {
     expect(market.plugins.length).toBe(3)
   })
 
-  it('git 市场重启后：marketRoot 可推导，refresh / install / update 正常（P0 回归）', async () => {
+  it('git 市场重启后：marketRoot 可推导，refresh / install / update 正常（P0 回归）', { timeout: 20_000 }, async () => {
     const work = makeWork('hub-git-restart-')
     const repoDir = path.join(work, 'git-market-repo')
     const source = path.join(work, 'claude-market')

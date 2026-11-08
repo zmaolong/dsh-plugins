@@ -52,6 +52,26 @@ describe('安装器：安装 / 重装 / 禁用启用 / 更新 / 回滚 / 卸载 
     expect(hub.state.plugins.length).toBe(1)
   })
 
+  it('安装无 version 的插件：记录 0.0.0、目录 …/0.0.0/，更新不误报', async () => {
+    const { hub, market, work } = await setup('versionless-market')
+    const result = await hub.install({ name: 'demo-versionless', market: market.id })
+    const record = result.record
+    expect(record.name).toBe('demo-versionless')
+    expect(record.version).toBe('0.0.0')
+    expect(record.installedPath.includes(path.join('demo-versionless', '0.0.0'))).toBeTruthy()
+    expect(existsSync(path.join(record.installedPath, '.claude-plugin', 'plugin.json'))).toBe(true)
+    const caps = record.capabilities as CapabilityMap
+    expect([...caps.skills].sort()).toEqual(['greet'])
+    // 清单无 version：更新比较恒等 → 不产生更新动作
+    const updated = await hub.update('demo-versionless')
+    expect(updated.changed).toBe(false)
+    // 重启自检不卸载（validate 已放宽）
+    const reloaded = new AgentPluginHub({ home: path.join(work, 'hub-home') })
+    reloaded.start()
+    expect(reloaded.state.plugins.length).toBe(1)
+    expect(reloaded.state.plugins[0]?.version).toBe('0.0.0')
+  })
+
   it('重复安装同版本需 --force', async () => {
     const { hub, market } = await setup()
     await hub.install({ name: 'demo-claude', market: market.id })

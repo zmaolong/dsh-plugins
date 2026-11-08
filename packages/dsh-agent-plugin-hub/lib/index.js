@@ -260,8 +260,10 @@ function toCommandName(input) {
 * - `plugin.json` display fields are returned by `validatePluginManifest`
 *   for UI fallback.
 *
-* Required fields are strict (name, version); optional fields are tolerant;
-* whether to keep the raw manifest is the caller's decision.
+* Required fields are strict (name only); optional fields are tolerant —
+* `version` follows the Claude/ZCode ecosystem convention and defaults to
+* `0.0.0` when absent; whether to keep the raw manifest is the caller's
+* decision.
 *
 * @module dsh-agent-plugin-hub/manifest
 */
@@ -493,11 +495,11 @@ function detectPluginManifest(root, options = {}) {
 function validatePluginManifest(manifest, context) {
 	const warnings = [];
 	const name = textOf(manifest.name);
-	const version = textOf(manifest.version);
+	const rawVersion = textOf(manifest.version);
+	const version = rawVersion !== "" ? rawVersion : "0.0.0";
 	if (name === "") throw new Error(`${context.manifestPath} 缺少必填字段 name`);
-	if (version === "") throw new Error(`${context.manifestPath} 缺少必填字段 version`);
 	if (!isSafePluginName(name)) throw new Error(`${context.manifestPath} 的 name 不合法：${name}（只允许字母数字与 ._-，最长 64，且不得含 ..）`);
-	if (String(manifest.version).trim() !== version) warnings.push("version 含首尾空白，已规整");
+	if (rawVersion !== "" && String(manifest.version).trim() !== rawVersion) warnings.push("version 含首尾空白，已规整");
 	return {
 		name,
 		version,

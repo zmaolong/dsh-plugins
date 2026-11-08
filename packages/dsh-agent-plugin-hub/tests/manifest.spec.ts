@@ -50,11 +50,23 @@ it('只有根级 plugin.json 时按提示格式兜底并给出 warning', () => {
   expect(detected.warnings.length).toBeGreaterThan(0)
 })
 
-it('缺少 name/version 时报中文错误', () => {
+it('缺少 name 时报中文错误；version 缺省按 0.0.0（对齐 ZCode/Claude 生态）', () => {
   const fakeDetected = { format: 'claude', manifestPath: 'x/plugin.json' }
   expect(() => validatePluginManifest({ version: '1.0.0' }, fakeDetected)).toThrow(/缺少必填字段 name/)
-  expect(() => validatePluginManifest({ name: 'ok' }, fakeDetected)).toThrow(/缺少必填字段 version/)
   expect(() => validatePluginManifest({ name: '../evil', version: '1.0.0' }, fakeDetected)).toThrow(/name 不合法/)
+  const versionless = validatePluginManifest({ name: 'ok' }, fakeDetected)
+  expect(versionless.version).toBe('0.0.0')
+  expect(versionless.warnings).toEqual([])
+  expect(validatePluginManifest({ name: 'ok', version: ' 2.0.0 ' }, fakeDetected).version).toBe('2.0.0')
+})
+
+it('无 version 的 claude 插件夹具：探测与校验通过', () => {
+  const root = path.join(FIXTURES, 'versionless-market', 'plugins', 'demo-versionless')
+  const detected = detectPluginManifest(root)
+  expect(detected.format).toBe('claude')
+  const meta = validatePluginManifest(detected.manifest, detected)
+  expect(meta.name).toBe('demo-versionless')
+  expect(meta.version).toBe('0.0.0')
 })
 
 it('marketplace.json 解析：相对路径 / npm / 未知字段', () => {

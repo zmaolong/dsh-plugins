@@ -1,0 +1,6 @@
+{
+  "name": "demo-versionless",
+  "description": "夹具：无 version 的 Claude 插件",
+  "author": { "name": "fixture" },
+  "skills": "./skills"
+}
