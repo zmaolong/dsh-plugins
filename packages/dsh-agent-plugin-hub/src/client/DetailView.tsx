@@ -62,8 +62,9 @@ interface InfoRow {
 }
 
 /** Render the detail view. */
-export function DetailView({ useHub, actions, t, localeId }: ViewProps): ReactNode {
+export function DetailView({ useHub, actions, t }: ViewProps): ReactNode {
   const state: HubState = useHub(identity)
+  const localeId = state.localeId
   const snapshot = (state.snapshot ?? {}) as JsonRecord
   const key = state.detailKey ?? ''
   const installedList = (snapshot.installed as JsonRecord[] | undefined) ?? []

@@ -16,8 +16,9 @@ import css from './panel.module.css'
 import type { ViewProps } from './StoreView.tsx'
 
 /** Render the management view. */
-export function ManageView({ useHub, actions, t, localeId }: ViewProps): ReactNode {
+export function ManageView({ useHub, actions, t }: ViewProps): ReactNode {
   const state: HubState = useHub(identity)
+  const localeId = state.localeId
   const snapshot = state.snapshot ?? {}
   const installed = (snapshot.installed as JsonRecord[] | undefined) ?? []
   const query = state.manageQuery

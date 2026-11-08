@@ -55,6 +55,8 @@ export function apply(ctx: ClientContext): void {
   }
   const controller = createHubController({ translate: t, getLocaleId })
   ctx.effect(() => () => controller.actions.destroy(), 'dsh-agent-plugin-hub: controller')
+  // Track the active locale id in the snapshot so views re-resolve i18n display picks.
+  ctx.effect(() => ctx.locale.subscribe?.(() => controller.actions.setLocaleId(getLocaleId())), 'dsh-agent-plugin-hub: locale tracking')
 
   // Sidebar entry; panel order keeps 插件(0) → 智能体插件(5) → 自动化任务(10) → 上下文洞察(20).
   ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({
@@ -72,7 +74,7 @@ export function apply(ctx: ClientContext): void {
     locale: NS,
     inject: () => ({
       hooks: { hub: controller.store },
-      ...controller.actions,
+      actions: controller.actions,
     }),
   }, Panel))
 
@@ -86,7 +88,7 @@ export function apply(ctx: ClientContext): void {
     locale: NS,
     inject: () => ({
       hooks: { hub: controller.store },
-      ...controller.actions,
+      actions: controller.actions,
     }),
   }, OverlayHost))
 }

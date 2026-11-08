@@ -60,6 +60,8 @@ export interface HubState {
   updatingAll: boolean
   dialogs: DialogState[]
   toasts: ToastState[]
+  /** Active locale id (lowercase), tracked from the locale service. */
+  localeId: string
 }
 
 /** Create a snapshot store: stable snapshots, subscriber-safe dispatch. */
@@ -120,6 +122,7 @@ export function initialHubState(): HubState {
     updatingAll: false,
     dialogs: [],
     toasts: [],
+    localeId: '',
   }
 }
 
@@ -140,6 +143,7 @@ export interface HubActions {
   setQuery(query: string): void
   setManageQuery(query: string): void
   setManageFilter(filter: HubState['manageFilter']): void
+  setLocaleId(localeId: string): void
   toggleCollapse(groupKey: string): void
   refreshAll(): Promise<void>
   install(item: JsonRecord): void
@@ -183,7 +187,7 @@ export function identity<T>(state: T): T {
 /** Create the panel controller (one per apply; disposed with the plugin). */
 export function createHubController(options: HubControllerOptions): HubController {
   const { translate: t, getLocaleId } = options
-  const store = createSnapshotStore<HubState>(initialHubState())
+  const store = createSnapshotStore<HubState>({ ...initialHubState(), localeId: getLocaleId() })
   let started = false
   let queue: Promise<void> = Promise.resolve()
   let toastSeq = 0
@@ -338,6 +342,9 @@ export function createHubController(options: HubControllerOptions): HubControlle
     },
     setManageFilter(manageFilter: HubState['manageFilter']) {
       set({ manageFilter })
+    },
+    setLocaleId(localeId: string) {
+      set({ localeId })
     },
     toggleCollapse(groupKey: string) {
       set((state) => {

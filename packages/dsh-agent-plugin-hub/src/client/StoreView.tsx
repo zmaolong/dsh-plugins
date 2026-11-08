@@ -25,7 +25,6 @@ export interface ViewProps {
   useHub: UseHub
   actions: HubActions
   t: Translate
-  localeId: string
 }
 
 /** Collapsed-rows expander under one market group. */
@@ -52,8 +51,9 @@ function CollapseRow({ hidden, localeId, onExpand, t }: {
 }
 
 /** Render the store view. */
-export function StoreView({ useHub, actions, t, localeId }: ViewProps): ReactNode {
+export function StoreView({ useHub, actions, t }: ViewProps): ReactNode {
   const state: HubState = useHub(identity)
+  const localeId = state.localeId
   const snapshot = state.snapshot ?? {}
   const markets = (snapshot.markets as JsonRecord[] | undefined) ?? []
   const items = (snapshot.items as JsonRecord[] | undefined) ?? []

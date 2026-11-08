@@ -162,7 +162,7 @@ describe('Panel', () => {
   it('renders the loading block before the first snapshot', () => {
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
     const { useHub } = stubHub(controller.store.getSnapshot())
-    render(<Panel useHub={useHub} actions={controller.actions} t={t} localeId="zh" />)
+    render(<Panel useHub={useHub} actions={controller.actions} t={t} />)
     expect(screen.getByText(t('catalogLoading'))).toBeTruthy()
   })
 
@@ -170,7 +170,7 @@ describe('Panel', () => {
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
     const load = vi.spyOn(controller.actions, 'load')
     const { useHub } = stubHub({ ...initialHubState(), status: 'error', error: 'errorForbidden' })
-    render(<Panel useHub={useHub} actions={controller.actions} t={t} localeId="zh" />)
+    render(<Panel useHub={useHub} actions={controller.actions} t={t} />)
     expect(screen.getByText(t('apiUnavailable'))).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: t('retry') }))
     expect(load).toHaveBeenCalledOnce()
@@ -188,7 +188,7 @@ describe('Panel', () => {
         installed: [],
       },
     })
-    render(<Panel useHub={useHub} actions={controller.actions} t={t} localeId="zh" />)
+    render(<Panel useHub={useHub} actions={controller.actions} t={t} />)
     expect(screen.getByText(/迁移失败/u)).toBeTruthy()
     expect(screen.getByPlaceholderText(t('searchPlaceholder'))).toBeTruthy()
   })

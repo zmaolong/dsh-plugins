@@ -1540,7 +1540,8 @@ window.__ModuleLoader__.load({
 				refreshing: false,
 				updatingAll: false,
 				dialogs: [],
-				toasts: []
+				toasts: [],
+				localeId: ""
 			};
 		}
 		/**
@@ -1555,7 +1556,10 @@ window.__ModuleLoader__.load({
 		/** Create the panel controller (one per apply; disposed with the plugin). */
 		function createHubController(options) {
 			const { translate: t, getLocaleId } = options;
-			const store = createSnapshotStore(initialHubState());
+			const store = createSnapshotStore({
+				...initialHubState(),
+				localeId: getLocaleId()
+			});
 			let started = false;
 			let queue = Promise.resolve();
 			let toastSeq = 0;
@@ -1732,6 +1736,9 @@ window.__ModuleLoader__.load({
 				},
 				setManageFilter(manageFilter) {
 					set({ manageFilter });
+				},
+				setLocaleId(localeId) {
+					set({ localeId });
 				},
 				toggleCollapse(groupKey) {
 					set((state) => {
@@ -2835,8 +2842,9 @@ window.__ModuleLoader__.load({
 			});
 		}
 		/** Render the store view. */
-		function StoreView({ useHub, actions, t, localeId }) {
+		function StoreView({ useHub, actions, t }) {
 			const state = useHub(identity);
+			const localeId = state.localeId;
 			const snapshot = state.snapshot ?? {};
 			const markets = snapshot.markets ?? [];
 			const items = snapshot.items ?? [];
@@ -2987,8 +2995,9 @@ window.__ModuleLoader__.load({
 		}
 		// src/client/ManageView.tsx
 		/** Render the management view. */
-		function ManageView({ useHub, actions, t, localeId }) {
+		function ManageView({ useHub, actions, t }) {
 			const state = useHub(identity);
+			const localeId = state.localeId;
 			const snapshot = state.snapshot ?? {};
 			const installed = snapshot.installed ?? [];
 			const query = state.manageQuery;
@@ -3239,8 +3248,9 @@ window.__ModuleLoader__.load({
 			});
 		}
 		/** Render the detail view. */
-		function DetailView({ useHub, actions, t, localeId }) {
+		function DetailView({ useHub, actions, t }) {
 			const state = useHub(identity);
+			const localeId = state.localeId;
 			const snapshot = state.snapshot ?? {};
 			const key = state.detailKey ?? "";
 			const installedList = snapshot.installed ?? [];
@@ -3690,7 +3700,7 @@ window.__ModuleLoader__.load({
 		* @module dsh-agent-plugin-hub/client/Panel
 		*/
 		/** Render the main panel. */
-		function Panel({ useHub, actions, t, localeId }) {
+		function Panel({ useHub, actions, t }) {
 			const state = useHub(identity);
 			const scrollRef = (0, react.useRef)(null);
 			const listScroll = (0, react.useRef)(0);
@@ -3743,18 +3753,15 @@ window.__ModuleLoader__.load({
 				const view = state.view === "detail" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(DetailView, {
 					useHub,
 					actions,
-					t,
-					localeId
+					t
 				}, "detail") : state.view === "manage" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ManageView, {
 					useHub,
 					actions,
-					t,
-					localeId
+					t
 				}, "manage") : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(StoreView, {
 					useHub,
 					actions,
-					t,
-					localeId
+					t
 				}, "store");
 				body = /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					style: {
@@ -4266,6 +4273,7 @@ window.__ModuleLoader__.load({
 				getLocaleId
 			});
 			ctx.effect(() => () => controller.actions.destroy(), "dsh-agent-plugin-hub: controller");
+			ctx.effect(() => ctx.locale.subscribe?.(() => controller.actions.setLocaleId(getLocaleId())), "dsh-agent-plugin-hub: locale tracking");
 			ctx.slots.inject("sidebar.panellist", () => ctx.slots.register({
 				name: "sidebar.panellist",
 				id: PANEL_ID,
@@ -4279,7 +4287,7 @@ window.__ModuleLoader__.load({
 				locale: NS,
 				inject: () => ({
 					hooks: { hub: controller.store },
-					...controller.actions
+					actions: controller.actions
 				})
 			}, Panel));
 			ctx.slots.inject("shell.overlay", () => ctx.slots.register({
@@ -4290,7 +4298,7 @@ window.__ModuleLoader__.load({
 				locale: NS,
 				inject: () => ({
 					hooks: { hub: controller.store },
-					...controller.actions
+					actions: controller.actions
 				})
 			}, OverlayHost));
 		}

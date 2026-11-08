@@ -21,11 +21,10 @@ export interface PanelProps {
   useHub: UseHub
   actions: HubActions
   t: Translate
-  localeId: string
 }
 
 /** Render the main panel. */
-export function Panel({ useHub, actions, t, localeId }: PanelProps): ReactNode {
+export function Panel({ useHub, actions, t }: PanelProps): ReactNode {
   const state: HubState = useHub(identity)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const listScroll = useRef(0)
@@ -74,10 +73,10 @@ export function Panel({ useHub, actions, t, localeId }: PanelProps): ReactNode {
       )
     }
     const view = state.view === 'detail'
-      ? <DetailView key="detail" useHub={useHub} actions={actions} t={t} localeId={localeId} />
+      ? <DetailView key="detail" useHub={useHub} actions={actions} t={t} />
       : state.view === 'manage'
-        ? <ManageView key="manage" useHub={useHub} actions={actions} t={t} localeId={localeId} />
-        : <StoreView key="store" useHub={useHub} actions={actions} t={t} localeId={localeId} />
+        ? <ManageView key="manage" useHub={useHub} actions={actions} t={t} />
+        : <StoreView key="store" useHub={useHub} actions={actions} t={t} />
     body = <div style={{ display: 'flex', flexDirection: 'column' }}>{banners}{view}</div>
   }
 
