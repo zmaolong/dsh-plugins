@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Télécommande",
-    "description": "Contrôlez DSH depuis un téléphone sur le LAN : consultez les sessions avec sortie en direct, envoyez des messages, approuvez les appels et répondez aux questions. Appariement par QR, toutes les adresses LAN accessibles."
+    "description": "Passerelle LAN à jeton d’appariement qui sert la web UI DSH complète et adaptative aux téléphones du réseau local : sessions, sortie en direct, approbations et questions natives. Appariement par QR, toutes les adresses LAN accessibles."
   }
 }

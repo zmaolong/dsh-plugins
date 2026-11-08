@@ -1,7 +1,7 @@
 {
   "name": "dsh-remote-ctrl",
-  "version": "0.0.1-preview.0",
-  "description": "Remote Control (远程控制) for DSH: control DSH from a phone on the LAN — browse sessions with live output, send messages, approve tool calls and answer questions.",
+  "version": "0.0.1-preview.1",
+  "description": "Remote Control (远程控制) for DSH: a pairing-token LAN gateway that reverse-proxies the full, responsive DSH web UI to phones on the local network.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -62,8 +62,8 @@
     "remote-control",
     "mobile",
     "lan",
-    "qr",
-    "approval"
+    "gateway",
+    "qr"
   ],
   "dsh": {
     "bundle": {
@@ -83,16 +83,16 @@
         "zh-cn": "远程控制"
       },
       "description": {
-        "en": "Control DSH from a phone on the LAN: browse sessions with live output, send messages, approve tool calls, and answer questions. QR-code pairing, all LAN addresses reachable.",
-        "zh-cn": "在局域网内用手机控制 DSH：浏览会话与实时输出、发送消息、批准工具调用、回答提问。扫码配对，所有局域网地址均可访问。"
+        "en": "A pairing-token LAN gateway that reverse-proxies the full, responsive DSH web UI to phones on the local network — sessions, streaming output, approvals and questions all native. QR-code pairing, all LAN addresses reachable.",
+        "zh-cn": "局域网访问网关：扫码即得完整、自适应的 DSH Web UI（会话、流式输出、工具审批、智能体提问全部原生）。配对码鉴权，所有局域网地址均可访问。"
       },
       "category": "tool",
       "keywords": [
         "remote-control",
         "mobile",
         "lan",
-        "qr",
-        "approval"
+        "gateway",
+        "qr"
       ]
     }
   }

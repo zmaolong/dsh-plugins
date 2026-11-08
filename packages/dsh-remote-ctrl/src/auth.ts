@@ -1,14 +1,16 @@
 /**
- * Request gate of the plugin's own HTTP server. The host's `/api` trust
- * fence does not cover plugin routes, and this server binds the LAN on
- * purpose — so every request carries its own admission checks:
+ * Request gate of the plugin's LAN gateway. The host's `/api` trust fence
+ * does not cover plugin routes, and this server exposes the full DSH web UI
+ * to the LAN on purpose — so every request carries its own admission checks:
  *
  * - Host header must resolve to this machine (anti DNS-rebinding);
- * - every /api request needs the pairing token (Bearer header or `?token=`,
- *   both reachable from EventSource, which cannot set headers);
- * - mutating requests additionally need a same-origin Origin and a JSON
- *   content type, and a browser-attested `sec-fetch-site: cross-site` is
- *   rejected outright (mirrors the dsh-agent-plugin-hub `isAdmitted` fence).
+ * - every request needs the pairing token: `Authorization: Bearer`, `?token=`
+ *   (how the QR link opens), or the pairing cookie minted on the first
+ *   authenticated response (so the web UI's own fetches/WebSockets pass
+ *   without re-sending the token);
+ * - state-changing requests additionally need a same-origin Origin, and a
+ *   browser-attested `sec-fetch-site: cross-site` is rejected outright
+ *   (mirrors the dsh-agent-plugin-hub `isAdmitted` fence).
  *
  * @module dsh-remote-ctrl/auth
  */
@@ -19,6 +21,9 @@ import { join } from 'node:path'
 import { localHostNames } from './ip.ts'
 
 const STATE_VERSION = 1
+
+/** Name of the pairing cookie minted on the first authenticated response. */
+export const PAIRING_COOKIE = 'dsh-remote-ctrl'
 
 /** Minimal request view the gate reads (node IncomingMessage is shape-compatible). */
 export interface GateRequest {
@@ -86,18 +91,34 @@ function headerValue(request: GateRequest, name: string): string {
   return String(value ?? '').toLowerCase()
 }
 
+function headerRaw(request: GateRequest, name: string): string {
+  const value = request.headers?.[name]
+  if (Array.isArray(value)) return String(value[0] ?? '')
+  return String(value ?? '')
+}
+
 function safeEqual(left: string, right: string): boolean {
   const leftBytes = Buffer.from(left, 'utf8')
   const rightBytes = Buffer.from(right, 'utf8')
   return leftBytes.length === rightBytes.length && timingSafeEqual(leftBytes, rightBytes)
 }
 
-/** Pairing token of one request: Bearer header first, then `?token=`. */
+/** One cookie value out of a raw Cookie header (exact name match). */
+function cookieValue(rawCookie: string, name: string): string | undefined {
+  for (const segment of rawCookie.split(';')) {
+    const at = segment.indexOf('=')
+    if (at === -1 || segment.slice(0, at).trim() !== name) continue
+    return segment.slice(at + 1).trim()
+  }
+  return undefined
+}
+
+/**
+ * Pairing token of one request: Bearer header first, then `?token=` (how the
+ * QR link opens), then the pairing cookie minted after the first visit.
+ */
 export function tokenOf(request: GateRequest): string | null {
-  // Scheme 判定不区分大小写，但配对码本身保持原样（含大小写字母）。
-  const authorization = Array.isArray(request.headers?.authorization)
-    ? String(request.headers.authorization[0] ?? '')
-    : String(request.headers?.authorization ?? '')
+  const authorization = headerRaw(request, 'authorization')
   const match = /^bearer\s+(.+)$/iu.exec(authorization)
   if (match !== null) {
     const token = (match[1] ?? '').trim()
@@ -108,12 +129,22 @@ export function tokenOf(request: GateRequest): string | null {
     const token = url.searchParams.get('token')
     if (token !== null && token !== '') return token
   } catch {
-    /* malformed url falls through to the unauthenticated branch */
+    /* malformed url falls through to the cookie branch */
+  }
+  const rawCookie = headerRaw(request, 'cookie')
+  if (rawCookie !== '') {
+    const token = cookieValue(rawCookie, PAIRING_COOKIE)
+    if (token !== undefined && token !== '') return token
   }
   return null
 }
 
-/** Whether this request may reach the plugin API. */
+/** The pairing session cookie minted on every authenticated response (idempotent). */
+export function pairingCookieHeader(token: string): string {
+  return `${PAIRING_COOKIE}=${token}; Path=/; Max-Age=15552000; HttpOnly; SameSite=Lax`
+}
+
+/** Whether this request may pass the gateway. */
 export function checkApiAccess(request: GateRequest, token: string): GateResult {
   const hostHeader = String(request.headers?.host ?? '')
   if (hostHeader === '' || !localHostNames().has(hostnameOf(hostHeader))) {
@@ -131,9 +162,6 @@ export function checkApiAccess(request: GateRequest, token: string): GateResult 
   const origin = request.headers?.origin
   if (origin !== undefined && String(origin) !== `http://${hostHeader}` && String(origin) !== `https://${hostHeader}`) {
     return { ok: false, status: 403, code: 'forbidden_origin', message: '拒绝访问：跨站请求来源' }
-  }
-  if (!headerValue(request, 'content-type').includes('application/json')) {
-    return { ok: false, status: 415, code: 'unsupported_media_type', message: '请求体必须是 application/json' }
   }
   return { ok: true }
 }

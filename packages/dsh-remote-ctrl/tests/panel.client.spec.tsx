@@ -48,7 +48,7 @@ function runningState(overrides: Partial<PanelStatus> = {}): PanelState {
     qrUrl: 'http://192.168.1.5:31080/?token=tkn',
     token: 'tkn-value',
     clientCount: 2,
-    bridge: { controller: true, query: true },
+    upstream: { origin: 'http://127.0.0.1:3081', ready: true },
     ...overrides,
   }
   return { status: 'ready', error: '', data, copied: null }
@@ -88,6 +88,15 @@ describe('Panel', () => {
     expect(screen.getByText(t('stopped'))).toBeDefined()
     expect(screen.queryByTestId('qr')).toBeNull()
     expect(screen.getByText('服务启动失败：端口被占用')).toBeDefined()
+  })
+
+  it('hints that the host web service is still pending', () => {
+    render(<Panel
+      useRemote={stubRemote(runningState({ upstream: { origin: '', ready: false } })).useRemote}
+      actions={{ init: () => {}, load: () => {}, copy: vi.fn(), destroy: () => {} }}
+      t={t}
+    />)
+    expect(screen.getByText('宿主 web 服务尚未就绪：网关已启动，等宿主就绪后刷新手机页面即可。')).toBeDefined()
   })
 
   it('renders the api-unavailable state with a retry that reloads', () => {

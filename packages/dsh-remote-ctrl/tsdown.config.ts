@@ -1,8 +1,8 @@
 /**
- * Build config for dsh-remote-ctrl: the host half, the desktop panel factory,
- * and the standalone mobile page. Behavior mirrors the dsh-agent-plugin-hub
- * preset (which itself mirrors the official UI-plugin preset
- * `packages/client/tsdown.client.ts`) artifact by artifact:
+ * Build config for dsh-remote-ctrl: the host half plus the desktop panel
+ * factory. Behavior mirrors the dsh-agent-plugin-hub preset (which itself
+ * mirrors the official UI-plugin preset `packages/client/tsdown.client.ts`)
+ * artifact by artifact:
  *
  * - Host half `lib/index.js`: ESM, node, es2024, every relative module
  *   bundled (the package keeps zero runtime dependencies).
@@ -11,14 +11,11 @@
  *   footer `return module.exports; } });`, intro declaring `module`/`exports`
  *   — with sourcemap, react and `dsh.client.external` as the only externals,
  *   and everything else inlined.
- * - Mobile page `lib/mobile.js`: a plain IIFE the plugin's own HTTP server
- *   serves as `/static/mobile.js`; no loader handoff, fully inlined, minified.
  * - CSS Modules compile through lightningcss (`[hash]_[local]` pattern,
  *   minified) into a style-injection module that tags
- *   `<style data-plugin-css>` once per sheet and exports the class map
- *   (desktop panel only; the mobile page carries its CSS inline in the HTML).
+ *   `<style data-plugin-css>` once per sheet and exports the class map.
  * - Purity gate: value imports of `@deepseek-ai/*` packages and node
- *   builtins fail both browser builds — host capabilities cross through ctx,
+ *   builtins fail the browser build — host capabilities cross through ctx,
  *   never through a module specifier.
  */
 import { readFile } from 'node:fs/promises'
@@ -104,7 +101,7 @@ async function compileCssModule(id: string, fileId: string): Promise<string> {
   return styleInjectionModule(id, fileId, JSON.stringify(code.toString()), classMap)
 }
 
-/** Browser-face plugin set shared by the client and mobile configs. */
+/** Browser-face plugin set shared by the client config. */
 function browserPlugins(): Plugin[] {
   return [{
     name: 'dsh-client-bundle-purity',
@@ -177,27 +174,6 @@ function clientConfig(): UserConfig {
   }
 }
 
-/** The standalone mobile page bundle landing at lib/mobile.js. */
-function mobileConfig(): UserConfig {
-  return {
-    entry: { mobile: 'src/mobile/main.ts' },
-    outDir: 'lib',
-    format: 'iife',
-    platform: 'browser',
-    target: 'es2024',
-    dts: false,
-    sourcemap: false,
-    minify: true,
-    clean: false,
-    external: [],
-    inputOptions: BROWSER_RESOLVE,
-    plugins: browserPlugins(),
-    outputOptions: {
-      entryFileNames: 'mobile.js',
-    },
-  }
-}
-
 /** The host library bundle landing at lib/index.js. */
 function libConfig(): UserConfig {
   return {
@@ -210,10 +186,10 @@ function libConfig(): UserConfig {
     fixedExtension: false,
     dts: false,
     sourcemap: false,
-    // First config in the array: clean once here, then the browser configs
-    // add their artifacts beside the fresh node output (clean stays off there).
+    // First config in the array: clean once here, then the browser config
+    // adds its artifact beside the fresh node output (clean stays off there).
     clean: true,
   }
 }
 
-export default defineConfig([libConfig(), clientConfig(), mobileConfig()])
+export default defineConfig([libConfig(), clientConfig()])

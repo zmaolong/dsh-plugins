@@ -1,10 +1,11 @@
 /**
  * Built-artifact smoke: the committed browser panel bundle must keep the
- * closure-factory handoff shape; the mobile bundle must be a self-contained
- * IIFE with no require at all; the host half must stay an ESM module without
- * the banner. Line endings normalize (autocrlf checkouts).
+ * closure-factory handoff shape; the host half must stay an ESM module
+ * without the banner and carry the gateway/proxy implementation. Line
+ * endings normalize (autocrlf checkouts).
  */
 import { readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
@@ -22,7 +23,6 @@ function flat(text: string): string {
 
 const client = normalize(readFileSync(join(LIB, 'client.js'), 'utf8'))
 const index = normalize(readFileSync(join(LIB, 'index.js'), 'utf8'))
-const mobile = normalize(readFileSync(join(LIB, 'mobile.js'), 'utf8'))
 
 describe('built artifacts', () => {
   it('wraps the desktop panel in the ModuleLoader factory handoff', () => {
@@ -48,21 +48,15 @@ describe('built artifacts', () => {
     expect(client).toContain('sourceMappingURL=client.js.map')
   })
 
-  it('keeps the host half a plain ESM library with the page shell inlined', () => {
+  it('keeps the host half a plain ESM library carrying the gateway', () => {
     expect(index).toContain('export')
     expect(index).not.toContain('__ModuleLoader__')
     expect(index).toContain('function apply(')
     expect(index).toContain('RemoteCtrl')
     expect(index).toContain('RcServer')
-    // The mobile page shell (HTML template) ships inside the host bundle.
-    expect(index).toContain('/static/mobile.js')
-    expect(index).toContain('远程控制服务已监听')
-  })
-
-  it('keeps the mobile page a self-contained IIFE without require', () => {
-    expect(mobile).not.toContain('require(')
-    expect(mobile).not.toContain('window.__ModuleLoader__')
-    expect(mobile).toContain('EventSource')
-    expect(mobile).toContain('/api/stream')
+    expect(index).toContain('局域网网关已监听')
+    expect(index).toContain('authenticatedUrl')
+    // 自研手机页已删除：不再有独立移动端产物
+    expect(existsSync(join(LIB, 'mobile.js'))).toBe(false)
   })
 })

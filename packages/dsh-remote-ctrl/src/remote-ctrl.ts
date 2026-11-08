@@ -1,30 +1,28 @@
 /**
  * The RemoteCtrl controller: owns config resolution (home/host/port/token),
- * the LAN server lifecycle, and the host-event handlers `apply` subscribes.
- * The desktop panel reads {@link panelStatus} through the host webServer
- * route (loopback only); the phone talks to the RcServer directly.
+ * the LAN gateway lifecycle, and the upstream handle (host webServer origin
+ * + launch-token cookie exchange) the proxy needs. The desktop panel reads
+ * {@link panelStatus} through the host webServer route (loopback only).
  *
  * @module dsh-remote-ctrl/remote-ctrl
  */
 
+import http from 'node:http'
 import { randomUUID } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 import os from 'node:os'
 import { join } from 'node:path'
 import { loadOrCreateToken } from './auth.ts'
-import { HostBridge } from './bridge.ts'
 import { lanAddresses } from './ip.ts'
-import { RcServer } from './server.ts'
-import { normalizeEventItem, normalizeStreamFrame } from './view.ts'
-import type { HostContext, RemoteCtrlConfig } from './host.ts'
-import type { Item } from './view.ts'
+import { RcServer, type UpstreamHandle } from './server.ts'
+import type { ConnectionService, HostContext, RemoteCtrlConfig, WebServerService } from './host.ts'
 
 /** Package version surfaced in logs. */
-export const REMOTE_CTRL_VERSION = '0.0.1-preview.0'
+export const REMOTE_CTRL_VERSION = '0.0.1-preview.1'
 
 const LOG_PREFIX = 'dsh-remote-ctrl: '
 
-/** One LAN address the server answers on. */
+/** One LAN address the gateway answers on. */
 export interface PanelAddress {
   address: string
   scope: string
@@ -43,7 +41,7 @@ export interface PanelStatus {
   qrUrl: string
   token: string
   clientCount: number
-  bridge: { controller: boolean, query: boolean }
+  upstream: { origin: string, ready: boolean }
 }
 
 /** Resolve the persistence home: config → env → ~/.dsh/remote-ctrl. */
@@ -57,14 +55,16 @@ export function resolveHome(configured: string | undefined): string {
 
 export class RemoteCtrl {
   readonly home: string
-  readonly bridge = new HostBridge()
   readonly warnings: string[] = []
   private readonly configHost: string
   private readonly configPort: number
   private readonly configToken: string
   private server: RcServer | null = null
   private token = ''
-  private sessionsRefresh: NodeJS.Timeout | null = null
+  private webServer: WebServerService | null = null
+  private connection: ConnectionService | null = null
+  private cachedAuthCookie: string | null = null
+  private exchange: Promise<string | null> | null = null
 
   constructor(
     private readonly ctx: HostContext,
@@ -97,14 +97,14 @@ export class RemoteCtrl {
       host: this.configHost,
       port: this.configPort,
       token: this.token,
-      bridge: this.bridge,
+      upstream: this.upstreamHandle(),
       log: (level, message) => this.log(level, message),
     })
     this.server = server
     server.listen().catch(error => {
       const message = error instanceof Error ? error.message : String(error)
       server.listenError = message
-      this.log('error', `启动远程控制服务失败（host=${this.configHost} port=${this.configPort}，端口被占用？）：${message}`)
+      this.log('error', `启动局域网网关失败（host=${this.configHost} port=${this.configPort}，端口被占用？）：${message}`)
     })
   }
 
@@ -117,6 +117,88 @@ export class RemoteCtrl {
     }
   }
 
+  /** Attach the upstream services once they appear (cordis availability). */
+  attachUpstream(scope: unknown, name: 'webServer' | 'connection'): boolean {
+    const source = scope as { get?: (name: string) => unknown } | null
+    const service = (source?.get?.(name) ?? (source as Record<string, unknown> | null)?.[name]) as object | undefined
+    if (!service) return false
+    if (name === 'webServer' && typeof (service as WebServerService).getOrigin === 'function') {
+      this.webServer = service as WebServerService
+      return true
+    }
+    if (name === 'connection' && typeof (service as ConnectionService).authenticatedUrl === 'function') {
+      this.connection = service as ConnectionService
+      return true
+    }
+    return false
+  }
+
+  /** The proxy's upstream face: origin lookup + launch-token cookie exchange. */
+  private upstreamHandle(): UpstreamHandle {
+    return {
+      origin: () => this.hostOrigin(),
+      authCookieSync: () => this.cachedAuthCookie,
+      authCookie: (force?: boolean) => this.exchangeAuthCookie(force === true),
+    }
+  }
+
+  /** Host web origin, or null while the webServer service is pending. */
+  private hostOrigin(): string | null {
+    if (this.webServer === null) return null
+    try {
+      const origin = this.webServer.getOrigin()
+      return typeof origin === 'string' && origin !== '' ? origin : null
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * Exchange the process launch token for the signed upstream cookie and
+   * cache it. The request itself must carry the upstream authority as its
+   * Host header so the minted cookie's authority matches the rewritten
+   * proxied requests.
+   */
+  private exchangeAuthCookie(force: boolean): Promise<string | null> {
+    if (!force && this.cachedAuthCookie !== null) return Promise.resolve(this.cachedAuthCookie)
+    if (this.exchange !== null) return this.exchange
+    const origin = this.hostOrigin()
+    if (origin === null || this.connection === null) return Promise.resolve(null)
+    let authedUrl: string
+    try {
+      authedUrl = this.connection.authenticatedUrl(`${origin}/`)
+    } catch (error) {
+      this.log('warn', `换取宿主会话失败：${error instanceof Error ? error.message : String(error)}`)
+      return Promise.resolve(null)
+    }
+    this.exchange = new Promise<string | null>(resolve => {
+      const request = http.request(authedUrl, { method: 'GET' }, response => {
+        const setCookie = response.headers['set-cookie']?.[0]
+        response.resume()
+        response.on('end', () => {
+          this.exchange = null
+          const value = typeof setCookie === 'string' ? setCookie.split(';')[0] ?? null : null
+          if (value !== null) {
+            this.cachedAuthCookie = value
+            this.log('debug', '已通过 launch token 代换宿主会话 cookie')
+          }
+          resolve(value)
+        })
+        response.on('error', () => {
+          this.exchange = null
+          resolve(null)
+        })
+      })
+      request.on('error', () => {
+        this.exchange = null
+        this.log('debug', '换取宿主会话 cookie 失败（宿主未就绪？）')
+        resolve(null)
+      })
+      request.end()
+    })
+    return this.exchange
+  }
+
   /** Panel data plane status. */
   panelStatus(): PanelStatus {
     const server = this.server
@@ -126,9 +208,10 @@ export class RemoteCtrl {
       scope: entry.scope,
       url: `http://${entry.family === 6 ? `[${entry.address}]` : entry.address}:${port}/`,
     }))
-    // 二维码挑第一个私网 IPv4（手机最可能可达的地址）；没有私网时退回第一个地址。
+    // 二维码挑第一个私网地址（手机最可能可达的地址）；没有私网时退回第一个地址。
     const recommended = addresses.find(entry => entry.scope === 'private') ?? addresses[0] ?? null
     const origin = (recommended?.url ?? `http://127.0.0.1:${port}/`).replace(/\/+$/u, '')
+    const upstreamOrigin = this.hostOrigin() ?? ''
     return {
       active: server !== null,
       listening: server?.listening ?? false,
@@ -139,94 +222,13 @@ export class RemoteCtrl {
       recommendedUrl: `${origin}/`,
       qrUrl: `${origin}/?token=${encodeURIComponent(this.token)}`,
       token: this.token,
-      clientCount: server?.clientCount ?? 0,
-      bridge: this.bridge.readiness(),
+      clientCount: server?.connectionCount ?? 0,
+      upstream: { origin: upstreamOrigin, ready: upstreamOrigin !== '' && this.connection !== null },
     }
   }
 
-  // ------------------------------------------------------------ host events
-
-  /** `session/event`: append renderable items to watchers, track decisions. */
-  onSessionEvent(session: unknown, event: unknown): void {
-    const server = this.server
-    if (server === null || event === null || typeof event !== 'object') return
-    const record = event as Record<string, unknown>
-    const sessionId = sessionIdOf(session)
-    const type = typeof record.type === 'string' ? record.type : typeof record.kind === 'string' ? record.kind : ''
-    if (type === 'approval/decided') {
-      server.dropApproval(firstStringLike(record.callId) ?? firstStringLike(record.id) ?? '')
-      return
-    }
-    if (type === 'user/message') {
-      // userQuestions.answer steers a user message tagged with the question it closes.
-      const source = record.source as Record<string, unknown> | undefined
-        ?? (record.message as Record<string, unknown> | undefined)?.source as Record<string, unknown> | undefined
-      if (source !== undefined && source.kind === 'user-question-reply') {
-        server.dropQuestion(firstStringLike(source.callId) ?? '')
-      }
-    }
-    const item = normalizeEventItem(record)
-    if (item !== null) server.broadcastItem(sessionId, item)
-  }
-
-  /** `agent/assistant-stream`: token-level frames for the watched session. */
-  onAssistantStream(payload: unknown): void {
-    const server = this.server
-    if (server === null || payload === null || typeof payload !== 'object') return
-    const record = payload as Record<string, unknown>
-    const agent = record.agent as Record<string, unknown> | undefined
-    if (agent === undefined) return
-    const sessionId = sessionIdOf(agent)
-    const frame = normalizeStreamFrame(record.frame ?? record)
-    if (frame === null) return
-    server.broadcastStream(sessionId, frame.phase, frame.text)
-  }
-
-  /** `approval/request` waterfall answerer (delegates to the server). */
-  onApprovalRequest(request: unknown, next: () => unknown): unknown {
-    return this.server?.claimApproval(request, next) ?? next()
-  }
-
-  /** `user-questions/request` waterfall answerer (delegates to the server). */
-  onQuestionRequest(request: unknown, next: () => unknown): unknown {
-    return this.server?.claimQuestion(request, next) ?? next()
-  }
-
-  /** Debounced session-list refresh broadcast (api-session/* churn). */
-  scheduleSessionsRefresh(): void {
-    if (this.server === null) return
-    if (this.sessionsRefresh !== null) return
-    this.sessionsRefresh = setTimeout(() => {
-      this.sessionsRefresh = null
-      this.server?.broadcastSessions().catch(error => {
-        this.log('debug', `会话列表刷新失败：${error instanceof Error ? error.message : String(error)}`)
-      })
-    }, 300)
-    this.sessionsRefresh.unref?.()
-  }
-
-  /** Tear down server, timers. */
+  /** Tear down server. */
   dispose(): void {
-    if (this.sessionsRefresh !== null) {
-      clearTimeout(this.sessionsRefresh)
-      this.sessionsRefresh = null
-    }
     this.server?.dispose()
   }
 }
-
-function sessionIdOf(scope: unknown): string {
-  if (scope === null || typeof scope !== 'object') return ''
-  const record = scope as Record<string, unknown>
-  if (typeof record.id === 'string' && record.id !== '') return record.id
-  if (typeof record.sessionId === 'string') return record.sessionId
-  const session = record.session as Record<string, unknown> | undefined
-  return typeof session?.id === 'string' ? session.id : ''
-}
-
-function firstStringLike(value: unknown): string | null {
-  return typeof value === 'string' && value !== '' ? value : null
-}
-
-/** Item kind re-exported for tests. */
-export type { Item }

@@ -81,7 +81,7 @@ export function Panel({ useRemote, actions, t }: PanelProps): ReactNode {
           </div>
           <p className={css.hint}>{t('listenAt', { host: data.host, port: data.port })}</p>
           <p className={css.hint}>{t('clients', { count: data.clientCount })}</p>
-          {!data.bridge.controller && !data.bridge.query && <p className={css.hint}>{t('bridgeMissing')}</p>}
+          {!data.upstream.ready && <p className={css.hint}>{t('upstreamMissing')}</p>}
         </section>
 
         {data.listening && (

@@ -1,242 +1,152 @@
 /**
- * The plugin's own HTTP server (node:http) — the LAN data plane the phone
- * browser talks to. It deliberately does not ride the host webServer: the
- * host rejects wildcard binds, while remote control wants every interface
- * address reachable, so the plugin owns one listener on `config.host`
- * (default 0.0.0.0) + `config.port`.
+ * The plugin's LAN gateway: a token-gated reverse proxy in front of the host
+ * web UI. The host webServer binds loopback only and refuses wildcard
+ * addresses, so the plugin owns one listener on `config.host` (default
+ * 0.0.0.0) + `config.port` and forwards everything to it — the phone opens
+ * the complete, responsive DSH web UI (sessions, streaming, approvals,
+ * questions — all native), the plugin only adds LAN reachability plus the
+ * pairing token.
  *
- * Surface:
- * - `GET /` — the mobile page (self-contained HTML + `/static/mobile.js`);
- * - `GET /api/status` — bootstrap snapshot (sessions + pending cards);
- * - `GET /api/sessions`, `GET /api/sessions/:id/events` — lists and history;
- * - `POST /api/sessions/:id/prompt` — send a user message (queue);
- * - `POST /api/pending/approvals/:id` — resolve a claimed tool approval;
- * - `POST /api/pending/questions/:id` — answer an ask-user question;
- * - `GET /api/stream?sid=` — SSE: hello, sessions, item, stream, pending.
+ * Upstream authentication mirrors the host's browser-auth exactly
+ * (`browser-auth.ts`): the launch token is exchanged once server-side
+ * (`ctx.connection.authenticatedUrl`) for the signed `dsh-auth-*` cookie,
+ * which is cached for upstream requests and handed to the phone on first
+ * responses. The upstream `Host` header is rewritten to the loopback origin
+ * so both the cookie authority and the `/api` trust fence stay valid; the
+ * browser's own cookies simply round-trip through the proxy.
  *
- * Every /api request passes `checkApiAccess` (token + machine-local Host +
- * same-origin mutations). Approval answers ride the `approval/request`
- * waterfall: claimed only while at least one phone is connected, raced
- * against the rest of the answerer chain so the desktop UI stays a
- * first-responder.
+ * SSE and streaming responses pipe through unbuffered; WebSocket upgrades
+ * are gated and relayed socket-to-socket.
  *
  * @module dsh-remote-ctrl/server
  */
 
 import http from 'node:http'
-import { randomUUID } from 'node:crypto'
-import { readFileSync } from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { checkApiAccess, type GateRequest } from './auth.ts'
-import type { HostBridge } from './bridge.ts'
-import { renderPage } from './html.ts'
-import {
-  historyEventsOf,
-  normalizeEventItem,
-  normalizeSessionSummary,
-  type Item,
-  type PendingCard,
-  type SessionSummary,
-} from './view.ts'
+import { checkApiAccess, pairingCookieHeader, type GateRequest } from './auth.ts'
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
+
+/** Upstream face the controller provides (host webServer + connection). */
+export interface UpstreamHandle {
+  /** Host web origin (`http://127.0.0.1:3081`) or null while services are pending. */
+  origin(): string | null
+  /** Cached signed cookie (`name=value`), or null before the first exchange / when unavailable. */
+  authCookieSync(): string | null
+  /**
+   * Exchange the launch token for the signed `dsh-auth-*` cookie now
+   * (cache-aside; `force` refreshes a possibly stale cache). Resolves null
+   * when the connection service is unavailable or the exchange failed.
+   */
+  authCookie(force?: boolean): Promise<string | null>
+}
 
 export interface RcServerOptions {
   host: string
   port: number
   token: string
-  bridge: HostBridge
+  upstream: UpstreamHandle
   log: (level: LogLevel, message: string) => void
-  /** Override for tests; defaults to the built `lib/mobile.js` beside index.js. */
-  mobileScriptFile?: string
 }
 
-interface SseClient {
-  id: string
-  res: ServerResponse
-  watched: string | null
+/** Hop-by-hop headers that must not travel across the proxy. */
+const HOP_BY_HOP = new Set(['connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 'te', 'trailer', 'transfer-encoding', 'upgrade'])
+
+function withoutHopByHop(headers: Record<string, string | string[] | undefined>): Record<string, string | string[] | undefined> {
+  const result: Record<string, string | string[] | undefined> = {}
+  for (const [name, value] of Object.entries(headers)) {
+    if (HOP_BY_HOP.has(name.toLowerCase())) continue
+    result[name] = value
+  }
+  return result
 }
 
-interface ApprovalEntry {
-  key: string
-  sessionId: string
-  toolName: string
-  reason: string
-  done: boolean
-  resolve: (outcome: string) => void
+/** Merge one `name=value` pair into a raw Cookie header (replacing an existing same-name entry). */
+function mergeCookie(rawCookie: string | undefined, cookie: string): string | undefined {
+  const name = cookie.slice(0, Math.max(cookie.indexOf('='), 0))
+  const parts: string[] = []
+  for (const segment of (rawCookie ?? '').split(';')) {
+    const trimmed = segment.trim()
+    if (trimmed === '') continue
+    if (trimmed.startsWith(`${name}=`)) continue
+    parts.push(trimmed)
+  }
+  parts.push(cookie)
+  return parts.join('; ')
 }
 
-const APPROVAL_OUTCOMES = new Set(['allowed-once', 'rejected', 'cancelled'])
-const MAX_BODY_BYTES = 256 * 1024
-const HEARTBEAT_MS = 15_000
-
-function sendJson(response: ServerResponse, status: number, payload: unknown): void {
-  const body = JSON.stringify(payload)
-  response.writeHead(status, {
-    'content-type': 'application/json; charset=utf-8',
-    'cache-control': 'no-store',
-    'content-length': Buffer.byteLength(body),
-  })
-  response.end(body)
+/**
+ * Rewrite browser-surface headers to the upstream authority: Origin and
+ * Referer must agree with the rewritten Host for the host's `/api` trust
+ * fence (same-authority Origin check) to admit proxied requests.
+ */
+function rewriteBrowserHeaders(headers: Record<string, string | string[] | undefined>, authority: string): void {
+  const origin = headers.origin
+  if (typeof origin === 'string' && origin !== '') headers.origin = `http://${authority}`
+  const referer = headers.referer
+  if (typeof referer === 'string' && referer !== '') {
+    try {
+      const refererUrl = new URL(referer)
+      headers.referer = `http://${authority}${refererUrl.pathname}${refererUrl.search}`
+    } catch {
+      /* unparsable referer: drop it rather than leak a mismatched authority */
+      delete headers.referer
+    }
+  }
 }
 
-function readJsonBody(request: IncomingMessage): Promise<Record<string, unknown>> {
-  return new Promise((resolve, reject) => {
+function toArray(value: string | string[] | undefined): string[] {
+  if (value === undefined) return []
+  return Array.isArray(value) ? value : [value]
+}
+
+/** Bodies at or below this size are buffered so a stale-cookie 401 can replay them. */
+const MAX_BUFFERED_BODY_BYTES = 8 * 1024 * 1024
+
+/**
+ * Buffer small request bodies for replay; `null` means stream the original
+ * request through (large or chunked bodies). Body-less methods buffer an
+ * empty buffer so retries always work for them.
+ */
+function readBufferedBody(request: IncomingMessage): Promise<Buffer | null> {
+  const method = (request.method ?? 'GET').toUpperCase()
+  if (method === 'GET' || method === 'HEAD') return Promise.resolve(Buffer.alloc(0))
+  const declared = Number(request.headers['content-length'] ?? '0')
+  if (Number.isFinite(declared) && declared > MAX_BUFFERED_BODY_BYTES) return Promise.resolve(null)
+  return new Promise((resolve) => {
     const chunks: Buffer[] = []
     let size = 0
+    let overflow = false
     request.on('data', (chunk: Buffer) => {
+      if (overflow) return
       size += chunk.length
-      if (size > MAX_BODY_BYTES) {
-        reject(new Error('请求体过大'))
-        request.destroy()
+      if (size > MAX_BUFFERED_BODY_BYTES) {
+        // 超限：放弃缓冲改走流式；已收下的部分无意义，但流不能倒带 ——
+        // 直接销毁连接让客户端重发（上传大附件遇过期 cookie 属罕见路径）。
+        overflow = true
+        chunks.length = 0
+        request.destroy(new Error('请求体超过网关缓冲上限，无法代理重试'))
+        resolve(null)
         return
       }
       chunks.push(chunk)
     })
     request.on('end', () => {
-      if (chunks.length === 0) {
-        resolve({})
-        return
-      }
-      try {
-        const parsed = JSON.parse(Buffer.concat(chunks).toString('utf8')) as unknown
-        if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-          reject(new Error('请求体必须是 JSON 对象'))
-          return
-        }
-        resolve(parsed as Record<string, unknown>)
-      } catch {
-        reject(new Error('请求体不是合法 JSON'))
-      }
+      if (!overflow) resolve(Buffer.concat(chunks))
     })
-    request.on('error', error => reject(error))
+    request.on('error', () => {
+      if (!overflow) resolve(null)
+    })
+    request.on('close', () => {
+      if (!overflow && !request.readableEnded) resolve(null)
+    })
   })
-}
-
-function isThenable(value: unknown): value is Promise<unknown> {
-  return typeof value === 'object' && value !== null && typeof (value as Promise<unknown>).then === 'function'
-}
-
-/** The abort-signal face the approval request carries. */
-interface AbortSignalFace {
-  aborted?: boolean
-  addEventListener?: (type: string, listener: () => void, options?: { once?: boolean }) => void
-}
-
-/** Extract the fields the approval answerer needs from an ApprovalRequest. */
-function extractApprovalRequest(request: unknown): {
-  key: string
-  sessionId: string
-  toolName: string
-  reason: string
-  signal: AbortSignalFace | undefined
-} | null {
-  if (request === null || typeof request !== 'object') return null
-  const record = request as Record<string, unknown>
-  const agent = record.agent as Record<string, unknown> | null | undefined
-  const session = agent?.session as Record<string, unknown> | null | undefined
-  const sessionId = typeof session?.id === 'string'
-    ? session.id
-    : typeof agent?.sessionId === 'string' ? agent.sessionId : ''
-  const callId = typeof record.callId === 'string' && record.callId !== '' ? record.callId : ''
-  return {
-    key: callId !== '' ? callId : `ap-${randomUUID()}`,
-    sessionId,
-    toolName: typeof record.toolName === 'string' ? record.toolName : '',
-    reason: typeof record.reason === 'string' ? record.reason : '',
-    signal: record.signal as AbortSignalFace | undefined,
-  }
-}
-
-/** The per-question item face of `AskUserQuestionRequestEvent.questions[]`. */
-interface QuestionItemFace {
-  id: string
-  question: string
-  detail: string
-  options: string[]
-  multiSelect: boolean
-  answered: boolean
-}
-
-/** One claimed user-questions request awaiting phone answers. */
-interface QuestionEntry {
-  key: string
-  agent: unknown
-  sessionId: string
-  items: QuestionItemFace[]
-  answers: Array<{ id: string, selected: string[], custom?: string }>
-  done: boolean
-  resolve: (answer: unknown) => void
-}
-
-/**
- * Extract the fields the phone question cards need from an
- * `AskUserQuestionRequestEvent` (`{questions:[{id,question,options…}], agent,
- * wait?:{callId}}`); one card per question item.
- */
-function extractQuestionRequest(request: unknown): { key: string, agent: unknown, sessionId: string, items: QuestionItemFace[] } | null {
-  if (request === null || typeof request !== 'object') return null
-  const record = request as Record<string, unknown>
-  const agent = record.agent
-  if (agent === undefined || agent === null) return null
-  const agentRecord = agent as Record<string, unknown>
-  const session = agentRecord.session as Record<string, unknown> | null | undefined
-  const sessionId = typeof session?.id === 'string'
-    ? session.id
-    : typeof agentRecord.sessionId === 'string' ? agentRecord.sessionId : ''
-  const wait = asWait(record.wait)
-  const rawQuestions = Array.isArray(record.questions) ? record.questions : []
-  const items: QuestionItemFace[] = []
-  for (const raw of rawQuestions.slice(0, 6)) {
-    if (raw === null || typeof raw !== 'object') continue
-    const item = raw as Record<string, unknown>
-    const id = typeof item.id === 'string' && item.id !== '' ? item.id : ''
-    const question = typeof item.question === 'string' ? item.question : ''
-    if (id === '' || question === '') continue
-    const options: string[] = []
-    if (Array.isArray(item.options)) {
-      for (const option of item.options.slice(0, 8)) {
-        if (typeof option === 'string' && option.trim() !== '') options.push(option.trim())
-        else if (option !== null && typeof option === 'object') {
-          const entry = option as Record<string, unknown>
-          const label = [entry.label, entry.title, entry.value, entry.text].find(value => typeof value === 'string' && value !== '')
-          if (typeof label === 'string') options.push(label)
-        }
-      }
-    }
-    items.push({
-      id,
-      question,
-      detail: typeof item.detail === 'string' ? item.detail : '',
-      options,
-      multiSelect: item.multiSelect === true,
-      answered: false,
-    })
-  }
-  if (items.length === 0) return null
-  const key = `q-${wait?.callId !== undefined && wait.callId !== '' ? wait.callId : items[0]?.id ?? randomUUID()}`
-  return { key, agent, sessionId, items }
-}
-
-function asWait(value: unknown): { callId: string } | null {
-  if (value === null || typeof value !== 'object') return null
-  const record = value as Record<string, unknown>
-  return typeof record.callId === 'string' ? { callId: record.callId } : null
-}
-
-/** One SSE frame as `data: <json>\n\n`. */
-function frameLine(frame: Record<string, unknown>): string {
-  return `data: ${JSON.stringify(frame)}\n\n`
 }
 
 export class RcServer {
   private http: http.Server | null = null
-  private readonly clients = new Map<string, SseClient>()
-  private readonly approvals = new Map<string, ApprovalEntry>()
-  private readonly questions = new Map<string, QuestionEntry>()
-  private heartbeat: NodeJS.Timeout | null = null
-  private mobileScript: Buffer | null = null
   private readonly address: { host: string, port: number }
+  private connections = 0
   listening = false
   listenError = ''
 
@@ -244,14 +154,14 @@ export class RcServer {
     this.address = { host: options.host, port: options.port }
   }
 
-  /** Connected phone clients. */
-  get clientCount(): number {
-    return this.clients.size
-  }
-
-  /** Actual port after listen (port 0 resolves to the OS-assigned value). */
+  /** Listener port after listen (port 0 resolves to the OS-assigned value). */
   get port(): number {
     return this.address.port
+  }
+
+  /** Currently proxied upstream exchanges (requests + relays). */
+  get connectionCount(): number {
+    return this.connections
   }
 
   /** Bind and start serving. Resolves once the listener is up. */
@@ -260,6 +170,12 @@ export class RcServer {
       void this.handle(request, response)
     })
     server.requestTimeout = 0
+    server.on('upgrade', (request, socket, head) => {
+      this.handleUpgrade(request, socket, head)
+    })
+    server.on('connection', socket => {
+      socket.setTimeout(0)
+    })
     await new Promise<void>((resolve, reject) => {
       server.once('error', reject)
       server.listen(this.options.port, this.options.host, () => resolve())
@@ -269,37 +185,11 @@ export class RcServer {
     this.listenError = ''
     const addr = server.address()
     if (addr !== null && typeof addr === 'object') this.address.port = addr.port
-    this.heartbeat = setInterval(() => this.ping(), HEARTBEAT_MS)
-    this.heartbeat.unref?.()
-    this.options.log('info', `远程控制服务已监听 http://${this.options.host}:${this.address.port}/`)
+    this.options.log('info', `局域网网关已监听 http://${this.options.host}:${this.address.port}/（上游 ${this.options.upstream.origin() ?? '未就绪'}）`)
   }
 
-  /** Stop serving, drop every client, and fail-closed the claimed approvals. */
+  /** Stop serving and close the listener. */
   dispose(): void {
-    if (this.heartbeat !== null) {
-      clearInterval(this.heartbeat)
-      this.heartbeat = null
-    }
-    for (const client of this.clients.values()) {
-      try {
-        client.res.end()
-      } catch {
-        /* the socket may already be gone */
-      }
-    }
-    this.clients.clear()
-    for (const entry of this.approvals.values()) {
-      if (!entry.done) {
-        entry.done = true
-        try {
-          entry.resolve('cancelled')
-        } catch {
-          /* the awaiting waterfall is being torn down anyway */
-        }
-      }
-    }
-    this.approvals.clear()
-    this.questions.clear()
     if (this.http !== null) {
       const server = this.http
       this.http = null
@@ -312,396 +202,213 @@ export class RcServer {
     this.listening = false
   }
 
-  // ---------------------------------------------------------------- listeners
+  // ------------------------------------------------------------------ proxy
 
-  /**
-   * The `approval/request` waterfall answerer. Claims the request only while
-   * a phone is connected; the rest of the answerer chain is engaged too, so
-   * desktop and phone race and the first decision wins at the service.
-   */
-  claimApproval(request: unknown, next: () => unknown): unknown {
-    if (this.clientCount === 0) return next()
-    const info = extractApprovalRequest(request)
-    if (info === null) return next()
-    const downstream = next()
-    return new Promise<string>(resolve => {
-      const entry: ApprovalEntry = {
-        key: info.key,
-        sessionId: info.sessionId,
-        toolName: info.toolName,
-        reason: info.reason,
-        done: false,
-        resolve: outcome => {
-          if (entry.done) return
-          entry.done = true
-          this.approvals.delete(entry.key)
-          this.broadcastPending()
-          resolve(outcome)
-        },
-      }
-      this.approvals.set(entry.key, entry)
-      this.broadcastPending()
-      if (isThenable(downstream)) {
-        Promise.resolve(downstream).then(value => {
-          if (typeof value === 'string' && APPROVAL_OUTCOMES.has(value)) entry.resolve(value)
-        }, () => { /* downstream failed; the phone decision (or abort) decides */ })
-      }
-      const signal = info.signal
-      if (signal !== undefined && signal !== null && typeof signal.addEventListener === 'function') {
-        if (signal.aborted === true) entry.resolve('cancelled')
-        else signal.addEventListener('abort', () => entry.resolve('cancelled'), { once: true })
-      }
-    })
-  }
-
-  /** `approval/decided` observed on the session log: drop a matching card if any. */
-  dropApproval(callId: string): void {
-    if (callId === '') return
-    if (this.approvals.delete(callId)) this.broadcastPending()
-  }
-
-  /**
-   * The `user-questions/request` waterfall answerer. Same policy as
-   * approvals: claim only while a phone is connected, race the rest of the
-   * chain (desktop UI stays a first-responder), resolve with the official
-   * `AskUserQuestionAnswer` shape once every question item has an answer.
-   */
-  claimQuestion(request: unknown, next: () => unknown): unknown {
-    if (this.clientCount === 0) return next()
-    const info = extractQuestionRequest(request)
-    if (info === null) return next()
-    const downstream = next()
-    return new Promise<unknown>(resolve => {
-      const entry: QuestionEntry = {
-        key: info.key,
-        agent: info.agent,
-        sessionId: info.sessionId,
-        items: info.items,
-        answers: [],
-        done: false,
-        resolve: answer => {
-          if (entry.done) return
-          entry.done = true
-          this.questions.delete(entry.key)
-          this.broadcastPending()
-          resolve(answer)
-        },
-      }
-      this.questions.set(entry.key, entry)
-      this.broadcastPending()
-      if (isThenable(downstream)) {
-        Promise.resolve(downstream).then(value => {
-          if (value !== null && typeof value === 'object' && Array.isArray((value as { answers?: unknown }).answers)) {
-            entry.resolve(value)
-          }
-        }, () => { /* downstream declined; the phone decision decides */ })
-      }
-      const signal = (request as Record<string, unknown>).signal as AbortSignalFace | undefined
-      if (signal !== undefined && signal !== null && typeof signal.addEventListener === 'function') {
-        if (signal.aborted === true) entry.resolve(undefined)
-        else signal.addEventListener('abort', () => entry.resolve(undefined), { once: true })
-      }
-    })
-  }
-
-  /** Record one answered question item; resolve the claim when all items are in. */
-  answerQuestionItem(cardId: string, payload: Record<string, unknown>): { id: string } {
-    const separator = cardId.indexOf('::')
-    const key = separator === -1 ? cardId : cardId.slice(0, separator)
-    const itemId = separator === -1 ? '' : cardId.slice(separator + 2)
-    const entry = this.questions.get(key)
-    if (entry === undefined) throw new Error('该提问不存在或已被回答')
-    const item = entry.items.find(candidate => candidate.id === itemId && !candidate.answered)
-    if (item === undefined) throw new Error('该问题不存在或已被回答')
-    const selected = Array.isArray(payload.selected) ? payload.selected.map(value => String(value)) : []
-    const custom = typeof payload.custom === 'string' && payload.custom.trim() !== '' ? payload.custom.trim() : undefined
-    if (selected.length === 0 && custom === undefined) {
-      throw new Error('回答需要 selected 选项或 custom 文本')
-    }
-    item.answered = true
-    entry.answers.push(custom !== undefined
-      ? { id: item.id, selected, ...(custom !== undefined ? { custom } : {}) }
-      : { id: item.id, selected })
-    if (entry.answers.length >= entry.items.length) {
-      entry.resolve({ answers: entry.answers })
-      return { id: cardId }
-    }
-    this.broadcastPending()
-    return { id: cardId }
-  }
-
-  /** Drop a question card when the host reports it answered elsewhere. */
-  dropQuestion(callId: string): void {
-    if (callId === '') return
-    if (this.questions.delete(`q-${callId}`)) this.broadcastPending()
-  }
-
-  // ------------------------------------------------------------------ publish
-
-  /** New history item for one session; pushed to clients watching it. */
-  broadcastItem(sessionId: string, item: Item): void {
-    for (const client of this.clients.values()) {
-      if (client.watched === sessionId) this.send(client, { type: 'item', sessionId, item })
-    }
-  }
-
-  /** Assistant stream frame; pushed to clients watching the session. */
-  broadcastStream(sessionId: string, phase: 'start' | 'chunk' | 'end', text: string): void {
-    for (const client of this.clients.values()) {
-      if (client.watched === sessionId) this.send(client, { type: 'stream', sessionId, phase, text })
-    }
-  }
-
-  /** Fresh session list to every client (used on api-session/* churn). */
-  async broadcastSessions(): Promise<void> {
-    const sessions = await this.listSessions()
-    for (const client of this.clients.values()) this.send(client, { type: 'sessions', sessions })
-  }
-
-  /** Pending-card snapshot to every client. */
-  broadcastPending(): void {
-    const cards = this.pendingCards()
-    for (const client of this.clients.values()) this.send(client, { type: 'pending', cards })
-  }
-
-  /** Pending cards snapshot (approvals claimed by this server + questions). */
-  pendingCards(): PendingCard[] {
-    const cards: PendingCard[] = []
-    for (const entry of this.approvals.values()) {
-      cards.push({
-        id: entry.key,
-        kind: 'approval',
-        sessionId: entry.sessionId,
-        ...(entry.toolName !== '' ? { toolName: entry.toolName } : {}),
-        ...(entry.reason !== '' ? { reason: entry.reason } : {}),
-      })
-    }
-    for (const entry of this.questions.values()) {
-      for (const item of entry.items) {
-        if (item.answered) continue
-        cards.push({
-          id: `${entry.key}::${item.id}`,
-          kind: 'question',
-          sessionId: entry.sessionId,
-          question: item.question,
-          ...(item.detail !== '' ? { detail: item.detail } : {}),
-          ...(item.options.length > 0 ? { options: item.options } : {}),
-          ...(item.multiSelect ? { multiSelect: true } : {}),
-        })
-      }
-    }
-    return cards
-  }
-
-  /** Bootstrap payload of GET /api/status. */
-  async statusData(): Promise<Record<string, unknown>> {
-    let sessions: SessionSummary[] = []
-    let sessionsError: string | null = null
+  private upstreamAuthority(origin: string): string | undefined {
     try {
-      sessions = await this.listSessions()
-    } catch (error) {
-      sessionsError = error instanceof Error ? error.message : String(error)
-    }
-    return {
-      server: { host: this.address.host, port: this.address.port },
-      clientCount: this.clientCount,
-      bridge: this.options.bridge.readiness(),
-      sessions,
-      pending: this.pendingCards(),
-      ...(sessionsError !== null ? { sessionsError } : {}),
+      return new URL(origin).host
+    } catch {
+      return undefined
     }
   }
-
-  /** Normalized session list from the bridge. */
-  async listSessions(): Promise<SessionSummary[]> {
-    const rows = await this.options.bridge.listSessions()
-    const sessions: SessionSummary[] = []
-    for (const row of rows) {
-      const summary = normalizeSessionSummary(row)
-      if (summary !== null) sessions.push(summary)
-    }
-    return sessions
-  }
-
-  // ------------------------------------------------------------------- routes
 
   private async handle(request: IncomingMessage, response: ServerResponse): Promise<void> {
     const url = new URL(request.url ?? '/', `http://${request.headers.host ?? 'localhost'}`)
-    const pathname = url.pathname
     try {
-      if (pathname === '/' || pathname === '/index.html') {
-        this.sendPage(response)
-        return
-      }
-      if (pathname === '/static/mobile.js') {
-        this.sendMobileScript(response)
-        return
-      }
-      if (pathname === '/favicon.ico') {
-        // 内联 SVG 图标：避免浏览器默认请求在控制台留下 404 噪音。
-        const icon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#2563eb"/><rect x="21" y="10" width="22" height="40" rx="5" fill="none" stroke="#fff" stroke-width="4"/><line x1="30" y1="45" x2="34" y2="45" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg>'
-        response.writeHead(200, {
-          'content-type': 'image/svg+xml',
-          'cache-control': 'public, max-age=86400',
-          'content-length': Buffer.byteLength(icon),
-        })
-        response.end(icon)
-        return
-      }
-      if (!pathname.startsWith('/api/')) {
-        sendJson(response, 404, { ok: false, error: '未知路径', code: 'not_found' })
-        return
-      }
       const gate = checkApiAccess(request as unknown as GateRequest, this.options.token)
       if (!gate.ok) {
-        sendJson(response, gate.status, { ok: false, error: gate.message, code: gate.code })
+        this.deny(response, gate.status, gate.code, gate.message)
         return
       }
-      await this.handleApi(pathname, url, request, response)
+      const origin = this.options.upstream.origin()
+      if (origin === null) {
+        this.deny(response, 503, 'upstream_unavailable', '宿主 web 服务尚未就绪：请稍后刷新（需 web/desktop profile 且宿主已启动）')
+        return
+      }
+      await this.proxyOnce(request, response, origin)
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
-      this.options.log('warn', `请求 ${pathname} 失败：${message}`)
+      this.options.log('warn', `请求 ${url.pathname} 代理失败：${message}`)
       if (!response.headersSent) {
-        sendJson(response, 500, { ok: false, error: message, code: 'internal' })
+        this.deny(response, 502, 'bad_gateway', `上游请求失败：${message}`)
       } else {
-        response.end()
+        response.destroy()
       }
     }
   }
 
-  private async handleApi(pathname: string, url: URL, request: IncomingMessage, response: ServerResponse): Promise<void> {
-    const method = (request.method ?? 'GET').toUpperCase()
-    if (pathname === '/api/stream' && method === 'GET') {
-      this.openStream(url, request, response)
+  /** Forward one request; on upstream 401 re-exchange the host cookie and replay once. */
+  private async proxyOnce(request: IncomingMessage, response: ServerResponse, origin: string): Promise<void> {
+    const authority = this.upstreamAuthority(origin)
+    if (authority === undefined) throw new Error(`上游地址不合法：${origin}`)
+    let cookie = this.options.upstream.authCookieSync()
+    // 手机还没有宿主 cookie 时先代换一次：既给上游请求用，也要下发给手机浏览器。
+    let minted: string | null = null
+    if (cookie === null) {
+      minted = await this.options.upstream.authCookie(true)
+      cookie = minted
+    }
+    // 小体积请求体先缓冲（401 重放可复用）；大体积/无长度声明走流式（不可重放）。
+    const buffered = await readBufferedBody(request)
+    const status = await this.send(request, response, origin, authority, cookie, buffered, true, minted !== null ? [minted] : [])
+    if (status !== 401) return
+    const fresh = await this.options.upstream.authCookie(true)
+    if (fresh === null) {
+      this.deny(response, 502, 'bad_gateway', '上游会话代换失败：宿主 connection 服务不可用')
       return
     }
-    if (pathname === '/api/status' && method === 'GET') {
-      sendJson(response, 200, { ok: true, data: await this.statusData() })
+    const replayable = buffered !== null || request.method === 'GET' || request.method === 'HEAD'
+    if (!replayable) {
+      this.deny(response, 401, 'unauthorized', '宿主会话已更新，请刷新页面后重试')
       return
     }
-    if (pathname === '/api/sessions' && method === 'GET') {
-      sendJson(response, 200, { ok: true, data: { sessions: await this.listSessions() } })
-      return
-    }
-    const events = /^\/api\/sessions\/([^/]+)\/events$/.exec(pathname)
-    if (events !== null && method === 'GET') {
-      const sessionId = decodeURIComponent(events[1] ?? '')
-      const payload = await this.options.bridge.readEvents(sessionId)
-      const items: Item[] = []
-      for (const raw of historyEventsOf(payload)) {
-        const item = normalizeEventItem(raw)
-        if (item !== null) items.push(item)
-      }
-      sendJson(response, 200, { ok: true, data: { sessionId, items } })
-      return
-    }
-    const prompt = /^\/api\/sessions\/([^/]+)\/prompt$/.exec(pathname)
-    if (prompt !== null && method === 'POST') {
-      const body = await readJsonBody(request)
-      const text = typeof body.text === 'string' ? body.text.trim() : ''
-      if (text === '') {
-        sendJson(response, 400, { ok: false, error: '消息不能为空', code: 'bad_request' })
-        return
-      }
-      const mode = body.mode === 'steer' ? 'steer' : 'queue'
-      await this.options.bridge.prompt(decodeURIComponent(prompt[1] ?? ''), text, mode)
-      sendJson(response, 200, { ok: true, data: { queued: true, mode } })
-      return
-    }
-    const approval = /^\/api\/pending\/approvals\/([^/]+)$/.exec(pathname)
-    if (approval !== null && method === 'POST') {
-      const body = await readJsonBody(request)
-      const outcome = typeof body.outcome === 'string' && APPROVAL_OUTCOMES.has(body.outcome) ? body.outcome : ''
-      if (outcome === '') {
-        sendJson(response, 400, { ok: false, error: 'outcome 必须是 allowed-once / rejected / cancelled', code: 'bad_request' })
-        return
-      }
-      const key = decodeURIComponent(approval[1] ?? '')
-      const entry = this.approvals.get(key)
-      if (entry === undefined) {
-        sendJson(response, 404, { ok: false, error: '该审批不存在或已被处理', code: 'not_found' })
-        return
-      }
-      entry.resolve(outcome)
-      sendJson(response, 200, { ok: true, data: { id: key, outcome } })
-      return
-    }
-    const question = /^\/api\/pending\/questions\/([^/]+)$/.exec(pathname)
-    if (question !== null && method === 'POST') {
-      const body = await readJsonBody(request)
-      const cardId = decodeURIComponent(question[1] ?? '')
-      const result = this.answerQuestionItem(cardId, body)
-      sendJson(response, 200, { ok: true, data: result })
-      return
-    }
-    sendJson(response, 404, { ok: false, error: `未知接口：${pathname}`, code: 'not_found' })
+    await this.send(request, response, origin, authority, fresh, buffered, false, [])
   }
 
-  private openStream(url: URL, request: IncomingMessage, response: ServerResponse): void {
-    response.writeHead(200, {
-      'content-type': 'text/event-stream; charset=utf-8',
-      'cache-control': 'no-store',
-      connection: 'keep-alive',
-      'x-accel-buffering': 'no',
+  /**
+   * Run one upstream exchange and pipe the response. Resolves with the
+   * upstream status; when `swallowUnauthorized` is set the 401 body is
+   * consumed but not written (the caller decides the retry), otherwise the
+   * response streams straight through — SSE and chunked bodies included.
+   * `extraSetCookies` rides the response for the phone's cookie jar (the
+   * server-side launch-token exchange result).
+   */
+  private send(
+    request: IncomingMessage,
+    response: ServerResponse,
+    origin: string,
+    authority: string,
+    cookie: string | null,
+    buffered: Buffer | null,
+    swallowUnauthorized: boolean,
+    extraSetCookies: string[],
+  ): Promise<number> {
+    return new Promise<number>((resolve, reject) => {
+      const headers: Record<string, string | string[] | undefined> = {
+        ...withoutHopByHop(request.headers),
+        host: authority,
+      }
+      rewriteBrowserHeaders(headers, authority)
+      if (cookie !== null) headers.cookie = mergeCookie(request.headers.cookie, cookie)
+      if (buffered !== null) headers['content-length'] = String(buffered.length)
+      const upstream = http.request(`${origin}${request.url ?? '/'}`, { method: request.method, headers })
+      this.connections += 1
+      if (buffered !== null) {
+        upstream.end(buffered)
+      } else {
+        request.pipe(upstream)
+        request.on('error', () => upstream.destroy())
+      }
+      upstream.on('response', upstreamResponse => {
+        const status = upstreamResponse.statusCode ?? 502
+        if (status === 401 && swallowUnauthorized) {
+          upstreamResponse.resume()
+          upstreamResponse.on('end', () => resolve(status))
+          upstreamResponse.on('error', () => resolve(status))
+          return
+        }
+        const setCookie = [
+          ...extraSetCookies,
+          ...toArray(upstreamResponse.headers['set-cookie']),
+          pairingCookieHeader(this.options.token),
+        ]
+        response.writeHead(status, {
+          ...withoutHopByHop(upstreamResponse.headers),
+          'set-cookie': setCookie,
+        })
+        upstreamResponse.pipe(response)
+        upstreamResponse.on('end', () => resolve(status))
+        upstreamResponse.on('error', () => {
+          response.destroy()
+          resolve(status)
+        })
+      })
+      upstream.on('error', error => reject(error))
+      upstream.on('close', () => {
+        this.connections = Math.max(0, this.connections - 1)
+      })
     })
-    const client: SseClient = {
-      id: randomUUID(),
-      res: response,
-      watched: url.searchParams.get('sid') || null,
-    }
-    this.clients.set(client.id, client)
-    this.send(client, { type: 'hello', watched: client.watched })
-    this.send(client, { type: 'pending', cards: this.pendingCards() })
-    request.on('close', () => {
-      this.clients.delete(client.id)
-    })
   }
 
-  private ping(): void {
-    for (const client of this.clients.values()) {
-      try {
-        client.res.write(': ping\n\n')
-      } catch {
-        this.clients.delete(client.id)
+  // ---------------------------------------------------------------- upgrades
+
+  private handleUpgrade(request: IncomingMessage, socket: import('node:stream').Duplex, head: Buffer): void {
+    void (async () => {
+      const gate = checkApiAccess(request as unknown as GateRequest, this.options.token)
+      if (!gate.ok) {
+        socket.end(`HTTP/1.1 ${gate.status} ${gate.code}\r\nconnection: close\r\n\r\n`)
+        return
       }
-    }
+      const origin = this.options.upstream.origin()
+      const authority = origin === null ? undefined : this.upstreamAuthority(origin)
+      if (origin === null || authority === undefined) {
+        socket.end('HTTP/1.1 503 upstream unavailable\r\nconnection: close\r\n\r\n')
+        return
+      }
+      const cookie = this.options.upstream.authCookieSync()
+      // upgrade 转发不过滤 hop-by-hop：connection/upgrade 头本身就是升级语义。
+      const headers: Record<string, string | string[] | undefined> = {
+        ...request.headers,
+        host: authority,
+      }
+      rewriteBrowserHeaders(headers, authority)
+      if (cookie !== null) headers.cookie = mergeCookie(request.headers.cookie, cookie)
+      const upstream = http.request(`${origin}${request.url ?? '/'}`, {
+        method: request.method,
+        headers,
+      })
+      this.connections += 1
+      upstream.end(head.length > 0 ? head : undefined)
+      await new Promise<void>(resolve => {
+        upstream.on('upgrade', (upstreamResponse, upstreamSocket, upstreamHead) => {
+          // 101 的 connection/upgrade 头是升级语义本身，必须原样转发（不过滤 hop-by-hop）。
+          const headLines = [`HTTP/${upstreamResponse.httpVersion} ${upstreamResponse.statusCode ?? 101} ${upstreamResponse.statusMessage ?? ''}`]
+          for (const [name, value] of Object.entries(upstreamResponse.headers)) {
+            for (const item of toArray(value)) headLines.push(`${name}: ${item}`)
+          }
+          socket.write(`${headLines.join('\r\n')}\r\n\r\n`)
+          if (upstreamHead.length > 0) socket.write(upstreamHead)
+          upstreamSocket.pipe(socket)
+          socket.pipe(upstreamSocket)
+          const close = (): void => {
+            socket.destroy()
+            upstreamSocket.destroy()
+            resolve()
+          }
+          socket.on('error', close)
+          upstreamSocket.on('error', close)
+          socket.on('close', close)
+        })
+        upstream.on('response', upstreamResponse => {
+          // 上游拒绝升级：原样回写普通响应后收尾。
+          const headLines = [`HTTP/${upstreamResponse.httpVersion} ${upstreamResponse.statusCode ?? 502} ${upstreamResponse.statusMessage ?? ''}`]
+          for (const [name, value] of Object.entries(withoutHopByHop(upstreamResponse.headers))) {
+            for (const item of toArray(value)) headLines.push(`${name}: ${item}`)
+          }
+          socket.end(`${headLines.join('\r\n')}\r\n\r\n`)
+          resolve()
+        })
+        upstream.on('error', () => {
+          socket.destroy()
+          resolve()
+        })
+        socket.on('error', () => {
+          upstream.destroy()
+          resolve()
+        })
+      })
+      this.connections = Math.max(0, this.connections - 1)
+    })()
   }
 
-  private send(client: SseClient, frame: Record<string, unknown>): void {
-    try {
-      client.res.write(frameLine(frame))
-    } catch {
-      this.clients.delete(client.id)
-    }
-  }
+  // ------------------------------------------------------------------ basics
 
-  private sendPage(response: ServerResponse): void {
-    const body = renderPage()
-    response.writeHead(200, {
-      'content-type': 'text/html; charset=utf-8',
+  private deny(response: ServerResponse, status: number, code: string, message: string): void {
+    const body = JSON.stringify({ ok: false, error: message, code })
+    response.writeHead(status, {
+      'content-type': 'application/json; charset=utf-8',
       'cache-control': 'no-store',
       'content-length': Buffer.byteLength(body),
-      'x-content-type-options': 'nosniff',
-    })
-    response.end(body)
-  }
-
-  private sendMobileScript(response: ServerResponse): void {
-    if (this.mobileScript === null) {
-      const file = this.options.mobileScriptFile ?? new URL('./mobile.js', import.meta.url)
-      try {
-        this.mobileScript = readFileSync(file)
-      } catch {
-        this.mobileScript = Buffer.from('/* mobile bundle missing: run `npm run build` */', 'utf8')
-        this.options.log('warn', `lib/mobile.js 缺失（${String(file)}），请先构建`)
-      }
-    }
-    const body = this.mobileScript
-    response.writeHead(200, {
-      'content-type': 'text/javascript; charset=utf-8',
-      'cache-control': 'no-store',
-      'content-length': body.length,
-      'x-content-type-options': 'nosniff',
     })
     response.end(body)
   }

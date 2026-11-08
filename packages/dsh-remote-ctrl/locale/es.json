@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Control remoto",
-    "description": "Controla DSH desde un teléfono en la LAN: ve sesiones con salida en vivo, envía mensajes, aprueba llamadas y responde preguntas. Emparejamiento por QR, todas las direcciones LAN accesibles."
+    "description": "Pasarela LAN con token de emparejamiento que sirve la web completa y adaptable de DSH a los teléfonos de la red local: sesiones, salida en vivo, aprobaciones y preguntas nativas. Emparejamiento por QR, todas las direcciones LAN accesibles."
   }
 }

@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Remote Control",
-    "description": "Control DSH from a phone on the LAN: browse sessions with live output, send messages, approve tool calls, and answer questions. QR-code pairing, all LAN addresses reachable."
+    "description": "A pairing-token LAN gateway that reverse-proxies the full, responsive DSH web UI to phones on the local network — sessions, streaming output, approvals and questions all native. QR-code pairing, all LAN addresses reachable."
   }
 }
