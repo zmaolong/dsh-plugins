@@ -294,7 +294,7 @@ export interface MarketPreview {
   name: string
   title: string
   description: string
-  plugins: Array<{ name: string, version: string, display: { title: string, description: string }, installable: boolean, warning?: string }>
+  plugins: Array<{ name: string, version: string, display: { title: string, description: string, category?: string, author?: { name?: string, url?: string }, homepage?: string, repository?: string, license?: string }, installable: boolean, warning?: string }>
 }
 
 /** Market-level head fields shared by the preview branches. */
@@ -312,12 +312,18 @@ function previewPlugins(parsed: Marketplace): MarketPreview['plugins'] {
   return parsed.plugins.map((entry) => {
     const installable = entry.source.kind === 'local' || entry.source.kind === 'github' || entry.source.kind === 'git'
     const metaTitle = entry.meta.displayName ?? String(entry.meta.title ?? '')
+    const author = entry.meta.author
     return {
       name: entry.name,
       version: entry.version,
       display: {
         title: metaTitle !== '' ? metaTitle : entry.name,
         description: entry.meta.description ?? entry.description ?? '',
+        ...(entry.meta.category !== undefined ? { category: entry.meta.category } : {}),
+        ...(author !== undefined ? { author } : {}),
+        ...(entry.meta.homepage !== undefined ? { homepage: entry.meta.homepage } : {}),
+        ...(entry.meta.repository !== undefined ? { repository: entry.meta.repository } : {}),
+        ...(entry.meta.license !== undefined ? { license: entry.meta.license } : {}),
       },
       installable,
       ...(installable ? {} : { warning: '该插件的 source 暂不支持安装' }),

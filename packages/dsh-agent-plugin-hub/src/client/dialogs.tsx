@@ -8,12 +8,11 @@
  */
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { Badge, Button, IconButton, LoadingBlock, Spinner } from './controls.tsx'
+import { Button, IconButton, Spinner } from './controls.tsx'
 import { Icon } from './icons.tsx'
 import { useEscapeClose } from './overlay-hooks.ts'
-import { addedMarketFor } from './recommended.ts'
 import { identity, type DialogState, type HubActions, type HubState, type UseHub } from './store.ts'
-import { formatTime, errorMessageFor, orderMarkets, displayOf, type JsonRecord, type Translate } from './presentation.ts'
+import { formatTime, errorMessageFor, orderMarkets, type JsonRecord, type Translate } from './presentation.ts'
 import css from './dialogs.module.css'
 
 /** Shell of every dialog: mask, card, header, body, footer. */
@@ -216,94 +215,6 @@ export function SourcesDialog({ useHub, store, t }: {
       )}
     >
       {list}
-    </DialogShell>
-  )
-}
-
-/** Recommended-source preview dialog: read-only plugin list with refresh and one-click add. */
-export function PreviewSourceDialog({ useHub, store, t }: {
-  useHub: UseHub
-  store: { actions: HubActions }
-  t: Translate
-}): ReactNode {
-  const state: HubState = useHub(identity)
-  const preview = state.recPreview
-  if (preview === null) return null
-  const snapshot = state.snapshot ?? {}
-  const matched = addedMarketFor((snapshot.markets as JsonRecord[] | undefined) ?? [], preview.location)
-  const adding = state.marketBusy[`rec:${preview.id}`] === 'add'
-  const refreshing = preview.status === 'loading' && preview.data !== null
-  const close = (): void => { store.actions.closePreview() }
-
-  let body: ReactNode
-  if (preview.status === 'loading' && preview.data === null) {
-    body = <LoadingBlock text={t('catalogLoading')} />
-  } else {
-    const data = (preview.data ?? {}) as JsonRecord
-    const plugins = (data.plugins as JsonRecord[] | undefined) ?? []
-    const detected = typeof data.type === 'string' && data.type !== ''
-      ? (data.type === 'git' ? t('detectedGit') : data.type === 'url' ? t('detectedUrl') : t('detectedLocal'))
-      : ''
-    body = (
-      <>
-        {preview.status === 'error' ? <div className={css.error} role="alert">{preview.error}</div> : null}
-        <div className={css.previewHead}>
-          <span>{t('pluginCount', { count: plugins.length })}{detected !== '' ? ` · ${detected}` : ''}</span>
-          {matched !== null ? <Badge tone="success">{t('addedBadge')}</Badge> : null}
-        </div>
-        {plugins.length === 0
-          ? <div className={css.emptyRow}>{t('marketEmpty')}</div>
-          : (
-            <div className={css.previewList}>
-              {plugins.map((plugin, index) => {
-                const display = displayOf(plugin, state.localeId)
-                const nameText = String(display.title !== '' ? display.title : plugin.name ?? `#${index + 1}`)
-                const descText = display.description
-                return (
-                  <div key={String(plugin.name ?? index)} className={css.previewRow}>
-                    <div className={css.previewName} title={nameText}>{nameText}</div>
-                    {descText !== '' ? <div className={css.previewDesc} title={descText}>{descText}</div> : null}
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        {matched === null && preview.status === 'ready' ? <div className={css.previewHint}>{t('previewAddHint')}</div> : null}
-      </>
-    )
-  }
-
-  return (
-    <DialogShell
-      t={t}
-      title={preview.title}
-      onClose={close}
-      footer={(
-        <div className={css.footInline}>
-          <IconButton
-            icon="refresh"
-            title={refreshing ? t('refreshing') : t('refresh')}
-            busy={refreshing}
-            disabled={refreshing}
-            onClick={() => store.actions.previewRecommendedSource({ id: preview.id, location: preview.location }, true)}
-          />
-          {matched !== null
-            ? <Badge tone="success">{t('addedBadge')}</Badge>
-            : (
-              <Button
-                variant="primary"
-                icon="plus"
-                disabled={adding}
-                onClick={() => { void store.actions.addRecommendedSource({ id: preview.id, location: preview.location }) }}
-              >
-                {adding ? <Spinner /> : null}{adding ? t('adding') : t('add')}
-              </Button>
-            )}
-          <Button variant="secondary" onClick={close}>{t('close')}</Button>
-        </div>
-      )}
-    >
-      {body}
     </DialogShell>
   )
 }

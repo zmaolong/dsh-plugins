@@ -368,7 +368,7 @@ export function DetailView({ useHub, actions, t }: ViewProps): ReactNode {
 
   return (
     <div className={`${css.page} ${detailCss.detail}`}>
-      <button type="button" className={css.back} onClick={actions.openStore}>
+      <button type="button" className={css.back} onClick={actions.backFromDetail}>
         <Icon name="arrowLeft" size={16} />
         {t('back')}
       </button>

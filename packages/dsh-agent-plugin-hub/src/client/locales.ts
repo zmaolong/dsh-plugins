@@ -170,6 +170,7 @@ export const zh = {
   recommendedHint: '精选的插件市场源，点击添加后即可浏览安装。',
   addedBadge: '已添加',
   previewAddHint: '添加后即可浏览并安装其中的全部插件。',
+  previewInstallBlocked: '添加市场源后可安装',
 } as const
 
 /** English dictionary (sentence case; same key set as `zh`). */
@@ -333,6 +334,7 @@ export const en: Record<HubLocaleKey, string> = {
   recommendedHint: 'Curated marketplace sources — add one to browse and install its plugins.',
   addedBadge: 'Added',
   previewAddHint: 'Add the source to browse and install all of its plugins.',
+  previewInstallBlocked: 'Installable after adding the source',
 }
 
 /** Japanese dictionary (same key set as `zh`). */
@@ -496,6 +498,7 @@ export const ja: Record<HubLocaleKey, string> = {
   recommendedHint: '厳選されたマーケットソースです。追加するとプラグインを閲覧・インストールできます。',
   addedBadge: '追加済み',
   previewAddHint: '追加すると、すべてのプラグインを閲覧・インストールできます。',
+  previewInstallBlocked: 'マーケットソースの追加後にインストールできます',
 }
 
 /** Spanish dictionary (same key set as `zh`). */
@@ -659,6 +662,7 @@ export const es: Record<HubLocaleKey, string> = {
   recommendedHint: 'Fuentes de marketplace seleccionadas: agregue una para explorar e instalar sus plugins.',
   addedBadge: 'Agregado',
   previewAddHint: 'Agregue la fuente para explorar e instalar todos sus plugins.',
+  previewInstallBlocked: 'Se puede instalar tras agregar la fuente',
 }
 
 /** French dictionary (same key set as `zh`). */
@@ -822,6 +826,7 @@ export const fr: Record<HubLocaleKey, string> = {
   recommendedHint: 'Sources de marketplace sélectionnées — ajoutez-en une pour parcourir et installer ses plugins.',
   addedBadge: 'Ajouté',
   previewAddHint: 'Ajoutez la source pour parcourir et installer tous ses plugins.',
+  previewInstallBlocked: 'Installable après ajout de la source',
 }
 
 /** German dictionary (same key set as `zh`). */
@@ -985,6 +990,7 @@ export const de: Record<HubLocaleKey, string> = {
   recommendedHint: 'Ausgewählte Marketplace-Quellen – fügen Sie eine hinzu, um deren Plugins zu durchstöbern und zu installieren.',
   addedBadge: 'Hinzugefügt',
   previewAddHint: 'Fügen Sie die Quelle hinzu, um alle Plugins zu durchstöbern und zu installieren.',
+  previewInstallBlocked: 'Nach Hinzufügen der Quelle installierbar',
 }
 
 /** Russian dictionary (same key set as `zh`). */
@@ -1148,6 +1154,7 @@ export const ru: Record<HubLocaleKey, string> = {
   recommendedHint: 'Отобранные источники маркетплейсов — добавьте один, чтобы просматривать и устанавливать его плагины.',
   addedBadge: 'Добавлено',
   previewAddHint: 'Добавьте источник, чтобы просматривать и устанавливать все его плагины.',
+  previewInstallBlocked: 'Установка после добавления источника',
 }
 
 /** Portuguese dictionary (same key set as `zh`). */
@@ -1311,6 +1318,7 @@ export const pt: Record<HubLocaleKey, string> = {
   recommendedHint: 'Fontes de marketplace selecionadas — adicione uma para explorar e instalar os plugins dela.',
   addedBadge: 'Adicionado',
   previewAddHint: 'Adicione a fonte para explorar e instalar todos os plugins dela.',
+  previewInstallBlocked: 'Instalável após adicionar a fonte',
 }
 
 /** Every dictionary key of the plugin namespace. */

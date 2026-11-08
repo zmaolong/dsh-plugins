@@ -2640,12 +2640,18 @@ function previewPlugins(parsed) {
 	return parsed.plugins.map((entry) => {
 		const installable = entry.source.kind === "local" || entry.source.kind === "github" || entry.source.kind === "git";
 		const metaTitle = entry.meta.displayName ?? String(entry.meta.title ?? "");
+		const author = entry.meta.author;
 		return {
 			name: entry.name,
 			version: entry.version,
 			display: {
 				title: metaTitle !== "" ? metaTitle : entry.name,
-				description: entry.meta.description ?? entry.description ?? ""
+				description: entry.meta.description ?? entry.description ?? "",
+				...entry.meta.category !== void 0 ? { category: entry.meta.category } : {},
+				...author !== void 0 ? { author } : {},
+				...entry.meta.homepage !== void 0 ? { homepage: entry.meta.homepage } : {},
+				...entry.meta.repository !== void 0 ? { repository: entry.meta.repository } : {},
+				...entry.meta.license !== void 0 ? { license: entry.meta.license } : {}
 			},
 			installable,
 			...installable ? {} : { warning: "该插件的 source 暂不支持安装" }

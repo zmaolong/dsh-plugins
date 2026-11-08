@@ -30,7 +30,7 @@ export interface ViewProps {
 }
 
 /** Collapsed-rows expander under one market group. */
-function CollapseRow({ hidden, localeId, onExpand, t }: {
+export function CollapseRow({ hidden, localeId, onExpand, t }: {
   hidden: JsonRecord[]
   localeId: string
   onExpand: () => void
@@ -116,7 +116,7 @@ function RecommendedList({ useHub, actions, t }: ViewProps): ReactNode {
               type="button"
               className={css.recRow}
               title={display.title}
-              onClick={() => actions.previewRecommendedSource({ id: entry.id, location: entry.location })}
+              onClick={() => actions.openMarketDetail({ id: entry.id, location: entry.location })}
             >
               <div className={css.recMain}>
                 <div className={css.recHead}>

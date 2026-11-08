@@ -10,6 +10,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 
 import { Panel } from '../src/client/Panel.tsx'
 import { StoreView } from '../src/client/StoreView.tsx'
+import { MarketView } from '../src/client/MarketView.tsx'
 import { StoreCard } from '../src/client/StoreCard.tsx'
 import { Switch } from '../src/client/Switch.tsx'
 import { Menu } from '../src/client/Menu.tsx'
@@ -257,113 +258,6 @@ describe('StoreView', () => {
   })
 })
 
-describe('recommended source preview', () => {
-  const ENTRY = { id: 'claude-plugins-official', location: 'https://github.com/anthropics/claude-plugins-official' }
-  const addedSnapshot = {
-    markets: [{ id: 'm1', location: ENTRY.location, locationKey: 'git:github.com/anthropics/claude-plugins-official', title: 'Anthropic 官方插件市场' }],
-    items: [
-      { key: 'm1/a', name: 'a', market: { id: 'm1' }, display: { title: '插件 A', description: '描述 A' } },
-      { key: 'm1/b', name: 'b', market: { id: 'm1' }, display: { title: '插件 B', description: '' } },
-    ],
-    installed: [],
-  }
-
-  it('StoreView：点击推荐行触发预览；行内添加按钮不触发行预览', () => {
-    const controller = createHubController({ translate: t, getLocaleId: () => 'zh-cn' })
-    const previewRecommendedSource = vi.spyOn(controller.actions, 'previewRecommendedSource')
-    const addRecommendedSource = vi.spyOn(controller.actions, 'addRecommendedSource')
-    const { useHub } = stubHub({
-      ...initialHubState(),
-      status: 'ready',
-      localeId: 'zh-cn',
-      storeTab: 'recommended',
-      snapshot: { markets: [], items: [], installed: [] },
-    })
-    render(<StoreView useHub={useHub} actions={controller.actions} t={t} />)
-    const row = within(screen.getByRole('tabpanel')).getByRole('button', { name: /claude-plugins-official/u })
-    fireEvent.click(row)
-    expect(previewRecommendedSource).toHaveBeenCalledWith({ id: ENTRY.id, location: ENTRY.location })
-    fireEvent.click(within(row).getByRole('button', { name: t('add') }))
-    expect(addRecommendedSource).toHaveBeenCalledWith({ id: ENTRY.id, location: ENTRY.location })
-    expect(previewRecommendedSource).toHaveBeenCalledTimes(1)
-  })
-
-  it('PreviewSourceDialog：已添加态展示快照清单与已添加徽标（零请求路径）', async () => {
-    const controller = createHubController({ translate: t, getLocaleId: () => 'zh-cn' })
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ ok: true, data: addedSnapshot }), { status: 200, headers: { 'content-type': 'application/json' } })))
-    await controller.actions.load()
-    act(() => {
-      controller.actions.previewRecommendedSource(ENTRY)
-    })
-    const { useHub } = stubHub(controller.store.getSnapshot())
-    render(<OverlayHost useHub={useHub} actions={controller.actions} t={t} />)
-    const dialog = screen.getByRole('dialog', { name: 'Anthropic 官方插件市场' })
-    expect(within(dialog).getByText('插件 A')).toBeTruthy()
-    expect(within(dialog).getByText('插件 B')).toBeTruthy()
-    expect(within(dialog).getAllByText(t('addedBadge')).length).toBeGreaterThan(0)
-    expect(within(dialog).queryByRole('button', { name: t('add') })).toBeNull()
-  })
-
-  it('PreviewSourceDialog：未添加态有添加按钮，刷新中保留清单且刷新按钮转圈', async () => {
-    const controller = createHubController({ translate: t, getLocaleId: () => 'zh-cn' })
-    const addRecommendedSource = vi.spyOn(controller.actions, 'addRecommendedSource')
-    let calls = 0
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input)
-      if (url.includes('/market/preview') && init?.method === 'POST') {
-        calls += 1
-        if (calls === 1) {
-          return new Response(JSON.stringify({ ok: true, data: { type: 'git', plugins: [{ name: 'a', display: { title: '插件 A', description: '描述 A' } }] } }), { status: 200, headers: { 'content-type': 'application/json' } })
-        }
-        return new Promise(resolve => setTimeout(() => {
-          resolve(new Response(JSON.stringify({ ok: true, data: { type: 'git', plugins: [] } }), { status: 200, headers: { 'content-type': 'application/json' } }))
-        }, 50))
-      }
-      return new Response(JSON.stringify({ ok: true, data: { markets: [], items: [], installed: [] } }), { status: 200, headers: { 'content-type': 'application/json' } })
-    }))
-    await controller.actions.load()
-    act(() => {
-      controller.actions.previewRecommendedSource(ENTRY)
-    })
-    await vi.waitFor(() => {
-      expect(controller.store.getSnapshot().recPreview?.status).toBe('ready')
-    })
-    act(() => {
-      controller.actions.previewRecommendedSource(ENTRY, true)
-    })
-    const { useHub } = stubHub(controller.store.getSnapshot())
-    render(<OverlayHost useHub={useHub} actions={controller.actions} t={t} />)
-    const dialog = screen.getByRole('dialog', { name: 'Anthropic 官方插件市场' })
-    expect(within(dialog).getByText('插件 A')).toBeTruthy()
-    const refresh = within(dialog).getByRole('button', { name: t('refreshing') })
-    expect((refresh as HTMLButtonElement).disabled).toBe(true)
-    const add = within(dialog).getByRole('button', { name: t('add') })
-    fireEvent.click(add)
-    expect(addRecommendedSource).toHaveBeenCalledWith({ id: ENTRY.id, location: ENTRY.location })
-  })
-
-  it('PreviewSourceDialog：失败展示错误信息', async () => {
-    const controller = createHubController({ translate: t, getLocaleId: () => 'zh-cn' })
-    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const url = String(input)
-      if (url.includes('/market/preview') && init?.method === 'POST') {
-        return new Response(JSON.stringify({ ok: false, error: '拉取失败', code: 'network_error' }), { status: 502, headers: { 'content-type': 'application/json' } })
-      }
-      return new Response(JSON.stringify({ ok: true, data: { markets: [], items: [], installed: [] } }), { status: 200, headers: { 'content-type': 'application/json' } })
-    }))
-    await controller.actions.load()
-    act(() => {
-      controller.actions.previewRecommendedSource(ENTRY)
-    })
-    await vi.waitFor(() => {
-      expect(controller.store.getSnapshot().recPreview?.status).toBe('error')
-    })
-    const { useHub } = stubHub(controller.store.getSnapshot())
-    render(<OverlayHost useHub={useHub} actions={controller.actions} t={t} />)
-    expect(screen.getByRole('alert').textContent).toBe(t('errorNetwork'))
-  })
-})
-
 describe('OverlayHost', () => {
   it('renders the top dialog only and the toast stack', () => {
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
@@ -385,5 +279,119 @@ describe('OverlayHost', () => {
     const { useHub } = stubHub(controller.store.getSnapshot())
     const { container } = render(<OverlayHost useHub={useHub} actions={controller.actions} t={t} />)
     expect(container.firstChild).toBeNull()
+  })
+})
+
+describe('market detail view', () => {
+  const ENTRY = { id: 'claude-plugins-official', location: 'https://github.com/anthropics/claude-plugins-official' }
+  const ADDED_STORE = {
+    markets: [{ id: 'm1', location: ENTRY.location, locationKey: 'git:github.com/anthropics/claude-plugins-official', title: 'Anthropic 官方插件市场' }],
+    items: [
+      { key: 'm1/a', name: 'a', version: '1.0.0', market: { id: 'm1' }, display: { title: '插件 A', description: '描述 A' }, installable: true },
+      { key: 'm1/b', name: 'b', version: '1.0.0', market: { id: 'm1' }, display: { title: '插件 B', description: '' }, installable: true },
+    ],
+    installed: [],
+  }
+
+  function jsonResponseData(data: unknown): Response {
+    return new Response(JSON.stringify({ ok: true, data }), { status: 200, headers: { 'content-type': 'application/json' } })
+  }
+
+  it('StoreView：点击推荐行进入市场详情；行内添加按钮不触发行激活', () => {
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh-cn' })
+    const openMarketDetail = vi.spyOn(controller.actions, 'openMarketDetail')
+    const addRecommendedSource = vi.spyOn(controller.actions, 'addRecommendedSource')
+    const { useHub } = stubHub({
+      ...initialHubState(),
+      status: 'ready',
+      localeId: 'zh-cn',
+      storeTab: 'recommended',
+      snapshot: { markets: [], items: [], installed: [] },
+    })
+    render(<StoreView useHub={useHub} actions={controller.actions} t={t} />)
+    const row = within(screen.getByRole('tabpanel')).getByRole('button', { name: /claude-plugins-official/u })
+    fireEvent.click(row)
+    expect(openMarketDetail).toHaveBeenCalledWith({ id: ENTRY.id, location: ENTRY.location })
+    fireEvent.click(within(row).getByRole('button', { name: t('add') }))
+    expect(addRecommendedSource).toHaveBeenCalledWith({ id: ENTRY.id, location: ENTRY.location })
+    expect(openMarketDetail).toHaveBeenCalledTimes(1)
+  })
+
+  it('MarketView：已添加态渲染插件卡片网格，卡片进入插件详情', async () => {
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh-cn' })
+    const openDetail = vi.spyOn(controller.actions, 'openDetail')
+    vi.stubGlobal('fetch', vi.fn(async () => jsonResponseData(ADDED_STORE)))
+    await controller.actions.load()
+    act(() => {
+      controller.actions.openMarketDetail(ENTRY)
+    })
+    const { useHub } = stubHub(controller.store.getSnapshot())
+    render(<MarketView useHub={useHub} actions={controller.actions} t={t} />)
+    expect(screen.getByRole('button', { name: t('back') })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Anthropic 官方插件市场' })).toBeTruthy()
+    expect(screen.getByText('插件 A')).toBeTruthy()
+    expect(screen.getByText('插件 B')).toBeTruthy()
+    expect(screen.getAllByRole('button', { name: t('install') }).length).toBe(2)
+    fireEvent.click(screen.getByRole('button', { name: '插件 A' }))
+    expect(openDetail).toHaveBeenCalledWith('m1/a', 'market')
+  })
+
+  it('MarketView：未添加态渲染预览卡片（不可安装），点击进入描述页', async () => {
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh-cn' })
+    const openMarketPlugin = vi.spyOn(controller.actions, 'openMarketPlugin')
+    const closeMarketPlugin = vi.spyOn(controller.actions, 'closeMarketPlugin')
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.includes('/market/preview') && init?.method === 'POST') {
+        return jsonResponseData({ type: 'git', plugins: [{ name: 'a', version: '1.0.0', display: { title: '插件 A', description: '描述 A', category: '工具' } }] })
+      }
+      return jsonResponseData({ markets: [], items: [], installed: [] })
+    }))
+    await controller.actions.load()
+    act(() => {
+      controller.actions.openMarketDetail(ENTRY)
+    })
+    await vi.waitFor(() => {
+      expect(controller.store.getSnapshot().marketDetail?.status).toBe('ready')
+    })
+    const { useHub } = stubHub(controller.store.getSnapshot())
+    const view = render(<MarketView useHub={useHub} actions={controller.actions} t={t} />)
+    // The disabled button's accessible name is its tooltip (the blocked reason).
+    const blocked = screen.getByRole('button', { name: t('previewInstallBlocked') })
+    expect((blocked as HTMLButtonElement).disabled).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: '插件 A' }))
+    expect(openMarketPlugin).toHaveBeenCalledWith('preview:a')
+    act(() => {
+      controller.actions.openMarketPlugin('preview:a')
+    })
+    view.rerender(<MarketView useHub={stubHub(controller.store.getSnapshot()).useHub} actions={controller.actions} t={t} />)
+    expect(screen.getByText('描述 A')).toBeTruthy()
+    expect(screen.getByText('工具')).toBeTruthy()
+    expect(screen.getByText(t('previewInstallBlocked'))).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: t('back') }))
+    expect(closeMarketPlugin).toHaveBeenCalled()
+  })
+
+  it('MarketView：未添加态刷新按钮带 refresh 重新拉取', async () => {
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh-cn' })
+    const openMarketDetail = vi.spyOn(controller.actions, 'openMarketDetail')
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.includes('/market/preview') && init?.method === 'POST') {
+        return jsonResponseData({ type: 'git', plugins: [{ name: 'a', display: { title: '插件 A' } }] })
+      }
+      return jsonResponseData({ markets: [], items: [], installed: [] })
+    }))
+    await controller.actions.load()
+    act(() => {
+      controller.actions.openMarketDetail(ENTRY)
+    })
+    await vi.waitFor(() => {
+      expect(controller.store.getSnapshot().marketDetail?.status).toBe('ready')
+    })
+    const { useHub } = stubHub(controller.store.getSnapshot())
+    render(<MarketView useHub={useHub} actions={controller.actions} t={t} />)
+    fireEvent.click(screen.getByRole('button', { name: t('refresh') }))
+    expect(openMarketDetail).toHaveBeenLastCalledWith({ id: ENTRY.id, location: ENTRY.location }, true)
   })
 })

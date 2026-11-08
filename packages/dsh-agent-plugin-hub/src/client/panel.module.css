@@ -249,6 +249,14 @@
   color: var(--dsw-alias-label-tertiary);
 }
 
+.pluginDesc {
+  margin: 8px 8px 0;
+  font-size: 14px;
+  color: var(--dsw-alias-label-primary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .gridSingle {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

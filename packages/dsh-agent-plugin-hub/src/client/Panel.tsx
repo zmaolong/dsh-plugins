@@ -12,6 +12,7 @@ import { Icon } from './icons.tsx'
 import { StoreView } from './StoreView.tsx'
 import { ManageView } from './ManageView.tsx'
 import { DetailView } from './DetailView.tsx'
+import { MarketView } from './MarketView.tsx'
 import { identity, type HubActions, type HubState, type UseHub } from './store.ts'
 import type { JsonRecord, Translate } from './presentation.ts'
 import css from './panel.module.css'
@@ -76,7 +77,9 @@ export function Panel({ useHub, actions, t }: PanelProps): ReactNode {
       ? <DetailView key="detail" useHub={useHub} actions={actions} t={t} />
       : state.view === 'manage'
         ? <ManageView key="manage" useHub={useHub} actions={actions} t={t} />
-        : <StoreView key="store" useHub={useHub} actions={actions} t={t} />
+        : state.view === 'market'
+          ? <MarketView key="market" useHub={useHub} actions={actions} t={t} />
+          : <StoreView key="store" useHub={useHub} actions={actions} t={t} />
     body = <div style={{ display: 'flex', flexDirection: 'column' }}>{banners}{view}</div>
   }
 

@@ -200,38 +200,39 @@ describe('store tabs and recommended sources', () => {
   })
 })
 
-describe('recommended source preview', () => {
+describe('market detail view', () => {
   const ENTRY = { id: 'claude-plugins-official', location: 'https://github.com/anthropics/claude-plugins-official' }
+  const ADDED_STORE = {
+    markets: [{ id: 'm1', location: ENTRY.location, locationKey: 'git:github.com/anthropics/claude-plugins-official', title: 'Anthropic 官方插件市场' }],
+    items: [{ key: 'm1/a', name: 'a', market: { id: 'm1' }, display: { title: 'A' } }],
+    installed: [],
+  }
 
   function jsonResponseData(data: unknown): Response {
     return jsonResponse({ ok: true, data })
   }
 
-  it('added market: zero-request preview projects snapshot items', async () => {
+  it('added market: zero-request open projects snapshot items and routes to the market view', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       if (url.includes('/market/preview') && init?.method === 'POST') {
         return jsonResponse({ ok: false, error: 'preview must not be called', code: 'internal' })
       }
-      return jsonResponseData({
-        markets: [{ id: 'm1', location: ENTRY.location, locationKey: 'git:github.com/anthropics/claude-plugins-official', title: 'Anthropic 官方插件市场' }],
-        items: [{ key: 'm1/a', name: 'a', market: { id: 'm1' }, display: { title: 'A' } }],
-        installed: [],
-      })
+      return jsonResponseData(ADDED_STORE)
     })
     vi.stubGlobal('fetch', fetchMock)
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
     await controller.actions.load()
-    controller.actions.previewRecommendedSource(ENTRY)
-    const preview = controller.store.getSnapshot().recPreview
-    expect(preview?.status).toBe('ready')
-    expect(preview?.data?.plugins).toHaveLength(1)
-    expect(controller.store.getSnapshot().dialogs.some(dialog => dialog.kind === 'preview-source')).toBe(true)
-    // Only /store loads — the preview itself made no request.
+    controller.actions.openMarketDetail(ENTRY)
+    const state = controller.store.getSnapshot()
+    expect(state.view).toBe('market')
+    expect(state.marketDetail?.status).toBe('ready')
+    expect(state.marketDetail?.data?.plugins).toHaveLength(1)
+    // Only /store loads — the market view itself made no request.
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
-  it('un-added market: fetches /market/preview and renders the data', async () => {
+  it('un-added market: fetches /market/preview for the plugin list', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       if (url.includes('/market/preview') && init?.method === 'POST') {
@@ -241,15 +242,15 @@ describe('recommended source preview', () => {
     }))
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
     await controller.actions.load()
-    controller.actions.previewRecommendedSource(ENTRY)
-    expect(controller.store.getSnapshot().recPreview?.status).toBe('loading')
+    controller.actions.openMarketDetail(ENTRY)
+    expect(controller.store.getSnapshot().marketDetail?.status).toBe('loading')
     await vi.waitFor(() => {
-      expect(controller.store.getSnapshot().recPreview?.status).toBe('ready')
+      expect(controller.store.getSnapshot().marketDetail?.status).toBe('ready')
     })
-    expect(controller.store.getSnapshot().recPreview?.data?.plugins).toHaveLength(1)
+    expect(controller.store.getSnapshot().marketDetail?.data?.plugins).toHaveLength(1)
   })
 
-  it('preview failure surfaces in-dialog error state, not a toast', async () => {
+  it('openMarketDetail failure surfaces in the view error state', async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       if (url.includes('/market/preview') && init?.method === 'POST') return jsonResponse({ ok: false, error: '拉取失败', code: 'network_error' })
@@ -257,15 +258,15 @@ describe('recommended source preview', () => {
     }))
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
     await controller.actions.load()
-    controller.actions.previewRecommendedSource(ENTRY)
+    controller.actions.openMarketDetail(ENTRY)
     await vi.waitFor(() => {
-      expect(controller.store.getSnapshot().recPreview?.status).toBe('error')
+      expect(controller.store.getSnapshot().marketDetail?.status).toBe('error')
     })
-    expect(controller.store.getSnapshot().recPreview?.error).not.toBe('')
+    expect(controller.store.getSnapshot().marketDetail?.error).not.toBe('')
     expect(controller.store.getSnapshot().toasts).toHaveLength(0)
   })
 
-  it('refresh keeps previous data visible while re-fetching with refresh flag', async () => {
+  it('refresh keeps previous data visible while re-fetching with the refresh flag', async () => {
     let calls = 0
     const bodies: unknown[] = []
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -273,36 +274,69 @@ describe('recommended source preview', () => {
       if (url.includes('/market/preview') && init?.method === 'POST') {
         calls += 1
         bodies.push(JSON.parse(String(init?.body)))
-        if (calls === 1) return jsonResponseData({ type: 'git', via: 'raw', plugins: [{ name: 'a', display: { title: 'A' } }] })
+        if (calls === 1) return jsonResponseData({ type: 'git', plugins: [{ name: 'a', display: { title: 'A' } }] })
         await new Promise(resolve => setTimeout(resolve, 20))
-        return jsonResponseData({ type: 'git', via: 'raw', plugins: [{ name: 'b', display: { title: 'B' } }] })
+        return jsonResponseData({ type: 'git', plugins: [{ name: 'b', display: { title: 'B' } }] })
       }
       return jsonResponseData({ items: [], installed: [], markets: [] })
     }))
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
     await controller.actions.load()
-    controller.actions.previewRecommendedSource(ENTRY)
+    controller.actions.openMarketDetail(ENTRY)
     await vi.waitFor(() => {
-      expect(controller.store.getSnapshot().recPreview?.status).toBe('ready')
+      expect(controller.store.getSnapshot().marketDetail?.status).toBe('ready')
     })
-    controller.actions.previewRecommendedSource(ENTRY, true)
-    const refreshing = controller.store.getSnapshot().recPreview
+    controller.actions.openMarketDetail(ENTRY, true)
+    const refreshing = controller.store.getSnapshot().marketDetail
     expect(refreshing?.status).toBe('loading')
     expect(refreshing?.data?.plugins).toHaveLength(1)
     await vi.waitFor(() => {
-      expect(controller.store.getSnapshot().recPreview?.status).toBe('ready')
+      expect(controller.store.getSnapshot().marketDetail?.status).toBe('ready')
     })
     expect(bodies[1]).toMatchObject({ location: ENTRY.location, refresh: true })
   })
 
-  it('closePreview closes the dialog and clears the state', async () => {
+  it('closeMarketDetail returns to the store keeping the recommended tab', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => jsonResponseData(ADDED_STORE)))
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    await controller.actions.load()
+    controller.actions.setStoreTab('recommended')
+    controller.actions.openMarketDetail(ENTRY)
+    expect(controller.store.getSnapshot().view).toBe('market')
+    controller.actions.closeMarketDetail()
+    const state = controller.store.getSnapshot()
+    expect(state.view).toBe('store')
+    expect(state.storeTab).toBe('recommended')
+    expect(state.marketDetail).toBeNull()
+  })
+
+  it('openDetail from the market view backs into the market view, otherwise into the store', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes('/describe')) return jsonResponseData({ key: 'm1/a' })
+      return jsonResponseData(ADDED_STORE)
+    }))
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    await controller.actions.load()
+    controller.actions.openMarketDetail(ENTRY)
+    controller.actions.openDetail('m1/a', 'market')
+    expect(controller.store.getSnapshot().view).toBe('detail')
+    controller.actions.backFromDetail()
+    expect(controller.store.getSnapshot().view).toBe('market')
+    controller.actions.openDetail('m1/a')
+    expect(controller.store.getSnapshot().detailReturn).toBe('store')
+    controller.actions.backFromDetail()
+    expect(controller.store.getSnapshot().view).toBe('store')
+  })
+
+  it('openMarketPlugin/closeMarketPlugin toggle the preview plugin pane', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => jsonResponseData({ items: [], installed: [], markets: [] })))
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
     await controller.actions.load()
-    controller.actions.previewRecommendedSource(ENTRY)
-    expect(controller.store.getSnapshot().dialogs.some(dialog => dialog.kind === 'preview-source')).toBe(true)
-    controller.actions.closePreview()
-    expect(controller.store.getSnapshot().dialogs.some(dialog => dialog.kind === 'preview-source')).toBe(false)
-    expect(controller.store.getSnapshot().recPreview).toBeNull()
+    controller.actions.openMarketDetail(ENTRY)
+    controller.actions.openMarketPlugin('preview:a')
+    expect(controller.store.getSnapshot().marketPluginKey).toBe('preview:a')
+    controller.actions.closeMarketPlugin()
+    expect(controller.store.getSnapshot().marketPluginKey).toBeNull()
   })
 })

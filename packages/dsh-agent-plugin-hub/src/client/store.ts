@@ -31,7 +31,7 @@ export interface ToastState {
 /** One stacked dialog. */
 export interface DialogState {
   id: string
-  kind: 'sources' | 'add-source' | 'preview-source' | 'confirm'
+  kind: 'sources' | 'add-source' | 'confirm'
   title?: string
   message?: string
   confirmLabel?: string
@@ -39,9 +39,9 @@ export interface DialogState {
   onConfirm?: () => Promise<void> | void
 }
 
-/** State of the recommended-source preview dialog. */
-export interface RecPreviewState {
-  id: string
+/** State of the market detail view (a recommended source's plugin list). */
+export interface MarketDetailState {
+  entryId: string
   title: string
   location: string
   status: 'loading' | 'ready' | 'error'
@@ -54,8 +54,12 @@ export interface HubState {
   status: 'loading' | 'ready' | 'error'
   error: string
   snapshot: JsonRecord | null
-  view: 'store' | 'manage' | 'detail'
+  view: 'store' | 'manage' | 'market' | 'detail'
   storeTab: 'sources' | 'recommended'
+  /** Where the detail view was opened from (back navigation). */
+  detailReturn: 'store' | 'market'
+  marketDetail: MarketDetailState | null
+  marketPluginKey: string | null
   detailKey: string | null
   detail: JsonRecord | null
   detailStatus: 'idle' | 'loading' | 'ready' | 'error'
@@ -67,7 +71,6 @@ export interface HubState {
   busy: Record<string, string>
   capBusy: Record<string, boolean>
   marketBusy: Record<string, string>
-  recPreview: RecPreviewState | null
   loading: boolean
   refreshing: boolean
   updatingAll: boolean
@@ -120,6 +123,9 @@ export function initialHubState(): HubState {
     snapshot: null,
     view: 'store',
     storeTab: 'sources',
+    detailReturn: 'store',
+    marketDetail: null,
+    marketPluginKey: null,
     detailKey: null,
     detail: null,
     detailStatus: 'idle',
@@ -131,7 +137,6 @@ export function initialHubState(): HubState {
     busy: {},
     capBusy: {},
     marketBusy: {},
-    recPreview: null,
     loading: false,
     refreshing: false,
     updatingAll: false,
@@ -153,7 +158,12 @@ export interface HubActions {
   load(): Promise<void>
   openStore(): void
   openManage(): void
-  openDetail(key: string): void
+  openDetail(key: string, from?: 'store' | 'market'): void
+  backFromDetail(): void
+  openMarketDetail(entry: JsonRecord, refresh?: boolean): void
+  closeMarketDetail(): void
+  openMarketPlugin(key: string): void
+  closeMarketPlugin(): void
   loadDetail(force: boolean): Promise<void>
   setQuery(query: string): void
   setManageQuery(query: string): void
@@ -171,8 +181,6 @@ export interface HubActions {
   askRollback(record: JsonRecord, targetVersion?: string): void
   toggleCapability(pluginKey: string, kind: string, capability: string, enabled: boolean): void
   addMarketSource(location: string, name: string): Promise<JsonRecord>
-  previewRecommendedSource(entry: JsonRecord, refresh?: boolean): void
-  closePreview(): void
   refreshMarket(id: string): Promise<void>
   removeMarket(market: JsonRecord): void
   openSources(): void
@@ -324,7 +332,7 @@ export function createHubController(options: HubControllerOptions): HubControlle
         })
       } else if (item) {
         const market = item.market ? String((item.market as JsonRecord).id ?? '') : ''
-        data = await api<JsonRecord>(`/describe?market=${encodeURIComponent(market)}&name=${encodeURIComponent(String(item.name ? '' : ''))}`, { timeoutMs: 60000 })
+        data = await api<JsonRecord>(`/describe?market=${encodeURIComponent(market)}&name=${encodeURIComponent(String(item.name ?? ''))}`, { timeoutMs: 60000 })
       } else {
         throw new ApiError(t('unknownError'), 'not_found')
       }
@@ -343,14 +351,86 @@ export function createHubController(options: HubControllerOptions): HubControlle
     },
     load,
     openStore() {
-      set({ view: 'store', detailKey: null, detail: null, detailStatus: 'idle', detailError: '' })
+      set({ view: 'store', detailKey: null, detail: null, detailStatus: 'idle', detailError: '', marketDetail: null, marketPluginKey: null })
     },
     openManage() {
       set({ view: 'manage', detailKey: null, detail: null, detailStatus: 'idle', detailError: '' })
     },
-    openDetail(key: string) {
-      set({ view: 'detail', detailKey: key, detail: null, detailStatus: 'loading', detailError: '' })
+    openDetail(key: string, from: 'store' | 'market' = 'store') {
+      set({ view: 'detail', detailReturn: from, detailKey: key, detail: null, detailStatus: 'loading', detailError: '' })
       void loadDetail(false)
+    },
+    backFromDetail() {
+      if (store.getSnapshot().detailReturn === 'market' && store.getSnapshot().marketDetail !== null) {
+        set({ view: 'market', detailKey: null, detail: null, detailStatus: 'idle', detailError: '' })
+        return
+      }
+      actions.openStore()
+    },
+    openMarketDetail(entry: JsonRecord, refresh = false) {
+      const id = String(entry.id ?? '')
+      const location = String(entry.location ?? '')
+      if (id === '' || location === '') return
+      const state = store.getSnapshot()
+      const markets = ((state.snapshot ?? {}).markets as JsonRecord[] | undefined) ?? []
+      const matched = addedMarketFor(markets, location)
+      // Display fields come from the curated list (the action face only carries id/location).
+      const known = RECOMMENDED_SOURCES.find(source => source.id === id)
+      const display = displayOf(known ?? entry, getLocaleId())
+      const previous = state.marketDetail
+      const previousData = previous?.entryId === id && previous.status === 'ready' ? previous.data ?? null : null
+
+      // Zero-request path: an equivalent market is already added — project its catalog items.
+      let instantData: JsonRecord | null = null
+      if (matched !== null) {
+        const items = ((state.snapshot ?? {}).items as JsonRecord[] | undefined) ?? []
+        instantData = { plugins: items.filter(item => ((item.market as JsonRecord | undefined) ?? {}).id === matched.id) }
+      }
+
+      // Ready without a request when projecting an added market, or re-opening a
+      // fetched preview; a refresh keeps the old data visible (spinner) while re-fetching.
+      const data = instantData ?? previousData
+      const ready = instantData !== null || (!refresh && previousData !== null)
+      set({
+        view: 'market',
+        marketPluginKey: null,
+        marketDetail: {
+          entryId: id,
+          title: display.title,
+          location,
+          status: ready ? 'ready' : 'loading',
+          error: '',
+          data,
+        },
+      })
+      if (ready) return
+
+      void (async () => {
+        try {
+          const fetched = await api<JsonRecord>('/market/preview', {
+            method: 'POST',
+            body: { location, ...(refresh ? { refresh: true } : {}) },
+            timeoutMs: 180000,
+          })
+          // Apply only while this detail view is still the open one (race guard).
+          if (store.getSnapshot().marketDetail?.entryId === id) {
+            set(current => ({ marketDetail: current.marketDetail ? { ...current.marketDetail, status: 'ready', error: '', data: fetched } : null }))
+          }
+        } catch (error) {
+          if (store.getSnapshot().marketDetail?.entryId === id) {
+            set(current => ({ marketDetail: current.marketDetail ? { ...current.marketDetail, status: 'error', error: errorMessageFor(error, t) } : null }))
+          }
+        }
+      })()
+    },
+    closeMarketDetail() {
+      set({ view: 'store', marketDetail: null, marketPluginKey: null })
+    },
+    openMarketPlugin(key: string) {
+      set({ marketPluginKey: key })
+    },
+    closeMarketPlugin() {
+      set({ marketPluginKey: null })
     },
     loadDetail,
     setQuery(query: string) {
@@ -562,68 +642,6 @@ export function createHubController(options: HubControllerOptions): HubControlle
           setMarketBusy(busyKey, '')
         }
       })
-    },
-    previewRecommendedSource(entry: JsonRecord, refresh = false) {
-      const id = String(entry.id ?? '')
-      const location = String(entry.location ?? '')
-      if (id === '' || location === '') return
-      const state = store.getSnapshot()
-      const markets = ((state.snapshot ?? {}).markets as JsonRecord[] | undefined) ?? []
-      const matched = addedMarketFor(markets, location)
-      // Display fields come from the curated list (the action face only carries id/location).
-      const known = RECOMMENDED_SOURCES.find(source => source.id === id)
-      const display = displayOf(known ?? entry, getLocaleId())
-      const previous = state.recPreview
-      const previousData = previous?.id === id && previous.status === 'ready' ? previous.data ?? null : null
-
-      // Zero-request path: an equivalent market is already added — project its catalog items.
-      let instantData: JsonRecord | null = null
-      if (matched !== null) {
-        const items = ((state.snapshot ?? {}).items as JsonRecord[] | undefined) ?? []
-        instantData = { plugins: items.filter(item => ((item.market as JsonRecord | undefined) ?? {}).id === matched.id) }
-      }
-
-      if (state.dialogs.find(item => item.kind === 'preview-source') === undefined) {
-        pushDialog({ kind: 'preview-source', title: display.title })
-      }
-      // Ready without a request when projecting an added market, or re-opening a
-      // fetched preview; a refresh keeps the old data visible (spinner) while re-fetching.
-      const data = instantData ?? previousData
-      const ready = instantData !== null || (!refresh && previousData !== null)
-      set({
-        recPreview: {
-          id,
-          title: display.title,
-          location,
-          status: ready ? 'ready' : 'loading',
-          error: '',
-          data,
-        },
-      })
-      if (ready) return
-
-      void (async () => {
-        try {
-          const fetched = await api<JsonRecord>('/market/preview', {
-            method: 'POST',
-            body: { location, ...(refresh ? { refresh: true } : {}) },
-            timeoutMs: 180000,
-          })
-          // Apply only while this preview is still the open one (race guard).
-          if (store.getSnapshot().recPreview?.id === id) {
-            set(current => ({ recPreview: current.recPreview ? { ...current.recPreview, status: 'ready', error: '', data: fetched } : null }))
-          }
-        } catch (error) {
-          if (store.getSnapshot().recPreview?.id === id) {
-            set(current => ({ recPreview: current.recPreview ? { ...current.recPreview, status: 'error', error: errorMessageFor(error, t) } : null }))
-          }
-        }
-      })()
-    },
-    closePreview() {
-      const dialog = store.getSnapshot().dialogs.find(item => item.kind === 'preview-source')
-      if (dialog !== undefined) closeDialog(dialog.id)
-      set({ recPreview: null })
     },
     async refreshMarket(id: string): Promise<void> {
       if (store.getSnapshot().marketBusy[id]) return
