@@ -44,6 +44,7 @@ export interface HubState {
   error: string
   snapshot: JsonRecord | null
   view: 'store' | 'manage' | 'detail'
+  storeTab: 'sources' | 'recommended'
   detailKey: string | null
   detail: JsonRecord | null
   detailStatus: 'idle' | 'loading' | 'ready' | 'error'
@@ -106,6 +107,7 @@ export function initialHubState(): HubState {
     error: '',
     snapshot: null,
     view: 'store',
+    storeTab: 'sources',
     detailKey: null,
     detail: null,
     detailStatus: 'idle',
@@ -143,6 +145,8 @@ export interface HubActions {
   setQuery(query: string): void
   setManageQuery(query: string): void
   setManageFilter(filter: HubState['manageFilter']): void
+  setStoreTab(tab: HubState['storeTab']): void
+  addRecommendedSource(entry: JsonRecord): void
   setLocaleId(localeId: string): void
   toggleCollapse(groupKey: string): void
   refreshAll(): Promise<void>
@@ -343,6 +347,9 @@ export function createHubController(options: HubControllerOptions): HubControlle
     setManageFilter(manageFilter: HubState['manageFilter']) {
       set({ manageFilter })
     },
+    setStoreTab(storeTab: HubState['storeTab']) {
+      set({ storeTab })
+    },
     setLocaleId(localeId: string) {
       set({ localeId })
     },
@@ -518,6 +525,28 @@ export function createHubController(options: HubControllerOptions): HubControlle
       })
       await load()
       return data
+    },
+    addRecommendedSource(entry: JsonRecord) {
+      const id = String(entry.id ?? '')
+      const busyKey = `rec:${id}`
+      if (id === '' || store.getSnapshot().marketBusy[busyKey]) return
+      setMarketBusy(busyKey, 'add')
+      void enqueue(async () => {
+        try {
+          const data = await actions.addMarketSource(String(entry.location ?? ''), '')
+          const detected = data.detectedType === 'git'
+            ? t('detectedGit')
+            : data.detectedType === 'url' ? t('detectedUrl') : t('detectedLocal')
+          const market = (data.market ?? {}) as JsonRecord
+          toast('success', t('addedToast', {
+            name: String(market.title || market.name || String(entry.location ?? '')),
+            type: detected,
+            count: typeof data.pluginCount === 'number' ? data.pluginCount : 0,
+          }))
+        } finally {
+          setMarketBusy(busyKey, '')
+        }
+      })
     },
     async refreshMarket(id: string): Promise<void> {
       if (store.getSnapshot().marketBusy[id]) return

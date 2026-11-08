@@ -170,7 +170,12 @@ window.__ModuleLoader__.load({
 			menuUninstall: "卸载",
 			hooksInactive: "未生效：{reason}",
 			clearSearch: "清空搜索",
-			allSources: "全部来源"
+			allSources: "全部来源",
+			tabSources: "我的市场",
+			tabRecommended: "推荐",
+			storeTabsLabel: "视图",
+			recommendedHint: "精选的插件市场源，点击添加后即可浏览安装。",
+			addedBadge: "已添加"
 		};
 		/** English dictionary (sentence case; same key set as `zh`). */
 		const en = {
@@ -326,7 +331,12 @@ window.__ModuleLoader__.load({
 			menuUninstall: "Uninstall",
 			hooksInactive: "Not effective: {reason}",
 			clearSearch: "Clear search",
-			allSources: "All sources"
+			allSources: "All sources",
+			tabSources: "My marketplaces",
+			tabRecommended: "Recommended",
+			storeTabsLabel: "Views",
+			recommendedHint: "Curated marketplace sources — add one to browse and install its plugins.",
+			addedBadge: "Added"
 		};
 		/** Japanese dictionary (same key set as `zh`). */
 		const ja = {
@@ -482,7 +492,12 @@ window.__ModuleLoader__.load({
 			menuUninstall: "アンインストール",
 			hooksInactive: "未反映：{reason}",
 			clearSearch: "検索をクリア",
-			allSources: "すべてのソース"
+			allSources: "すべてのソース",
+			tabSources: "マーケット",
+			tabRecommended: "おすすめ",
+			storeTabsLabel: "ビュー",
+			recommendedHint: "厳選されたマーケットソースです。追加するとプラグインを閲覧・インストールできます。",
+			addedBadge: "追加済み"
 		};
 		/** Spanish dictionary (same key set as `zh`). */
 		const es = {
@@ -638,7 +653,12 @@ window.__ModuleLoader__.load({
 			menuUninstall: "Desinstalar",
 			hooksInactive: "Sin efecto: {reason}",
 			clearSearch: "Borrar búsqueda",
-			allSources: "Todas las fuentes"
+			allSources: "Todas las fuentes",
+			tabSources: "Mis mercados",
+			tabRecommended: "Recomendados",
+			storeTabsLabel: "Vistas",
+			recommendedHint: "Fuentes de marketplace seleccionadas: agregue una para explorar e instalar sus plugins.",
+			addedBadge: "Agregado"
 		};
 		/** French dictionary (same key set as `zh`). */
 		const fr = {
@@ -794,7 +814,12 @@ window.__ModuleLoader__.load({
 			menuUninstall: "Désinstaller",
 			hooksInactive: "Sans effet : {reason}",
 			clearSearch: "Effacer la recherche",
-			allSources: "Toutes les sources"
+			allSources: "Toutes les sources",
+			tabSources: "Mes marchés",
+			tabRecommended: "Recommandés",
+			storeTabsLabel: "Vues",
+			recommendedHint: "Sources de marketplace sélectionnées — ajoutez-en une pour parcourir et installer ses plugins.",
+			addedBadge: "Ajouté"
 		};
 		/** German dictionary (same key set as `zh`). */
 		const de = {
@@ -950,7 +975,12 @@ window.__ModuleLoader__.load({
 			menuUninstall: "Deinstallieren",
 			hooksInactive: "Nicht wirksam: {reason}",
 			clearSearch: "Suche löschen",
-			allSources: "Alle Quellen"
+			allSources: "Alle Quellen",
+			tabSources: "Meine Märkte",
+			tabRecommended: "Empfohlen",
+			storeTabsLabel: "Ansichten",
+			recommendedHint: "Ausgewählte Marketplace-Quellen – fügen Sie eine hinzu, um deren Plugins zu durchstöbern und zu installieren.",
+			addedBadge: "Hinzugefügt"
 		};
 		/** Russian dictionary (same key set as `zh`). */
 		const ru = {
@@ -1106,7 +1136,12 @@ window.__ModuleLoader__.load({
 			menuUninstall: "Удалить",
 			hooksInactive: "Не действует: {reason}",
 			clearSearch: "Очистить поиск",
-			allSources: "Все источники"
+			allSources: "Все источники",
+			tabSources: "Мои маркетплейсы",
+			tabRecommended: "Рекомендации",
+			storeTabsLabel: "Вид",
+			recommendedHint: "Отобранные источники маркетплейсов — добавьте один, чтобы просматривать и устанавливать его плагины.",
+			addedBadge: "Добавлено"
 		};
 		/** Portuguese dictionary (same key set as `zh`). */
 		const pt = {
@@ -1262,7 +1297,12 @@ window.__ModuleLoader__.load({
 			menuUninstall: "Desinstalar",
 			hooksInactive: "Sem efeito: {reason}",
 			clearSearch: "Limpar pesquisa",
-			allSources: "Todas as fontes"
+			allSources: "Todas as fontes",
+			tabSources: "Meus mercados",
+			tabRecommended: "Recomendados",
+			storeTabsLabel: "Exibições",
+			recommendedHint: "Fontes de marketplace selecionadas — adicione uma para explorar e instalar os plugins dela.",
+			addedBadge: "Adicionado"
 		};
 		// src/client/api.ts
 		/** Envelope error carrying the host's stable code. */
@@ -1525,6 +1565,7 @@ window.__ModuleLoader__.load({
 				error: "",
 				snapshot: null,
 				view: "store",
+				storeTab: "sources",
 				detailKey: null,
 				detail: null,
 				detailStatus: "idle",
@@ -1737,6 +1778,9 @@ window.__ModuleLoader__.load({
 				setManageFilter(manageFilter) {
 					set({ manageFilter });
 				},
+				setStoreTab(storeTab) {
+					set({ storeTab });
+				},
 				setLocaleId(localeId) {
 					set({ localeId });
 				},
@@ -1942,6 +1986,26 @@ window.__ModuleLoader__.load({
 					});
 					await load();
 					return data;
+				},
+				addRecommendedSource(entry) {
+					const id = String(entry.id ?? "");
+					const busyKey = `rec:${id}`;
+					if (id === "" || store.getSnapshot().marketBusy[busyKey]) return;
+					setMarketBusy(busyKey, "add");
+					enqueue(async () => {
+						try {
+							const data = await actions.addMarketSource(String(entry.location ?? ""), "");
+							const detected = data.detectedType === "git" ? t("detectedGit") : data.detectedType === "url" ? t("detectedUrl") : t("detectedLocal");
+							const market = data.market ?? {};
+							toast("success", t("addedToast", {
+								name: String(market.title || market.name || String(entry.location ?? "")),
+								type: detected,
+								count: typeof data.pluginCount === "number" ? data.pluginCount : 0
+							}));
+						} finally {
+							setMarketBusy(busyKey, "");
+						}
+					});
 				},
 				async refreshMarket(id) {
 					if (store.getSnapshot().marketBusy[id]) return;
@@ -2777,8 +2841,39 @@ window.__ModuleLoader__.load({
 				]
 			});
 		}
+		// src/client/recommended.ts
+		/** The curated list (first entry: Anthropic's official Claude plugin marketplace). */
+		const RECOMMENDED_SOURCES = Object.freeze([{
+			id: "claude-plugins-official",
+			location: "https://github.com/anthropics/claude-plugins-official",
+			format: "claude",
+			display: {
+				title: "Anthropic Official Plugins",
+				titleI18n: {
+					zh: "Anthropic 官方插件市场",
+					en: "Anthropic Official Plugins"
+				},
+				description: "Anthropic’s officially maintained catalog of high-quality Claude plugins.",
+				descriptionI18n: {
+					zh: "Anthropic 官方维护的高质量 Claude 插件目录，持续更新。",
+					en: "Anthropic’s officially maintained catalog of high-quality Claude plugins."
+				}
+			}
+		}]);
+		/** Normalize a source location for the "already added" comparison. */
+		function normalizedLocation(location) {
+			return String(location ?? "").trim().replace(/\/+$/, "").replace(/\.git$/i, "").toLowerCase();
+		}
+		/** Whether a market with the same normalized location exists among the added markets. */
+		function isSourceAdded(markets, location) {
+			const wanted = normalizedLocation(location);
+			if (wanted === "") return false;
+			return (Array.isArray(markets) ? markets : []).some((market) => {
+				return normalizedLocation((market && typeof market === "object" ? market : {}).location) === wanted;
+			});
+		}
 		// \0dsh-css:F:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub\src\client\panel.module.css.mjs
-		const css$4 = ".QasDMG_root{height:100%;min-height:0;color:var(--dsw-alias-label-primary);overflow-wrap:break-word;font-size:14px;line-height:1.5;position:relative;overflow:hidden auto;container-type:inline-size}.QasDMG_root *{box-sizing:border-box}.QasDMG_page{flex-direction:column;gap:20px;width:100%;max-width:896px;min-height:100%;margin:0 auto;padding:20px 16px 32px;display:flex;position:relative}@container (width>=1024px){.QasDMG_page{padding-left:32px;padding-right:32px}}.QasDMG_topbar{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;display:flex}.QasDMG_title{overflow-wrap:anywhere;letter-spacing:-.01em;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:18px;font-weight:600}.QasDMG_titleRow{align-items:center;gap:8px;min-width:0;display:flex}.QasDMG_actions{flex-wrap:wrap;align-items:center;gap:8px;display:flex}.QasDMG_toolbar{flex-wrap:wrap;align-items:center;gap:12px 16px;display:flex}.QasDMG_segmented{flex-wrap:wrap;align-items:center;gap:6px;display:inline-flex}.QasDMG_segment{corner-shape:round;color:var(--dsw-alias-label-secondary);font:inherit;white-space:nowrap;cursor:pointer;background:0 0;border:0;border-radius:999px;align-items:center;gap:6px;padding:4px 12px;font-size:14px;font-weight:500;transition:background .12s,color .12s;display:inline-flex}.QasDMG_segment:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}.QasDMG_segment[aria-pressed=true]{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-label-primary)}@media (hover:hover){.QasDMG_segment:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.QasDMG_section{flex-direction:column;display:flex}.QasDMG_sectionHead{justify-content:space-between;align-items:baseline;gap:8px;padding:0 8px 8px;display:flex}.QasDMG_sectionTitle{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:16px;font-weight:500}.QasDMG_sectionCount{white-space:nowrap;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.QasDMG_divider{background:var(--dsw-alias-border-l2);height:.5px}.QasDMG_grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 24px;margin-top:8px;display:grid}.QasDMG_gridSingle{grid-template-columns:minmax(0,1fr);margin-top:8px;display:grid}@container (width<=640px){.QasDMG_grid,.QasDMG_gridSingle{grid-template-columns:minmax(0,1fr)}}.QasDMG_collapseRow{border-radius:var(--dsw-radius-md);width:100%;color:var(--dsw-alias-label-secondary);font:inherit;text-align:left;white-space:nowrap;cursor:pointer;background:0 0;border:0;align-items:center;gap:8px;margin-top:8px;padding:8px;font-size:14px;display:flex}.QasDMG_collapseRow:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.QasDMG_collapseRow:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.QasDMG_collapseAvatars{flex:none;align-items:center;gap:6px;display:flex}.QasDMG_collapseLabel{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.QasDMG_errorBanner{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);white-space:pre-wrap;word-break:break-word;padding:10px 12px;font-size:13px}.QasDMG_warningBanner{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-warn-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-state-warn-tertiary);color:var(--dsw-alias-state-warn-primary);word-break:break-word;align-items:flex-start;gap:8px;padding:10px 12px;font-size:13px;display:flex}.QasDMG_warningBanner>span{overflow-wrap:anywhere;min-width:0}.QasDMG_inlineButton{color:inherit;font:inherit;cursor:pointer;background:0 0;border:0;align-items:center;gap:4px;padding:0;font-size:13px;display:inline-flex}@media (hover:hover){.QasDMG_inlineButton:hover{text-decoration:underline}}.QasDMG_warningBanner .QasDMG_inlineButton{margin-left:auto}.QasDMG_footer{color:var(--dsw-alias-label-secondary);flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding-top:8px;font-size:12px;display:flex}.QasDMG_runtimeRow{color:var(--dsw-alias-label-secondary);flex-wrap:wrap;align-items:center;gap:8px;padding-top:8px;font-size:12px;display:flex}.QasDMG_back{border-radius:var(--dsw-radius-sm);width:fit-content;height:28px;color:var(--dsw-alias-label-secondary);font:inherit;white-space:nowrap;cursor:pointer;background:0 0;border:0;align-items:center;gap:6px;margin-left:-8px;padding:0 8px;font-size:14px;display:inline-flex}.QasDMG_back:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.QasDMG_back:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.QasDMG_mono{color:var(--dsw-alias-label-secondary);word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}.QasDMG_listBlock{flex-direction:column;gap:6px;display:flex}.QasDMG_listTitle{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500}.QasDMG_listRow{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);overflow-wrap:anywhere;flex-wrap:wrap;align-items:center;gap:8px;min-width:0;padding:8px 10px;font-size:13px;display:flex}.QasDMG_listRowMain{text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;overflow:hidden}";
+		const css$4 = ".QasDMG_root{height:100%;min-height:0;color:var(--dsw-alias-label-primary);overflow-wrap:break-word;font-size:14px;line-height:1.5;position:relative;overflow:hidden auto;container-type:inline-size}.QasDMG_root *{box-sizing:border-box}.QasDMG_page{flex-direction:column;gap:20px;width:100%;max-width:896px;min-height:100%;margin:0 auto;padding:20px 16px 32px;display:flex;position:relative}@container (width>=1024px){.QasDMG_page{padding-left:32px;padding-right:32px}}.QasDMG_topbar{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;display:flex}.QasDMG_title{overflow-wrap:anywhere;letter-spacing:-.01em;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:18px;font-weight:600}.QasDMG_titleRow{align-items:center;gap:8px;min-width:0;display:flex}.QasDMG_actions{flex-wrap:wrap;align-items:center;gap:8px;display:flex}.QasDMG_toolbar{flex-wrap:wrap;align-items:center;gap:12px 16px;display:flex}.QasDMG_segmented{flex-wrap:wrap;align-items:center;gap:6px;display:inline-flex}.QasDMG_segment{corner-shape:round;color:var(--dsw-alias-label-secondary);font:inherit;white-space:nowrap;cursor:pointer;background:0 0;border:0;border-radius:999px;align-items:center;gap:6px;padding:4px 12px;font-size:14px;font-weight:500;transition:background .12s,color .12s;display:inline-flex}.QasDMG_segment:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}.QasDMG_segment[aria-pressed=true],.QasDMG_segment[aria-selected=true]{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-label-primary)}@media (hover:hover){.QasDMG_segment:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.QasDMG_section{flex-direction:column;display:flex}.QasDMG_sectionHead{justify-content:space-between;align-items:baseline;gap:8px;padding:0 8px 8px;display:flex}.QasDMG_sectionTitle{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:16px;font-weight:500}.QasDMG_sectionCount{white-space:nowrap;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.QasDMG_divider{background:var(--dsw-alias-border-l2);height:.5px}.QasDMG_grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 24px;margin-top:8px;display:grid}.QasDMG_recHint{color:var(--dsw-alias-label-secondary);margin:0 8px;font-size:13px}.QasDMG_recList{flex-direction:column;margin-top:8px;display:flex}.QasDMG_recRow{align-items:center;gap:16px;padding:12px 8px;display:flex}.QasDMG_recRow+.QasDMG_recRow{border-top:.5px solid var(--dsw-alias-border-l3)}.QasDMG_recMain{flex:1;min-width:0}.QasDMG_recHead{align-items:center;gap:8px;min-width:0;display:flex}.QasDMG_recName{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px;font-weight:500}.QasDMG_recDesc{color:var(--dsw-alias-label-secondary);margin-top:2px;font-size:13px}.QasDMG_recLocation{color:var(--dsw-alias-label-tertiary);word-break:break-all;margin-top:4px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}.QasDMG_recAction{flex:none;align-items:center;display:flex}.QasDMG_gridSingle{grid-template-columns:minmax(0,1fr);margin-top:8px;display:grid}@container (width<=640px){.QasDMG_grid,.QasDMG_gridSingle{grid-template-columns:minmax(0,1fr)}}.QasDMG_collapseRow{border-radius:var(--dsw-radius-md);width:100%;color:var(--dsw-alias-label-secondary);font:inherit;text-align:left;white-space:nowrap;cursor:pointer;background:0 0;border:0;align-items:center;gap:8px;margin-top:8px;padding:8px;font-size:14px;display:flex}.QasDMG_collapseRow:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.QasDMG_collapseRow:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.QasDMG_collapseAvatars{flex:none;align-items:center;gap:6px;display:flex}.QasDMG_collapseLabel{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.QasDMG_errorBanner{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);white-space:pre-wrap;word-break:break-word;padding:10px 12px;font-size:13px}.QasDMG_warningBanner{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-warn-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-state-warn-tertiary);color:var(--dsw-alias-state-warn-primary);word-break:break-word;align-items:flex-start;gap:8px;padding:10px 12px;font-size:13px;display:flex}.QasDMG_warningBanner>span{overflow-wrap:anywhere;min-width:0}.QasDMG_inlineButton{color:inherit;font:inherit;cursor:pointer;background:0 0;border:0;align-items:center;gap:4px;padding:0;font-size:13px;display:inline-flex}@media (hover:hover){.QasDMG_inlineButton:hover{text-decoration:underline}}.QasDMG_warningBanner .QasDMG_inlineButton{margin-left:auto}.QasDMG_footer{color:var(--dsw-alias-label-secondary);flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding-top:8px;font-size:12px;display:flex}.QasDMG_runtimeRow{color:var(--dsw-alias-label-secondary);flex-wrap:wrap;align-items:center;gap:8px;padding-top:8px;font-size:12px;display:flex}.QasDMG_back{border-radius:var(--dsw-radius-sm);width:fit-content;height:28px;color:var(--dsw-alias-label-secondary);font:inherit;white-space:nowrap;cursor:pointer;background:0 0;border:0;align-items:center;gap:6px;margin-left:-8px;padding:0 8px;font-size:14px;display:inline-flex}.QasDMG_back:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.QasDMG_back:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.QasDMG_mono{color:var(--dsw-alias-label-secondary);word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}.QasDMG_listBlock{flex-direction:column;gap:6px;display:flex}.QasDMG_listTitle{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500}.QasDMG_listRow{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);overflow-wrap:anywhere;flex-wrap:wrap;align-items:center;gap:8px;min-width:0;padding:8px 10px;font-size:13px;display:flex}.QasDMG_listRowMain{text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;overflow:hidden}";
 		const tagId$4 = "dsh-agent-plugin-hub/panel.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$4) + "]") === null) {
 			const tag = document.createElement("style");
@@ -2805,6 +2900,15 @@ window.__ModuleLoader__.load({
 			"listTitle": "QasDMG_listTitle",
 			"mono": "QasDMG_mono",
 			"page": "QasDMG_page",
+			"recAction": "QasDMG_recAction",
+			"recDesc": "QasDMG_recDesc",
+			"recHead": "QasDMG_recHead",
+			"recHint": "QasDMG_recHint",
+			"recList": "QasDMG_recList",
+			"recLocation": "QasDMG_recLocation",
+			"recMain": "QasDMG_recMain",
+			"recName": "QasDMG_recName",
+			"recRow": "QasDMG_recRow",
 			"root": "QasDMG_root",
 			"runtimeRow": "QasDMG_runtimeRow",
 			"section": "QasDMG_section",
@@ -2839,6 +2943,113 @@ window.__ModuleLoader__.load({
 					className: panel_module_css_default.collapseLabel,
 					children: label
 				})]
+			});
+		}
+		/** Store view tabs: added sources (default) and curated recommendations. */
+		function StoreTabs({ tab, onChange, t }) {
+			const tabs = [{
+				value: "sources",
+				label: t("tabSources")
+			}, {
+				value: "recommended",
+				label: t("tabRecommended")
+			}];
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+				className: panel_module_css_default.segmented,
+				role: "tablist",
+				"aria-label": t("storeTabsLabel"),
+				children: tabs.map((entry) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+					type: "button",
+					role: "tab",
+					id: `aph-store-tab-${entry.value}`,
+					className: panel_module_css_default.segment,
+					"aria-selected": tab === entry.value,
+					"aria-controls": "aph-store-panel",
+					tabIndex: tab === entry.value ? 0 : -1,
+					onClick: () => onChange(entry.value),
+					onKeyDown: (event) => {
+						if (![
+							"ArrowLeft",
+							"ArrowUp",
+							"ArrowRight",
+							"ArrowDown",
+							"Home",
+							"End"
+						].includes(event.key)) return;
+						event.preventDefault();
+						const current = tabs.findIndex((item) => item.value === tab);
+						const next = event.key === "Home" ? 0 : event.key === "End" ? tabs.length - 1 : event.key === "ArrowLeft" || event.key === "ArrowUp" ? (current + tabs.length - 1) % tabs.length : (current + 1) % tabs.length;
+						const target = tabs[next];
+						if (!target) return;
+						onChange(target.value);
+						event.currentTarget.parentElement?.querySelectorAll("[role=\"tab\"]")[next]?.focus();
+					},
+					children: entry.label
+				}, entry.value))
+			});
+		}
+		/** Curated recommended sources with one-click add. */
+		function RecommendedList({ useHub, actions, t }) {
+			const state = useHub(identity);
+			const markets = (state.snapshot ?? {}).markets ?? [];
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+				className: panel_module_css_default.section,
+				children: [
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+						className: panel_module_css_default.recHint,
+						children: t("recommendedHint")
+					}),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", { className: panel_module_css_default.divider }),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: panel_module_css_default.recList,
+						children: RECOMMENDED_SOURCES.map((entry) => {
+							const added = isSourceAdded(markets, entry.location);
+							const busy = state.marketBusy[`rec:${entry.id}`] === "add";
+							const display = displayOf(entry, state.localeId);
+							return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: panel_module_css_default.recRow,
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+									className: panel_module_css_default.recMain,
+									children: [
+										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+											className: panel_module_css_default.recHead,
+											children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+												className: panel_module_css_default.recName,
+												children: display.title
+											}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
+												tone: "plain",
+												children: entry.format
+											})]
+										}),
+										display.description !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+											className: panel_module_css_default.recDesc,
+											children: display.description
+										}) : null,
+										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+											className: panel_module_css_default.recLocation,
+											children: entry.location
+										})
+									]
+								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+									className: panel_module_css_default.recAction,
+									children: added ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
+										tone: "success",
+										children: t("addedBadge")
+									}) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Button, {
+										variant: "secondary",
+										icon: "plus",
+										disabled: busy,
+										onClick: () => actions.addRecommendedSource({
+											id: entry.id,
+											location: entry.location
+										}),
+										children: [busy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Spinner, {}) : null, busy ? t("adding") : t("add")]
+									})
+								})]
+							}, entry.id);
+						})
+					})
+				]
 			});
 		}
 		/** Render the store view. */
@@ -2977,19 +3188,33 @@ window.__ModuleLoader__.load({
 							]
 						})]
 					}),
-					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)(StoreTabs, {
+						tab: state.storeTab,
+						onChange: actions.setStoreTab,
+						t
+					}),
+					state.storeTab === "sources" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: panel_module_css_default.toolbar,
 						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SearchBox, {
 							value: query,
 							onChange: actions.setQuery,
 							placeholder: t("searchPlaceholder")
 						})
-					}),
+					}) : null,
 					state.error !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: panel_module_css_default.errorBanner,
 						children: state.error
 					}) : null,
-					content
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						id: "aph-store-panel",
+						role: "tabpanel",
+						"aria-labelledby": `aph-store-tab-${state.storeTab}`,
+						children: state.storeTab === "recommended" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(RecommendedList, {
+							useHub,
+							actions,
+							t
+						}) : content
+					})
 				]
 			});
 		}

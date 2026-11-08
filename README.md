@@ -110,7 +110,7 @@ dsh --profile web
 
 | 包 | 作用 | 代码要点 |
 |---|---|---|
-| `dsh-agent-plugin-hub` | 在 DSH 里托管 Claude Code、CodeBuddy、ZCode 等**智能体插件**（Agent Plugins）：个人市场、安装/更新/回滚、能力注入与逐项启停，以及 ZCode 风格商店面板 | 组合包 + `/agent-plugin` 命令 + 首页左侧栏商店面板（个人分段 / 按市场分组 / 详情 / 管理 / 市场源 / 自动识别来源）；schema v2 自动迁移；skills/commands/hooks 注入，MCP 清单标注；TypeScript + tsdown + vitest 官方化工具链，150 个离线用例 |
+| `dsh-agent-plugin-hub` | 在 DSH 里托管 Claude Code、CodeBuddy、ZCode 等**智能体插件**（Agent Plugins）：个人市场、安装/更新/回滚、能力注入与逐项启停，以及 ZCode 风格商店面板 | 组合包 + `/agent-plugin` 命令 + 首页左侧栏商店面板（首页双 tab：我的市场 / 推荐（内置精选源一键添加）、按市场分组 / 详情 / 管理 / 市场源 / 自动识别来源）；schema v2 自动迁移；skills/commands/hooks 注入，MCP 清单标注；TypeScript + tsdown + vitest 官方化工具链，161 个离线用例 |
 
 > 命名说明：Agent 直译“代理”不准确、“助手”易混淆；单叫“插件”会与 DSH 自身插件混淆。
 > 用**智能体插件**（英文 Agent Plugins）加限定词区分；代码里的包名与 `/agent-plugin` 命令不变。

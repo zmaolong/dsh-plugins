@@ -22,7 +22,8 @@
 
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { existsSync, lstatSync, mkdirSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, lstatSync, mkdirSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import type { Stats } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -234,6 +235,53 @@ export interface DetectSourceOptions {
  * 4. `http(s)://`: first a 15s JSON fetch tries url; on failure a 120s shallow clone tries git;
  * 5. Anything else throws an actionable Chinese error.
  */
+/**
+ * Remove a cloned tree. Fresh git clones on Windows transiently fail with
+ * EPERM/EBUSY while indexers hold handles, and git marks pack files
+ * read-only; retry briefly and clear read-only bits before a final attempt.
+ * The removal is best-effort: a leftover cache directory is harmless residue.
+ */
+function rmTree(target: string): void {
+  try {
+    rmSync(target, { force: true, recursive: true, maxRetries: 5, retryDelay: 200 })
+    return
+  } catch {
+    /* fall through and clear the read-only attributes first */
+  }
+  const clearReadOnly = (current: string): void => {
+    let stats: Stats | null = null
+    try {
+      stats = lstatSync(current)
+    } catch {
+      return
+    }
+    if (stats.isDirectory()) {
+      try {
+        for (const entry of readdirSync(current)) clearReadOnly(path.join(current, entry))
+      } catch {
+        /* unreadable directory: leave it to the retry */
+      }
+      try {
+        chmodSync(current, 0o777)
+      } catch {
+        /* best effort */
+      }
+    } else if (stats.isFile()) {
+      try {
+        chmodSync(current, 0o666)
+      } catch {
+        /* best effort */
+      }
+    }
+  }
+  try {
+    clearReadOnly(target)
+    rmSync(target, { force: true, recursive: true, maxRetries: 5, retryDelay: 200 })
+  } catch {
+    /* best effort: a locked tree stays behind instead of failing the caller */
+  }
+}
+
 export async function detectSource(
   location: unknown,
   options: DetectSourceOptions = {},
@@ -280,7 +328,7 @@ export async function detectSource(
       const cloneError = error instanceof Error ? error.message : String(error)
       throw hubError(`无法识别的市场地址：${raw}（JSON 拉取失败：${jsonError}；git 克隆失败：${cloneError}）`, 'network_error')
     } finally {
-      rmSync(cloneTarget, { force: true, recursive: true })
+      rmTree(cloneTarget)
     }
   }
 
@@ -676,7 +724,7 @@ export class MarketManager {
   cloneGitMarket(market: MarketRecord): void {
     const repo = this.marketRoot(market)
     if (repo === null) throw hubError(`无法定位 git 市场缓存目录：${market.id}`, 'bad_request')
-    rmSync(repo, { force: true, recursive: true })
+    rmTree(repo)
     mkdirSync(path.dirname(repo), { recursive: true })
     runGit(['clone', '--depth', '1', '--', market.location, repo])
   }
@@ -817,7 +865,7 @@ export class MarketManager {
     data.markets = data.markets.filter(item => item.id !== id)
     this.save()
     if (market.type !== 'local') {
-      rmSync(path.join(this.store.paths.markets, market.id), { force: true, recursive: true })
+      rmTree(path.join(this.store.paths.markets, market.id))
     }
     this.log('info', `市场 ${id} 已移除`)
     return market

@@ -129,3 +129,73 @@ describe('createHubController', () => {
     expect(state.toasts).toEqual([])
   })
 })
+
+describe('store tabs and recommended sources', () => {
+  it('switches the store tab', () => {
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    expect(controller.store.getSnapshot().storeTab).toBe('sources')
+    controller.actions.setStoreTab('recommended')
+    expect(controller.store.getSnapshot().storeTab).toBe('recommended')
+    controller.actions.setStoreTab('sources')
+    expect(controller.store.getSnapshot().storeTab).toBe('sources')
+  })
+
+  it('adds a recommended source with a success toast and clears busy', async () => {
+    const bodies: unknown[] = []
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.includes('/market/add') && init?.method === 'POST') {
+        bodies.push(JSON.parse(String(init.body)))
+        return jsonResponse({
+          ok: true,
+          data: { detectedType: 'git', market: { name: 'claude-plugins-official', title: 'Anthropic Official' }, pluginCount: 12 },
+        })
+      }
+      return jsonResponse({ ok: true, data: { items: [], installed: [], markets: [] } })
+    }))
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    await controller.actions.load()
+    controller.actions.addRecommendedSource({ id: 'claude-plugins-official', location: 'https://github.com/anthropics/claude-plugins-official' })
+    await vi.waitFor(() => {
+      expect(controller.store.getSnapshot().toasts.some(toast => toast.kind === 'success')).toBe(true)
+    })
+    expect(bodies).toEqual([{ location: 'https://github.com/anthropics/claude-plugins-official' }])
+    expect(controller.store.getSnapshot().marketBusy['rec:claude-plugins-official']).toBeUndefined()
+  })
+
+  it('surfaces a failed recommended add as an error toast and clears busy', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.includes('/market/add') && init?.method === 'POST') return jsonResponse({ ok: false, error: 'boom', code: 'internal' })
+      return jsonResponse({ ok: true, data: { items: [], installed: [], markets: [] } })
+    }))
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    await controller.actions.load()
+    controller.actions.addRecommendedSource({ id: 'x', location: 'https://example.com/x' })
+    await vi.waitFor(() => {
+      expect(controller.store.getSnapshot().toasts.some(toast => toast.kind === 'error' && toast.message === '内部错误')).toBe(true)
+    })
+    expect(controller.store.getSnapshot().marketBusy['rec:x']).toBeUndefined()
+  })
+
+  it('guards concurrent recommended adds for the same entry', async () => {
+    let addCalls = 0
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.includes('/market/add') && init?.method === 'POST') {
+        addCalls += 1
+        await new Promise(resolve => setTimeout(resolve, 20))
+        return jsonResponse({ ok: true, data: { detectedType: 'git', market: {}, pluginCount: 0 } })
+      }
+      return jsonResponse({ ok: true, data: { items: [], installed: [], markets: [] } })
+    }))
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    await controller.actions.load()
+    controller.actions.addRecommendedSource({ id: 'x', location: 'https://example.com/x' })
+    controller.actions.addRecommendedSource({ id: 'x', location: 'https://example.com/x' })
+    await vi.waitFor(() => {
+      expect(controller.store.getSnapshot().marketBusy['rec:x']).toBeUndefined()
+    })
+    expect(addCalls).toBe(1)
+  })
+})

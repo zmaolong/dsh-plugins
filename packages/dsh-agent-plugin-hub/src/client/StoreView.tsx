@@ -6,9 +6,10 @@
  */
 
 import type { ReactNode } from 'react'
-import { Avatar, Button, EmptyBlock, IconButton, SearchBox, columnGap } from './controls.tsx'
+import { Avatar, Badge, Button, EmptyBlock, IconButton, SearchBox, Spinner, columnGap } from './controls.tsx'
 import { AddMenu } from './AddMenu.tsx'
 import { StoreCard } from './StoreCard.tsx'
+import { RECOMMENDED_SOURCES, isSourceAdded } from './recommended.ts'
 import { identity, type HubActions, type HubState, type UseHub } from './store.ts'
 import {
   displayNames,
@@ -47,6 +48,96 @@ function CollapseRow({ hidden, localeId, onExpand, t }: {
       </span>
       <span className={css.collapseLabel}>{label}</span>
     </button>
+  )
+}
+
+/** Store view tabs: added sources (default) and curated recommendations. */
+function StoreTabs({ tab, onChange, t }: {
+  tab: HubState['storeTab']
+  onChange: (tab: HubState['storeTab']) => void
+  t: Translate
+}): ReactNode {
+  const tabs: ReadonlyArray<{ value: HubState['storeTab'], label: string }> = [
+    { value: 'sources', label: t('tabSources') },
+    { value: 'recommended', label: t('tabRecommended') },
+  ]
+  return (
+    <div className={css.segmented} role="tablist" aria-label={t('storeTabsLabel')}>
+      {tabs.map(entry => (
+        <button
+          key={entry.value}
+          type="button"
+          role="tab"
+          id={`aph-store-tab-${entry.value}`}
+          className={css.segment}
+          aria-selected={tab === entry.value}
+          aria-controls="aph-store-panel"
+          tabIndex={tab === entry.value ? 0 : -1}
+          onClick={() => onChange(entry.value)}
+          onKeyDown={(event) => {
+            if (!['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown', 'Home', 'End'].includes(event.key)) return
+            event.preventDefault()
+            const current = tabs.findIndex(item => item.value === tab)
+            const next = event.key === 'Home' ? 0
+              : event.key === 'End' ? tabs.length - 1
+              : event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+                ? (current + tabs.length - 1) % tabs.length
+                : (current + 1) % tabs.length
+            const target = tabs[next]
+            if (!target) return
+            onChange(target.value)
+            event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus()
+          }}
+        >
+          {entry.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/** Curated recommended sources with one-click add. */
+function RecommendedList({ useHub, actions, t }: ViewProps): ReactNode {
+  const state: HubState = useHub(identity)
+  const markets = ((state.snapshot ?? {}).markets as JsonRecord[] | undefined) ?? []
+  return (
+    <section className={css.section}>
+      <p className={css.recHint}>{t('recommendedHint')}</p>
+      <div className={css.divider} />
+      <div className={css.recList}>
+        {RECOMMENDED_SOURCES.map((entry) => {
+          const added = isSourceAdded(markets, entry.location)
+          const busy = state.marketBusy[`rec:${entry.id}`] === 'add'
+          const display = displayOf(entry, state.localeId)
+          return (
+            <div key={entry.id} className={css.recRow}>
+              <div className={css.recMain}>
+                <div className={css.recHead}>
+                  <span className={css.recName}>{display.title}</span>
+                  <Badge tone="plain">{entry.format}</Badge>
+                </div>
+                {display.description !== '' ? <div className={css.recDesc}>{display.description}</div> : null}
+                <div className={css.recLocation}>{entry.location}</div>
+              </div>
+              <div className={css.recAction}>
+                {added
+                  ? <Badge tone="success">{t('addedBadge')}</Badge>
+                  : (
+                    <Button
+                      variant="secondary"
+                      icon="plus"
+                      disabled={busy}
+                      onClick={() => actions.addRecommendedSource({ id: entry.id, location: entry.location })}
+                    >
+                      {busy ? <Spinner /> : null}{busy ? t('adding') : t('add')}
+                    </Button>
+                  )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </section>
   )
 }
 
@@ -136,15 +227,22 @@ export function StoreView({ useHub, actions, t }: ViewProps): ReactNode {
           <Button variant="primary" onClick={actions.openManage}>{t('manage')}</Button>
         </div>
       </header>
-      <div className={css.toolbar}>
-        <SearchBox
-          value={query}
-          onChange={actions.setQuery}
-          placeholder={t('searchPlaceholder')}
-        />
-      </div>
+      <StoreTabs tab={state.storeTab} onChange={actions.setStoreTab} t={t} />
+      {state.storeTab === 'sources'
+        ? (
+          <div className={css.toolbar}>
+            <SearchBox
+              value={query}
+              onChange={actions.setQuery}
+              placeholder={t('searchPlaceholder')}
+            />
+          </div>
+        )
+        : null}
       {state.error !== '' ? <div className={css.errorBanner}>{state.error}</div> : null}
-      {content}
+      <div id="aph-store-panel" role="tabpanel" aria-labelledby={`aph-store-tab-${state.storeTab}`}>
+        {state.storeTab === 'recommended' ? <RecommendedList useHub={useHub} actions={actions} t={t} /> : content}
+      </div>
     </div>
   )
 }

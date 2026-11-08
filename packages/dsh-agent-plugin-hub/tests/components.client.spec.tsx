@@ -6,9 +6,10 @@
  * real controller store.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 
 import { Panel } from '../src/client/Panel.tsx'
+import { StoreView } from '../src/client/StoreView.tsx'
 import { StoreCard } from '../src/client/StoreCard.tsx'
 import { Switch } from '../src/client/Switch.tsx'
 import { Menu } from '../src/client/Menu.tsx'
@@ -191,6 +192,68 @@ describe('Panel', () => {
     render(<Panel useHub={useHub} actions={controller.actions} t={t} />)
     expect(screen.getByText(/迁移失败/u)).toBeTruthy()
     expect(screen.getByPlaceholderText(t('searchPlaceholder'))).toBeTruthy()
+  })
+})
+
+describe('StoreView', () => {
+  const readyState = (overrides: Partial<HubState> = {}): HubState => ({
+    ...initialHubState(),
+    status: 'ready',
+    snapshot: { markets: [], items: [], installed: [] },
+    ...overrides,
+  })
+
+  it('renders the sources tab by default and reports tab switches', () => {
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const setStoreTab = vi.spyOn(controller.actions, 'setStoreTab')
+    const { useHub } = stubHub(readyState())
+    render(<StoreView useHub={useHub} actions={controller.actions} t={t} />)
+    const sources = screen.getByRole('tab', { name: t('tabSources') })
+    expect(sources.getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByPlaceholderText(t('searchPlaceholder'))).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: t('tabRecommended') }))
+    expect(setStoreTab).toHaveBeenCalledWith('recommended')
+  })
+
+  it('moves tab selection with arrow keys', () => {
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const setStoreTab = vi.spyOn(controller.actions, 'setStoreTab')
+    const { useHub } = stubHub(readyState())
+    render(<StoreView useHub={useHub} actions={controller.actions} t={t} />)
+    fireEvent.keyDown(screen.getByRole('tab', { name: t('tabSources') }), { key: 'ArrowRight' })
+    expect(setStoreTab).toHaveBeenCalledWith('recommended')
+    fireEvent.keyDown(screen.getByRole('tab', { name: t('tabSources') }), { key: 'End' })
+    expect(setStoreTab).toHaveBeenCalledWith('recommended')
+  })
+
+  it('lists recommended sources with add actions on the recommended tab', () => {
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const addRecommendedSource = vi.spyOn(controller.actions, 'addRecommendedSource')
+    const { useHub } = stubHub(readyState({ storeTab: 'recommended', localeId: 'zh-cn' }))
+    render(<StoreView useHub={useHub} actions={controller.actions} t={t} />)
+    expect(screen.getByRole('tabpanel')).toBeTruthy()
+    expect(screen.getByText('Anthropic 官方插件市场')).toBeTruthy()
+    expect(screen.queryByPlaceholderText(t('searchPlaceholder'))).toBeNull()
+    fireEvent.click(within(screen.getByRole('tabpanel')).getByRole('button', { name: t('add') }))
+    expect(addRecommendedSource).toHaveBeenCalledWith({
+      id: 'claude-plugins-official',
+      location: 'https://github.com/anthropics/claude-plugins-official',
+    })
+  })
+
+  it('marks a recommended source as already added by normalized location', () => {
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const { useHub } = stubHub(readyState({
+      storeTab: 'recommended',
+      snapshot: {
+        markets: [{ id: 'm1', location: 'https://github.com/anthropics/claude-plugins-official.git/' }],
+        items: [],
+        installed: [],
+      },
+    }))
+    render(<StoreView useHub={useHub} actions={controller.actions} t={t} />)
+    expect(screen.getByText(t('addedBadge'))).toBeTruthy()
+    expect(within(screen.getByRole('tabpanel')).queryByRole('button', { name: t('add') })).toBeNull()
   })
 })
 

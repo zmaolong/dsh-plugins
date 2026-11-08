@@ -164,6 +164,11 @@ export const zh = {
   hooksInactive: '未生效：{reason}',
   clearSearch: '清空搜索',
   allSources: '全部来源',
+  tabSources: '我的市场',
+  tabRecommended: '推荐',
+  storeTabsLabel: '视图',
+  recommendedHint: '精选的插件市场源，点击添加后即可浏览安装。',
+  addedBadge: '已添加',
 } as const
 
 /** English dictionary (sentence case; same key set as `zh`). */
@@ -321,6 +326,11 @@ export const en: Record<HubLocaleKey, string> = {
   hooksInactive: 'Not effective: {reason}',
   clearSearch: 'Clear search',
   allSources: 'All sources',
+  tabSources: 'My marketplaces',
+  tabRecommended: 'Recommended',
+  storeTabsLabel: 'Views',
+  recommendedHint: 'Curated marketplace sources — add one to browse and install its plugins.',
+  addedBadge: 'Added',
 }
 
 /** Japanese dictionary (same key set as `zh`). */
@@ -478,6 +488,11 @@ export const ja: Record<HubLocaleKey, string> = {
   hooksInactive: '未反映：{reason}',
   clearSearch: '検索をクリア',
   allSources: 'すべてのソース',
+  tabSources: 'マーケット',
+  tabRecommended: 'おすすめ',
+  storeTabsLabel: 'ビュー',
+  recommendedHint: '厳選されたマーケットソースです。追加するとプラグインを閲覧・インストールできます。',
+  addedBadge: '追加済み',
 }
 
 /** Spanish dictionary (same key set as `zh`). */
@@ -635,6 +650,11 @@ export const es: Record<HubLocaleKey, string> = {
   hooksInactive: 'Sin efecto: {reason}',
   clearSearch: 'Borrar búsqueda',
   allSources: 'Todas las fuentes',
+  tabSources: 'Mis mercados',
+  tabRecommended: 'Recomendados',
+  storeTabsLabel: 'Vistas',
+  recommendedHint: 'Fuentes de marketplace seleccionadas: agregue una para explorar e instalar sus plugins.',
+  addedBadge: 'Agregado',
 }
 
 /** French dictionary (same key set as `zh`). */
@@ -792,6 +812,11 @@ export const fr: Record<HubLocaleKey, string> = {
   hooksInactive: 'Sans effet : {reason}',
   clearSearch: 'Effacer la recherche',
   allSources: 'Toutes les sources',
+  tabSources: 'Mes marchés',
+  tabRecommended: 'Recommandés',
+  storeTabsLabel: 'Vues',
+  recommendedHint: 'Sources de marketplace sélectionnées — ajoutez-en une pour parcourir et installer ses plugins.',
+  addedBadge: 'Ajouté',
 }
 
 /** German dictionary (same key set as `zh`). */
@@ -949,6 +974,11 @@ export const de: Record<HubLocaleKey, string> = {
   hooksInactive: 'Nicht wirksam: {reason}',
   clearSearch: 'Suche löschen',
   allSources: 'Alle Quellen',
+  tabSources: 'Meine Märkte',
+  tabRecommended: 'Empfohlen',
+  storeTabsLabel: 'Ansichten',
+  recommendedHint: 'Ausgewählte Marketplace-Quellen – fügen Sie eine hinzu, um deren Plugins zu durchstöbern und zu installieren.',
+  addedBadge: 'Hinzugefügt',
 }
 
 /** Russian dictionary (same key set as `zh`). */
@@ -1106,6 +1136,11 @@ export const ru: Record<HubLocaleKey, string> = {
   hooksInactive: 'Не действует: {reason}',
   clearSearch: 'Очистить поиск',
   allSources: 'Все источники',
+  tabSources: 'Мои маркетплейсы',
+  tabRecommended: 'Рекомендации',
+  storeTabsLabel: 'Вид',
+  recommendedHint: 'Отобранные источники маркетплейсов — добавьте один, чтобы просматривать и устанавливать его плагины.',
+  addedBadge: 'Добавлено',
 }
 
 /** Portuguese dictionary (same key set as `zh`). */
@@ -1263,6 +1298,11 @@ export const pt: Record<HubLocaleKey, string> = {
   hooksInactive: 'Sem efeito: {reason}',
   clearSearch: 'Limpar pesquisa',
   allSources: 'Todas as fontes',
+  tabSources: 'Meus mercados',
+  tabRecommended: 'Recomendados',
+  storeTabsLabel: 'Exibições',
+  recommendedHint: 'Fontes de marketplace selecionadas — adicione uma para explorar e instalar os plugins dela.',
+  addedBadge: 'Adicionado',
 }
 
 /** Every dictionary key of the plugin namespace. */

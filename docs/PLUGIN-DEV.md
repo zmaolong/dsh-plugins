@@ -526,6 +526,7 @@ npm run build   # tsdown 产物（lib/ 入库）
 | 索引看起来是旧的 | 索引缓存（约 10 分钟，🟠 观察值） | 刷新「发现」页或重新添加源 | 🟠 |
 | 图标不显示 | http 图床 / 跨源非 https / 超过 256 KiB（bundle 图标）或 32 KiB（内联索引图标） | 按官方规则修正 | 🟢 官方 |
 | 市场条目与实际包对不上 | 索引 `name` 与 `package.json.name` 不一致 | 对齐 | 🟡 实测 |
+| Windows 下删除 git 克隆目录报 `EPERM`（市场添加/刷新/移除偶发失败） | 克隆产物被索引器/杀软短暂占用句柄；Node `fs.rmSync` 默认 `maxRetries: 0`，一次失败即抛 | 用 `rmSync(…, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 })`（hub 内封装为 `rmTree`，尽力清理、不阻断主流程） | 🟡 实测 |
 
 ---
 

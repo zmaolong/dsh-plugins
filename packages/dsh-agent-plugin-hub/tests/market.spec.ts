@@ -4,7 +4,7 @@
  */
 
 import { spawnSync } from 'node:child_process'
-import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { chmodSync, cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import path from 'node:path'
@@ -280,6 +280,23 @@ describe('市场管理', () => {
       },
     })
     expect(gitFallback).toEqual({ type: 'git', location: 'https://example.com/repo.git' })
+
+    // URL：git 克隆成功，但探测目录带只读文件（Windows git pack 的真实形态），
+    // 清理失败不能把识别成功的返回值吞掉。
+    const readOnlyClone = await detectSource('https://example.com/repo', {
+      store: hub.store,
+      fetchImpl: async () => {
+        throw new Error('HTTP 404')
+      },
+      cloneImpl: (_location, target) => {
+        const objects = path.join(target, '.git', 'objects')
+        mkdirSync(objects, { recursive: true })
+        const pack = path.join(objects, 'pack-abc.file')
+        writeFileSync(pack, 'pack')
+        chmodSync(pack, 0o444)
+      },
+    })
+    expect(readOnlyClone).toEqual({ type: 'git', location: 'https://example.com/repo' })
 
     // URL：JSON 与 git 都失败 → 中文错误
     await expect(
