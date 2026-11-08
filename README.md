@@ -130,6 +130,7 @@ dsh --profile web
 3. 改 `cordis.patch.yml`：`id` 换成本插件独有的行 id，`name` 换成**自己的包名**。
 4. 改 `src/index.ts`：`export const name` 和 `apply` 里的逻辑；客户端改 `src/client/`，然后 `npm run build`（`lib/` 产物与源码一起提交）。
 5. 跑 `node scripts\build-index.mjs` 重新生成索引。
+6. 在 DSH 里调试：`powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\<你的包>`，默认装进 `zdebug` 调试 profile 并启动浏览器实例；也可加 `-Profile desktop -NoBoot` 装进桌面真实环境。用法见脚本顶部注释。
 
 骨架要求（缺一个都装不上）：
 

@@ -47,6 +47,27 @@
 6. `git push origin release-0.0.1`；
 7. 涉及 npm 发布时按 §8 执行，并 `npm view <pkg> versions dist-tags` 验证。
 
+## 调试交接（开发完成后）
+
+插件不能脱离 DSH 宿主单独调试。开发完成后按下面收尾，把包交到可调试状态：
+
+1. 质量门与构建：`npm run check && npm test && npm run build`（下面的脚本会自动跑）；
+2. 装进调试 profile 并启动，默认 `zdebug`：首次按官方 `web` 模板创建，浏览器调试与宿主终端日志都可用：
+
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\dsh-agent-plugin-hub
+   ```
+
+   装进桌面真实环境（只安装、不启动，随后刷新页面或关/开插件）：
+
+   ```powershell
+   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\dsh-agent-plugin-hub -Profile desktop -NoBoot
+   ```
+
+3. 交接信息必须包含：包路径、profile、浏览器入口 URL、宿主日志路径、本次改动点；
+4. **不要手改 `~/.dsh/profiles/**`**：安装只走脚本、`dsh plugin` 或应用内插件页；
+5. 脚本使用桌面安装自带的 CLI（`resources\runtime\cli\bin\dsh.cmd`，允许管理 `desktop` profile；普通 `dsh` 会拒绝）。link 安装要创建 junction，**DSH 沙箱内的 shell 会被拒绝**（EPERM），请在 ZCode 等普通终端里运行。
+
 ## 常用命令
 
 ```powershell

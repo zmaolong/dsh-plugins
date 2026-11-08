@@ -353,7 +353,15 @@ dsh --profile web
 ```
 
 **桌面端**：设置 → 插件 → 安装，填包名或安装 spec；本地目录用绝对路径。
-注意：`desktop` profile 由 Electron 应用独占管理，CLI 会拒绝（`profile "desktop" is managed exclusively by the Electron application`）。
+注意：普通 `dsh` CLI 会拒绝 `desktop` profile（`profile "desktop" is managed exclusively by the Electron application`）；桌面安装自带的 `resources\runtime\cli\bin\dsh.cmd` 例外，它允许管理该 profile（🟡 读 `dsh-desktop-host/lib/cli.js` 的 `manageDesktopProfile: true` 实测）。
+
+**本仓库一键调试（推荐）**：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\dsh-agent-plugin-hub
+```
+
+默认跑 `check`/`test`/`build`，装进 `zdebug` 调试 profile（首次按 `web` 模板创建）并启动浏览器实例，打印入口 URL 与宿主日志路径；`-Profile desktop -NoBoot` 只装进桌面真实环境。link 安装要创建 junction，需在 ZCode 等普通终端运行（DSH 沙箱内的 shell 会拒绝）。
 
 **验证**：
 
