@@ -141,11 +141,11 @@
         },
         {
           "version": "0.0.1-preview.13",
-          "publishTimestamp": 1794144335,
+          "publishTimestamp": 1794154677,
           "source": {
             "type": "git",
             "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "83ebe3f36fc52824cb906ca65de493305ab66e7a",
+            "commit": "549b6f177af2aaf39f7803747ce0dfe6ca7c2bbc",
             "path": "packages/dsh-agent-plugin-hub"
           }
         },
@@ -187,6 +187,43 @@
             "url": "https://github.com/zmaolong/dsh-plugins",
             "commit": "51693f1352ce153ccf2a3706a1b1e70fae5d1f6e",
             "path": "packages/dsh-agent-plugin-hub"
+          }
+        }
+      ]
+    },
+    {
+      "name": "dsh-remote-ctrl",
+      "title": {
+        "en": "Remote Control",
+        "zh-cn": "远程控制"
+      },
+      "description": {
+        "en": "Control DSH from a phone on the LAN: browse sessions with live output, send messages, approve tool calls, and answer questions. QR-code pairing, all LAN addresses reachable.",
+        "zh-cn": "在局域网内用手机控制 DSH：浏览会话与实时输出、发送消息、批准工具调用、回答提问。扫码配对，所有局域网地址均可访问。"
+      },
+      "homepage": "https://github.com/zmaolong/dsh-plugins/tree/release-0.0.1/packages/dsh-remote-ctrl",
+      "repository": {
+        "url": "https://github.com/zmaolong/dsh-plugins"
+      },
+      "metadata": {
+        "category": "tool",
+        "keywords": [
+          "remote-control",
+          "mobile",
+          "lan",
+          "qr",
+          "approval"
+        ]
+      },
+      "versions": [
+        {
+          "version": "0.0.1-preview.0",
+          "publishTimestamp": 1794154677,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/zmaolong/dsh-plugins",
+            "commit": "549b6f177af2aaf39f7803747ce0dfe6ca7c2bbc",
+            "path": "packages/dsh-remote-ctrl"
           }
         }
       ]
