@@ -37,8 +37,7 @@ dsh-plugins/
 ├── index.json                  # 生成物，需要提交
 ├── market.config.json
 ├── package.json
-├── AGENTS.md                   # AI Agent / Harness 工作规范（Claude Code / CodeBuddy / ZCode / Cursor / Codex 等）
-├── CLAUDE.md                   # Claude Code 入口（指向 AGENTS.md）
+├── AGENTS.md                   # AI Agent / Harness 工作规范（Claude Code / CodeBuddy / ZCode / Cursor / Codex 等，唯一入口）
 ├── README.md
 ├── docs/
 │   └── PLUGIN-DEV.md           # DSH 插件开发规范（权威）

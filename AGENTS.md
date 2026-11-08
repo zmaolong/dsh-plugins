@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> 本文件面向所有在本仓库工作的 AI Agent / Harness（Claude Code、CodeBuddy、ZCode、Cursor、Codex 等）。
+> 本文件面向所有在本仓库工作的 AI Agent / Harness（Claude Code、CodeBuddy、ZCode、Cursor、Codex 等），是**唯一入口**：不再维护 `CLAUDE.md` 等副本，各 Harness 直接读本文件。
 > **开工前必读**：DSH 插件开发规范 [`docs/PLUGIN-DEV.md`](docs/PLUGIN-DEV.md)（权威）；仓库结构与市场索引格式见 [`README.md`](README.md)。
 
 ## 权威资料与知识来源
