@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Remote Control",
+    "description": "Control DSH from a phone on the LAN: browse sessions with live output, send messages, approve tool calls, and answer questions. QR-code pairing, all LAN addresses reachable."
+  }
+}

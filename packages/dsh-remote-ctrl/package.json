@@ -1,0 +1,99 @@
+{
+  "name": "dsh-remote-ctrl",
+  "version": "0.0.1-preview.0",
+  "description": "Remote Control (远程控制) for DSH: control DSH from a phone on the LAN — browse sessions with live output, send messages, approve tool calls and answer questions.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "icon": "./icon.svg",
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "package.json"
+  ],
+  "scripts": {
+    "check": "tsc -p tsconfig.node.json --noEmit && tsc -p tsconfig.client.json --noEmit",
+    "build": "tsdown",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^22.20.1",
+    "@types/react": "~18.3.1",
+    "@types/react-dom": "~18.3.0",
+    "@vitest/coverage-v8": "^4.1.11",
+    "clsx": "^2.1.1",
+    "jsdom": "29.1.1",
+    "lightningcss": "^1.33.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tsdown": "^0.22.2",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.11"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zmaolong/dsh-plugins.git",
+    "directory": "packages/dsh-remote-ctrl"
+  },
+  "homepage": "https://github.com/zmaolong/dsh-plugins/tree/release-0.0.1/packages/dsh-remote-ctrl",
+  "bugs": {
+    "url": "https://github.com/zmaolong/dsh-plugins/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "tag": "preview"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "remote-control",
+    "mobile",
+    "lan",
+    "qr",
+    "approval"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-theme"
+      ]
+    },
+    "market": {
+      "title": {
+        "en": "Remote Control",
+        "zh-cn": "远程控制"
+      },
+      "description": {
+        "en": "Control DSH from a phone on the LAN: browse sessions with live output, send messages, approve tool calls, and answer questions. QR-code pairing, all LAN addresses reachable.",
+        "zh-cn": "在局域网内用手机控制 DSH：浏览会话与实时输出、发送消息、批准工具调用、回答提问。扫码配对，所有局域网地址均可访问。"
+      },
+      "category": "tool",
+      "keywords": [
+        "remote-control",
+        "mobile",
+        "lan",
+        "qr",
+        "approval"
+      ]
+    }
+  }
+}

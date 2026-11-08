@@ -45,15 +45,16 @@ dsh-plugins/
 │   ├── build-index.mjs
 │   └── serve-index.mjs
 └── packages/
-    └── dsh-agent-plugin-hub/   # 智能体插件运行时与市场（0.0.1-preview.6，ZCode 风格商店面板）
-        ├── package.json        # devDependencies 工具链（TS/tsdown/vitest），dependencies 为空
-        ├── cordis.patch.yml
-        ├── README.md
-        ├── src/                # 源码：服务端 *.ts（函数插件形）+ client/*.tsx（组件 + *.module.css）
-        ├── locale/             # 8 语言展示元数据（en/zh/ja/es/fr/de/ru/pt）
-        ├── docs/HOST-API.md    # 宿主 API 侦察结论与当前接口
-        ├── lib/                # tsdown 构建产物（入库）：lib/index.js ESM 宿主半 + lib/client.js 浏览器工厂
-        └── tests/              # vitest：fixtures + 150 个离线用例（*.spec / *.client.spec）
+    ├── dsh-agent-plugin-hub/   # 智能体插件运行时与市场（0.0.1-preview.6，ZCode 风格商店面板）
+    │   ├── package.json        # devDependencies 工具链（TS/tsdown/vitest），dependencies 为空
+    │   ├── cordis.patch.yml
+    │   ├── README.md
+    │   ├── src/                # 源码：服务端 *.ts（函数插件形）+ client/*.tsx（组件 + *.module.css）
+    │   ├── locale/             # 8 语言展示元数据（en/zh/ja/es/fr/de/ru/pt）
+    │   ├── docs/HOST-API.md    # 宿主 API 侦察结论与当前接口
+    │   ├── lib/                # tsdown 构建产物（入库）：lib/index.js ESM 宿主半 + lib/client.js 浏览器工厂
+    │   └── tests/              # vitest：fixtures + 150 个离线用例（*.spec / *.client.spec）
+    └── dsh-remote-ctrl/        # 局域网远程控制（手机扫码看会话/发消息/审批/应答），同一工具链三产物
 ```
 
 ### 分支与发布
@@ -111,6 +112,7 @@ dsh --profile web
 | 包 | 作用 | 代码要点 |
 |---|---|---|
 | `dsh-agent-plugin-hub` | 在 DSH 里托管 Claude Code、CodeBuddy、ZCode 等**智能体插件**（Agent Plugins）：个人市场、安装/更新/回滚、能力注入与逐项启停，以及 ZCode 风格商店面板 | 组合包 + `/agent-plugin` 命令 + 首页左侧栏商店面板（首页双 tab：我的市场 / 推荐（市场详情页 + 插件描述页 + 一键添加）、按市场分组 / 详情 / 管理 / 市场源 / 自动识别来源 / 等价来源查重）；schema v2 自动迁移；skills/commands/hooks 注入，MCP 清单标注；TypeScript + tsdown + vitest 官方化工具链，161 个离线用例 |
+| `dsh-remote-ctrl` | **局域网远程控制**：手机扫码连接插件自起的 HTTP 服务（默认 `0.0.0.0:31080`，所有局域网地址天然可达），浏览会话与实时输出、发送消息、批准工具调用、回答智能体提问；局域网直连，不做云中继与 Bot Channel | 组合包 + 自起 `node:http`（宿主 webServer 拒绝通配绑定）+ 配对码鉴权（Bearer/query，Host 校验 + 同源写防护）+ SSE（`session/event`、`agent/assistant-stream`、审批/提问卡实时推送）+ `sessionController.prompt` 发消息 + `approval/request` 与 `user-questions/request` waterfall 认领代答（与桌面 UI 先答者定局）；桌面面板挂宿主回环 `/remote-ctrl/api`（状态/地址列表/二维码/token）；TypeScript + tsdown（宿主/面板/手机页三产物）+ vitest，38 个离线用例 |
 
 > 命名说明：Agent 直译“代理”不准确、“助手”易混淆；单叫“插件”会与 DSH 自身插件混淆。
 > 用**智能体插件**（英文 Agent Plugins）加限定词区分；代码里的包名与 `/agent-plugin` 命令不变。

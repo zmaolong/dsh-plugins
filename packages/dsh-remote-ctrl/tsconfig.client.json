@@ -1,0 +1,21 @@
+{
+  // Browser halves: the desktop panel TSX (src/client), the standalone
+  // mobile page (src/mobile) and their jsdom specs. Client sources must
+  // carry no ambient node types; specs execute under vitest on node, so
+  // node types are restored at this aggregate level only.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2024", "DOM", "DOM.Iterable"],
+    "types": ["node"],
+    "noEmit": true
+  },
+  "include": [
+    "src/client/**/*.ts",
+    "src/client/**/*.tsx",
+    "src/mobile/**/*.ts",
+    "src/css-modules.d.ts",
+    "tests/**/*.client.spec.ts",
+    "tests/**/*.client.spec.tsx"
+  ]
+}

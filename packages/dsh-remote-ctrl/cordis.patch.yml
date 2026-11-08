@@ -1,0 +1,13 @@
+# 把远程控制的行插进 profile 组合层。
+# home 留空时依次取 DSH_REMOTE_CTRL_HOME、~/.dsh/remote-ctrl（配对 token 持久化处）。
+# host 是本插件自起 HTTP 服务的监听地址：0.0.0.0 表示所有网卡（每个局域网 IP 都可访问），
+# 也可以收窄成单个 IPv4/IPv6 字面量（如仅在某一个网卡上暴露）。
+# port 是自起服务的端口；token 留空则首启生成随机配对码并持久化到 home。
+- insert:
+    - id: remote-ctrl
+      name: 'dsh-remote-ctrl'
+      config:
+        home: ''
+        host: '0.0.0.0'
+        port: 31080
+        token: ''
