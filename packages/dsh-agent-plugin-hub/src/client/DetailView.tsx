@@ -170,7 +170,22 @@ export function DetailView({ useHub, actions, t }: ViewProps): ReactNode {
   } else if (!detail || state.detailStatus === 'loading') {
     components = <LoadingBlock text={t('componentsLoading')} />
   } else if (!capabilities) {
-    components = <EmptyBlock description={detailRecord.blockedReason ? String(detailRecord.blockedReason) : t('componentsEmpty')} />
+    // A degraded-but-successful describe (uncached external source) must still
+    // offer the fetch-online action; otherwise the plugin looks component-less.
+    const source = (detailRecord.source ?? {}) as JsonRecord
+    const canFetch = !installedFlag && Boolean(catalogItem) && source.resolved === false
+    components = canFetch
+      ? (
+        <div className={css.warningBanner}>
+          <Icon name="alert" size={14} />
+          <span style={{ flex: 1 }}>{t('fetchDetailHint')}</span>
+          <button type="button" className={css.inlineButton} onClick={() => { void actions.loadDetail(true) }}>
+            <Icon name="refresh" size={14} />
+            {t('fetchDetail')}
+          </button>
+        </div>
+      )
+      : <EmptyBlock description={detailRecord.blockedReason ? String(detailRecord.blockedReason) : t('componentsEmpty')} />
   } else {
     const capBusyFor = (kind: string, name: string): boolean => actions.isCapBusy(key, kind, name)
     const switchOf = (kind: string, name: string, item: JsonRecord): ReactNode => (installedFlag && item.enabled !== undefined

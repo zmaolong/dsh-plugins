@@ -11,6 +11,7 @@ import { act, cleanup, fireEvent, render, screen, within } from '@testing-librar
 import { Panel } from '../src/client/Panel.tsx'
 import { StoreView } from '../src/client/StoreView.tsx'
 import { MarketView } from '../src/client/MarketView.tsx'
+import { DetailView } from '../src/client/DetailView.tsx'
 import { StoreCard } from '../src/client/StoreCard.tsx'
 import { Switch } from '../src/client/Switch.tsx'
 import { Menu } from '../src/client/Menu.tsx'
@@ -193,6 +194,31 @@ describe('Panel', () => {
     render(<Panel useHub={useHub} actions={controller.actions} t={t} />)
     expect(screen.getByText(/迁移失败/u)).toBeTruthy()
     expect(screen.getByPlaceholderText(t('searchPlaceholder'))).toBeTruthy()
+  })
+})
+
+describe('DetailView', () => {
+  it('来源未缓存时提供联网获取详情；已解析但无组件时保持空态', () => {
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const loadDetail = vi.spyOn(controller.actions, 'loadDetail')
+    const snapshot = {
+      markets: [{ id: 'm1', title: 'One' }],
+      items: [{ key: 'm1/ai', name: 'ai', market: { id: 'm1' }, display: { title: 'ai-plugins' } }],
+      installed: [],
+    }
+    const base = { ...initialHubState(), status: 'ready' as const, snapshot, view: 'detail' as const, detailKey: 'm1/ai', detailStatus: 'ready' as const }
+    // 未缓存来源：describe 成功但 source.resolved === false → 必须提供联网入口
+    const degraded = { ...base, detail: { key: 'm1/ai', name: 'ai', source: { resolved: false, cloneRequired: true } } }
+    render(<DetailView useHub={stubHub(degraded).useHub} actions={controller.actions} t={t} />)
+    fireEvent.click(screen.getByRole('button', { name: t('fetchDetail') }))
+    expect(loadDetail).toHaveBeenCalledWith(true)
+    cleanup()
+
+    // 已解析但确实没有组件：保持空态，不出现联网按钮
+    const resolved = { ...base, detail: { key: 'm1/ai', name: 'ai', source: { resolved: true } } }
+    render(<DetailView useHub={stubHub(resolved).useHub} actions={controller.actions} t={t} />)
+    expect(screen.getByText(t('componentsEmpty'))).toBeTruthy()
+    expect(screen.queryByRole('button', { name: t('fetchDetail') })).toBeNull()
   })
 })
 

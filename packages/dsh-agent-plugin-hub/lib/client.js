@@ -3826,8 +3826,33 @@ window.__ModuleLoader__.load({
 					]
 				});
 			} else if (!detail || state.detailStatus === "loading") components = /* @__PURE__ */ (0, react_jsx_runtime.jsx)(LoadingBlock, { text: t("componentsLoading") });
-			else if (!capabilities) components = /* @__PURE__ */ (0, react_jsx_runtime.jsx)(EmptyBlock, { description: detailRecord.blockedReason ? String(detailRecord.blockedReason) : t("componentsEmpty") });
-			else {
+			else if (!capabilities) {
+				const source = detailRecord.source ?? {};
+				components = !installedFlag && Boolean(catalogItem) && source.resolved === false ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+					className: panel_module_css_default.warningBanner,
+					children: [
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Icon, {
+							name: "alert",
+							size: 14
+						}),
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+							style: { flex: 1 },
+							children: t("fetchDetailHint")
+						}),
+						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
+							type: "button",
+							className: panel_module_css_default.inlineButton,
+							onClick: () => {
+								actions.loadDetail(true);
+							},
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Icon, {
+								name: "refresh",
+								size: 14
+							}), t("fetchDetail")]
+						})
+					]
+				}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(EmptyBlock, { description: detailRecord.blockedReason ? String(detailRecord.blockedReason) : t("componentsEmpty") });
+			} else {
 				const capBusyFor = (kind, name) => actions.isCapBusy(key, kind, name);
 				const switchOf = (kind, name, item) => installedFlag && item.enabled !== void 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Switch, {
 					checked: item.enabled === true,
