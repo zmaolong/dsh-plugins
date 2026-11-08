@@ -18,6 +18,7 @@ import path from 'node:path'
 
 import { normalizeDisabledCapabilities } from './capabilities.ts'
 import { HUB_VERSION, buildUpdateInfo, normalizeAuthor, type HubOperation, type UpdateInfo } from './hub.ts'
+import { marketLocationKey } from './location-key.ts'
 import { detectPluginManifest, resolveRelativeSource } from './manifest.ts'
 import { mcpAvailability } from './mcp.ts'
 import { isInstallableVersion } from './version.ts'
@@ -179,6 +180,7 @@ export interface MarketSummary {
   type: string
   format: string
   location: string
+  locationKey: string
   lastRefreshed: string | null
   refreshError: string | null
   pluginCount: number
@@ -251,6 +253,7 @@ export function buildMarketSummary(
     type: market.type,
     format: market.format,
     location: market.location,
+    locationKey: marketLocationKey(market.location),
     lastRefreshed: nonEmptyString(market.lastRefreshed) || null,
     refreshError: nonEmptyString(market.refreshError) || null,
     pluginCount: (market.plugins ?? []).length,

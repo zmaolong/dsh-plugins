@@ -2372,6 +2372,44 @@ var Installer = class Installer {
 		};
 	}
 };
+// src/location-key.ts
+/**
+* Canonical market location key shared by both halves: the server uses it for
+* add-time duplicate detection (same source under different spellings — bare
+* repo URL, `.git` suffix, raw manifest link — must not register twice), the
+* client for "already added" matching. Deliberately independent from
+* `marketIdFor`: ids stay stable for existing installs, this key only powers
+* equivalence checks.
+*
+* @module dsh-agent-plugin-hub/location-key
+*/
+/** Canonical key of one market location ('' for empty input). */
+function marketLocationKey(location) {
+	const raw = String(location ?? "").trim();
+	if (raw === "") return "";
+	const scp = /^git@([^:/]+):(.+)$/i.exec(raw);
+	if (scp) return gitKey(String(scp[1] ?? ""), String(scp[2] ?? ""));
+	const ssh = /^ssh:\/\/(?:[^@/]+@)?([^:/]+)(?::\d+)?\/(.+)$/i.exec(raw);
+	if (ssh) return gitKey(String(ssh[1] ?? ""), String(ssh[2] ?? ""));
+	if (/^https?:\/\//i.test(raw)) try {
+		const url = new URL(raw);
+		const host = url.hostname.toLowerCase();
+		const segments = url.pathname.split("/").filter((segment) => segment !== "");
+		if ((host === "github.com" || host === "raw.githubusercontent.com") && segments.length >= 2) return gitKey("github.com", `${String(segments[0])}/${String(segments[1])}`);
+		return `url:${host}/${segments.join("/")}`;
+	} catch {
+		return `url:${raw.toLowerCase()}`;
+	}
+	const normalized = raw.replace(/\\/g, "/").replace(/\/+$/, "");
+	return `local:${/^[a-z]:\//i.test(normalized) || raw.includes("\\") ? normalized.toLowerCase() : normalized}`;
+}
+/** Key of a git-ish host/path pair: lowercase host and path, `.git` suffix stripped. */
+function gitKey(host, repoPath) {
+	const segments = repoPath.replace(/\/+$/, "").toLowerCase().split("/").filter((segment) => segment !== "");
+	const last = segments[segments.length - 1];
+	if (last !== void 0) segments[segments.length - 1] = last.replace(/\.git$/i, "");
+	return `git:${host.toLowerCase()}/${segments.join("/")}`;
+}
 // src/market.ts
 /**
 * Market source management: local directories, git repositories, and
@@ -2587,6 +2625,55 @@ function rmTree(target) {
 			retryDelay: 200
 		});
 	} catch {}
+}
+/** Market-level head fields shared by the preview branches. */
+function previewHead(format, parsed, fallbackName) {
+	return {
+		format,
+		name: parsed.name !== "" ? parsed.name : fallbackName,
+		title: parsed.display.title || parsed.name || fallbackName,
+		description: parsed.display.description || ""
+	};
+}
+/** Light projection of parsed entries for the preview list (displayOf-compatible). */
+function previewPlugins(parsed) {
+	return parsed.plugins.map((entry) => {
+		const installable = entry.source.kind === "local" || entry.source.kind === "github" || entry.source.kind === "git";
+		const metaTitle = entry.meta.displayName ?? String(entry.meta.title ?? "");
+		return {
+			name: entry.name,
+			version: entry.version,
+			display: {
+				title: metaTitle !== "" ? metaTitle : entry.name,
+				description: entry.meta.description ?? entry.description ?? ""
+			},
+			installable,
+			...installable ? {} : { warning: "该插件的 source 暂不支持安装" }
+		};
+	});
+}
+/** Raw manifest base of a github repo URL (`null` for anything else). */
+function githubRawInfo(raw) {
+	const match = /^https?:\/\/github\.com\/([^/]+)\/([^/#?]+?)(?:\.git)?(?:\/tree\/([^/#?]+))?(?:\/.*)?$/iu.exec(raw);
+	const owner = match?.[1] ?? "";
+	const repo = match?.[2] ?? "";
+	if (owner === "" || repo === "") return null;
+	return { base: `https://raw.githubusercontent.com/${owner}/${repo}/${(match?.[3] ?? "") || "HEAD"}` };
+}
+/** Manifest candidate paths in probe order (FORMAT_PRIORITY × marketplaceFiles, deduped). */
+function rawManifestCandidates() {
+	const seen = /* @__PURE__ */ new Set();
+	const list = [];
+	for (const formatId of FORMAT_PRIORITY) {
+		const format = findFormat(formatId);
+		if (!format) continue;
+		for (const relative of format.marketplaceFiles) {
+			if (seen.has(relative)) continue;
+			seen.add(relative);
+			list.push([formatId, relative]);
+		}
+	}
+	return list;
 }
 async function detectSource(location, options = {}) {
 	const raw = String(location ?? "").trim();
@@ -2880,6 +2967,13 @@ var MarketManager = class {
 		this.store = options.store;
 		this.log = options.log;
 		this.fetchImpl = options.fetchImpl ?? globalThis.fetch;
+		this.cleanupPreviewCache();
+	}
+	/** Drop the previous process's preview clones (tmp is transient by design). */
+	cleanupPreviewCache() {
+		try {
+			for (const entry of readdirSync(this.store.paths.tmp)) if (entry.startsWith("preview-")) rmTree(path.join(this.store.paths.tmp, entry));
+		} catch {}
 	}
 	load() {
 		const { markets, warnings } = this.store.readMarkets();
@@ -2942,6 +3036,9 @@ var MarketManager = class {
 		const normalizedLocation = normalizeLocation(type, location);
 		const id = marketIdFor(type, normalizedLocation);
 		if (this.get(id)) throw hubError(`市场已存在：${id}`, "conflict");
+		const wantedKey = marketLocationKey(normalizedLocation);
+		const duplicate = wantedKey === "" ? null : this.list().find((market) => marketLocationKey(market.location) === wantedKey);
+		if (duplicate) throw hubError(`该市场已存在：${duplicate.title || duplicate.name}（${duplicate.location}）。如需重新添加，请先移除原市场。`, "market_exists");
 		const market = {
 			id,
 			name: String(input.name ?? "").trim() || path.basename(normalizedLocation),
@@ -2976,6 +3073,90 @@ var MarketManager = class {
 			this.save();
 		}
 		return this.get(id);
+	}
+	/** Read-only preview of one market source (never registers or persists anything). */
+	async preview(input, options = {}) {
+		const raw = String(input.location ?? "").trim();
+		if (raw === "") throw hubError("市场地址不能为空", "bad_request");
+		const formatHint = String(input.format ?? "").trim() || void 0;
+		const refresh = input.refresh === true;
+		const fetchImpl = options.fetchImpl ?? this.fetchImpl;
+		const jsonTimeoutMs = options.jsonTimeoutMs ?? 15e3;
+		const resolvedDir = path.resolve(expandTildeValue(raw));
+		if (isDirectory(resolvedDir)) {
+			const read = this.readFromDirectory(resolvedDir, void 0, formatHint);
+			return {
+				type: "local",
+				location: resolvedDir,
+				via: "local",
+				...previewHead(read.format, read.parsed, read.marketplaceName),
+				plugins: previewPlugins(read.parsed)
+			};
+		}
+		if (isHttpLocation(raw)) {
+			const github = githubRawInfo(raw);
+			if (github !== null) for (const [formatId, relative] of rawManifestCandidates()) try {
+				const parsed = parseMarketplace(await fetchJsonProbe(`${github.base}/${relative}`, fetchImpl, jsonTimeoutMs), {
+					format: formatId,
+					root: raw,
+					origin: raw
+				});
+				return {
+					type: "git",
+					location: raw,
+					via: "raw",
+					...previewHead(formatId, parsed, ""),
+					plugins: previewPlugins(parsed)
+				};
+			} catch {}
+			else try {
+				const manifest = await fetchJsonProbe(raw, fetchImpl, jsonTimeoutMs);
+				const format = formatHint ?? "claude";
+				const parsed = parseMarketplace(manifest, {
+					format,
+					root: raw,
+					origin: raw
+				});
+				return {
+					type: "url",
+					location: raw,
+					via: "raw",
+					...previewHead(format, parsed, ""),
+					plugins: previewPlugins(parsed)
+				};
+			} catch {}
+		}
+		if (isGitLocation(raw) || isHttpLocation(raw)) {
+			const target = this.previewCloneTarget(raw);
+			if (refresh) rmTree(target);
+			if (!isDirectory(target)) {
+				mkdirSync(path.dirname(target), { recursive: true });
+				if (typeof options.cloneImpl === "function") options.cloneImpl(raw, target);
+				else runGit([
+					"clone",
+					"--depth",
+					"1",
+					"--",
+					raw,
+					target
+				], { timeoutMs: options.cloneTimeoutMs ?? 12e4 });
+			}
+			const read = this.readFromDirectory(target, void 0, formatHint);
+			return {
+				type: "git",
+				location: raw,
+				via: "clone",
+				...previewHead(read.format, read.parsed, read.marketplaceName),
+				plugins: previewPlugins(read.parsed)
+			};
+		}
+		if (isPathLike(raw)) throw hubError(`本地市场目录不存在：${resolvedDir}`, "not_found");
+		throw hubError(`无法识别的市场地址：${raw}（支持本地目录、git 仓库地址或 marketplace.json 直链）`, "bad_request");
+	}
+	/** Clone-cache path of one git location for previews. */
+	previewCloneTarget(location) {
+		const hash = createHash("sha1").update(location).digest("hex").slice(0, 12);
+		return path.join(this.store.paths.tmp, `preview-${hash}`);
 	}
 	/** Read marketplace.json from a directory/git repo; a single-plugin directory takes the compatibility branch. */
 	readFromDirectory(root, name, formatHint) {
@@ -4098,6 +4279,7 @@ const STATUS_BY_CODE = Object.freeze({
 	not_found: 404,
 	method_not_allowed: 405,
 	conflict: 409,
+	market_exists: 409,
 	operation_in_progress: 409,
 	market_unavailable: 409,
 	source_unavailable: 409,
@@ -4950,6 +5132,14 @@ var AgentPluginHub = class {
 			});
 		}));
 	}
+	/** Preview a market source without registering it (read-only; git sources use a tmp clone cache). */
+	marketPreview(input) {
+		return this.markets.preview({
+			location: input.location,
+			...input.format !== void 0 ? { format: input.format } : {},
+			...input.refresh !== void 0 ? { refresh: input.refresh } : {}
+		});
+	}
 	/** Refresh one or all markets; failures land in `failures` (a single id no longer 400s the whole call). */
 	marketRefresh(marketId) {
 		const id = nonEmptyString$2(marketId);
@@ -5399,6 +5589,7 @@ function buildMarketSummary(hub, market, operations = hub.operationsList()) {
 		type: market.type,
 		format: market.format,
 		location: market.location,
+		locationKey: marketLocationKey(market.location),
 		lastRefreshed: nonEmptyString$1(market.lastRefreshed) || null,
 		refreshError: nonEmptyString$1(market.refreshError) || null,
 		pluginCount: (market.plugins ?? []).length,
@@ -5849,6 +6040,7 @@ const GET_ROUTES = /* @__PURE__ */ new Set([
 const POST_ROUTES = /* @__PURE__ */ new Set([
 	"/describe",
 	"/market/add",
+	"/market/preview",
 	"/market/refresh",
 	"/market/remove",
 	"/install",
@@ -6162,6 +6354,17 @@ async function dispatch(hub, route, body = {}) {
 				format: market.format,
 				pluginCount: (market.plugins ?? []).length,
 				refreshError: nonEmptyString(market.refreshError) || null
+			};
+		}
+		case "/market/preview": {
+			const data = await hub.marketPreview({
+				location: String(body.location ?? ""),
+				...body.format !== void 0 && body.format !== null ? { format: String(body.format) } : {},
+				refresh: body.refresh === true
+			});
+			return {
+				...data,
+				pluginCount: data.plugins.length
 			};
 		}
 		case "/market/refresh": {

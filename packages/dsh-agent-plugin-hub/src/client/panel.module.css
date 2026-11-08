@@ -178,7 +178,25 @@
   display: flex;
   align-items: center;
   gap: 16px;
+  width: 100%;
   padding: 12px 8px;
+  border: 0;
+  border-radius: var(--dsw-radius-sm);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.recRow:focus-visible {
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .recRow:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+  }
 }
 
 .recRow + .recRow {
@@ -223,6 +241,12 @@
   display: flex;
   flex: none;
   align-items: center;
+  gap: 8px;
+}
+
+.recChevron {
+  display: inline-flex;
+  color: var(--dsw-alias-label-tertiary);
 }
 
 .gridSingle {

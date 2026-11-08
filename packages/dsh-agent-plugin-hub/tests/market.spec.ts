@@ -9,11 +9,11 @@ import { createServer } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import path from 'node:path'
 
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { AgentPluginHub } from '../src/hub.ts'
 import { detectSource, entryIconFile, marketRoot } from '../src/market.ts'
-import type { MarketRecord, StoredEntry } from '../src/store.ts'
+import type { MarketsFile, MarketRecord, StoredEntry } from '../src/store.ts'
 import { copyFixture, removeDirs, tempHome } from './helpers.ts'
 
 async function makeHub(work: string): Promise<AgentPluginHub> {
@@ -312,6 +312,118 @@ describe('市场管理', () => {
     ).rejects.toThrow(/无法识别的市场地址/)
 
     await expect(detectSource('not-a-market', { store: hub.store })).rejects.toThrow(/无法识别/)
+  })
+
+  it('等价来源查重：同一来源的不同书写形式不允许重复登记', async () => {
+    const work = makeWork('hub-dup-')
+    const hub = await makeHub(work)
+    const existing = {
+      id: 'git-claude-plugins-official-00000000',
+      name: 'claude-plugins-official',
+      title: 'Anthropic 官方插件市场',
+      format: 'claude',
+      type: 'git',
+      location: 'https://github.com/anthropics/claude-plugins-official',
+      addedAt: new Date().toISOString(),
+      lastRefreshed: '',
+      display: { title: 'Anthropic 官方插件市场', description: '', owner: { name: '' } },
+      owner: { name: '' },
+      featured: [],
+      plugins: [],
+      warnings: [],
+    }
+    hub.store.saveMarkets({
+      schemaVersion: 2,
+      updatedAt: new Date().toISOString(),
+      markets: [existing] as unknown as MarketRecord[],
+    } satisfies MarketsFile)
+    hub.markets.load()
+
+    // `.git` 后缀形式：id 不同（不触发 conflict），位置键相同 → market_exists
+    const gitError = await hub.marketAdd({ type: 'git', location: 'https://github.com/anthropics/claude-plugins-official.git' })
+      .then(() => null, (error: { code?: string, message?: string }) => error)
+    expect(gitError?.code).toBe('market_exists')
+    expect(gitError?.message).toMatch(/该市场已存在/)
+
+    // raw 清单直链（url 类型）与仓库 URL 同键 → 同样拒绝（且不发任何网络请求）
+    const urlError = await hub.marketAdd({ type: 'url', location: 'https://raw.githubusercontent.com/anthropics/claude-plugins-official/HEAD/.claude-plugin/marketplace.json' })
+      .then(() => null, (error: { code?: string }) => error)
+    expect(urlError?.code).toBe('market_exists')
+    expect(hub.markets.list().length).toBe(1)
+  })
+
+  it('preview：github 仓库走 raw 直取，不克隆、不登记', async () => {
+    const work = makeWork('hub-preview-raw-')
+    const hub = await makeHub(work)
+    const requested: string[] = []
+    const clone = vi.fn()
+    const preview = await hub.markets.preview(
+      { location: 'https://github.com/anthropics/claude-plugins-official' },
+      {
+        cloneImpl: clone,
+        fetchImpl: async (input: unknown): Promise<Response> => {
+          const url = String(input)
+          requested.push(url)
+          if (url === 'https://raw.githubusercontent.com/anthropics/claude-plugins-official/HEAD/.claude-plugin/marketplace.json') {
+            return new Response(JSON.stringify({
+              name: 'claude-plugins-official',
+              plugins: [{ name: 'demo', description: '演示插件', source: './demo' }],
+            }), { status: 200 })
+          }
+          return new Response('Not Found', { status: 404 })
+        },
+      },
+    )
+    expect(requested).toEqual(['https://raw.githubusercontent.com/anthropics/claude-plugins-official/HEAD/.claude-plugin/marketplace.json'])
+    expect(clone).not.toHaveBeenCalled()
+    expect(preview.type).toBe('git')
+    expect(preview.via).toBe('raw')
+    expect(preview.format).toBe('claude')
+    expect(preview.title).toBe('claude-plugins-official')
+    expect(preview.plugins).toHaveLength(1)
+    expect(preview.plugins[0]?.name).toBe('demo')
+    expect(preview.plugins[0]?.display.title).toBe('demo')
+    expect(hub.markets.list().length).toBe(0)
+  })
+
+  it('preview：raw 未命中 → 克隆兜底 + 缓存复用 + refresh 强制重取', async () => {
+    const work = makeWork('hub-preview-clone-')
+    const hub = await makeHub(work)
+    const fixture = copyFixture('claude-market', work)
+    let clones = 0
+    const cloneImpl = (_location: string, target: string): void => {
+      clones += 1
+      cpSync(fixture, target, { recursive: true })
+    }
+    const options = { cloneImpl, fetchImpl: async (): Promise<Response> => { throw new Error('no network') } }
+
+    const first = await hub.markets.preview({ location: 'https://gitlab.com/owner/repo' }, options)
+    expect(first.via).toBe('clone')
+    expect(first.plugins).toHaveLength(3)
+    expect(clones).toBe(1)
+
+    // 缓存复用：第二次不再克隆
+    const second = await hub.markets.preview({ location: 'https://gitlab.com/owner/repo' }, options)
+    expect(second.via).toBe('clone')
+    expect(clones).toBe(1)
+
+    // refresh: true 丢弃缓存重新克隆
+    const refreshed = await hub.markets.preview({ location: 'https://gitlab.com/owner/repo', refresh: true }, options)
+    expect(refreshed.plugins).toHaveLength(3)
+    expect(clones).toBe(2)
+    expect(hub.markets.list().length).toBe(0)
+  })
+
+  it('preview：本地目录即时解析，不登记', async () => {
+    const work = makeWork('hub-preview-local-')
+    const hub = await makeHub(work)
+    const marketDir = copyFixture('claude-market', work)
+    const preview = await hub.markets.preview({ location: marketDir })
+    expect(preview.type).toBe('local')
+    expect(preview.via).toBe('local')
+    expect(preview.plugins).toHaveLength(3)
+    expect(preview.plugins.every(plugin => plugin.installable || plugin.warning !== undefined)).toBe(true)
+    expect(hub.markets.list().length).toBe(0)
   })
 
   it('marketAdd 在 type 缺省时自动识别来源', async () => {

@@ -576,6 +576,47 @@ describe('商店面板 Host API', () => {
     expect(badLocation.body.error).toMatch(/不存在/u)
   })
 
+  it('POST /market/preview：只读返回清单且不登记市场', async () => {
+    const { route, work, hub } = await setup()
+    const marketDir = path.join(work, 'claude-market')
+    const preview = await post(route, 'market/preview', { location: marketDir })
+    expect(preview.status, JSON.stringify(preview.body)).toBe(200)
+    const data = preview.body.data
+    expect(data.type).toBe('local')
+    expect(data.via).toBe('local')
+    expect(data.pluginCount).toBe(3)
+    expect(data.plugins).toHaveLength(3)
+    expect(data.plugins[0].name).toBe('demo-claude')
+    expect(data.plugins[0].display.title).toBeTruthy()
+    expect(hub.markets.list().length, '预览不登记市场').toBe(1)
+  })
+
+  it('POST /market/add：等价书写形式（.git 后缀）→ 409 market_exists', async () => {
+    const { route, hub } = await setup()
+    const existing = {
+      id: 'git-claude-plugins-official-00000000',
+      name: 'claude-plugins-official',
+      title: 'Anthropic 官方插件市场',
+      format: 'claude',
+      type: 'git',
+      location: 'https://github.com/anthropics/claude-plugins-official',
+      addedAt: new Date().toISOString(),
+      lastRefreshed: '',
+      display: { title: 'Anthropic 官方插件市场', description: '', owner: { name: '' } },
+      owner: { name: '' },
+      featured: [],
+      plugins: [],
+      warnings: [],
+    } as unknown as MarketRecord
+    hub.store.saveMarkets({ schemaVersion: 2, updatedAt: new Date().toISOString(), markets: [existing] } satisfies MarketsFile)
+    hub.markets.load()
+    const gitForm = await post(route, 'market/add', { location: 'https://github.com/anthropics/claude-plugins-official.git' })
+    expect(gitForm.status).toBe(409)
+    expect(gitForm.body.code).toBe('market_exists')
+    expect(gitForm.body.error).toMatch(/该市场已存在/u)
+    expect(hub.markets.list().length, '不产生第二条记录').toBe(1)
+  })
+
   it('POST /market/refresh：单个失败进 failures 仍 200，未知 id 404', async () => {
     const { route, hub, market } = await setup()
     const id = market.id

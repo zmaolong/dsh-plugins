@@ -61,6 +61,7 @@ export type HubErrorCode =
   | 'not_found'
   | 'method_not_allowed'
   | 'conflict'
+  | 'market_exists'
   | 'operation_in_progress'
   | 'market_unavailable'
   | 'source_unavailable'
@@ -76,6 +77,7 @@ export const STATUS_BY_CODE: Readonly<Record<HubErrorCode, number>> = Object.fre
   not_found: 404,
   method_not_allowed: 405,
   conflict: 409,
+  market_exists: 409,
   operation_in_progress: 409,
   market_unavailable: 409,
   source_unavailable: 409,
@@ -1093,6 +1095,15 @@ export class AgentPluginHub {
         return market
       })
     ))
+  }
+
+  /** Preview a market source without registering it (read-only; git sources use a tmp clone cache). */
+  marketPreview(input: { location: string, format?: string | undefined, refresh?: boolean | undefined }): Promise<import('./market.ts').MarketPreview> {
+    return this.markets.preview({
+      location: input.location,
+      ...(input.format !== undefined ? { format: input.format } : {}),
+      ...(input.refresh !== undefined ? { refresh: input.refresh } : {}),
+    })
   }
 
   /** Refresh one or all markets; failures land in `failures` (a single id no longer 400s the whole call). */

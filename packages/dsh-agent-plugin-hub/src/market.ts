@@ -38,8 +38,10 @@ import {
   resolveRelativeSource,
   validatePluginManifest,
 } from './manifest.ts'
+import { FORMAT_PRIORITY, findFormat } from './formats.ts'
 import { hubError } from './hub.ts'
-import type { SourceRef } from './manifest.ts'
+import { marketLocationKey } from './location-key.ts'
+import type { Marketplace, SourceRef } from './manifest.ts'
 import type { HubStore, MarketRecord, MarketsFile, StoredEntry } from './store.ts'
 import type { LogFn } from './log.ts'
 
@@ -280,6 +282,73 @@ function rmTree(target: string): void {
   } catch {
     /* best effort: a locked tree stays behind instead of failing the caller */
   }
+}
+
+/** Result of previewing one market source. */
+export interface MarketPreview {
+  type: 'local' | 'git' | 'url'
+  /** How the manifest was obtained: raw file fetch, a clone, or a local directory. */
+  via: 'raw' | 'clone' | 'local'
+  location: string
+  format: string
+  name: string
+  title: string
+  description: string
+  plugins: Array<{ name: string, version: string, display: { title: string, description: string }, installable: boolean, warning?: string }>
+}
+
+/** Market-level head fields shared by the preview branches. */
+function previewHead(format: string, parsed: Marketplace, fallbackName: string): { format: string, name: string, title: string, description: string } {
+  return {
+    format,
+    name: parsed.name !== '' ? parsed.name : fallbackName,
+    title: parsed.display.title || parsed.name || fallbackName,
+    description: parsed.display.description || '',
+  }
+}
+
+/** Light projection of parsed entries for the preview list (displayOf-compatible). */
+function previewPlugins(parsed: Marketplace): MarketPreview['plugins'] {
+  return parsed.plugins.map((entry) => {
+    const installable = entry.source.kind === 'local' || entry.source.kind === 'github' || entry.source.kind === 'git'
+    const metaTitle = entry.meta.displayName ?? String(entry.meta.title ?? '')
+    return {
+      name: entry.name,
+      version: entry.version,
+      display: {
+        title: metaTitle !== '' ? metaTitle : entry.name,
+        description: entry.meta.description ?? entry.description ?? '',
+      },
+      installable,
+      ...(installable ? {} : { warning: '该插件的 source 暂不支持安装' }),
+    }
+  })
+}
+
+/** Raw manifest base of a github repo URL (`null` for anything else). */
+function githubRawInfo(raw: string): { base: string } | null {
+  const match = /^https?:\/\/github\.com\/([^/]+)\/([^/#?]+?)(?:\.git)?(?:\/tree\/([^/#?]+))?(?:\/.*)?$/iu.exec(raw)
+  const owner = match?.[1] ?? ''
+  const repo = match?.[2] ?? ''
+  if (owner === '' || repo === '') return null
+  const ref = match?.[3] ?? ''
+  return { base: `https://raw.githubusercontent.com/${owner}/${repo}/${ref || 'HEAD'}` }
+}
+
+/** Manifest candidate paths in probe order (FORMAT_PRIORITY × marketplaceFiles, deduped). */
+function rawManifestCandidates(): Array<[formatId: string, relative: string]> {
+  const seen = new Set<string>()
+  const list: Array<[string, string]> = []
+  for (const formatId of FORMAT_PRIORITY) {
+    const format = findFormat(formatId)
+    if (!format) continue
+    for (const relative of format.marketplaceFiles) {
+      if (seen.has(relative)) continue
+      seen.add(relative)
+      list.push([formatId, relative])
+    }
+  }
+  return list
 }
 
 export async function detectSource(
@@ -585,6 +654,18 @@ export class MarketManager {
     this.store = options.store
     this.log = options.log
     this.fetchImpl = options.fetchImpl ?? globalThis.fetch
+    this.cleanupPreviewCache()
+  }
+
+  /** Drop the previous process's preview clones (tmp is transient by design). */
+  private cleanupPreviewCache(): void {
+    try {
+      for (const entry of readdirSync(this.store.paths.tmp)) {
+        if (entry.startsWith('preview-')) rmTree(path.join(this.store.paths.tmp, entry))
+      }
+    } catch {
+      /* tmp may not exist yet */
+    }
   }
 
   load(): this {
@@ -658,6 +739,13 @@ export class MarketManager {
     const normalizedLocation = normalizeLocation(type, location)
     const id = marketIdFor(type, normalizedLocation)
     if (this.get(id)) throw hubError(`市场已存在：${id}`, 'conflict')
+    // Same source under a different spelling (`.git` suffix, raw manifest link,
+    // another host form) must not register as a second market.
+    const wantedKey = marketLocationKey(normalizedLocation)
+    const duplicate = wantedKey === '' ? null : this.list().find(market => marketLocationKey(market.location) === wantedKey)
+    if (duplicate) {
+      throw hubError(`该市场已存在：${duplicate.title || duplicate.name}（${duplicate.location}）。如需重新添加，请先移除原市场。`, 'market_exists')
+    }
     const market: MarketRecord = {
       id,
       name: String(input.name ?? '').trim() || path.basename(normalizedLocation),
@@ -689,6 +777,71 @@ export class MarketManager {
       this.save()
     }
     return this.get(id) as MarketRecord
+  }
+
+  /** Read-only preview of one market source (never registers or persists anything). */
+  async preview(input: { location: unknown, format?: unknown, refresh?: unknown }, options: { fetchImpl?: unknown, cloneImpl?: (location: string, target: string) => void, jsonTimeoutMs?: number, cloneTimeoutMs?: number } = {}): Promise<MarketPreview> {
+    const raw = String(input.location ?? '').trim()
+    if (raw === '') throw hubError('市场地址不能为空', 'bad_request')
+    const formatHint = String(input.format ?? '').trim() || undefined
+    const refresh = input.refresh === true
+    const fetchImpl = options.fetchImpl ?? this.fetchImpl
+    const jsonTimeoutMs = options.jsonTimeoutMs ?? 15_000
+
+    // 1: existing directory (marketplace or single-plugin)
+    const resolvedDir = path.resolve(expandTildeValue(raw))
+    if (isDirectory(resolvedDir)) {
+      const read = this.readFromDirectory(resolvedDir, undefined, formatHint)
+      return { type: 'local', location: resolvedDir, via: 'local', ...previewHead(read.format, read.parsed, read.marketplaceName), plugins: previewPlugins(read.parsed) }
+    }
+
+    // 2: http(s) — a github repo probes its raw manifest files first (no clone);
+    //    a direct marketplace.json link parses as-is; anything else falls to a clone.
+    if (isHttpLocation(raw)) {
+      const github = githubRawInfo(raw)
+      if (github !== null) {
+        for (const [formatId, relative] of rawManifestCandidates()) {
+          try {
+            const manifest = await fetchJsonProbe(`${github.base}/${relative}`, fetchImpl, jsonTimeoutMs)
+            const parsed = parseMarketplace(manifest, { format: formatId, root: raw, origin: raw })
+            return { type: 'git', location: raw, via: 'raw', ...previewHead(formatId, parsed, ''), plugins: previewPlugins(parsed) }
+          } catch {
+            /* try the next candidate, then fall through to a clone */
+          }
+        }
+      } else {
+        try {
+          const manifest = await fetchJsonProbe(raw, fetchImpl, jsonTimeoutMs)
+          const format = formatHint ?? 'claude'
+          const parsed = parseMarketplace(manifest, { format, root: raw, origin: raw })
+          return { type: 'url', location: raw, via: 'raw', ...previewHead(format, parsed, ''), plugins: previewPlugins(parsed) }
+        } catch {
+          /* fall through to a clone */
+        }
+      }
+    }
+
+    // 3: git (explicit git forms, or http(s) whose probing found no manifest)
+    if (isGitLocation(raw) || isHttpLocation(raw)) {
+      const target = this.previewCloneTarget(raw)
+      if (refresh) rmTree(target)
+      if (!isDirectory(target)) {
+        mkdirSync(path.dirname(target), { recursive: true })
+        if (typeof options.cloneImpl === 'function') options.cloneImpl(raw, target)
+        else runGit(['clone', '--depth', '1', '--', raw, target], { timeoutMs: options.cloneTimeoutMs ?? 120_000 })
+      }
+      const read = this.readFromDirectory(target, undefined, formatHint)
+      return { type: 'git', location: raw, via: 'clone', ...previewHead(read.format, read.parsed, read.marketplaceName), plugins: previewPlugins(read.parsed) }
+    }
+
+    if (isPathLike(raw)) throw hubError(`本地市场目录不存在：${resolvedDir}`, 'not_found')
+    throw hubError(`无法识别的市场地址：${raw}（支持本地目录、git 仓库地址或 marketplace.json 直链）`, 'bad_request')
+  }
+
+  /** Clone-cache path of one git location for previews. */
+  private previewCloneTarget(location: string): string {
+    const hash = createHash('sha1').update(location).digest('hex').slice(0, 12)
+    return path.join(this.store.paths.tmp, `preview-${hash}`)
   }
 
   /** Read marketplace.json from a directory/git repo; a single-plugin directory takes the compatibility branch. */

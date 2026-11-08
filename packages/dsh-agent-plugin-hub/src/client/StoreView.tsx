@@ -7,6 +7,7 @@
 
 import type { ReactNode } from 'react'
 import { Avatar, Badge, Button, EmptyBlock, IconButton, SearchBox, Spinner, columnGap } from './controls.tsx'
+import { Icon } from './icons.tsx'
 import { AddMenu } from './AddMenu.tsx'
 import { StoreCard } from './StoreCard.tsx'
 import { RECOMMENDED_SOURCES, isSourceAdded } from './recommended.ts'
@@ -96,7 +97,7 @@ function StoreTabs({ tab, onChange, t }: {
   )
 }
 
-/** Curated recommended sources with one-click add. */
+/** Curated recommended sources: one-click add and click-to-preview plugin lists. */
 function RecommendedList({ useHub, actions, t }: ViewProps): ReactNode {
   const state: HubState = useHub(identity)
   const markets = ((state.snapshot ?? {}).markets as JsonRecord[] | undefined) ?? []
@@ -110,7 +111,13 @@ function RecommendedList({ useHub, actions, t }: ViewProps): ReactNode {
           const busy = state.marketBusy[`rec:${entry.id}`] === 'add'
           const display = displayOf(entry, state.localeId)
           return (
-            <div key={entry.id} className={css.recRow}>
+            <button
+              key={entry.id}
+              type="button"
+              className={css.recRow}
+              title={display.title}
+              onClick={() => actions.previewRecommendedSource({ id: entry.id, location: entry.location })}
+            >
               <div className={css.recMain}>
                 <div className={css.recHead}>
                   <span className={css.recName}>{display.title}</span>
@@ -127,13 +134,19 @@ function RecommendedList({ useHub, actions, t }: ViewProps): ReactNode {
                       variant="secondary"
                       icon="plus"
                       disabled={busy}
-                      onClick={() => actions.addRecommendedSource({ id: entry.id, location: entry.location })}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        actions.addRecommendedSource({ id: entry.id, location: entry.location })
+                      }}
                     >
                       {busy ? <Spinner /> : null}{busy ? t('adding') : t('add')}
                     </Button>
                   )}
+                <span className={css.recChevron} aria-hidden>
+                  <Icon name="chevronRight" size={16} />
+                </span>
               </div>
-            </div>
+            </button>
           )
         })}
       </div>

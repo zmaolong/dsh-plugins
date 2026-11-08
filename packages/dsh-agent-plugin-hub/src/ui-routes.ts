@@ -42,6 +42,7 @@ const GET_ROUTES = new Set(['/store', '/describe', '/icon'])
 const POST_ROUTES = new Set([
   '/describe',
   '/market/add',
+  '/market/preview',
   '/market/refresh',
   '/market/remove',
   '/install',
@@ -339,6 +340,14 @@ async function dispatch(hub: AgentPluginHub, route: string, body: Record<string,
         pluginCount: (market.plugins ?? []).length,
         refreshError: nonEmptyString(market.refreshError) || null,
       }
+    }
+    case '/market/preview': {
+      const data = await hub.marketPreview({
+        location: String(body.location ?? ''),
+        ...(body.format !== undefined && body.format !== null ? { format: String(body.format) } : {}),
+        refresh: body.refresh === true,
+      })
+      return { ...data, pluginCount: data.plugins.length }
     }
     case '/market/refresh': {
       const result = await hub.marketRefresh(nonEmptyString(body.id))

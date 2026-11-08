@@ -175,7 +175,8 @@ window.__ModuleLoader__.load({
 			tabRecommended: "推荐",
 			storeTabsLabel: "视图",
 			recommendedHint: "精选的插件市场源，点击添加后即可浏览安装。",
-			addedBadge: "已添加"
+			addedBadge: "已添加",
+			previewAddHint: "添加后即可浏览并安装其中的全部插件。"
 		};
 		/** English dictionary (sentence case; same key set as `zh`). */
 		const en = {
@@ -336,7 +337,8 @@ window.__ModuleLoader__.load({
 			tabRecommended: "Recommended",
 			storeTabsLabel: "Views",
 			recommendedHint: "Curated marketplace sources — add one to browse and install its plugins.",
-			addedBadge: "Added"
+			addedBadge: "Added",
+			previewAddHint: "Add the source to browse and install all of its plugins."
 		};
 		/** Japanese dictionary (same key set as `zh`). */
 		const ja = {
@@ -497,7 +499,8 @@ window.__ModuleLoader__.load({
 			tabRecommended: "おすすめ",
 			storeTabsLabel: "ビュー",
 			recommendedHint: "厳選されたマーケットソースです。追加するとプラグインを閲覧・インストールできます。",
-			addedBadge: "追加済み"
+			addedBadge: "追加済み",
+			previewAddHint: "追加すると、すべてのプラグインを閲覧・インストールできます。"
 		};
 		/** Spanish dictionary (same key set as `zh`). */
 		const es = {
@@ -658,7 +661,8 @@ window.__ModuleLoader__.load({
 			tabRecommended: "Recomendados",
 			storeTabsLabel: "Vistas",
 			recommendedHint: "Fuentes de marketplace seleccionadas: agregue una para explorar e instalar sus plugins.",
-			addedBadge: "Agregado"
+			addedBadge: "Agregado",
+			previewAddHint: "Agregue la fuente para explorar e instalar todos sus plugins."
 		};
 		/** French dictionary (same key set as `zh`). */
 		const fr = {
@@ -819,7 +823,8 @@ window.__ModuleLoader__.load({
 			tabRecommended: "Recommandés",
 			storeTabsLabel: "Vues",
 			recommendedHint: "Sources de marketplace sélectionnées — ajoutez-en une pour parcourir et installer ses plugins.",
-			addedBadge: "Ajouté"
+			addedBadge: "Ajouté",
+			previewAddHint: "Ajoutez la source pour parcourir et installer tous ses plugins."
 		};
 		/** German dictionary (same key set as `zh`). */
 		const de = {
@@ -980,7 +985,8 @@ window.__ModuleLoader__.load({
 			tabRecommended: "Empfohlen",
 			storeTabsLabel: "Ansichten",
 			recommendedHint: "Ausgewählte Marketplace-Quellen – fügen Sie eine hinzu, um deren Plugins zu durchstöbern und zu installieren.",
-			addedBadge: "Hinzugefügt"
+			addedBadge: "Hinzugefügt",
+			previewAddHint: "Fügen Sie die Quelle hinzu, um alle Plugins zu durchstöbern und zu installieren."
 		};
 		/** Russian dictionary (same key set as `zh`). */
 		const ru = {
@@ -1141,7 +1147,8 @@ window.__ModuleLoader__.load({
 			tabRecommended: "Рекомендации",
 			storeTabsLabel: "Вид",
 			recommendedHint: "Отобранные источники маркетплейсов — добавьте один, чтобы просматривать и устанавливать его плагины.",
-			addedBadge: "Добавлено"
+			addedBadge: "Добавлено",
+			previewAddHint: "Добавьте источник, чтобы просматривать и устанавливать все его плагины."
 		};
 		/** Portuguese dictionary (same key set as `zh`). */
 		const pt = {
@@ -1302,7 +1309,8 @@ window.__ModuleLoader__.load({
 			tabRecommended: "Recomendados",
 			storeTabsLabel: "Exibições",
 			recommendedHint: "Fontes de marketplace selecionadas — adicione uma para explorar e instalar os plugins dela.",
-			addedBadge: "Adicionado"
+			addedBadge: "Adicionado",
+			previewAddHint: "Adicione a fonte para explorar e instalar todos os plugins dela."
 		};
 		// src/client/api.ts
 		/** Envelope error carrying the host's stable code. */
@@ -1335,6 +1343,89 @@ window.__ModuleLoader__.load({
 			}
 			if (!response.ok || payload === null || payload.ok !== true) throw new ApiError(payload !== null && typeof payload.error === "string" ? payload.error : `HTTP ${response.status}`, payload !== null && typeof payload.code === "string" ? payload.code : "");
 			return payload.data;
+		}
+		// src/location-key.ts
+		/**
+		* Canonical market location key shared by both halves: the server uses it for
+		* add-time duplicate detection (same source under different spellings — bare
+		* repo URL, `.git` suffix, raw manifest link — must not register twice), the
+		* client for "already added" matching. Deliberately independent from
+		* `marketIdFor`: ids stay stable for existing installs, this key only powers
+		* equivalence checks.
+		*
+		* @module dsh-agent-plugin-hub/location-key
+		*/
+		/** Canonical key of one market location ('' for empty input). */
+		function marketLocationKey(location) {
+			const raw = String(location ?? "").trim();
+			if (raw === "") return "";
+			const scp = /^git@([^:/]+):(.+)$/i.exec(raw);
+			if (scp) return gitKey(String(scp[1] ?? ""), String(scp[2] ?? ""));
+			const ssh = /^ssh:\/\/(?:[^@/]+@)?([^:/]+)(?::\d+)?\/(.+)$/i.exec(raw);
+			if (ssh) return gitKey(String(ssh[1] ?? ""), String(ssh[2] ?? ""));
+			if (/^https?:\/\//i.test(raw)) try {
+				const url = new URL(raw);
+				const host = url.hostname.toLowerCase();
+				const segments = url.pathname.split("/").filter((segment) => segment !== "");
+				if ((host === "github.com" || host === "raw.githubusercontent.com") && segments.length >= 2) return gitKey("github.com", `${String(segments[0])}/${String(segments[1])}`);
+				return `url:${host}/${segments.join("/")}`;
+			} catch {
+				return `url:${raw.toLowerCase()}`;
+			}
+			const normalized = raw.replace(/\\/g, "/").replace(/\/+$/, "");
+			return `local:${/^[a-z]:\//i.test(normalized) || raw.includes("\\") ? normalized.toLowerCase() : normalized}`;
+		}
+		/** Key of a git-ish host/path pair: lowercase host and path, `.git` suffix stripped. */
+		function gitKey(host, repoPath) {
+			const segments = repoPath.replace(/\/+$/, "").toLowerCase().split("/").filter((segment) => segment !== "");
+			const last = segments[segments.length - 1];
+			if (last !== void 0) segments[segments.length - 1] = last.replace(/\.git$/i, "");
+			return `git:${host.toLowerCase()}/${segments.join("/")}`;
+		}
+		// src/client/recommended.ts
+		/**
+		* Curated recommended market sources of the store's "Recommended" tab: a
+		* package-level constant list the user can add with one click. Entries are
+		* shaped like server-side display records so `displayOf` resolves their
+		* localized title/description without new plumbing.
+		*
+		* @module dsh-agent-plugin-hub/client/recommended
+		*/
+		/** The curated list (first entry: Anthropic's official Claude plugin marketplace). */
+		const RECOMMENDED_SOURCES = Object.freeze([{
+			id: "claude-plugins-official",
+			location: "https://github.com/anthropics/claude-plugins-official",
+			format: "claude",
+			display: {
+				title: "Anthropic Official Plugins",
+				titleI18n: {
+					zh: "Anthropic 官方插件市场",
+					en: "Anthropic Official Plugins"
+				},
+				description: "Anthropic’s officially maintained catalog of high-quality Claude plugins.",
+				descriptionI18n: {
+					zh: "Anthropic 官方维护的高质量 Claude 插件目录，持续更新。",
+					en: "Anthropic’s officially maintained catalog of high-quality Claude plugins."
+				}
+			}
+		}]);
+		/**
+		* The added market equivalent to a recommended location, if any. Prefers the
+		* server-provided `locationKey` on market summaries; falls back to computing
+		* the canonical key client-side.
+		*/
+		function addedMarketFor(markets, location) {
+			const wanted = marketLocationKey(location);
+			if (wanted === "") return null;
+			for (const market of Array.isArray(markets) ? markets : []) {
+				const record = market && typeof market === "object" ? market : {};
+				if ((typeof record.locationKey === "string" && record.locationKey !== "" ? record.locationKey : marketLocationKey(record.location)) === wanted) return record;
+			}
+			return null;
+		}
+		/** Whether a market equivalent to the given location exists among the added markets. */
+		function isSourceAdded(markets, location) {
+			return addedMarketFor(markets, location) !== null;
 		}
 		// src/client/presentation.ts
 		function isObject(value) {
@@ -1577,6 +1668,7 @@ window.__ModuleLoader__.load({
 				busy: {},
 				capBusy: {},
 				marketBusy: {},
+				recPreview: null,
 				loading: false,
 				refreshing: false,
 				updatingAll: false,
@@ -2006,6 +2098,62 @@ window.__ModuleLoader__.load({
 							setMarketBusy(busyKey, "");
 						}
 					});
+				},
+				previewRecommendedSource(entry, refresh = false) {
+					const id = String(entry.id ?? "");
+					const location = String(entry.location ?? "");
+					if (id === "" || location === "") return;
+					const state = store.getSnapshot();
+					const matched = addedMarketFor((state.snapshot ?? {}).markets ?? [], location);
+					const display = displayOf(RECOMMENDED_SOURCES.find((source) => source.id === id) ?? entry, getLocaleId());
+					const previous = state.recPreview;
+					const previousData = previous?.id === id && previous.status === "ready" ? previous.data ?? null : null;
+					let instantData = null;
+					if (matched !== null) instantData = { plugins: ((state.snapshot ?? {}).items ?? []).filter((item) => (item.market ?? {}).id === matched.id) };
+					if (state.dialogs.find((item) => item.kind === "preview-source") === void 0) pushDialog({
+						kind: "preview-source",
+						title: display.title
+					});
+					const data = instantData ?? previousData;
+					const ready = instantData !== null || !refresh && previousData !== null;
+					set({ recPreview: {
+						id,
+						title: display.title,
+						location,
+						status: ready ? "ready" : "loading",
+						error: "",
+						data
+					} });
+					if (ready) return;
+					(async () => {
+						try {
+							const fetched = await api("/market/preview", {
+								method: "POST",
+								body: {
+									location,
+									...refresh ? { refresh: true } : {}
+								},
+								timeoutMs: 18e4
+							});
+							if (store.getSnapshot().recPreview?.id === id) set((current) => ({ recPreview: current.recPreview ? {
+								...current.recPreview,
+								status: "ready",
+								error: "",
+								data: fetched
+							} : null }));
+						} catch (error) {
+							if (store.getSnapshot().recPreview?.id === id) set((current) => ({ recPreview: current.recPreview ? {
+								...current.recPreview,
+								status: "error",
+								error: errorMessageFor(error, t)
+							} : null }));
+						}
+					})();
+				},
+				closePreview() {
+					const dialog = store.getSnapshot().dialogs.find((item) => item.kind === "preview-source");
+					if (dialog !== void 0) closeDialog(dialog.id);
+					set({ recPreview: null });
 				},
 				async refreshMarket(id) {
 					if (store.getSnapshot().marketBusy[id]) return;
@@ -2841,39 +2989,8 @@ window.__ModuleLoader__.load({
 				]
 			});
 		}
-		// src/client/recommended.ts
-		/** The curated list (first entry: Anthropic's official Claude plugin marketplace). */
-		const RECOMMENDED_SOURCES = Object.freeze([{
-			id: "claude-plugins-official",
-			location: "https://github.com/anthropics/claude-plugins-official",
-			format: "claude",
-			display: {
-				title: "Anthropic Official Plugins",
-				titleI18n: {
-					zh: "Anthropic 官方插件市场",
-					en: "Anthropic Official Plugins"
-				},
-				description: "Anthropic’s officially maintained catalog of high-quality Claude plugins.",
-				descriptionI18n: {
-					zh: "Anthropic 官方维护的高质量 Claude 插件目录，持续更新。",
-					en: "Anthropic’s officially maintained catalog of high-quality Claude plugins."
-				}
-			}
-		}]);
-		/** Normalize a source location for the "already added" comparison. */
-		function normalizedLocation(location) {
-			return String(location ?? "").trim().replace(/\/+$/, "").replace(/\.git$/i, "").toLowerCase();
-		}
-		/** Whether a market with the same normalized location exists among the added markets. */
-		function isSourceAdded(markets, location) {
-			const wanted = normalizedLocation(location);
-			if (wanted === "") return false;
-			return (Array.isArray(markets) ? markets : []).some((market) => {
-				return normalizedLocation((market && typeof market === "object" ? market : {}).location) === wanted;
-			});
-		}
 		// \0dsh-css:F:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub\src\client\panel.module.css.mjs
-		const css$4 = ".QasDMG_root{height:100%;min-height:0;color:var(--dsw-alias-label-primary);overflow-wrap:break-word;font-size:14px;line-height:1.5;position:relative;overflow:hidden auto;container-type:inline-size}.QasDMG_root *{box-sizing:border-box}.QasDMG_page{flex-direction:column;gap:20px;width:100%;max-width:896px;min-height:100%;margin:0 auto;padding:20px 16px 32px;display:flex;position:relative}@container (width>=1024px){.QasDMG_page{padding-left:32px;padding-right:32px}}.QasDMG_topbar{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;display:flex}.QasDMG_title{overflow-wrap:anywhere;letter-spacing:-.01em;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:18px;font-weight:600}.QasDMG_titleRow{align-items:center;gap:8px;min-width:0;display:flex}.QasDMG_actions{flex-wrap:wrap;align-items:center;gap:8px;display:flex}.QasDMG_toolbar{flex-wrap:wrap;align-items:center;gap:12px 16px;display:flex}.QasDMG_segmented{flex-wrap:wrap;align-items:center;gap:6px;display:inline-flex}.QasDMG_segment{corner-shape:round;color:var(--dsw-alias-label-secondary);font:inherit;white-space:nowrap;cursor:pointer;background:0 0;border:0;border-radius:999px;align-items:center;gap:6px;padding:4px 12px;font-size:14px;font-weight:500;transition:background .12s,color .12s;display:inline-flex}.QasDMG_segment:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}.QasDMG_segment[aria-pressed=true],.QasDMG_segment[aria-selected=true]{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-label-primary)}@media (hover:hover){.QasDMG_segment:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.QasDMG_section{flex-direction:column;display:flex}.QasDMG_sectionHead{justify-content:space-between;align-items:baseline;gap:8px;padding:0 8px 8px;display:flex}.QasDMG_sectionTitle{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:16px;font-weight:500}.QasDMG_sectionCount{white-space:nowrap;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.QasDMG_divider{background:var(--dsw-alias-border-l2);height:.5px}.QasDMG_grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 24px;margin-top:8px;display:grid}.QasDMG_recHint{color:var(--dsw-alias-label-secondary);margin:0 8px;font-size:13px}.QasDMG_recList{flex-direction:column;margin-top:8px;display:flex}.QasDMG_recRow{align-items:center;gap:16px;padding:12px 8px;display:flex}.QasDMG_recRow+.QasDMG_recRow{border-top:.5px solid var(--dsw-alias-border-l3)}.QasDMG_recMain{flex:1;min-width:0}.QasDMG_recHead{align-items:center;gap:8px;min-width:0;display:flex}.QasDMG_recName{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px;font-weight:500}.QasDMG_recDesc{color:var(--dsw-alias-label-secondary);margin-top:2px;font-size:13px}.QasDMG_recLocation{color:var(--dsw-alias-label-tertiary);word-break:break-all;margin-top:4px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}.QasDMG_recAction{flex:none;align-items:center;display:flex}.QasDMG_gridSingle{grid-template-columns:minmax(0,1fr);margin-top:8px;display:grid}@container (width<=640px){.QasDMG_grid,.QasDMG_gridSingle{grid-template-columns:minmax(0,1fr)}}.QasDMG_collapseRow{border-radius:var(--dsw-radius-md);width:100%;color:var(--dsw-alias-label-secondary);font:inherit;text-align:left;white-space:nowrap;cursor:pointer;background:0 0;border:0;align-items:center;gap:8px;margin-top:8px;padding:8px;font-size:14px;display:flex}.QasDMG_collapseRow:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.QasDMG_collapseRow:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.QasDMG_collapseAvatars{flex:none;align-items:center;gap:6px;display:flex}.QasDMG_collapseLabel{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.QasDMG_errorBanner{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);white-space:pre-wrap;word-break:break-word;padding:10px 12px;font-size:13px}.QasDMG_warningBanner{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-warn-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-state-warn-tertiary);color:var(--dsw-alias-state-warn-primary);word-break:break-word;align-items:flex-start;gap:8px;padding:10px 12px;font-size:13px;display:flex}.QasDMG_warningBanner>span{overflow-wrap:anywhere;min-width:0}.QasDMG_inlineButton{color:inherit;font:inherit;cursor:pointer;background:0 0;border:0;align-items:center;gap:4px;padding:0;font-size:13px;display:inline-flex}@media (hover:hover){.QasDMG_inlineButton:hover{text-decoration:underline}}.QasDMG_warningBanner .QasDMG_inlineButton{margin-left:auto}.QasDMG_footer{color:var(--dsw-alias-label-secondary);flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding-top:8px;font-size:12px;display:flex}.QasDMG_runtimeRow{color:var(--dsw-alias-label-secondary);flex-wrap:wrap;align-items:center;gap:8px;padding-top:8px;font-size:12px;display:flex}.QasDMG_back{border-radius:var(--dsw-radius-sm);width:fit-content;height:28px;color:var(--dsw-alias-label-secondary);font:inherit;white-space:nowrap;cursor:pointer;background:0 0;border:0;align-items:center;gap:6px;margin-left:-8px;padding:0 8px;font-size:14px;display:inline-flex}.QasDMG_back:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.QasDMG_back:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.QasDMG_mono{color:var(--dsw-alias-label-secondary);word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}.QasDMG_listBlock{flex-direction:column;gap:6px;display:flex}.QasDMG_listTitle{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500}.QasDMG_listRow{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);overflow-wrap:anywhere;flex-wrap:wrap;align-items:center;gap:8px;min-width:0;padding:8px 10px;font-size:13px;display:flex}.QasDMG_listRowMain{text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;overflow:hidden}";
+		const css$4 = ".QasDMG_root{height:100%;min-height:0;color:var(--dsw-alias-label-primary);overflow-wrap:break-word;font-size:14px;line-height:1.5;position:relative;overflow:hidden auto;container-type:inline-size}.QasDMG_root *{box-sizing:border-box}.QasDMG_page{flex-direction:column;gap:20px;width:100%;max-width:896px;min-height:100%;margin:0 auto;padding:20px 16px 32px;display:flex;position:relative}@container (width>=1024px){.QasDMG_page{padding-left:32px;padding-right:32px}}.QasDMG_topbar{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;display:flex}.QasDMG_title{overflow-wrap:anywhere;letter-spacing:-.01em;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:18px;font-weight:600}.QasDMG_titleRow{align-items:center;gap:8px;min-width:0;display:flex}.QasDMG_actions{flex-wrap:wrap;align-items:center;gap:8px;display:flex}.QasDMG_toolbar{flex-wrap:wrap;align-items:center;gap:12px 16px;display:flex}.QasDMG_segmented{flex-wrap:wrap;align-items:center;gap:6px;display:inline-flex}.QasDMG_segment{corner-shape:round;color:var(--dsw-alias-label-secondary);font:inherit;white-space:nowrap;cursor:pointer;background:0 0;border:0;border-radius:999px;align-items:center;gap:6px;padding:4px 12px;font-size:14px;font-weight:500;transition:background .12s,color .12s;display:inline-flex}.QasDMG_segment:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}.QasDMG_segment[aria-pressed=true],.QasDMG_segment[aria-selected=true]{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-label-primary)}@media (hover:hover){.QasDMG_segment:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.QasDMG_section{flex-direction:column;display:flex}.QasDMG_sectionHead{justify-content:space-between;align-items:baseline;gap:8px;padding:0 8px 8px;display:flex}.QasDMG_sectionTitle{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:16px;font-weight:500}.QasDMG_sectionCount{white-space:nowrap;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.QasDMG_divider{background:var(--dsw-alias-border-l2);height:.5px}.QasDMG_grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 24px;margin-top:8px;display:grid}.QasDMG_recHint{color:var(--dsw-alias-label-secondary);margin:0 8px;font-size:13px}.QasDMG_recList{flex-direction:column;margin-top:8px;display:flex}.QasDMG_recRow{border-radius:var(--dsw-radius-sm);width:100%;font:inherit;text-align:left;cursor:pointer;background:0 0;border:0;align-items:center;gap:16px;padding:12px 8px;display:flex}.QasDMG_recRow:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.QasDMG_recRow:hover{background:var(--dsw-alias-interactive-bg-hover)}}.QasDMG_recRow+.QasDMG_recRow{border-top:.5px solid var(--dsw-alias-border-l3)}.QasDMG_recMain{flex:1;min-width:0}.QasDMG_recHead{align-items:center;gap:8px;min-width:0;display:flex}.QasDMG_recName{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px;font-weight:500}.QasDMG_recDesc{color:var(--dsw-alias-label-secondary);margin-top:2px;font-size:13px}.QasDMG_recLocation{color:var(--dsw-alias-label-tertiary);word-break:break-all;margin-top:4px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}.QasDMG_recAction{flex:none;align-items:center;gap:8px;display:flex}.QasDMG_recChevron{color:var(--dsw-alias-label-tertiary);display:inline-flex}.QasDMG_gridSingle{grid-template-columns:minmax(0,1fr);margin-top:8px;display:grid}@container (width<=640px){.QasDMG_grid,.QasDMG_gridSingle{grid-template-columns:minmax(0,1fr)}}.QasDMG_collapseRow{border-radius:var(--dsw-radius-md);width:100%;color:var(--dsw-alias-label-secondary);font:inherit;text-align:left;white-space:nowrap;cursor:pointer;background:0 0;border:0;align-items:center;gap:8px;margin-top:8px;padding:8px;font-size:14px;display:flex}.QasDMG_collapseRow:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.QasDMG_collapseRow:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.QasDMG_collapseAvatars{flex:none;align-items:center;gap:6px;display:flex}.QasDMG_collapseLabel{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.QasDMG_errorBanner{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);white-space:pre-wrap;word-break:break-word;padding:10px 12px;font-size:13px}.QasDMG_warningBanner{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-warn-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-state-warn-tertiary);color:var(--dsw-alias-state-warn-primary);word-break:break-word;align-items:flex-start;gap:8px;padding:10px 12px;font-size:13px;display:flex}.QasDMG_warningBanner>span{overflow-wrap:anywhere;min-width:0}.QasDMG_inlineButton{color:inherit;font:inherit;cursor:pointer;background:0 0;border:0;align-items:center;gap:4px;padding:0;font-size:13px;display:inline-flex}@media (hover:hover){.QasDMG_inlineButton:hover{text-decoration:underline}}.QasDMG_warningBanner .QasDMG_inlineButton{margin-left:auto}.QasDMG_footer{color:var(--dsw-alias-label-secondary);flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding-top:8px;font-size:12px;display:flex}.QasDMG_runtimeRow{color:var(--dsw-alias-label-secondary);flex-wrap:wrap;align-items:center;gap:8px;padding-top:8px;font-size:12px;display:flex}.QasDMG_back{border-radius:var(--dsw-radius-sm);width:fit-content;height:28px;color:var(--dsw-alias-label-secondary);font:inherit;white-space:nowrap;cursor:pointer;background:0 0;border:0;align-items:center;gap:6px;margin-left:-8px;padding:0 8px;font-size:14px;display:inline-flex}.QasDMG_back:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.QasDMG_back:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.QasDMG_mono{color:var(--dsw-alias-label-secondary);word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}.QasDMG_listBlock{flex-direction:column;gap:6px;display:flex}.QasDMG_listTitle{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500}.QasDMG_listRow{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);overflow-wrap:anywhere;flex-wrap:wrap;align-items:center;gap:8px;min-width:0;padding:8px 10px;font-size:13px;display:flex}.QasDMG_listRowMain{text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;overflow:hidden}";
 		const tagId$4 = "dsh-agent-plugin-hub/panel.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$4) + "]") === null) {
 			const tag = document.createElement("style");
@@ -2901,6 +3018,7 @@ window.__ModuleLoader__.load({
 			"mono": "QasDMG_mono",
 			"page": "QasDMG_page",
 			"recAction": "QasDMG_recAction",
+			"recChevron": "QasDMG_recChevron",
 			"recDesc": "QasDMG_recDesc",
 			"recHead": "QasDMG_recHead",
 			"recHint": "QasDMG_recHint",
@@ -2988,7 +3106,7 @@ window.__ModuleLoader__.load({
 				}, entry.value))
 			});
 		}
-		/** Curated recommended sources with one-click add. */
+		/** Curated recommended sources: one-click add and click-to-preview plugin lists. */
 		function RecommendedList({ useHub, actions, t }) {
 			const state = useHub(identity);
 			const markets = (state.snapshot ?? {}).markets ?? [];
@@ -3006,8 +3124,14 @@ window.__ModuleLoader__.load({
 							const added = isSourceAdded(markets, entry.location);
 							const busy = state.marketBusy[`rec:${entry.id}`] === "add";
 							const display = displayOf(entry, state.localeId);
-							return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
+								type: "button",
 								className: panel_module_css_default.recRow,
+								title: display.title,
+								onClick: () => actions.previewRecommendedSource({
+									id: entry.id,
+									location: entry.location
+								}),
 								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 									className: panel_module_css_default.recMain,
 									children: [
@@ -3030,21 +3154,31 @@ window.__ModuleLoader__.load({
 											children: entry.location
 										})
 									]
-								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+								}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 									className: panel_module_css_default.recAction,
-									children: added ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
+									children: [added ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
 										tone: "success",
 										children: t("addedBadge")
 									}) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Button, {
 										variant: "secondary",
 										icon: "plus",
 										disabled: busy,
-										onClick: () => actions.addRecommendedSource({
-											id: entry.id,
-											location: entry.location
-										}),
+										onClick: (event) => {
+											event.stopPropagation();
+											actions.addRecommendedSource({
+												id: entry.id,
+												location: entry.location
+											});
+										},
 										children: [busy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Spinner, {}) : null, busy ? t("adding") : t("add")]
-									})
+									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										className: panel_module_css_default.recChevron,
+										"aria-hidden": true,
+										children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Icon, {
+											name: "chevronRight",
+											size: 16
+										})
+									})]
 								})]
 							}, entry.id);
 						})
@@ -4067,7 +4201,7 @@ window.__ModuleLoader__.load({
 			});
 		}
 		// \0dsh-css:F:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub\src\client\dialogs.module.css.mjs
-		const css$1 = ".PzAkBW_mask{background:var(--dsw-alias-bg-mask-3);backdrop-filter:var(--dsw-mask-blur);pointer-events:auto;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.PzAkBW_dialog{box-sizing:border-box;border-radius:var(--dsw-radius-panel);background:var(--dsw-alias-bg-layer-2);width:min(480px,100vw - 32px);max-height:calc(100vh - 80px);box-shadow:var(--dsw-elevation-prominent);pointer-events:auto;border:0;flex-direction:column;gap:16px;padding:16px 0;display:flex}.PzAkBW_dialog:focus{outline:none}.PzAkBW_dialogNarrow{width:min(420px,100vw - 32px)}.PzAkBW_head{align-items:center;gap:8px;padding:0 12px 0 16px;display:flex}.PzAkBW_title{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-primary);flex:1;margin:0;font-size:16px;font-weight:500;overflow:hidden}.PzAkBW_body{overflow-wrap:anywhere;flex-direction:column;gap:12px;min-height:0;padding:0 16px;display:flex;overflow-y:auto}.PzAkBW_foot{flex-wrap:wrap;justify-content:flex-end;gap:8px;padding:0 16px;display:flex}.PzAkBW_footInline{justify-content:flex-end;width:100%;display:flex}.PzAkBW_field{flex-direction:column;gap:6px;display:flex}.PzAkBW_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px}.PzAkBW_fieldHint{color:var(--dsw-alias-label-tertiary);font-size:12px}.PzAkBW_input{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);width:100%;height:36px;color:var(--dsw-alias-label-primary);font:inherit;padding:0 12px;font-size:14px}.PzAkBW_input::placeholder{color:var(--dsw-alias-label-tertiary)}@media (hover:hover){.PzAkBW_input:hover{border-color:var(--dsw-alias-border-l4)}}.PzAkBW_input:focus{border-color:var(--dsw-alias-border-l4);outline:none}.PzAkBW_risk{border-radius:var(--dsw-radius-md);background:var(--dsw-alias-state-warn-tertiary);color:var(--dsw-alias-state-warn-primary);word-break:break-word;align-items:flex-start;gap:8px;padding:12px;font-size:13px;display:flex}.PzAkBW_risk>span{overflow-wrap:anywhere;min-width:0}.PzAkBW_check{color:var(--dsw-alias-label-secondary);cursor:pointer;word-break:break-word;align-items:flex-start;gap:8px;font-size:13px;display:flex}.PzAkBW_check>span{overflow-wrap:anywhere;min-width:0}.PzAkBW_check input{accent-color:var(--dsw-alias-brand-primary);flex:none;margin:3px 0 0}.PzAkBW_confirmMessage{color:var(--dsw-alias-label-secondary);white-space:pre-wrap;font-size:14px}.PzAkBW_error{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);white-space:pre-wrap;word-break:break-word;padding:10px 12px;font-size:13px}.PzAkBW_sourceList{flex-direction:column;gap:2px;max-height:min(420px,60vh);display:flex;overflow-y:auto}.PzAkBW_emptyRow{border:.5px dashed var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);min-height:96px;color:var(--dsw-alias-label-secondary);text-align:center;justify-content:center;align-items:center;padding:24px 16px;font-size:14px;display:flex}.PzAkBW_sourceRow{border-radius:var(--dsw-radius-sm);align-items:center;gap:12px;padding:8px;display:flex}@media (hover:hover){.PzAkBW_sourceRow:hover{background:var(--dsw-alias-interactive-bg-hover)}}.PzAkBW_sourceMain{flex-direction:column;flex:1;min-width:0;display:flex}.PzAkBW_sourceName{color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500;overflow:hidden}.PzAkBW_sourceSub{color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;margin-top:2px;font-size:12px;overflow:hidden}.PzAkBW_sourceError{color:var(--dsw-alias-state-error-primary);white-space:pre-wrap;word-break:break-word;align-items:flex-start;gap:4px;margin-top:4px;font-size:12px;display:flex}";
+		const css$1 = ".PzAkBW_mask{background:var(--dsw-alias-bg-mask-3);backdrop-filter:var(--dsw-mask-blur);pointer-events:auto;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.PzAkBW_dialog{box-sizing:border-box;border-radius:var(--dsw-radius-panel);background:var(--dsw-alias-bg-layer-2);width:min(480px,100vw - 32px);max-height:calc(100vh - 80px);box-shadow:var(--dsw-elevation-prominent);pointer-events:auto;border:0;flex-direction:column;gap:16px;padding:16px 0;display:flex}.PzAkBW_dialog:focus{outline:none}.PzAkBW_dialogNarrow{width:min(420px,100vw - 32px)}.PzAkBW_head{align-items:center;gap:8px;padding:0 12px 0 16px;display:flex}.PzAkBW_title{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-primary);flex:1;margin:0;font-size:16px;font-weight:500;overflow:hidden}.PzAkBW_body{overflow-wrap:anywhere;flex-direction:column;gap:12px;min-height:0;padding:0 16px;display:flex;overflow-y:auto}.PzAkBW_foot{flex-wrap:wrap;justify-content:flex-end;gap:8px;padding:0 16px;display:flex}.PzAkBW_footInline{justify-content:flex-end;width:100%;display:flex}.PzAkBW_field{flex-direction:column;gap:6px;display:flex}.PzAkBW_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px}.PzAkBW_fieldHint{color:var(--dsw-alias-label-tertiary);font-size:12px}.PzAkBW_input{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);width:100%;height:36px;color:var(--dsw-alias-label-primary);font:inherit;padding:0 12px;font-size:14px}.PzAkBW_input::placeholder{color:var(--dsw-alias-label-tertiary)}@media (hover:hover){.PzAkBW_input:hover{border-color:var(--dsw-alias-border-l4)}}.PzAkBW_input:focus{border-color:var(--dsw-alias-border-l4);outline:none}.PzAkBW_risk{border-radius:var(--dsw-radius-md);background:var(--dsw-alias-state-warn-tertiary);color:var(--dsw-alias-state-warn-primary);word-break:break-word;align-items:flex-start;gap:8px;padding:12px;font-size:13px;display:flex}.PzAkBW_risk>span{overflow-wrap:anywhere;min-width:0}.PzAkBW_check{color:var(--dsw-alias-label-secondary);cursor:pointer;word-break:break-word;align-items:flex-start;gap:8px;font-size:13px;display:flex}.PzAkBW_check>span{overflow-wrap:anywhere;min-width:0}.PzAkBW_check input{accent-color:var(--dsw-alias-brand-primary);flex:none;margin:3px 0 0}.PzAkBW_confirmMessage{color:var(--dsw-alias-label-secondary);white-space:pre-wrap;font-size:14px}.PzAkBW_error{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);white-space:pre-wrap;word-break:break-word;padding:10px 12px;font-size:13px}.PzAkBW_sourceList{flex-direction:column;gap:2px;max-height:min(420px,60vh);display:flex;overflow-y:auto}.PzAkBW_emptyRow{border:.5px dashed var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);min-height:96px;color:var(--dsw-alias-label-secondary);text-align:center;justify-content:center;align-items:center;padding:24px 16px;font-size:14px;display:flex}.PzAkBW_sourceRow{border-radius:var(--dsw-radius-sm);align-items:center;gap:12px;padding:8px;display:flex}@media (hover:hover){.PzAkBW_sourceRow:hover{background:var(--dsw-alias-interactive-bg-hover)}}.PzAkBW_sourceMain{flex-direction:column;flex:1;min-width:0;display:flex}.PzAkBW_sourceName{color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500;overflow:hidden}.PzAkBW_sourceSub{color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;margin-top:2px;font-size:12px;overflow:hidden}.PzAkBW_sourceError{color:var(--dsw-alias-state-error-primary);white-space:pre-wrap;word-break:break-word;align-items:flex-start;gap:4px;margin-top:4px;font-size:12px;display:flex}.PzAkBW_previewHead{color:var(--dsw-alias-label-secondary);justify-content:space-between;align-items:center;gap:8px;padding:0 2px;font-size:12px;display:flex}.PzAkBW_previewList{flex-direction:column;margin-top:4px;display:flex}.PzAkBW_previewRow{flex-direction:column;gap:1px;padding:7px 2px;display:flex}.PzAkBW_previewRow+.PzAkBW_previewRow{border-top:.5px solid var(--dsw-alias-border-l3)}.PzAkBW_previewName{min-width:0;color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;font-size:13px;font-weight:500;overflow:hidden}.PzAkBW_previewDesc{color:var(--dsw-alias-label-secondary);-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:12px;display:-webkit-box;overflow:hidden}.PzAkBW_previewHint{color:var(--dsw-alias-label-tertiary);margin-top:8px;font-size:12px}";
 		const tagId$1 = "dsh-agent-plugin-hub/dialogs.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$1) + "]") === null) {
 			const tag = document.createElement("style");
@@ -4092,6 +4226,12 @@ window.__ModuleLoader__.load({
 			"head": "PzAkBW_head",
 			"input": "PzAkBW_input",
 			"mask": "PzAkBW_mask",
+			"previewDesc": "PzAkBW_previewDesc",
+			"previewHead": "PzAkBW_previewHead",
+			"previewHint": "PzAkBW_previewHint",
+			"previewList": "PzAkBW_previewList",
+			"previewName": "PzAkBW_previewName",
+			"previewRow": "PzAkBW_previewRow",
 			"risk": "PzAkBW_risk",
 			"sourceError": "PzAkBW_sourceError",
 			"sourceList": "PzAkBW_sourceList",
@@ -4358,6 +4498,107 @@ window.__ModuleLoader__.load({
 				children: list
 			});
 		}
+		/** Recommended-source preview dialog: read-only plugin list with refresh and one-click add. */
+		function PreviewSourceDialog({ useHub, store, t }) {
+			const state = useHub(identity);
+			const preview = state.recPreview;
+			if (preview === null) return null;
+			const matched = addedMarketFor((state.snapshot ?? {}).markets ?? [], preview.location);
+			const adding = state.marketBusy[`rec:${preview.id}`] === "add";
+			const refreshing = preview.status === "loading" && preview.data !== null;
+			const close = () => {
+				store.actions.closePreview();
+			};
+			let body;
+			if (preview.status === "loading" && preview.data === null) body = /* @__PURE__ */ (0, react_jsx_runtime.jsx)(LoadingBlock, { text: t("catalogLoading") });
+			else {
+				const data = preview.data ?? {};
+				const plugins = data.plugins ?? [];
+				const detected = typeof data.type === "string" && data.type !== "" ? data.type === "git" ? t("detectedGit") : data.type === "url" ? t("detectedUrl") : t("detectedLocal") : "";
+				body = /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
+					preview.status === "error" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: dialogs_module_css_default.error,
+						role: "alert",
+						children: preview.error
+					}) : null,
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						className: dialogs_module_css_default.previewHead,
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", { children: [t("pluginCount", { count: plugins.length }), detected !== "" ? ` · ${detected}` : ""] }), matched !== null ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
+							tone: "success",
+							children: t("addedBadge")
+						}) : null]
+					}),
+					plugins.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: dialogs_module_css_default.emptyRow,
+						children: t("marketEmpty")
+					}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: dialogs_module_css_default.previewList,
+						children: plugins.map((plugin, index) => {
+							const display = displayOf(plugin, state.localeId);
+							const nameText = String(display.title !== "" ? display.title : plugin.name ?? `#${index + 1}`);
+							const descText = display.description;
+							return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: dialogs_module_css_default.previewRow,
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+									className: dialogs_module_css_default.previewName,
+									title: nameText,
+									children: nameText
+								}), descText !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+									className: dialogs_module_css_default.previewDesc,
+									title: descText,
+									children: descText
+								}) : null]
+							}, String(plugin.name ?? index));
+						})
+					}),
+					matched === null && preview.status === "ready" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: dialogs_module_css_default.previewHint,
+						children: t("previewAddHint")
+					}) : null
+				] });
+			}
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(DialogShell, {
+				t,
+				title: preview.title,
+				onClose: close,
+				footer: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+					className: dialogs_module_css_default.footInline,
+					children: [
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)(IconButton, {
+							icon: "refresh",
+							title: refreshing ? t("refreshing") : t("refresh"),
+							busy: refreshing,
+							disabled: refreshing,
+							onClick: () => store.actions.previewRecommendedSource({
+								id: preview.id,
+								location: preview.location
+							}, true)
+						}),
+						matched !== null ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
+							tone: "success",
+							children: t("addedBadge")
+						}) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Button, {
+							variant: "primary",
+							icon: "plus",
+							disabled: adding,
+							onClick: () => {
+								store.actions.addRecommendedSource({
+									id: preview.id,
+									location: preview.location
+								});
+							},
+							children: [adding ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Spinner, {}) : null, adding ? t("adding") : t("add")]
+						}),
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+							variant: "secondary",
+							onClick: close,
+							children: t("close")
+						})
+					]
+				}),
+				children: body
+			});
+		}
 		/** Generic confirm dialog with an async confirm action. */
 		function ConfirmDialog({ store, t, dialog }) {
 			const [busy, setBusy] = (0, react.useState)(false);
@@ -4437,6 +4678,11 @@ window.__ModuleLoader__.load({
 					dialog: top
 				}, top.id);
 				else if (top.kind === "sources") dialog = /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SourcesDialog, {
+					useHub,
+					store,
+					t
+				}, top.id);
+				else if (top.kind === "preview-source") dialog = /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PreviewSourceDialog, {
 					useHub,
 					store,
 					t

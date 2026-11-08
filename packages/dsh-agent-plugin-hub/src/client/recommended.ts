@@ -7,6 +7,7 @@
  * @module dsh-agent-plugin-hub/client/recommended
  */
 
+import { marketLocationKey } from '../location-key.ts'
 import type { JsonRecord } from './presentation.ts'
 
 /** One curated market source of the Recommended tab. */
@@ -41,21 +42,25 @@ export const RECOMMENDED_SOURCES: readonly RecommendedSource[] = Object.freeze([
   },
 ])
 
-/** Normalize a source location for the "already added" comparison. */
-function normalizedLocation(location: unknown): string {
-  return String(location ?? '')
-    .trim()
-    .replace(/\/+$/, '')
-    .replace(/\.git$/i, '')
-    .toLowerCase()
+/**
+ * The added market equivalent to a recommended location, if any. Prefers the
+ * server-provided `locationKey` on market summaries; falls back to computing
+ * the canonical key client-side.
+ */
+export function addedMarketFor(markets: readonly unknown[], location: string): JsonRecord | null {
+  const wanted = marketLocationKey(location)
+  if (wanted === '') return null
+  for (const market of Array.isArray(markets) ? markets : []) {
+    const record = (market && typeof market === 'object' ? market : {}) as JsonRecord
+    const key = typeof record.locationKey === 'string' && record.locationKey !== ''
+      ? record.locationKey
+      : marketLocationKey(record.location)
+    if (key === wanted) return record
+  }
+  return null
 }
 
-/** Whether a market with the same normalized location exists among the added markets. */
+/** Whether a market equivalent to the given location exists among the added markets. */
 export function isSourceAdded(markets: readonly unknown[], location: string): boolean {
-  const wanted = normalizedLocation(location)
-  if (wanted === '') return false
-  return (Array.isArray(markets) ? markets : []).some((market) => {
-    const record = (market && typeof market === 'object' ? market : {}) as JsonRecord
-    return normalizedLocation(record.location) === wanted
-  })
+  return addedMarketFor(markets, location) !== null
 }

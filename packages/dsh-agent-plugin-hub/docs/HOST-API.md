@@ -297,6 +297,7 @@ Operation = {
 | POST | `/describe` | 详情；`{key?\|market?,name?,fetch?}`，`fetch:true` 才联网 |
 | GET | `/icon?key=&v=` | 图标二进制（raster） |
 | POST | `/market/add` | 添加市场（可自动识别来源类型） |
+| POST | `/market/preview` | 预览市场清单（只读，不登记） |
 | POST | `/market/refresh` | 刷新一个或全部市场 |
 | POST | `/market/remove` | 移除市场（允许保留已安装插件） |
 | POST | `/install` | 安装插件 |
@@ -356,12 +357,49 @@ Operation = {
 }
 ```
 
-- 重复添加 → 409 `conflict`（文案「市场已存在：<id>」）；
+- 完全相同的 `type+location` → 409 `conflict`（文案「市场已存在：<id>」）；
+- **等价来源查重**：同一来源的不同书写形式（裸仓库 URL vs `.git` 后缀 vs
+  `raw.githubusercontent.com` 清单直链 vs 本地路径形式）→ 409 `market_exists`
+  （文案「该市场已存在：<title>（<location>）。如需重新添加，请先移除原市场。」，
+  判定用 `marketLocationKey` 规范化，见 `src/location-key.ts`；不改 id 派生）；
 - 地址无法识别 → 400/404 + 中文原因；
 - 首次刷新失败：url 市场保留记录 + `refreshError`；local/git 首次失败回滚记录并返回错误
   （与既有 CLI 行为一致，便于重试）。
 
-### 3.5 POST /market/refresh
+### 3.5 POST /market/preview
+
+只读预览：解析市场清单并返回插件条目，**不写 marketplaces.json / state.json**
+（git 源仅在 `tmp/preview-<sha1>` 留一个克隆缓存，宿主启动时清理；`refresh:true`
+丢弃缓存重取）。GitHub 仓库地址优先用
+`raw.githubusercontent.com/<o>/<r>/<ref>/<清单路径>` 直取（按
+FORMAT_PRIORITY × marketplaceFiles 顺序探测），无 clone；非 GitHub 或 raw 未命中
+→ 浅克隆兜底。
+
+请求：
+
+```json
+{ "location": "https://github.com/anthropics/claude-plugins-official", "refresh": false }
+```
+
+响应：
+
+```json
+{
+  "type": "git",
+  "via": "raw",
+  "location": "https://github.com/anthropics/claude-plugins-official",
+  "format": "claude",
+  "name": "claude-plugins-official",
+  "title": "…",
+  "description": "…",
+  "pluginCount": 317,
+  "plugins": [ { "name": "…", "version": "…", "display": { "title": "…", "description": "…" }, "installable": true } ]
+}
+```
+
+- 不进操作互斥锁（只读 tmp，长预览不阻塞安装）。
+
+### 3.6 POST /market/refresh
 
 请求 `{ "id": "可选；省略=全部" }`。响应：
 
@@ -376,7 +414,7 @@ Operation = {
 
 - **部分失败仍 200**（含单 id 的失败：只看 `failures`）；未知 id → 404。
 
-### 3.6 POST /market/remove
+### 3.7 POST /market/remove
 
 请求 `{ "id": "…" }`。响应：
 
@@ -388,7 +426,7 @@ Operation = {
   插件转为孤立项；`orphaned` 返回将被孤立的插件名，供客户端提示/确认；
 - 不再返回「请先卸载」错误。
 
-### 3.7 POST /install
+### 3.8 POST /install
 
 请求（`key` 优先）：
 
@@ -417,7 +455,7 @@ Operation = {
 - 同版本已装且非 `force` → 409 `conflict`；清单 name 与条目不一致 → 409；
 - 来源不可安装 → 409 `source_unavailable` / 422 `version_invalid`（文案沿用 CLI）。
 
-### 3.8 POST /uninstall · /enable · /rollback · /capability
+### 3.9 POST /uninstall · /enable · /rollback · /capability
 
 ```json
 // /uninstall  { "key": "…" | "name": "…" }
@@ -435,7 +473,7 @@ Operation = {
     "skills": ["greet"], "commands": [], "hooks": [], "mcpServers": [] } }
 ```
 
-### 3.9 POST /update
+### 3.10 POST /update
 
 请求 `{ "key": "…", "force": false, "refresh": true }`。响应：
 
@@ -454,7 +492,7 @@ Operation = {
 - 版本不高于当前且非 force → 200 `changed:false` + 中文文案；
 - `unknown` 不可比较时不得报「已是最新」，返回可读说明。
 
-### 3.10 POST /update-all
+### 3.11 POST /update-all
 
 请求 `{ "force": false, "keys": [] }`（`keys` 省略 = 全部已安装项）。服务端行为：
 
