@@ -4,7 +4,7 @@
 > npm 上只发布 `preview` dist-tag（`latest` 暂不指向本版本）。
 > 需要安装时请锁定精确版本：
 > `dsh plugin --profile web add dsh-agent-plugin-hub@0.0.1-preview.1`。
-> 版本说明：仓库内 `0.3.x` 是开发期版本号；npm 公开线从 `0.0.1-preview.N` 起步，首个正式版定为 `1.0.0`。
+> 版本说明：仓库内 `0.3.x` 是开发期版本号；npm 公开线从 `0.0.1-preview.N` 起步，首个正式版定为 `0.0.1`（预览线的稳定版）。
 
 DSH 的**智能体插件**（Agent Plugins）运行时与市场，带一个 **ZCode「插件市场」同构的商店面板**。
 

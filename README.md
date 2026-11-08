@@ -222,7 +222,7 @@ node scripts\build-index.mjs
 > **npm 首发策略（试验期）**：`0.0.1-preview.N` 为试验线（当前 `0.0.1-preview.1`），
 > `publishConfig.tag` 固定为 `preview`，`latest` 暂不指向任何版本。
 > 市场索引与包版本保持同步（git 源），因此 `index.json` 里的版本号始终等于 `packages/*/package.json`。
-> 首个正式版定为 `1.0.0`，届时 `npm publish --tag latest`，再切 `DSH_PLUGINS_SOURCE=npm` 重新生成索引。
+> 首个正式版定为 `0.0.1`（即 `0.0.1-preview.N` 的稳定版），届时 `npm publish --tag latest`，再切 `DSH_PLUGINS_SOURCE=npm` 重新生成索引。
 
 ---
 
