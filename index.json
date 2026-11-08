@@ -65,7 +65,7 @@
           "source": {
             "type": "git",
             "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "acb738028bb5d896208181197998e12ceb4c8c5f",
+            "commit": "0ac3883d577174a5f3ce04baa32683cf93a3bddf",
             "path": "packages/dsh-agent-plugin-hub"
           }
         },
