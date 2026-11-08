@@ -62,10 +62,10 @@ node scripts\serve-index.mjs            # 本地起索引服务（http://127.0.0
 
 ## 仓库现状（以文件为准）
 
-- 插件包：`packages/dsh-agent-plugin-hub`，版本见其 `package.json`（当前 `0.1.0-preview.1`，官方化工具链重构线：TypeScript + JSX + CSS Modules + tsdown + vitest）；
+- 插件包：`packages/dsh-agent-plugin-hub`，版本见其 `package.json`（当前 `0.0.1-preview.6`，官方化工具链重构形态：TypeScript + JSX + CSS Modules + tsdown + vitest）；
 - 发布分支：`release-0.0.1`（市场索引从该分支的 `index.json` 读取）；
 - 索引源：Git（`DSH_PLUGINS_SOURCE` 可切 npm）；
-- 发布线：`0.1.0-preview.N`（`preview`）→ 正式 `0.1.0`（`latest`）。
+- 发布线：`0.0.1-preview.N`（`preview`）→ 正式 `0.0.1`（`latest`）。
 
 ## 沟通与提交约定
 

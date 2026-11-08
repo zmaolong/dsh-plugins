@@ -1,12 +1,12 @@
 # dsh-agent-plugin-hub
 
-> **试验性预览版（`0.1.0-preview.1`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
+> **试验性预览版（`0.0.1-preview.6`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
 > npm 上只发布 `preview` dist-tag（`latest` 暂不指向本版本）。
 > 需要安装时请锁定精确版本：
-> `dsh plugin --profile web add dsh-agent-plugin-hub@0.1.0-preview.1`。
-> 版本说明：npm 公开线从 `0.0.1-preview.N` 起步；`0.1.0-preview.1` 起为官方化工具链重构线
-> （TypeScript + JSX + CSS Modules + tsdown + vitest，对齐官方插件形态，破坏性重构、不做旧版兼容），
-> 首个正式版定为 `0.1.0`。
+> `dsh plugin --profile web add dsh-agent-plugin-hub@0.0.1-preview.6`。
+> 版本说明：npm 公开线为 `0.0.1-preview.N`，首个正式版定为 `0.0.1`（预览线的稳定版）；
+> `0.0.1-preview.6` 起为官方化工具链重构形态（TypeScript + JSX + CSS Modules + tsdown + vitest，
+> 对齐官方插件形态，破坏性重构、不做旧版兼容）。
 
 DSH 的**智能体插件**（Agent Plugins）运行时与市场，带一个 **ZCode「插件市场」同构的商店面板**。
 
@@ -21,7 +21,7 @@ DSH 的**智能体插件**（Agent Plugins）运行时与市场，带一个 **ZC
 （cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
 
-## 0.1.0-preview.1 变更（对齐 DeepSeek Harness 官方插件形态的全量重构）
+## 0.0.1-preview.6 变更（对齐 DeepSeek Harness 官方插件形态的全量重构）
 
 - **工具链官方化**：TypeScript + JSX + CSS Modules + tsdown 构建 + vitest，全部进
   `devDependencies`（`dependencies` 保持为空，react 与宿主服务由宿主注入）；源码在
