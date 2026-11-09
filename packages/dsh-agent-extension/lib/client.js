@@ -6182,7 +6182,7 @@ window.__ModuleLoader__.load({
 								onChange: (event) => chooseProject(event.target.value),
 								children: projects.map((item) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
 									value: item.key,
-									children: `${item.displayName} (${item.entryCount})`
+									children: item.displayName
 								}, item.key))
 							}) : null,
 							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {

@@ -773,7 +773,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
               onChange={(event) => chooseProject(event.target.value)}
             >
               {projects.map(item => (
-                <option key={item.key} value={item.key}>{`${item.displayName} (${item.entryCount})`}</option>
+                <option key={item.key} value={item.key}>{item.displayName}</option>
               ))}
             </select>
           )
