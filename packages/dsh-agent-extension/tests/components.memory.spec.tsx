@@ -143,7 +143,9 @@ describe('MemoryView', () => {
     const row = await screen.findByRole('button', { name: /提交信息用中文/u })
     expect(within(row).getByText('仓库约定')).toBeTruthy()
     expect(within(row).getByText(t('memoryTypePreference'))).toBeTruthy()
-    expect(within(row).getByText(t('memoryStatusActive'))).toBeTruthy()
+    // 生效中的条目不挂状态徽章；标签以 chip 形式展示。
+    expect(within(row).queryByText(t('memoryStatusActive'))).toBeNull()
+    expect(within(row).getByText('git')).toBeTruthy()
     const archivedRow = screen.getByRole('button', { name: /旧决策/u })
     expect(within(archivedRow).getByText(t('memoryStatusArchived'))).toBeTruthy()
     // 默认选中的项目作用域是 lastSeen 最新的项目。
@@ -174,8 +176,9 @@ describe('MemoryView', () => {
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
     render(<MemoryView actions={controller.actions} t={t} />)
     await screen.findByRole('button', { name: /提交信息用中文/u })
-    const typeGroup = screen.getByRole('group', { name: t('memoryTypeLabel') })
-    fireEvent.click(within(typeGroup).getByRole('button', { name: t('memoryTypeDecision') }))
+    const filterTrigger = screen.getByRole('button', { name: t('memoryTypeFilterLabel') })
+    fireEvent.click(filterTrigger)
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: t('memoryTypeDecision') }))
     await waitFor(() => {
       expect(calls.some(call => call.url.includes('/memory/list') && call.url.includes('type=decision'))).toBe(true)
     })
@@ -241,23 +244,37 @@ describe('MemoryView', () => {
     })
   })
 
-  it('展示统计并保存设置到 /memory/settings', async () => {
+  it('设置对话框展示统计，开关即时保存、数字输入防抖保存', async () => {
     const { calls } = installFetch()
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
     render(<MemoryView actions={controller.actions} t={t} />)
     await screen.findByRole('button', { name: /提交信息用中文/u })
-    expect(screen.getByText('7')).toBeTruthy()
+    // 统计与设置都在对话框内：齿轮打开后可见。
+    fireEvent.click(screen.getByRole('button', { name: t('memorySettingsButton') }))
+    expect(await screen.findByRole('dialog', { name: t('memorySettingsTitle') })).toBeTruthy()
     expect(screen.getByText('50%')).toBeTruthy()
-    expect(screen.getByText('3')).toBeTruthy()
+    expect(screen.getByText('12')).toBeTruthy()
+    // 开关即时保存：第一次请求只翻转 injectEnabled，其余保持服务端值。
     fireEvent.click(screen.getByRole('switch', { name: t('memorySettingsInject') }))
-    fireEvent.change(screen.getByLabelText(t('memorySettingsIndexGlobal')), { target: { value: '120' } })
-    fireEvent.click(screen.getByRole('button', { name: t('memorySettingsSave') }))
     await waitFor(() => {
       expect(calls.some(call => call.url.includes('/memory/settings'))).toBe(true)
     })
-    const settingsCall = calls.find(call => call.url.includes('/memory/settings'))
-    expect(settingsCall?.init?.method).toBe('POST')
-    expect(bodyOf(settingsCall)).toMatchObject({
+    const settingsCalls = calls.filter(call => call.url.includes('/memory/settings'))
+    expect(settingsCalls[0]?.init?.method).toBe('POST')
+    expect(bodyOf(settingsCalls[0])).toMatchObject({
+      injectEnabled: false,
+      indexLimitGlobal: 40,
+      captureEnabled: true,
+      captureSessionEnd: false,
+      maxChars: 8000,
+    })
+    // 数字输入防抖 500ms 后自动保存，携带翻转后的完整设置。
+    fireEvent.change(screen.getByLabelText(t('memorySettingsIndexGlobal')), { target: { value: '120' } })
+    await waitFor(() => {
+      expect(calls.filter(call => call.url.includes('/memory/settings')).length).toBe(2)
+    }, { timeout: 2000 })
+    const lastSettings = calls.filter(call => call.url.includes('/memory/settings')).at(-1)
+    expect(bodyOf(lastSettings)).toMatchObject({
       injectEnabled: false,
       indexLimitGlobal: 120,
       captureEnabled: true,

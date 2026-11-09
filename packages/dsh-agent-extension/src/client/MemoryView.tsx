@@ -1,8 +1,10 @@
 /**
- * Memory tab of the Agent Extension panel: scope switch (global / project),
- * search and type filter, entry list, detail editor (create / edit / save /
- * deactivate / archive / restore / two-step delete), capture-injection
- * settings, statistics, and the Markdown export button.
+ * Memory tab of the Agent Extension panel: one compact toolbar row (scope
+ * switch, project select, search with a type-filter dropdown, and the action
+ * icons), the entry list beside the detail editor (create / edit / save /
+ * deactivate / archive / restore / two-step delete), the Markdown export,
+ * and a settings dialog (capture-injection switches and limits persist
+ * immediately; per-session statistics live there too).
  *
  * The view owns its local state (the hub snapshot only carries the section
  * tab) and talks to the host's `/memory/*` routes through `api()`; all copy
@@ -14,8 +16,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { api } from './api.ts'
 import { Badge, Button, EmptyBlock, IconButton, LoadingBlock, Spinner, columnGap } from './controls.tsx'
+import { DialogShell } from './dialogs.tsx'
 import { Icon } from './icons.tsx'
 import { Switch } from './Switch.tsx'
+import { useEscapeClose, useFocusRestore } from './overlay-hooks.ts'
 import { errorMessageFor, formatTime, type JsonRecord, type Translate } from './presentation.ts'
 import type { HubActions } from './store.ts'
 import panelCss from './panel.module.css'
@@ -324,7 +328,6 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const [stateToken, setStateToken] = useState(0)
   const [projects, setProjects] = useState<MemoryProject[]>([])
   const [stats, setStats] = useState<MemoryStats | null>(null)
-  const [draft, setDraft] = useState<MemorySettings>(DEFAULT_SETTINGS)
   const [scope, setScope] = useState<MemoryScope>('global')
   const [project, setProject] = useState('')
   const [query, setQuery] = useState('')
@@ -345,12 +348,26 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const [statusBusy, setStatusBusy] = useState(false)
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [settingsBusy, setSettingsBusy] = useState(false)
   const [exportBusy, setExportBusy] = useState(false)
+  const [settings, setSettings] = useState<MemorySettings>(DEFAULT_SETTINGS)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [filterOpen, setFilterOpen] = useState(false)
 
   // The user's explicit scope choice wins over the auto-selected defaults.
   const userChoseRef = useRef(false)
   const detailSeq = useRef(0)
+  const filterWrapRef = useRef<HTMLDivElement | null>(null)
+  // Latest local settings (kept in sync synchronously) and the last value the
+  // server confirmed; a failed persist rolls the UI back to the latter.
+  const settingsRef = useRef<MemorySettings>(DEFAULT_SETTINGS)
+  const savedSettingsRef = useRef<MemorySettings>(DEFAULT_SETTINGS)
+  const settingsTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEscapeClose(filterOpen, () => { setFilterOpen(false) })
+  useFocusRestore(filterWrapRef, filterOpen)
+  // Drop a pending debounced persist when the view unmounts.
+  useEffect(() => () => {
+    if (settingsTimer.current !== null) clearTimeout(settingsTimer.current)
+  }, [])
 
   // Load settings / projects / stats; the first load also picks the default
   // scope: project memory (newest lastSeen) when any project exists, else global.
@@ -365,7 +382,10 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
         const nextProjects = normalizeProjects(data.projects)
         setProjects(nextProjects)
         setStats(normalizeStats(data.stats))
-        setDraft(normalizeSettings(data.settings))
+        const nextSettings = normalizeSettings(data.settings)
+        savedSettingsRef.current = nextSettings
+        settingsRef.current = nextSettings
+        setSettings(nextSettings)
         if (!userChoseRef.current) {
           const latest = nextProjects[0]
           setScope(latest ? 'project' : 'global')
@@ -570,17 +590,32 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
     }
   }
 
-  const saveSettings = async (): Promise<void> => {
-    if (settingsBusy) return
-    setSettingsBusy(true)
+  /** POST the current settings; a failure toasts and rolls the UI back. */
+  const persistSettings = async (): Promise<void> => {
+    settingsTimer.current = null
     try {
-      const data = await api<JsonRecord>('/memory/settings', { method: 'POST', body: draft })
-      setDraft(normalizeSettings(data.settings))
-      actions.toast('success', t('memorySettingsSaved'))
+      const data = await api<JsonRecord>('/memory/settings', { method: 'POST', body: settingsRef.current })
+      savedSettingsRef.current = normalizeSettings(data.settings)
     } catch (error) {
       actions.toast('error', errorMessageFor(error, t))
-    } finally {
-      setSettingsBusy(false)
+      settingsRef.current = savedSettingsRef.current
+      setSettings(savedSettingsRef.current)
+    }
+  }
+
+  /**
+   * Merge one partial settings patch into the local state and persist.
+   * Switches persist immediately; numeric fields debounce by 500 ms.
+   */
+  const patchSettings = (partial: Partial<MemorySettings>, debounce = false): void => {
+    const next = { ...settingsRef.current, ...partial }
+    settingsRef.current = next
+    setSettings(next)
+    if (settingsTimer.current !== null) clearTimeout(settingsTimer.current)
+    if (debounce) {
+      settingsTimer.current = setTimeout(() => { void persistSettings() }, 500)
+    } else {
+      void persistSettings()
     }
   }
 
@@ -680,11 +715,24 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                 onClick={() => openEntry(item.id)}
               >
                 <span className={css.entryMain}>
-                  <span className={css.entryName}>{item.name}</span>
+                  <span className={css.entryTitleRow}>
+                    <span className={css.entryName}>{item.name}</span>
+                    {item.importance >= 80
+                      ? <span className={css.entryImportance} title={t('memoryFieldImportance')}>{String(item.importance)}</span>
+                      : null}
+                  </span>
                   {item.description !== '' ? <span className={css.entryDesc}>{item.description}</span> : null}
                   <span className={css.entryMeta}>
                     <Badge tone="plain">{typeLabel(item.type, t)}</Badge>
-                    <Badge tone={statusTone(item.status)}>{statusLabel(item.status, t)}</Badge>
+                    {item.status !== 'active'
+                      ? <Badge tone={statusTone(item.status)}>{statusLabel(item.status, t)}</Badge>
+                      : null}
+                    {item.tags.slice(0, 2).map((tag, index) => (
+                      <span key={`${index}-${tag}`} className={css.entryTag}>{tag}</span>
+                    ))}
+                    {item.tags.length > 2
+                      ? <span className={css.entryTagMore}>{`+${item.tags.length - 2}`}</span>
+                      : null}
                     {formatTime(item.updatedAt) !== ''
                       ? <span className={css.entryTime}>{formatTime(item.updatedAt)}</span>
                       : null}
@@ -873,47 +921,21 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
               {t('memoryScopeProject')}
             </button>
           </div>
-          {scope === 'project' && projects.length > 0
-            ? (
-              <select
-                className={`${css.input} ${css.projectSelect}`}
-                aria-label={t('memoryProjectLabel')}
-                value={project}
-                onChange={(event) => chooseProject(event.target.value)}
-              >
-                {projects.map(item => (
-                  <option key={item.key} value={item.key}>{`${item.displayName} (${item.entryCount})`}</option>
-                ))}
-              </select>
-            )
-            : null}
         </div>
-        <div className={css.actions}>
-          <Button variant="primary" icon="plus" disabled={projectMissing} onClick={startCreate}>
-            {t('memoryNew')}
-          </Button>
-          <Button
-            variant="secondary"
-            icon="download"
-            disabled={exportBusy || projectRequired}
-            onClick={() => { void exportMarkdown() }}
-          >
-            {exportBusy ? <Spinner /> : null}{exportBusy ? t('memoryExporting') : t('memoryExportMarkdown')}
-          </Button>
-          <IconButton
-            icon="refresh"
-            title={stateBusy || listBusy ? t('refreshing') : t('refresh')}
-            busy={stateBusy || listBusy}
-            disabled={stateBusy || listBusy}
-            onClick={() => {
-              setStateToken(token => token + 1)
-              setListToken(token => token + 1)
-            }}
-          />
-        </div>
-      </header>
-
-      <div className={css.toolbar}>
+        {scope === 'project' && projects.length > 0
+          ? (
+            <select
+              className={`${css.input} ${css.projectSelect}`}
+              aria-label={t('memoryProjectLabel')}
+              value={project}
+              onChange={(event) => chooseProject(event.target.value)}
+            >
+              {projects.map(item => (
+                <option key={item.key} value={item.key}>{`${item.displayName} (${item.entryCount})`}</option>
+              ))}
+            </select>
+          )
+          : null}
         <div className={css.searchWrap}>
           <Icon name="search" size={16} />
           <input
@@ -942,127 +964,163 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
               </button>
             )
             : null}
-        </div>
-        <div className={css.segmented} role="group" aria-label={t('memoryTypeLabel')}>
-          {typeOptions.map(option => (
+          <div ref={filterWrapRef} className={css.filterWrap} tabIndex={-1}>
             <button
-              key={option.value === '' ? 'all' : option.value}
               type="button"
-              className={panelCss.segment}
-              aria-pressed={typeFilter === option.value}
-              onClick={() => setTypeFilter(option.value)}
+              className={css.filterTrigger}
+              aria-expanded={filterOpen}
+              aria-label={t('memoryTypeFilterLabel')}
+              title={t('memoryTypeFilterLabel')}
+              onClick={() => { setFilterOpen(value => !value) }}
             >
-              {option.label}
+              <Icon name="filter" size={14} />
+              {typeFilter !== '' ? <span className={css.filterDot} /> : null}
             </button>
-          ))}
+            {filterOpen
+              ? (
+                <div>
+                  <div className={css.menuBackdrop} onClick={() => { setFilterOpen(false) }} />
+                  <div className={css.filterMenu} role="menu" aria-label={t('memoryTypeLabel')}>
+                    {typeOptions.map(option => (
+                      <button
+                        key={option.value === '' ? 'all' : option.value}
+                        type="button"
+                        role="menuitemradio"
+                        aria-checked={typeFilter === option.value}
+                        className={css.filterItem}
+                        onClick={() => {
+                          setTypeFilter(option.value)
+                          setFilterOpen(false)
+                        }}
+                      >
+                        <span className={css.filterItemText}>{option.label}</span>
+                        {typeFilter === option.value ? <Icon name="check" size={14} /> : null}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+              : null}
+          </div>
         </div>
-      </div>
+        <div className={css.actions}>
+          <Button variant="primary" icon="plus" disabled={projectMissing} onClick={startCreate}>
+            {t('memoryNew')}
+          </Button>
+          <IconButton
+            icon="download"
+            title={exportBusy ? t('memoryExporting') : t('memoryExportMarkdown')}
+            busy={exportBusy}
+            disabled={exportBusy || projectRequired}
+            onClick={() => { void exportMarkdown() }}
+          />
+          <IconButton icon="settings" title={t('memorySettingsButton')} onClick={() => { setSettingsOpen(true) }} />
+          <IconButton
+            icon="refresh"
+            title={stateBusy || listBusy ? t('refreshing') : t('refresh')}
+            busy={stateBusy || listBusy}
+            disabled={stateBusy || listBusy}
+            onClick={() => {
+              setStateToken(token => token + 1)
+              setListToken(token => token + 1)
+            }}
+          />
+        </div>
+      </header>
 
       {workspace}
 
-      {stateReady
+      {stateReady && settingsOpen
         ? (
-          <section className={css.card} aria-label={t('memorySettingsTitle')}>
-            <h2 className={css.sectionTitle}>{t('memorySettingsTitle')}</h2>
-            <div className={css.settingList}>
-              <div className={css.settingRow}>
-                <span className={css.settingLabel}>{t('memorySettingsCapture')}</span>
-                <Switch
-                  checked={draft.captureEnabled}
-                  label={t('memorySettingsCapture')}
-                  onChange={(next) => { setDraft(current => ({ ...current, captureEnabled: next })) }}
-                />
+          <div className={css.dialogPortal}>
+            <DialogShell t={t} title={t('memorySettingsTitle')} onClose={() => { setSettingsOpen(false) }}>
+              <div className={css.settingList}>
+                <div className={css.settingRow}>
+                  <span className={css.settingLabel}>{t('memorySettingsCapture')}</span>
+                  <Switch
+                    checked={settings.captureEnabled}
+                    label={t('memorySettingsCapture')}
+                    onChange={(next) => { patchSettings({ captureEnabled: next }) }}
+                  />
+                </div>
+                <div className={css.settingRow}>
+                  <span className={css.settingLabel}>{t('memorySettingsCaptureSessionEnd')}</span>
+                  <Switch
+                    checked={settings.captureSessionEnd}
+                    label={t('memorySettingsCaptureSessionEnd')}
+                    onChange={(next) => { patchSettings({ captureSessionEnd: next }) }}
+                  />
+                </div>
+                <div className={css.settingRow}>
+                  <span className={css.settingLabel}>{t('memorySettingsInject')}</span>
+                  <Switch
+                    checked={settings.injectEnabled}
+                    label={t('memorySettingsInject')}
+                    onChange={(next) => { patchSettings({ injectEnabled: next }) }}
+                  />
+                </div>
               </div>
-              <div className={css.settingRow}>
-                <span className={css.settingLabel}>{t('memorySettingsCaptureSessionEnd')}</span>
-                <Switch
-                  checked={draft.captureSessionEnd}
-                  label={t('memorySettingsCaptureSessionEnd')}
-                  onChange={(next) => { setDraft(current => ({ ...current, captureSessionEnd: next })) }}
-                />
+              <div className={css.numberGrid}>
+                <label className={css.field}>
+                  <span className={css.fieldLabel}>{t('memorySettingsIndexGlobal')}</span>
+                  <input
+                    className={css.input}
+                    type="number"
+                    min={0}
+                    max={200}
+                    aria-label={t('memorySettingsIndexGlobal')}
+                    value={settings.indexLimitGlobal}
+                    onChange={(event) => { patchSettings({ indexLimitGlobal: integer(event.target.value, 0, 200, settingsRef.current.indexLimitGlobal) }, true) }}
+                  />
+                </label>
+                <label className={css.field}>
+                  <span className={css.fieldLabel}>{t('memorySettingsIndexProject')}</span>
+                  <input
+                    className={css.input}
+                    type="number"
+                    min={0}
+                    max={200}
+                    aria-label={t('memorySettingsIndexProject')}
+                    value={settings.indexLimitProject}
+                    onChange={(event) => { patchSettings({ indexLimitProject: integer(event.target.value, 0, 200, settingsRef.current.indexLimitProject) }, true) }}
+                  />
+                </label>
+                <label className={css.field}>
+                  <span className={css.fieldLabel}>{t('memorySettingsMaxChars')}</span>
+                  <input
+                    className={css.input}
+                    type="number"
+                    min={1000}
+                    max={40000}
+                    step={500}
+                    aria-label={t('memorySettingsMaxChars')}
+                    value={settings.maxChars}
+                    onChange={(event) => { patchSettings({ maxChars: integer(event.target.value, 1000, 40000, settingsRef.current.maxChars) }, true) }}
+                  />
+                </label>
               </div>
-              <div className={css.settingRow}>
-                <span className={css.settingLabel}>{t('memorySettingsInject')}</span>
-                <Switch
-                  checked={draft.injectEnabled}
-                  label={t('memorySettingsInject')}
-                  onChange={(next) => { setDraft(current => ({ ...current, injectEnabled: next })) }}
-                />
-              </div>
-            </div>
-            <div className={css.numberGrid}>
-              <label className={css.field}>
-                <span className={css.fieldLabel}>{t('memorySettingsIndexGlobal')}</span>
-                <input
-                  className={css.input}
-                  type="number"
-                  min={0}
-                  max={200}
-                  aria-label={t('memorySettingsIndexGlobal')}
-                  value={draft.indexLimitGlobal}
-                  onChange={(event) => {
-                    setDraft(current => ({ ...current, indexLimitGlobal: integer(event.target.value, 0, 200, current.indexLimitGlobal) }))
-                  }}
-                />
-              </label>
-              <label className={css.field}>
-                <span className={css.fieldLabel}>{t('memorySettingsIndexProject')}</span>
-                <input
-                  className={css.input}
-                  type="number"
-                  min={0}
-                  max={200}
-                  aria-label={t('memorySettingsIndexProject')}
-                  value={draft.indexLimitProject}
-                  onChange={(event) => {
-                    setDraft(current => ({ ...current, indexLimitProject: integer(event.target.value, 0, 200, current.indexLimitProject) }))
-                  }}
-                />
-              </label>
-              <label className={css.field}>
-                <span className={css.fieldLabel}>{t('memorySettingsMaxChars')}</span>
-                <input
-                  className={css.input}
-                  type="number"
-                  min={1000}
-                  max={40000}
-                  step={500}
-                  aria-label={t('memorySettingsMaxChars')}
-                  value={draft.maxChars}
-                  onChange={(event) => {
-                    setDraft(current => ({ ...current, maxChars: integer(event.target.value, 1000, 40000, current.maxChars) }))
-                  }}
-                />
-              </label>
-            </div>
-            <div className={css.divider} />
-            <div className={css.statsHead}>
+              <div className={css.divider} />
               <h3 className={css.statsTitle}>{t('memoryStatsTitle')}</h3>
-            </div>
-            <div className={css.statGrid}>
-              <div className={css.stat}>
-                <span className={css.statLabel}>{t('memoryStatCaptureRuns')}</span>
-                <span className={css.statValue}>{String(stats?.captureRuns ?? 0)}</span>
+              <div className={css.statGrid}>
+                <div className={css.stat}>
+                  <span className={css.statLabel}>{t('memoryStatCaptureRuns')}</span>
+                  <span className={css.statValue}>{String(stats?.captureRuns ?? 0)}</span>
+                </div>
+                <div className={css.stat}>
+                  <span className={css.statLabel}>{t('memoryStatCapturedEntries')}</span>
+                  <span className={css.statValue}>{String(stats?.capturedEntries ?? 0)}</span>
+                </div>
+                <div className={css.stat}>
+                  <span className={css.statLabel}>{t('memoryStatHitRate')}</span>
+                  <span className={css.statValue}>{hitRate !== '' ? hitRate : t('memoryStatNoData')}</span>
+                </div>
+                <div className={css.stat}>
+                  <span className={css.statLabel}>{t('memoryStatOverflow')}</span>
+                  <span className={css.statValue}>{String(overflowOf(stats))}</span>
+                </div>
               </div>
-              <div className={css.stat}>
-                <span className={css.statLabel}>{t('memoryStatCapturedEntries')}</span>
-                <span className={css.statValue}>{String(stats?.capturedEntries ?? 0)}</span>
-              </div>
-              <div className={css.stat}>
-                <span className={css.statLabel}>{t('memoryStatHitRate')}</span>
-                <span className={css.statValue}>{hitRate !== '' ? hitRate : t('memoryStatNoData')}</span>
-              </div>
-              <div className={css.stat}>
-                <span className={css.statLabel}>{t('memoryStatOverflow')}</span>
-                <span className={css.statValue}>{String(overflowOf(stats))}</span>
-              </div>
-            </div>
-            <div className={css.cardActions}>
-              <Button variant="primary" disabled={settingsBusy} onClick={() => { void saveSettings() }}>
-                {settingsBusy ? <Spinner /> : null}{t('memorySettingsSave')}
-              </Button>
-            </div>
-          </section>
+            </DialogShell>
+          </div>
         )
         : null}
     </div>
