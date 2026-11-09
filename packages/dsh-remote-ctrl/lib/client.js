@@ -3104,7 +3104,7 @@ window.__ModuleLoader__.load({
 			};
 		})();
 		// \0dsh-css:E:\workspace\dsh-plugins\packages\dsh-remote-ctrl\src\client\panel.module.css.mjs
-		const css = ".n-Kf7q_layer{flex:none;align-items:center;height:42px;margin:8px 0 0;padding:0 0 0 2px;display:flex;position:relative}.n-Kf7q_rail{justify-content:center;width:36px;height:36px;margin:4px 0;padding:0}.n-Kf7q_trigger{border-radius:var(--dsw-radius-md);width:32px;height:32px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;flex:none;justify-content:center;align-items:center;padding:0;display:inline-flex;position:relative}.n-Kf7q_rail .n-Kf7q_trigger{width:36px;height:36px}@media (hover:hover){.n-Kf7q_trigger:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.n-Kf7q_trigger[aria-expanded=true]{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.n-Kf7q_trigger[data-active=true]{color:var(--dsw-alias-state-warn-primary);background:var(--dsw-alias-state-warn-tertiary)}@media (hover:hover){.n-Kf7q_trigger[data-active=true]:hover{background:var(--dsw-alias-state-warn-secondary)}}.n-Kf7q_trigger:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}.n-Kf7q_overlay{z-index:1000;justify-content:center;align-items:center;display:flex;position:fixed;inset:0}.n-Kf7q_mask{inset:var(--dsh-frame-chrome-top,0px) 0 0;background:var(--dsw-alias-bg-mask-1);backdrop-filter:var(--dsw-mask-blur);position:absolute}.n-Kf7q_dialog{z-index:1;width:900px;max-width:calc(100vw - 48px);max-height:min(760px, calc(100vh - 2 * max(24px, var(--dsh-frame-overlay-top,24px))));border-radius:var(--dsw-radius-panel);background:var(--dsw-alias-bg-layer-2);box-shadow:var(--dsw-elevation-prominent);--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2);flex-direction:column;display:flex;position:relative;overflow:hidden}.n-Kf7q_dialog:focus{outline:none}.n-Kf7q_dialogHeader{box-sizing:border-box;flex:none;align-items:center;gap:10px;padding:20px 56px 12px 20px;display:flex}.n-Kf7q_dialogIcon{border:.5px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);width:40px;height:40px;color:var(--dsw-alias-label-primary);flex:none;justify-content:center;align-items:center;display:inline-flex}.n-Kf7q_dialogHeading{flex-direction:column;gap:2px;min-width:0;display:flex}.n-Kf7q_dialogTitle{color:var(--dsw-alias-label-primary);font-size:16px;font-weight:600;line-height:24px}.n-Kf7q_dialogSubtitle{color:var(--dsw-alias-label-secondary);font-size:12.5px;line-height:18px}.n-Kf7q_closeButton{border-radius:var(--dsw-radius-sm);width:28px;height:28px;color:var(--dsw-alias-label-tertiary);cursor:pointer;background:0 0;border:0;justify-content:center;align-items:center;padding:0;display:inline-flex;position:absolute;top:12px;right:12px}@media (hover:hover){.n-Kf7q_closeButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.n-Kf7q_closeButton:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}.n-Kf7q_dialogBody{flex:1;min-height:0;padding:0 20px 20px;overflow-y:auto}.n-Kf7q_page{color:var(--dsw-alias-label-primary);overflow-wrap:break-word;flex-direction:column;gap:16px;font-size:13px;line-height:1.5;display:flex}.n-Kf7q_page *{box-sizing:border-box}.n-Kf7q_grid{grid-template-columns:minmax(0,1.45fr) minmax(300px,1fr);align-items:start;gap:16px;display:grid}@media (width<=860px){.n-Kf7q_grid{grid-template-columns:minmax(0,1fr)}}.n-Kf7q_card{border:.5px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-lg);flex-direction:column;gap:12px;padding:16px;display:flex}.n-Kf7q_cardHead{align-items:flex-start;gap:8px;display:flex}.n-Kf7q_cardIcon{color:var(--dsw-alias-label-tertiary);flex:none;margin-top:2px;display:inline-flex}.n-Kf7q_cardTitles{flex-direction:column;gap:2px;min-width:0;display:flex}.n-Kf7q_cardTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:13.5px;font-weight:600;line-height:20px}.n-Kf7q_hint{color:var(--dsw-alias-label-tertiary);overflow-wrap:anywhere;margin:0;font-size:12.5px;line-height:18px}.n-Kf7q_detail{color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;margin:0;font-size:12.5px;line-height:18px}.n-Kf7q_errorText{color:var(--dsw-alias-state-error-primary);overflow-wrap:anywhere;margin:0;font-size:12.5px;line-height:18px}.n-Kf7q_connectionCard{border-radius:var(--dsw-radius-md);background:var(--dsw-alias-interactive-bg-hover);flex-direction:column;gap:10px;padding:12px;display:flex}.n-Kf7q_connectionRow{justify-content:space-between;align-items:flex-start;gap:12px;display:flex}.n-Kf7q_connectionText{flex-direction:column;flex:1;gap:3px;min-width:0;display:flex}.n-Kf7q_statusRow{flex-wrap:wrap;align-items:center;gap:8px;display:flex}.n-Kf7q_statusRunning,.n-Kf7q_statusStopped{font-size:13px;font-weight:600;line-height:20px}.n-Kf7q_statusRunning{color:var(--dsw-alias-label-primary)}.n-Kf7q_statusStopped{color:var(--dsw-alias-label-tertiary)}.n-Kf7q_statusTag{corner-shape:round;background:var(--dsw-alias-bg-layer-1);height:20px;color:var(--dsw-alias-label-secondary);border-radius:999px;align-items:center;gap:5px;padding:0 8px;font-size:11px;font-weight:500;display:inline-flex}.n-Kf7q_statusDot{corner-shape:round;background:var(--dsw-alias-state-idle-primary);border-radius:50%;width:6px;height:6px}.n-Kf7q_statusTag[data-on=true] .n-Kf7q_statusDot{background:var(--dsw-alias-state-success-primary)}.n-Kf7q_copyRow{border-top:.5px solid var(--dsw-alias-border-l1);flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;padding-top:10px;display:flex}.n-Kf7q_outlineButton,.n-Kf7q_actionButton{border-radius:var(--dsw-radius-sm);height:30px;color:var(--dsw-alias-label-primary);cursor:pointer;flex:none;justify-content:center;align-items:center;gap:6px;padding:0 12px;font-family:inherit;font-size:12.5px;line-height:18px;display:inline-flex}.n-Kf7q_outlineButton{border:.5px solid var(--dsw-alias-border-l2);background:0 0}.n-Kf7q_actionButton{background:var(--dsw-alias-interactive-bg-hover);border:0}@media (hover:hover){.n-Kf7q_outlineButton:hover:not(:disabled),.n-Kf7q_actionButton:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-pressed,var(--dsw-alias-border-l1))}}.n-Kf7q_outlineButton:disabled,.n-Kf7q_actionButton:disabled{opacity:.5;cursor:default}.n-Kf7q_outlineButton:focus-visible,.n-Kf7q_actionButton:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}.n-Kf7q_qrArea{border:1px dashed var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-lg);background:#fff;flex:1;justify-content:center;align-items:center;min-height:232px;padding:16px;display:flex}.n-Kf7q_qrImage{width:224px;height:224px}.n-Kf7q_qrImage svg{width:100%;height:100%;display:block}.n-Kf7q_qrLink{color:var(--dsw-alias-label-tertiary);overflow-wrap:anywhere;text-align:center;margin:0;font-family:ui-monospace,Consolas,monospace;font-size:11px;line-height:16px}.n-Kf7q_addressList{flex-direction:column;gap:6px;display:flex}.n-Kf7q_addressOption{border:.5px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-sm);width:100%;color:var(--dsw-alias-label-primary);font:inherit;text-align:left;cursor:pointer;background:0 0;flex-direction:column;gap:2px;padding:8px 10px;display:flex}@media (hover:hover){.n-Kf7q_addressOption:hover{background:var(--dsw-alias-interactive-bg-hover)}}.n-Kf7q_addressOption[data-checked=true]{border-color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-hover)}.n-Kf7q_addressOption:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}.n-Kf7q_addressHead{flex-wrap:wrap;align-items:center;gap:6px;display:flex}.n-Kf7q_addressIp{font-family:ui-monospace,Consolas,monospace;font-size:12.5px;line-height:18px}.n-Kf7q_scopeTag,.n-Kf7q_recommendTag{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);height:18px;color:var(--dsw-alias-label-secondary);border-radius:999px;align-items:center;padding:0 6px;font-size:11px;line-height:16px;display:inline-flex}.n-Kf7q_recommendTag{border:.5px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-brand-primary);background:0 0}.n-Kf7q_addressUrl{color:var(--dsw-alias-label-tertiary);overflow-wrap:anywhere;font-family:ui-monospace,Consolas,monospace;font-size:11px;line-height:16px}.n-Kf7q_tokenSection{border-top:.5px solid var(--dsw-alias-border-l1);flex-direction:column;gap:8px;padding-top:12px;display:flex}.n-Kf7q_tokenRow{align-items:center;gap:8px;display:flex}.n-Kf7q_tokenValue{border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);overflow-wrap:anywhere;flex:1;min-width:0;padding:6px 8px;font-family:ui-monospace,Consolas,monospace;font-size:12px;line-height:18px}.n-Kf7q_tokenActions{flex-wrap:wrap;gap:8px;display:flex}.n-Kf7q_stateBlock{flex-direction:column;align-items:flex-start;gap:10px;padding:4px;display:flex}";
+		const css = ".n-Kf7q_layer{flex:none;align-items:center;height:42px;margin:8px 0 0;padding:0 0 0 2px;display:flex;position:relative}.n-Kf7q_rail{justify-content:center;width:36px;height:36px;margin:4px 0;padding:0}.n-Kf7q_trigger{border-radius:var(--dsw-radius-md);width:32px;height:32px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;flex:none;justify-content:center;align-items:center;padding:0;display:inline-flex;position:relative}.n-Kf7q_rail .n-Kf7q_trigger{width:36px;height:36px}@media (hover:hover){.n-Kf7q_trigger:hover{color:var(--dsw-alias-label-primary)}}.n-Kf7q_trigger[data-active=true]{color:var(--dsw-alias-state-warn-primary)}@media (hover:hover){.n-Kf7q_trigger[data-active=true]:hover{color:var(--dsw-alias-state-warn-label)}}.n-Kf7q_trigger:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}.n-Kf7q_overlay{z-index:1000;justify-content:center;align-items:center;display:flex;position:fixed;inset:0}.n-Kf7q_mask{inset:var(--dsh-frame-chrome-top,0px) 0 0;background:var(--dsw-alias-bg-mask-1);backdrop-filter:var(--dsw-mask-blur);position:absolute}.n-Kf7q_dialog{z-index:1;width:900px;height:min(720px, calc(100vh - 2 * max(24px, var(--dsh-frame-overlay-top,24px))));border-radius:var(--dsw-radius-panel);background:var(--dsw-alias-bg-layer-2);max-width:calc(100vw - 48px);box-shadow:var(--dsw-elevation-prominent);--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2);flex-direction:column;display:flex;position:relative;overflow:hidden}.n-Kf7q_dialog:focus{outline:none}.n-Kf7q_dialogHeader{box-sizing:border-box;flex:none;align-items:center;gap:10px;padding:20px 56px 12px 20px;display:flex}.n-Kf7q_dialogIcon{border:.5px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);width:40px;height:40px;color:var(--dsw-alias-label-primary);flex:none;justify-content:center;align-items:center;display:inline-flex}.n-Kf7q_dialogHeading{flex-direction:column;gap:2px;min-width:0;display:flex}.n-Kf7q_dialogTitle{color:var(--dsw-alias-label-primary);font-size:16px;font-weight:600;line-height:24px}.n-Kf7q_dialogSubtitle{color:var(--dsw-alias-label-secondary);font-size:12.5px;line-height:18px}.n-Kf7q_closeButton{border-radius:var(--dsw-radius-sm);width:28px;height:28px;color:var(--dsw-alias-label-tertiary);cursor:pointer;background:0 0;border:0;justify-content:center;align-items:center;padding:0;display:inline-flex;position:absolute;top:12px;right:12px}@media (hover:hover){.n-Kf7q_closeButton:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.n-Kf7q_closeButton:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}.n-Kf7q_dialogBody{flex:1;min-height:0;padding:0 20px 16px;overflow:hidden}.n-Kf7q_page{height:100%;min-height:0;color:var(--dsw-alias-label-primary);overflow-wrap:break-word;flex-direction:column;gap:16px;font-size:13px;line-height:1.5;display:flex}.n-Kf7q_page *{box-sizing:border-box}.n-Kf7q_grid{flex:1;grid-template-columns:minmax(0,1.45fr) minmax(300px,1fr);align-items:stretch;gap:16px;min-height:0;display:grid}@media (width<=860px){.n-Kf7q_dialog{height:auto;max-height:min(760px, calc(100vh - 2 * max(24px, var(--dsh-frame-overlay-top,24px))))}.n-Kf7q_dialogBody{overflow-y:auto}.n-Kf7q_page{height:auto}.n-Kf7q_grid{grid-template-columns:minmax(0,1fr)}.n-Kf7q_qrArea{min-height:200px}.n-Kf7q_addressList{max-height:260px}}.n-Kf7q_card{border:.5px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-lg);flex-direction:column;gap:10px;min-height:0;padding:14px;display:flex;overflow-y:auto}.n-Kf7q_cardHead{align-items:flex-start;gap:8px;display:flex}.n-Kf7q_cardIcon{color:var(--dsw-alias-label-tertiary);flex:none;margin-top:2px;display:inline-flex}.n-Kf7q_cardTitles{flex-direction:column;gap:2px;min-width:0;display:flex}.n-Kf7q_cardTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:13.5px;font-weight:600;line-height:20px}.n-Kf7q_hint{color:var(--dsw-alias-label-tertiary);overflow-wrap:anywhere;margin:0;font-size:12.5px;line-height:18px}.n-Kf7q_detail{color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;margin:0;font-size:12.5px;line-height:18px}.n-Kf7q_errorText{color:var(--dsw-alias-state-error-primary);overflow-wrap:anywhere;margin:0;font-size:12.5px;line-height:18px}.n-Kf7q_connectionCard{border-radius:var(--dsw-radius-md);background:var(--dsw-alias-interactive-bg-hover);flex-direction:column;gap:10px;padding:10px;display:flex}.n-Kf7q_connectionRow{justify-content:space-between;align-items:flex-start;gap:12px;display:flex}.n-Kf7q_connectionText{flex-direction:column;flex:1;gap:3px;min-width:0;display:flex}.n-Kf7q_statusRow{flex-wrap:wrap;align-items:center;gap:8px;display:flex}.n-Kf7q_statusRunning,.n-Kf7q_statusStopped{font-size:13px;font-weight:600;line-height:20px}.n-Kf7q_statusRunning{color:var(--dsw-alias-label-primary)}.n-Kf7q_statusStopped{color:var(--dsw-alias-label-tertiary)}.n-Kf7q_statusTag{corner-shape:round;background:var(--dsw-alias-bg-layer-1);height:20px;color:var(--dsw-alias-label-secondary);border-radius:999px;align-items:center;gap:5px;padding:0 8px;font-size:11px;font-weight:500;display:inline-flex}.n-Kf7q_statusDot{corner-shape:round;background:var(--dsw-alias-state-idle-primary);border-radius:50%;width:6px;height:6px}.n-Kf7q_statusTag[data-on=true] .n-Kf7q_statusDot{background:var(--dsw-alias-state-success-primary)}.n-Kf7q_copyRow{border-top:.5px solid var(--dsw-alias-border-l1);flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;padding-top:10px;display:flex}.n-Kf7q_outlineButton,.n-Kf7q_actionButton{border-radius:var(--dsw-radius-sm);height:30px;color:var(--dsw-alias-label-primary);cursor:pointer;flex:none;justify-content:center;align-items:center;gap:6px;padding:0 12px;font-family:inherit;font-size:12.5px;line-height:18px;display:inline-flex}.n-Kf7q_outlineButton{border:.5px solid var(--dsw-alias-border-l2);background:0 0}.n-Kf7q_actionButton{background:var(--dsw-alias-interactive-bg-hover);border:0}@media (hover:hover){.n-Kf7q_outlineButton:hover:not(:disabled),.n-Kf7q_actionButton:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-pressed,var(--dsw-alias-border-l1))}}.n-Kf7q_outlineButton:disabled,.n-Kf7q_actionButton:disabled{opacity:.5;cursor:default}.n-Kf7q_outlineButton:focus-visible,.n-Kf7q_actionButton:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}.n-Kf7q_qrArea{border:1px dashed var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-lg);flex:1;justify-content:center;align-items:center;min-height:190px;padding:10px;display:flex}.n-Kf7q_qrImage{border-radius:var(--dsw-radius-md);background:#fff;flex:none;width:176px;height:176px;padding:8px}.n-Kf7q_qrImage svg{width:100%;height:100%;display:block}.n-Kf7q_addressList{flex-direction:column;flex:auto;gap:6px;min-height:0;padding-right:2px;display:flex;overflow-y:auto}.n-Kf7q_addressOption{border:.5px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-sm);width:100%;color:var(--dsw-alias-label-primary);font:inherit;text-align:left;cursor:pointer;background:0 0;flex-direction:column;gap:2px;padding:8px 10px;display:flex}@media (hover:hover){.n-Kf7q_addressOption:hover{background:var(--dsw-alias-interactive-bg-hover)}}.n-Kf7q_addressOption[data-checked=true]{border-color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-hover)}.n-Kf7q_addressOption:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}.n-Kf7q_addressHead{flex-wrap:wrap;align-items:center;gap:6px;display:flex}.n-Kf7q_addressIp{font-family:ui-monospace,Consolas,monospace;font-size:12.5px;line-height:18px}.n-Kf7q_scopeTag,.n-Kf7q_recommendTag{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);height:18px;color:var(--dsw-alias-label-secondary);border-radius:999px;align-items:center;padding:0 6px;font-size:11px;line-height:16px;display:inline-flex}.n-Kf7q_recommendTag{border:.5px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-brand-primary);background:0 0}.n-Kf7q_addressUrl{color:var(--dsw-alias-label-tertiary);overflow-wrap:anywhere;font-family:ui-monospace,Consolas,monospace;font-size:11px;line-height:16px}.n-Kf7q_tokenSection{border-top:.5px solid var(--dsw-alias-border-l1);flex-direction:column;gap:8px;padding-top:12px;display:flex}.n-Kf7q_tokenRow{align-items:center;gap:8px;display:flex}.n-Kf7q_tokenValue{border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);overflow-wrap:anywhere;flex:1;min-width:0;padding:6px 8px;font-family:ui-monospace,Consolas,monospace;font-size:12px;line-height:18px}.n-Kf7q_tokenActions{flex-wrap:wrap;gap:8px;display:flex}.n-Kf7q_stateBlock{flex-direction:column;align-items:flex-start;gap:10px;padding:4px;display:flex}";
 		const tagId = "dsh-remote-ctrl/panel.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId) + "]") === null) {
 			const tag = document.createElement("style");
@@ -3148,7 +3148,6 @@ window.__ModuleLoader__.load({
 			"page": "n-Kf7q_page",
 			"qrArea": "n-Kf7q_qrArea",
 			"qrImage": "n-Kf7q_qrImage",
-			"qrLink": "n-Kf7q_qrLink",
 			"rail": "n-Kf7q_rail",
 			"recommendTag": "n-Kf7q_recommendTag",
 			"scopeTag": "n-Kf7q_scopeTag",
@@ -3167,10 +3166,10 @@ window.__ModuleLoader__.load({
 		// src/client/Panel.tsx
 		/**
 		* Remote Control dialog body (ZCode's remote-control layout): the left card
-		* carries the status strip, the start/stop control, the copy-link row and the
-		* QR code; the right card carries the LAN-address switcher and the pairing
-		* token. Picking an address re-points both the QR code and the copied link;
-		* the token only rotates through the explicit confirm step.
+		* carries the status strip, the copy-link row, the pairing token and the QR
+		* code; the right card carries the LAN-address switcher. Picking an address
+		* re-points both the QR code and the copied link; the token only rotates
+		* through the explicit confirm step.
 		*
 		* @module dsh-remote-ctrl/client/Panel
 		*/
@@ -3337,85 +3336,6 @@ window.__ModuleLoader__.load({
 									})
 								]
 							}),
-							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-								className: panel_module_css_default.qrArea,
-								children: data.listening && qr !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-									className: panel_module_css_default.qrImage,
-									"data-testid": "qr",
-									dangerouslySetInnerHTML: { __html: qr }
-								}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-									className: panel_module_css_default.hint,
-									children: data.listening ? link || t("noAddress") : t("stoppedHint")
-								})
-							}),
-							data.listening && link !== "" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-								className: panel_module_css_default.qrLink,
-								children: link
-							})
-						]
-					}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
-						className: panel_module_css_default.card,
-						"data-remote-ctrl-address-card": true,
-						children: [
-							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-								className: panel_module_css_default.cardHead,
-								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-									className: panel_module_css_default.cardIcon,
-									"aria-hidden": "true",
-									children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(NetworkGlyph, {})
-								}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-									className: panel_module_css_default.cardTitles,
-									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", {
-										className: panel_module_css_default.cardTitle,
-										children: t("addresses")
-									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-										className: panel_module_css_default.hint,
-										children: t("addressesDesc")
-									})]
-								})]
-							}),
-							addresses.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-								className: panel_module_css_default.hint,
-								children: t("noAddress")
-							}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-								className: panel_module_css_default.addressList,
-								role: "radiogroup",
-								"aria-label": t("addresses"),
-								children: addresses.map((entry) => {
-									const checked = entry.url === selected?.url;
-									return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
-										type: "button",
-										role: "radio",
-										"aria-checked": checked,
-										className: panel_module_css_default.addressOption,
-										"data-address": entry.address,
-										"data-checked": checked,
-										onClick: () => {
-											setSelectedUrl(entry.url);
-										},
-										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-											className: panel_module_css_default.addressHead,
-											children: [
-												/* @__PURE__ */ (0, react_jsx_runtime.jsx)("code", {
-													className: panel_module_css_default.addressIp,
-													children: entry.address
-												}),
-												/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-													className: panel_module_css_default.scopeTag,
-													children: scopeLabel(String(entry.scope), t)
-												}),
-												entry.url === data.recommendedUrl && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-													className: panel_module_css_default.recommendTag,
-													children: t("recommended")
-												})
-											]
-										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-											className: panel_module_css_default.addressUrl,
-											children: entry.url
-										})]
-									}, entry.url);
-								})
-							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 								className: panel_module_css_default.tokenSection,
 								children: [
@@ -3474,6 +3394,82 @@ window.__ModuleLoader__.load({
 										})
 									})
 								]
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+								className: panel_module_css_default.qrArea,
+								children: data.listening && qr !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+									className: panel_module_css_default.qrImage,
+									"data-testid": "qr",
+									dangerouslySetInnerHTML: { __html: qr }
+								}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+									className: panel_module_css_default.hint,
+									children: data.listening ? link || t("noAddress") : t("stoppedHint")
+								})
+							})
+						]
+					}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+						className: panel_module_css_default.card,
+						"data-remote-ctrl-address-card": true,
+						children: [
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: panel_module_css_default.cardHead,
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+									className: panel_module_css_default.cardIcon,
+									"aria-hidden": "true",
+									children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(NetworkGlyph, {})
+								}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+									className: panel_module_css_default.cardTitles,
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", {
+										className: panel_module_css_default.cardTitle,
+										children: t("addresses")
+									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+										className: panel_module_css_default.hint,
+										children: t("addressesDesc")
+									})]
+								})]
+							}),
+							addresses.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+								className: panel_module_css_default.hint,
+								children: t("noAddress")
+							}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+								className: panel_module_css_default.addressList,
+								role: "radiogroup",
+								"aria-label": t("addresses"),
+								"data-remote-ctrl-address-list": true,
+								children: addresses.map((entry) => {
+									const checked = entry.url === selected?.url;
+									return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
+										type: "button",
+										role: "radio",
+										"aria-checked": checked,
+										className: panel_module_css_default.addressOption,
+										"data-address": entry.address,
+										"data-checked": checked,
+										onClick: () => {
+											setSelectedUrl(entry.url);
+										},
+										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+											className: panel_module_css_default.addressHead,
+											children: [
+												/* @__PURE__ */ (0, react_jsx_runtime.jsx)("code", {
+													className: panel_module_css_default.addressIp,
+													children: entry.address
+												}),
+												/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+													className: panel_module_css_default.scopeTag,
+													children: scopeLabel(String(entry.scope), t)
+												}),
+												entry.url === data.recommendedUrl && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+													className: panel_module_css_default.recommendTag,
+													children: t("recommended")
+												})
+											]
+										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: panel_module_css_default.addressUrl,
+											children: entry.url
+										})]
+									}, entry.url);
+								})
 							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 								className: panel_module_css_default.hint,
@@ -3562,6 +3558,7 @@ window.__ModuleLoader__.load({
 		function Launcher({ wide, useRemote, actions, t }) {
 			const [open, setOpen] = (0, react.useState)(false);
 			const listening = useRemote((state) => state.data?.listening === true);
+			const pending = useRemote((state) => state.pending);
 			const trigger = (0, react.useRef)(null);
 			const dialog = (0, react.useRef)(null);
 			const wasOpen = (0, react.useRef)(false);
@@ -3691,7 +3688,12 @@ window.__ModuleLoader__.load({
 					"data-remote-ctrl-trigger": true,
 					"data-active": listening,
 					onClick: () => {
-						setOpen((value) => !value);
+						if (open) {
+							setOpen(false);
+							return;
+						}
+						setOpen(true);
+						if (!listening && !pending) actions.start();
 					},
 					children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PanelIcon, {
 						active: listening,

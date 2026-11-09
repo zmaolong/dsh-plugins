@@ -37,6 +37,7 @@ const FOCUSABLE = [
 export function Launcher({ wide, useRemote, actions, t }: LauncherProps): ReactNode {
   const [open, setOpen] = useState(false)
   const listening = useRemote(state => state.data?.listening === true)
+  const pending = useRemote(state => state.pending)
   const trigger = useRef<HTMLButtonElement>(null)
   const dialog = useRef<HTMLDivElement>(null)
   const wasOpen = useRef(false)
@@ -142,7 +143,15 @@ export function Launcher({ wide, useRemote, actions, t }: LauncherProps): ReactN
         title={listening ? `${t('title')} · ${t('running')}` : t('title')}
         data-remote-ctrl-trigger
         data-active={listening}
-        onClick={() => { setOpen(value => !value) }}
+        onClick={() => {
+          if (open) {
+            setOpen(false)
+            return
+          }
+          setOpen(true)
+          // ZCode parity: opening the dialog brings the gateway up.
+          if (!listening && !pending) void actions.start()
+        }}
       >
         <PanelIcon active={listening} size={wide ? 16 : 18} />
       </button>

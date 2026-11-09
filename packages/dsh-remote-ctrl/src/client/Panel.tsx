@@ -1,9 +1,9 @@
 /**
  * Remote Control dialog body (ZCode's remote-control layout): the left card
- * carries the status strip, the start/stop control, the copy-link row and the
- * QR code; the right card carries the LAN-address switcher and the pairing
- * token. Picking an address re-points both the QR code and the copied link;
- * the token only rotates through the explicit confirm step.
+ * carries the status strip, the copy-link row, the pairing token and the QR
+ * code; the right card carries the LAN-address switcher. Picking an address
+ * re-points both the QR code and the copied link; the token only rotates
+ * through the explicit confirm step.
  *
  * @module dsh-remote-ctrl/client/Panel
  */
@@ -124,52 +124,6 @@ export function Panel({ useRemote, actions, t }: PanelProps): ReactNode {
             </div>
           </div>
 
-          <div className={css.qrArea}>
-            {data.listening && qr !== ''
-              ? <div className={css.qrImage} data-testid="qr" dangerouslySetInnerHTML={{ __html: qr }} />
-              : <p className={css.hint}>{data.listening ? (link || t('noAddress')) : t('stoppedHint')}</p>}
-          </div>
-          {data.listening && link !== '' && <p className={css.qrLink}>{link}</p>}
-        </section>
-
-        <section className={css.card} data-remote-ctrl-address-card>
-          <div className={css.cardHead}>
-            <span className={css.cardIcon} aria-hidden="true"><NetworkGlyph /></span>
-            <div className={css.cardTitles}>
-              <h3 className={css.cardTitle}>{t('addresses')}</h3>
-              <p className={css.hint}>{t('addressesDesc')}</p>
-            </div>
-          </div>
-
-          {addresses.length === 0
-            ? <p className={css.hint}>{t('noAddress')}</p>
-            : (
-                <div className={css.addressList} role="radiogroup" aria-label={t('addresses')}>
-                  {addresses.map(entry => {
-                    const checked = entry.url === selected?.url
-                    return (
-                      <button
-                        key={entry.url}
-                        type="button"
-                        role="radio"
-                        aria-checked={checked}
-                        className={css.addressOption}
-                        data-address={entry.address}
-                        data-checked={checked}
-                        onClick={() => { setSelectedUrl(entry.url) }}
-                      >
-                        <span className={css.addressHead}>
-                          <code className={css.addressIp}>{entry.address}</code>
-                          <span className={css.scopeTag}>{scopeLabel(String(entry.scope), t)}</span>
-                          {entry.url === data.recommendedUrl && <span className={css.recommendTag}>{t('recommended')}</span>}
-                        </span>
-                        <span className={css.addressUrl}>{entry.url}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-
           <div className={css.tokenSection}>
             <div className={css.cardTitles}>
               <h3 className={css.cardTitle}>{t('tokenTitle')}</h3>
@@ -216,6 +170,52 @@ export function Panel({ useRemote, actions, t }: PanelProps): ReactNode {
                   )}
             </div>
           </div>
+
+          <div className={css.qrArea}>
+            {data.listening && qr !== ''
+              ? <div className={css.qrImage} data-testid="qr" dangerouslySetInnerHTML={{ __html: qr }} />
+              : <p className={css.hint}>{data.listening ? (link || t('noAddress')) : t('stoppedHint')}</p>}
+          </div>
+        </section>
+
+        <section className={css.card} data-remote-ctrl-address-card>
+          <div className={css.cardHead}>
+            <span className={css.cardIcon} aria-hidden="true"><NetworkGlyph /></span>
+            <div className={css.cardTitles}>
+              <h3 className={css.cardTitle}>{t('addresses')}</h3>
+              <p className={css.hint}>{t('addressesDesc')}</p>
+            </div>
+          </div>
+
+          {addresses.length === 0
+            ? <p className={css.hint}>{t('noAddress')}</p>
+            : (
+                <div className={css.addressList} role="radiogroup" aria-label={t('addresses')} data-remote-ctrl-address-list>
+                  {addresses.map(entry => {
+                    const checked = entry.url === selected?.url
+                    return (
+                      <button
+                        key={entry.url}
+                        type="button"
+                        role="radio"
+                        aria-checked={checked}
+                        className={css.addressOption}
+                        data-address={entry.address}
+                        data-checked={checked}
+                        onClick={() => { setSelectedUrl(entry.url) }}
+                      >
+                        <span className={css.addressHead}>
+                          <code className={css.addressIp}>{entry.address}</code>
+                          <span className={css.scopeTag}>{scopeLabel(String(entry.scope), t)}</span>
+                          {entry.url === data.recommendedUrl && <span className={css.recommendTag}>{t('recommended')}</span>}
+                        </span>
+                        <span className={css.addressUrl}>{entry.url}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+
           <p className={css.hint}>{t('securityHint')}</p>
         </section>
       </div>

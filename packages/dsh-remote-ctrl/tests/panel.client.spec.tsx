@@ -97,6 +97,19 @@ describe('Launcher', () => {
     expect(actions.init).toHaveBeenCalledTimes(1)
   })
 
+  it('starts a stopped gateway when the dialog opens (ZCode parity)', () => {
+    const stoppedActions = panelActions()
+    render(<Launcher wide useRemote={stubRemote(stoppedState()).useRemote} actions={stoppedActions} t={t} />)
+    fireEvent.click(screen.getByRole('button', { name: t('title') }))
+    expect(stoppedActions.start).toHaveBeenCalledTimes(1)
+
+    cleanup()
+    const runningActions = panelActions()
+    render(<Launcher wide useRemote={stubRemote(runningState()).useRemote} actions={runningActions} t={t} />)
+    fireEvent.click(screen.getByRole('button', { name: t('title') }))
+    expect(runningActions.start).not.toHaveBeenCalled()
+  })
+
   it('marks the entry active only while the gateway is enabled', () => {
     const actions = panelActions()
     const { rerender } = render(<Launcher wide useRemote={stubRemote(runningState()).useRemote} actions={actions} t={t} />)
@@ -178,20 +191,29 @@ describe('Panel', () => {
     expect(screen.queryByTestId('qr')).toBeNull()
   })
 
+  it('places the pairing token above the QR code', () => {
+    render(<Panel useRemote={stubRemote(runningState()).useRemote} actions={panelActions()} t={t} />)
+    const token = screen.getByText('tkn-value')
+    const qr = screen.getByTestId('qr')
+    expect((token.compareDocumentPosition(qr) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0).toBe(true)
+    expect(screen.getByTestId('qr').parentElement?.getAttribute('class')).toContain('qrArea')
+  })
+
   it('switches the QR code and copied link with the selected address', () => {
     const actions = panelActions()
     render(<Panel useRemote={stubRemote(runningState()).useRemote} actions={actions} t={t} />)
     const qrBefore = screen.getByTestId('qr').innerHTML
-    expect(screen.getByText('http://192.168.1.5:47291/?token=tkn-value')).toBeDefined()
+
+    fireEvent.click(screen.getByRole('button', { name: t('copyLink') }))
+    expect(actions.copy).toHaveBeenLastCalledWith('http://192.168.1.5:47291/?token=tkn-value', 'link')
 
     const second = screen.getByRole('radio', { name: /10\.0\.0\.2/u })
     fireEvent.click(second)
     expect(second.getAttribute('aria-checked')).toBe('true')
-    expect(screen.getByText('http://10.0.0.2:47291/?token=tkn-value')).toBeDefined()
     expect(screen.getByTestId('qr').innerHTML).not.toBe(qrBefore)
 
     fireEvent.click(screen.getByRole('button', { name: t('copyLink') }))
-    expect(actions.copy).toHaveBeenCalledWith('http://10.0.0.2:47291/?token=tkn-value', 'link')
+    expect(actions.copy).toHaveBeenLastCalledWith('http://10.0.0.2:47291/?token=tkn-value', 'link')
   })
 
   it('marks the recommended address and defaults the QR to it', () => {
