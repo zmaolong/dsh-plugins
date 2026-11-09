@@ -39,13 +39,15 @@ dsh-plugins/
 ├── package.json
 ├── AGENTS.md                   # AI Agent / Harness 工作规范（Claude Code / CodeBuddy / ZCode / Cursor / Codex 等，唯一入口）
 ├── README.md
+├── GLOSSARY.md                 # 领域词汇（记忆/作用域/项目身份/捕获/召回……）
 ├── docs/
-│   └── PLUGIN-DEV.md           # DSH 插件开发规范（权威）
+│   ├── PLUGIN-DEV.md           # DSH 插件开发规范（权威）
+│   └── adr/                    # 架构决策记录（记忆双作用域与捕获闸门）
 ├── scripts/
 │   ├── build-index.mjs
 │   └── serve-index.mjs
 └── packages/
-    ├── dsh-agent-extension/   # 智能体扩展：管理智能体插件、技能、MCP 等（ZCode 风格商店面板）
+    ├── dsh-agent-extension/   # 智能体扩展：管理智能体插件、技能、MCP 等 + 全局/项目记忆（ZCode 风格商店面板）
     │   ├── package.json        # devDependencies 工具链（TS/tsdown/vitest），dependencies 为空
     │   ├── cordis.patch.yml
     │   ├── README.md
@@ -53,7 +55,7 @@ dsh-plugins/
     │   ├── locale/             # 8 语言展示元数据（en/zh/ja/es/fr/de/ru/pt）
     │   ├── docs/HOST-API.md    # 宿主 API 侦察结论与当前接口
     │   ├── lib/                # tsdown 构建产物（入库）：lib/index.js ESM 宿主半 + lib/client.js 浏览器工厂
-    │   └── tests/              # vitest：fixtures + 150 个离线用例（*.spec / *.client.spec）
+    │   └── tests/              # vitest：fixtures + 225 个离线用例（*.spec / *.client.spec）
     └── dsh-remote-ctrl/        # 局域网访问网关（手机扫码即得完整 DSH Web UI），宿主/面板双产物
 ```
 
@@ -62,7 +64,7 @@ dsh-plugins/
 | 分支 | 内容 |
 |---|---|
 | `main` | 文档与仓库说明（本 README） |
-| `release-0.0.1` | 当前全部插件代码、脚本与生成的 `index.json`；市场索引从该分支读取（分支名沿用首个发布版本，当前包版本为 `0.0.1-preview.6`） |
+| `release-0.0.1` | 当前全部插件代码、脚本与生成的 `index.json`；市场索引从该分支读取（分支名沿用首个发布版本，当前包版本为 `0.0.1-preview.5`） |
 
 当前发布分支为 `release-0.0.1`。在 DSH 插件页 → **发现** → **添加索引源** 时填：
 
@@ -111,7 +113,7 @@ dsh --profile web
 
 | 包 | 作用 | 代码要点 |
 |---|---|---|
-| `dsh-agent-extension` | **智能体扩展**（Agent Extension）：在 DSH 里托管 Claude Code、CodeBuddy、ZCode 等**智能体插件**（Agent Plugins），并纳管技能、MCP 等更多扩展——个人市场、安装/更新/回滚、能力注入与逐项启停，以及 ZCode 风格商店面板 | 组合包 + `/agent-plugin` 命令 + 首页左侧栏商店面板（首页双 tab：我的市场 / 推荐（市场详情页 + 插件描述页 + 一键添加）、按市场分组 / 详情 / 管理 / 市场源 / 自动识别来源 / 等价来源查重）；schema v2 自动迁移；skills/commands/hooks 注入，MCP 清单标注；TypeScript + tsdown + vitest 官方化工具链，161 个离线用例 |
+| `dsh-agent-extension` | **智能体扩展**（Agent Extension）：在 DSH 里托管 Claude Code、CodeBuddy、ZCode 等**智能体插件**（Agent Plugins），并纳管技能、MCP 等更多扩展——个人市场、安装/更新/回滚、能力注入与逐项启停，以及 ZCode 风格商店面板；新增**跨会话记忆**（全局 + 项目双作用域、轮末自动捕获、开场召回 + 工具按需检索、管理面板） | 组合包 + `/agent-plugin` 命令 + 首页左侧栏商店面板（首页双 tab：我的市场 / 推荐（市场详情页 + 插件描述页 + 一键添加）、按市场分组 / 详情 / 管理 / 市场源 / 自动识别来源 / 等价来源查重）；schema v2 自动迁移；skills/commands/hooks 注入，MCP 清单标注；记忆：`memory/` Markdown 事实库 + `MEMORY.md` 索引 + `systemPrompt` 注入 + 4 个工具 + 3 个命令 + `/memory/*` 数据面；TypeScript + tsdown + vitest 官方化工具链，225 个离线用例 |
 | `dsh-remote-ctrl` | **局域网远程控制**：带配对码的访问网关——宿主 web UI 只绑回环，插件自起 `node:http`（默认 `0.0.0.0:31080`）把**完整、自适应的 DSH Web UI** 反代给局域网手机；会话/流式输出/发消息/工具审批/智能体提问全部宿主原生，插件不做业务 UI | 组合包 + 配对码门（query/Bearer/配对 cookie 三通道，Host 校验 + 同源写防护）+ 服务端 launch-token 代换（`ctx.connection.authenticatedUrl` → 签名 cookie 缓存并下发，宿主重启 401 自动重换重放）+ Host/Origin/Referer 统一改写满足 `/api` trust fence + SSE 直通与 WebSocket 中继；桌面面板挂宿主回环 `/remote-ctrl/api`（状态/地址列表/二维码/token/连接数）；TypeScript + tsdown 双产物 + vitest，22 个离线用例 |
 
 > 命名说明：Agent 直译“代理”不准确、“助手”易混淆；单叫“插件”会与 DSH 自身插件混淆。
@@ -243,7 +245,7 @@ node scripts\build-index.mjs
 
 > 索引**没有签名**：条目里的包名、版本只是索引的声明，最终装的是什么由被装包的 manifest 决定。所以自建源只放自己的插件，别把它当审核机制。
 
-> **npm 首发策略（试验期）**：`0.0.1-preview.N` 为试验线（当前 `0.0.1-preview.6`），
+> **npm 首发策略（试验期）**：`0.0.1-preview.N` 为试验线（当前 `0.0.1-preview.5`），
 > `publishConfig.tag` 固定为 `preview`，`latest` 暂不指向任何版本。
 > 市场索引与包版本保持同步（git 源），因此 `index.json` 里的版本号始终等于 `packages/*/package.json`。
 > 首个正式版定为 `0.0.1`（即 `0.0.1-preview.N` 的稳定版），届时 `npm publish --tag latest`，再切 `DSH_PLUGINS_SOURCE=npm` 重新生成索引。

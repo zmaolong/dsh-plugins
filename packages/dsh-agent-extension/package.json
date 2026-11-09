@@ -1,7 +1,7 @@
 {
   "name": "dsh-agent-extension",
-  "version": "0.0.1-preview.4",
-  "description": "Agent Extension (智能体扩展) for DSH: manage agent plugins, skills, MCP and more — hosts Claude Code / CodeBuddy / ZCode agent plugins as DSH skills, commands, hooks and MCP, with a ZCode-style store panel.",
+  "version": "0.0.1-preview.5",
+  "description": "Agent Extension (智能体扩展) for DSH: manage agent plugins, skills, MCP and more — plus built-in cross-session memory with global and project scopes, automatic capture and on-demand recall.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -65,6 +65,7 @@
     "codebuddy",
     "zcode",
     "marketplace",
+    "memory",
     "web-ui"
   ],
   "dsh": {
@@ -86,8 +87,8 @@
         "zh-cn": "智能体扩展"
       },
       "description": {
-        "en": "Manage agent extensions in DSH — agent plugins, skills, MCP servers and more: personal marketplaces, install/update/rollback, per-item capability toggles, and a ZCode-style store panel.",
-        "zh-cn": "在 DSH 里管理智能体扩展（插件、技能、MCP 等）：个人市场源、安装/更新/回滚、能力逐项启停，以及 ZCode 风格商店面板。"
+        "en": "Manage agent extensions in DSH — plugin marketplaces, install/update/rollback, per-item capability toggles, and built-in cross-session memory (global + project scopes, automatic capture, on-demand recall).",
+        "zh-cn": "在 DSH 里管理智能体扩展：插件市场与逐项启停，并内置跨会话记忆（全局 + 项目双作用域、自动捕获、按需召回）。"
       },
       "category": "tool",
       "keywords": [
@@ -96,6 +97,7 @@
         "codebuddy",
         "zcode",
         "marketplace",
+        "memory",
         "store"
       ]
     }

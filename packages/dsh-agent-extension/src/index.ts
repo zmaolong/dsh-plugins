@@ -12,8 +12,11 @@
 
 import { registerHubCommand } from './commands.ts'
 import { AgentPluginHub, HUB_VERSION } from './hub.ts'
+import { MemoryRuntime } from './memory-host.ts'
+import { MemoryStore } from './memory/store.ts'
 import { mountUiRoutes, type UiRoutesStatus } from './ui-routes.ts'
 import type { HubConfig, HostContext } from './host.ts'
+import type { LogFn } from './log.ts'
 
 /** Cordis 插件名，用于日志与加载器识别。 */
 export const name = 'agent-extension'
@@ -65,6 +68,21 @@ export function apply(ctx: HostContext, config: HubConfig = {}): AgentPluginHub 
     config,
   })
   hub.start()
+  const memoryLog: LogFn = (level, message) => hub.log(level, `memory: ${message}`)
+  const memory = new MemoryStore({ home: hub.home, log: memoryLog })
+  let memoryRuntime: MemoryRuntime | null = null
+  try {
+    memoryRuntime = new MemoryRuntime({ ctx, store: memory, log: memoryLog })
+    memoryRuntime.start()
+    hub.log('info', `记忆已启用：${memory.root}`)
+    if (typeof ctx.effect === 'function') {
+      ctx.effect(() => () => { void memoryRuntime?.dispose() }, 'dsh-agent-extension: memory runtime')
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    hub.warnings.push(`记忆功能启动失败：${message}`)
+    hub.log('error', `记忆功能启动失败：${message}`)
+  }
   try {
     const disposeCommand = registerHubCommand(ctx, hub)
     if (typeof disposeCommand === 'function') {
@@ -89,7 +107,7 @@ export function apply(ctx: HostContext, config: HubConfig = {}): AgentPluginHub 
   // 插件页「智能体扩展」Tab 的 HTTP 数据面；webServer 晚到也没关系。
   let uiRoutes: UiRoutesStatus = { active: false, reason: '未挂载', path: '/agent-plugin/api', dispose: () => {} }
   try {
-    uiRoutes = mountUiRoutes(ctx, hub)
+    uiRoutes = mountUiRoutes(ctx, hub, memory)
     if (uiRoutes.active && typeof ctx.effect === 'function') {
       ctx.effect(() => () => uiRoutes.dispose(), 'dsh-agent-extension: plugin-page API')
     }
@@ -101,7 +119,7 @@ export function apply(ctx: HostContext, config: HubConfig = {}): AgentPluginHub 
   if (!hub.uiRoutes.active) {
     deferService(ctx, ['webServer'], (scope) => {
       if (hub.uiRoutes.active) return
-      const status = mountUiRoutes(scope, hub)
+      const status = mountUiRoutes(scope as HostContext, hub, memory)
       if (typeof (scope as HostContext | null)?.effect === 'function') {
         (scope as HostContext).effect(() => () => status.dispose?.(), 'dsh-agent-extension: plugin-page API')
       }

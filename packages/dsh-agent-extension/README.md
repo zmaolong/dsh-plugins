@@ -1,9 +1,9 @@
 # dsh-agent-extension
 
-> **试验性预览版（`0.0.1-preview.4`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
+> **试验性预览版（`0.0.1-preview.5`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
 > npm 上只发布 `preview` dist-tag（`latest` 暂不指向本版本）。
 > 需要安装时请锁定精确版本：
-> `dsh plugin --profile web add dsh-agent-extension@0.0.1-preview.4`。
+> `dsh plugin --profile web add dsh-agent-extension@0.0.1-preview.5`。
 > 版本说明：npm 公开线为 `0.0.1-preview.N`，首个正式版定为 `0.0.1`（预览线的稳定版）；
 > 官方化工具链形态（TypeScript + JSX + CSS Modules + tsdown + vitest，对齐官方插件形态，
 > 破坏性重构、不做旧版兼容）自 `dsh-agent-plugin-hub` 时代的 `0.0.1-preview.6` 延续；
@@ -11,7 +11,7 @@
 > （新数据目录 `~/.dsh/agent-extension`）。
 
 DSH 的**智能体扩展**（Agent Extension）：管理智能体插件、技能、MCP 等扩展，带一个
-**ZCode「插件市场」同构的商店面板**。
+**ZCode「插件市场」同构的商店面板**，并内置**跨会话记忆**（全局 + 项目双作用域）。
 
 > 命名：本包托管的是 Claude Code / CodeBuddy / ZCode 等 Agent 的插件资产包。
 > “Agent”直译为“代理”不准确，译为“助手”又容易和通用助手混淆；单叫“插件”会与
@@ -24,6 +24,28 @@ DSH 的**智能体扩展**（Agent Extension）：管理智能体插件、技能
 `mcpServers` 等能力。已知格式包括 Claude Code、CodeBuddy、ZCode；它们不是 DSH 插件
 （cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
+
+## 0.0.1-preview.5 变更（新增「记忆」能力）
+
+- **双层作用域**：`global` 记忆属于用户、跨项目可见；`project` 记忆属于一个项目。
+  项目身份优先取 git `origin` 远程 URL（规范化），因此同一仓库的多个 worktree 与独立克隆
+  共享记忆；无 origin 退回首个远程，无远程退回 git common dir，无 git 退回工作目录路径；
+  项目内 `.dsh/agent-extension/memory/config.json` 可固定/覆盖身份，并自动加入本地
+  `.git/info/exclude`；
+- **存储**：记忆内容只写插件 home 的 `memory/`（`global/`、`projects/<key>/`），一条事实一个
+  Markdown（frontmatter + 正文），每个作用域一个 `MEMORY.md` 索引；`settings.json` /
+  `stats.json` / `projects.json` 存设置、统计与项目登记。项目目录只写身份文件，写内容；
+- **自动捕获**：轮末 `agent/turn-stopping` 先过便宜闸门（子代理/空轮/过短轮跳过），命中后
+  异步调一次低温度提炼（0–3 条结构化事实，输出上限 1k tokens），单运行 + 单排队；
+  用户显式「记住/以后都/never」跳过闸门；`agent/disposed` 可补一次全量补漏；
+- **召回**：`systemPrompt.context` 注入有界索引（全局/项目各默认 50 条、总 12k 字符），
+  `systemPrompt.section` 提供使用指南；`memory_search` / `memory_get` / `memory_save` /
+  `memory_forget` 四个工具按需取详情与维护，`/remember`、`/forget`、`/memory` 为人用入口；
+- **生命周期**：指纹相同只强化不新增；`supersedes`/`memory_forget`/`/forget` 计票，
+  一票 `stale`（不注入、仍可检索），两票 `archived`（默认不可见），界面可恢复或彻底删除；
+- **管理面板**：记忆 tab 支持全局/项目切换、搜索、类型筛选、新建/编辑/停用/归档/删除、
+  捕获与注入开关、索引条数与字符预算、捕获次数与注入命中率、导出 Markdown；
+- **新测试**：记忆存储/身份/捕获/路由 23 个用例 + 客户端 9 个组件用例（全量 225 个离线用例）。
 
 ## 0.0.1-preview.6 变更（对齐 DeepSeek Harness 官方插件形态的全量重构）
 
@@ -290,6 +312,23 @@ hook 命令按 Claude Code 约定执行：工作目录为插件根，stdin 传 J
 `hookSpecificOutput.permissionDecision: "deny"` 表示阻断（仅 PreToolUse 可阻断）。
 宿主没有对应事件的 hooks（Notification / SubagentStop / PreCompact 等）只保留清单。
 
+### 记忆（memory）
+
+跨会话保留智能体经验：自动捕获 + 显式写入两条通道，开场召回 + 按需检索两种用法。
+
+| 概念 | 说明 |
+|---|---|
+| 作用域 | `global`（用户级、跨项目）/ `project`（单项目，worktree 与克隆共享） |
+| 类型 | `preference` / `decision` / `gotcha` / `project` / `reference` |
+| 自动捕获 | 轮末闸门命中才异步提炼；模型路由取会话当前请求头；可全局/项目关闭，会话结束补漏可关 |
+| 显式写入 | 模型工具 `memory_save`；用户命令 `/remember [global] <内容>` |
+| 召回 | 开场注入有界索引 + `memory_search` / `memory_get` 按需取详情；`memory_forget` 与 `/forget` 标记过时 |
+| 过时 | 一票 `stale`（不注入、仍可搜）、两票 `archived`（默认不可见） |
+| 管理面板 | 记忆 tab：作用域切换、搜索、类型筛选、增删改、开关、索引预算、命中率、导出 |
+
+写入即去重：名称/描述/正文指纹相同只强化原条目，不重复新增。记忆中不含项目内容：
+项目目录只写 `.dsh/agent-extension/memory/config.json`（身份文件，已自动 exclude）。
+
 ### 运维命令（与面板等价）
 
 ```text
@@ -332,6 +371,19 @@ hook 命令按 Claude Code 约定执行：工作目录为插件根，stdin 传 J
 单写互斥：同一时刻只允许一个写操作，忙时返回 409 `operation_in_progress`。
 数据结构与错误码见 [`docs/HOST-API.md`](docs/HOST-API.md)。
 
+记忆数据面（同一前缀，同一信封与访问控制）：
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/agent-plugin/api/memory/state` | 设置 + 已知项目（含条目数）+ 捕获/命中率统计 |
+| GET | `/agent-plugin/api/memory/list` | `scope=global|project`、`project=<key>`、`query`、`type`、`includeArchived` |
+| GET | `/agent-plugin/api/memory/get` | 单条详情（`id`） |
+| POST | `/agent-plugin/api/memory/save` | 新建/更新（写） |
+| POST | `/agent-plugin/api/memory/status` | `active` / `stale` / `archived` |
+| POST | `/agent-plugin/api/memory/delete` | 永久删除单条 |
+| POST | `/agent-plugin/api/memory/settings` | 自动捕获、注入开关、索引条数、字符预算 |
+| POST | `/agent-plugin/api/memory/export` | 导出单作用域 Markdown |
+
 ## 存储（schema v2）
 
 home 解析：配置 `home` → `DSH_AGENT_EXTENSION_HOME` → `~/.dsh/agent-extension`。
@@ -344,7 +396,13 @@ home 解析：配置 `home` → `DSH_AGENT_EXTENSION_HOME` → `~/.dsh/agent-ext
 ├─ cache/<format>/<market>/<plugin>/<version>/   # 安装副本
 ├─ cache/markets/<marketId>/                     # git 市场浅克隆 / url 快照 / 来源克隆
 ├─ logs/hub.log          # 运行日志；损坏文件备份也是 corrupt-*.json
-└─ tmp/                  # 原子写临时文件与 hub.lock 进程锁
+├─ tmp/                  # 原子写临时文件与 hub.lock 进程锁
+└─ memory/               # 记忆（schema v1）
+   ├─ settings.json      # 自动捕获/注入开关、索引条数、字符预算
+   ├─ stats.json         # 捕获计数与最近 100 个会话的注入/命中率
+   ├─ projects.json      # 已知项目身份登记（含已见目录）
+   ├─ global/            # MEMORY.md 索引 + 一条事实一个 Markdown
+   └─ projects/<key>/    # 同上，按项目身份分目录
 ```
 
 升级说明：主代码只处理 schema v2。宿主启动时若检测到 v1 文件，会自动迁移并保留原文件备份；
@@ -376,12 +434,16 @@ home 解析：配置 `home` → `DSH_AGENT_EXTENSION_HOME` → `~/.dsh/agent-ext
 
 `cordis.patch.yml` 的改动约 1 秒热重载；`lib/` 构建产物的改动需要重启宿主（改源码后先 `npm run build`）。
 
+记忆没有额外的 cordis 配置项：自动捕获、注入、索引条数与字符预算都在面板（或
+`POST /agent-plugin/api/memory/settings`）里调整，落 `memory/settings.json`。`home` 配到哪，
+记忆就在哪。
+
 ## 开发
 
 ```powershell
 cd packages\dsh-agent-extension
 npm run check   # tsc --noEmit（node + client 双 tsconfig）
-npm test        # vitest run：150 个离线用例，零运行时依赖，不访问网络
+npm test        # vitest run：225 个离线用例，零运行时依赖，不访问网络
 npm run build   # tsdown：lib/index.js（ESM 宿主半）+ lib/client.js（CJS 浏览器工厂，产物入库）
 ```
 
@@ -389,7 +451,9 @@ npm run build   # tsdown：lib/index.js（ESM 宿主半）+ lib/client.js（CJS 
 市场添加/刷新/移除（含移除后孤立）、安装/重装/禁用启用/更新/回滚/卸载、重启恢复、state
 损坏自检、路径穿越与非法名拒绝、git 市场重启回归、版本比较与更新判定、schema v1→v2 迁移、
 技能 provider、插件命令、hooks 事件映射与阻断、MCP 清单、`/store` / `/describe` / `/icon`
-与访问控制（含 `sec-fetch-site` fence）、单写互斥与批量更新；客户端侧 presentation 纯函数、
+与访问控制（含 `sec-fetch-site` fence）、单写互斥与批量更新；记忆侧覆盖存储（索引/指纹去重/
+过时投票/检索/注入预算/导出）、项目身份（路径/远程/worktree/config 覆盖/exclude）、捕获闸门
+与提炼 JSON、记忆路由契约；客户端侧 presentation 纯函数、
 控制器（加载/竞态守卫/串行队列/Toast/弹窗）、Switch/Menu/弹窗/卡片/面板/浮层组件行为
 （jsdom）、样式回归守卫（corner-shape 配对、hover 门控、无 blur、无本地调色板）与构建产物
 工厂闭包形态。
@@ -409,6 +473,10 @@ Host API 契约与数据结构见 [`docs/HOST-API.md`](docs/HOST-API.md)。
 - **面板需刷新页面**：Client 代码由浏览器加载，安装/升级插件后刷新一次页面即可；
   Host API 更新需重启 DSH；
 - **远端 Web UI 下插件 API 返回 403**：本机回环安全门限制，桌面端本地访问不受影响；
+- **记忆不做向量检索**：宿主 LLM 只有 chat/stream、没有 embedding，首版用关键词 + 重要性
+  排序；语义召回留作后续；
+- **自动捕获依赖宿主 llm 服务**：服务缺失时只保留显式写入（工具/命令），不阻塞对话；
+- **项目记忆不随仓库迁移**：内容只存用户目录；交接用导出，团队共享写 `AGENTS.md`；
 - 不做签名/审计与完整信任模型（结构已留扩展点）。
 
 ## 安装（开发期）
@@ -423,7 +491,7 @@ E:\workspace\dsh-plugins\packages\dsh-agent-extension
 
 ## 市场索引
 
-发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 `0.0.1-preview.4`）。在 DSH 插件页 → 发现 → 添加索引源：
+发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 `0.0.1-preview.5`）。在 DSH 插件页 → 发现 → 添加索引源：
 
 ```text
 https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json

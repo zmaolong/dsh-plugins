@@ -184,7 +184,73 @@ window.__ModuleLoader__.load({
 			recommendedHint: "精选的插件市场源，点击添加后即可浏览安装。",
 			addedBadge: "已添加",
 			previewAddHint: "添加后即可浏览并安装其中的全部插件。",
-			previewInstallBlocked: "添加市场源后可安装"
+			previewInstallBlocked: "添加市场源后可安装",
+			memoryTitle: "记忆",
+			memoryScopeLabel: "记忆作用域",
+			memoryScopeGlobal: "全局",
+			memoryScopeProject: "项目",
+			memoryProjectLabel: "项目",
+			memoryProjectEmpty: "尚未识别到任何项目。在项目目录中打开一次会话后即可使用项目记忆；全局记忆始终可用。",
+			memorySearchPlaceholder: "搜索记忆",
+			memoryTypeLabel: "记忆类型",
+			memoryTypeAll: "全部",
+			memoryTypePreference: "偏好/约定",
+			memoryTypeDecision: "决策",
+			memoryTypeGotcha: "坑/经验",
+			memoryTypeProject: "项目事实",
+			memoryTypeReference: "参考资料",
+			memoryStatusActive: "生效中",
+			memoryStatusStale: "已停用",
+			memoryStatusArchived: "已归档",
+			memoryNew: "新建记忆",
+			memoryRetry: "重试",
+			memoryListTitle: "记忆条目",
+			memoryLoading: "正在加载记忆…",
+			memoryListEmpty: "还没有记忆条目。点击「新建记忆」创建第一条。",
+			memoryListEmptyFiltered: "没有匹配的记忆条目。",
+			memorySelectHint: "从左侧选择一条记忆进行查看和编辑，或新建一条。",
+			memoryCreateTitle: "新建记忆",
+			memoryEditTitle: "编辑记忆",
+			memoryFieldName: "名称",
+			memoryFieldDescription: "描述",
+			memoryFieldType: "类型",
+			memoryFieldTags: "标签",
+			memoryFieldImportance: "重要性",
+			memoryFieldContent: "内容",
+			memoryTagsHint: "用逗号分隔多个标签",
+			memoryImportanceHint: "0–100，越大越优先注入",
+			memorySave: "保存",
+			memorySaving: "保存中…",
+			memorySaved: "记忆已保存",
+			memoryNameRequired: "请填写名称和内容。",
+			memoryStatusDone: "记忆状态已更新",
+			memoryDeactivate: "停用",
+			memoryArchive: "归档",
+			memoryRestore: "恢复",
+			memoryDelete: "删除",
+			memoryDeleteConfirm: "确认删除",
+			memoryDeleteDescription: "删除「{name}」后无法恢复。",
+			memoryDeleting: "删除中…",
+			memoryDeleted: "已删除记忆「{name}」",
+			memoryExportMarkdown: "导出 Markdown",
+			memoryExporting: "导出中…",
+			memoryExportDone: "已导出 {filename}",
+			memoryExportFailed: "导出失败：{message}",
+			memorySettingsTitle: "捕获与注入设置",
+			memorySettingsCapture: "自动捕获",
+			memorySettingsCaptureSessionEnd: "会话结束补漏",
+			memorySettingsInject: "索引注入",
+			memorySettingsIndexGlobal: "全局索引条数",
+			memorySettingsIndexProject: "项目索引条数",
+			memorySettingsMaxChars: "总字符预算",
+			memorySettingsSave: "保存设置",
+			memorySettingsSaved: "设置已保存",
+			memoryStatsTitle: "统计",
+			memoryStatCaptureRuns: "累计捕获次数",
+			memoryStatCapturedEntries: "已捕获条目",
+			memoryStatHitRate: "注入命中率",
+			memoryStatOverflow: "溢出合计",
+			memoryStatNoData: "暂无数据"
 		};
 		/** English dictionary (sentence case; same key set as `zh`). */
 		const en = {
@@ -354,7 +420,73 @@ window.__ModuleLoader__.load({
 			recommendedHint: "Curated marketplace sources — add one to browse and install its plugins.",
 			addedBadge: "Added",
 			previewAddHint: "Add the source to browse and install all of its plugins.",
-			previewInstallBlocked: "Installable after adding the source"
+			previewInstallBlocked: "Installable after adding the source",
+			memoryTitle: "Memory",
+			memoryScopeLabel: "Memory scope",
+			memoryScopeGlobal: "Global",
+			memoryScopeProject: "Project",
+			memoryProjectLabel: "Project",
+			memoryProjectEmpty: "No projects detected yet. Open a session inside a project directory to use project memory; global memory is always available.",
+			memorySearchPlaceholder: "Search memory",
+			memoryTypeLabel: "Memory types",
+			memoryTypeAll: "All",
+			memoryTypePreference: "Preference",
+			memoryTypeDecision: "Decision",
+			memoryTypeGotcha: "Gotcha",
+			memoryTypeProject: "Project fact",
+			memoryTypeReference: "Reference",
+			memoryStatusActive: "Active",
+			memoryStatusStale: "Deactivated",
+			memoryStatusArchived: "Archived",
+			memoryNew: "New memory",
+			memoryRetry: "Retry",
+			memoryListTitle: "Memories",
+			memoryLoading: "Loading memory…",
+			memoryListEmpty: "No memories yet. Choose “New memory” to create the first one.",
+			memoryListEmptyFiltered: "No memories match this filter.",
+			memorySelectHint: "Select a memory on the left to view or edit it, or create a new one.",
+			memoryCreateTitle: "New memory",
+			memoryEditTitle: "Edit memory",
+			memoryFieldName: "Name",
+			memoryFieldDescription: "Description",
+			memoryFieldType: "Type",
+			memoryFieldTags: "Tags",
+			memoryFieldImportance: "Importance",
+			memoryFieldContent: "Content",
+			memoryTagsHint: "Separate tags with commas",
+			memoryImportanceHint: "0–100; higher values are injected first",
+			memorySave: "Save",
+			memorySaving: "Saving…",
+			memorySaved: "Memory saved",
+			memoryNameRequired: "Enter a name and content.",
+			memoryStatusDone: "Memory status updated",
+			memoryDeactivate: "Deactivate",
+			memoryArchive: "Archive",
+			memoryRestore: "Restore",
+			memoryDelete: "Delete",
+			memoryDeleteConfirm: "Confirm delete",
+			memoryDeleteDescription: "Deleting “{name}” cannot be undone.",
+			memoryDeleting: "Deleting…",
+			memoryDeleted: "Deleted memory “{name}”",
+			memoryExportMarkdown: "Export Markdown",
+			memoryExporting: "Exporting…",
+			memoryExportDone: "Exported {filename}",
+			memoryExportFailed: "Export failed: {message}",
+			memorySettingsTitle: "Capture and injection",
+			memorySettingsCapture: "Automatic capture",
+			memorySettingsCaptureSessionEnd: "Session-end sweep",
+			memorySettingsInject: "Index injection",
+			memorySettingsIndexGlobal: "Global index size",
+			memorySettingsIndexProject: "Project index size",
+			memorySettingsMaxChars: "Total character budget",
+			memorySettingsSave: "Save settings",
+			memorySettingsSaved: "Settings saved",
+			memoryStatsTitle: "Statistics",
+			memoryStatCaptureRuns: "Capture runs",
+			memoryStatCapturedEntries: "Entries captured",
+			memoryStatHitRate: "Injection hit rate",
+			memoryStatOverflow: "Overflow total",
+			memoryStatNoData: "No data yet"
 		};
 		/** Japanese dictionary (same key set as `zh`). */
 		const ja = {
@@ -524,7 +656,73 @@ window.__ModuleLoader__.load({
 			recommendedHint: "厳選されたマーケットソースです。追加するとプラグインを閲覧・インストールできます。",
 			addedBadge: "追加済み",
 			previewAddHint: "追加すると、すべてのプラグインを閲覧・インストールできます。",
-			previewInstallBlocked: "マーケットソースの追加後にインストールできます"
+			previewInstallBlocked: "マーケットソースの追加後にインストールできます",
+			memoryTitle: "メモリ",
+			memoryScopeLabel: "メモリのスコープ",
+			memoryScopeGlobal: "グローバル",
+			memoryScopeProject: "プロジェクト",
+			memoryProjectLabel: "プロジェクト",
+			memoryProjectEmpty: "プロジェクトがまだ検出されていません。プロジェクトのディレクトリでセッションを開くとプロジェクトメモリを利用できます。グローバルメモリは常に利用できます。",
+			memorySearchPlaceholder: "メモリを検索",
+			memoryTypeLabel: "メモリの種類",
+			memoryTypeAll: "すべて",
+			memoryTypePreference: "好み・取り決め",
+			memoryTypeDecision: "決定",
+			memoryTypeGotcha: "落とし穴・経験",
+			memoryTypeProject: "プロジェクトの事実",
+			memoryTypeReference: "参考資料",
+			memoryStatusActive: "有効",
+			memoryStatusStale: "停止中",
+			memoryStatusArchived: "アーカイブ済み",
+			memoryNew: "メモリを作成",
+			memoryRetry: "再試行",
+			memoryListTitle: "メモリ一覧",
+			memoryLoading: "メモリを読み込み中…",
+			memoryListEmpty: "メモリはまだありません。「メモリを作成」から最初の1件を作成してください。",
+			memoryListEmptyFiltered: "条件に一致するメモリがありません。",
+			memorySelectHint: "左の一覧からメモリを選択して表示・編集するか、新規作成してください。",
+			memoryCreateTitle: "メモリを作成",
+			memoryEditTitle: "メモリを編集",
+			memoryFieldName: "名前",
+			memoryFieldDescription: "説明",
+			memoryFieldType: "種類",
+			memoryFieldTags: "タグ",
+			memoryFieldImportance: "重要度",
+			memoryFieldContent: "内容",
+			memoryTagsHint: "タグはカンマ区切り",
+			memoryImportanceHint: "0〜100。大きいほど優先して注入されます",
+			memorySave: "保存",
+			memorySaving: "保存中…",
+			memorySaved: "メモリを保存しました",
+			memoryNameRequired: "名前と内容を入力してください。",
+			memoryStatusDone: "メモリの状態を更新しました",
+			memoryDeactivate: "停止",
+			memoryArchive: "アーカイブ",
+			memoryRestore: "復元",
+			memoryDelete: "削除",
+			memoryDeleteConfirm: "削除を確定",
+			memoryDeleteDescription: "「{name}」を削除すると元に戻せません。",
+			memoryDeleting: "削除中…",
+			memoryDeleted: "メモリ「{name}」を削除しました",
+			memoryExportMarkdown: "Markdown を書き出す",
+			memoryExporting: "書き出し中…",
+			memoryExportDone: "{filename} を書き出しました",
+			memoryExportFailed: "書き出しに失敗しました：{message}",
+			memorySettingsTitle: "キャプチャと注入の設定",
+			memorySettingsCapture: "自動キャプチャ",
+			memorySettingsCaptureSessionEnd: "セッション終了時の補完",
+			memorySettingsInject: "インデックス注入",
+			memorySettingsIndexGlobal: "グローバル索引件数",
+			memorySettingsIndexProject: "プロジェクト索引件数",
+			memorySettingsMaxChars: "合計文字数予算",
+			memorySettingsSave: "設定を保存",
+			memorySettingsSaved: "設定を保存しました",
+			memoryStatsTitle: "統計",
+			memoryStatCaptureRuns: "キャプチャ回数",
+			memoryStatCapturedEntries: "キャプチャ済み件数",
+			memoryStatHitRate: "注入ヒット率",
+			memoryStatOverflow: "オーバーフロー合計",
+			memoryStatNoData: "データなし"
 		};
 		/** Spanish dictionary (same key set as `zh`). */
 		const es = {
@@ -694,7 +892,73 @@ window.__ModuleLoader__.load({
 			recommendedHint: "Fuentes de marketplace seleccionadas: agregue una para explorar e instalar sus plugins.",
 			addedBadge: "Agregado",
 			previewAddHint: "Agregue la fuente para explorar e instalar todos sus plugins.",
-			previewInstallBlocked: "Se puede instalar tras agregar la fuente"
+			previewInstallBlocked: "Se puede instalar tras agregar la fuente",
+			memoryTitle: "Memoria",
+			memoryScopeLabel: "Ámbito de memoria",
+			memoryScopeGlobal: "Global",
+			memoryScopeProject: "Proyecto",
+			memoryProjectLabel: "Proyecto",
+			memoryProjectEmpty: "Aún no se detectan proyectos. Abra una sesión dentro del directorio de un proyecto para usar la memoria de proyecto; la memoria global siempre está disponible.",
+			memorySearchPlaceholder: "Buscar en la memoria",
+			memoryTypeLabel: "Tipos de memoria",
+			memoryTypeAll: "Todos",
+			memoryTypePreference: "Preferencia",
+			memoryTypeDecision: "Decisión",
+			memoryTypeGotcha: "Advertencia",
+			memoryTypeProject: "Hecho del proyecto",
+			memoryTypeReference: "Referencia",
+			memoryStatusActive: "Activa",
+			memoryStatusStale: "Desactivada",
+			memoryStatusArchived: "Archivada",
+			memoryNew: "Nueva memoria",
+			memoryRetry: "Reintentar",
+			memoryListTitle: "Memorias",
+			memoryLoading: "Cargando memoria…",
+			memoryListEmpty: "Aún no hay memorias. Elija «Nueva memoria» para crear la primera.",
+			memoryListEmptyFiltered: "Ninguna memoria coincide con este filtro.",
+			memorySelectHint: "Seleccione una memoria a la izquierda para verla o editarla, o cree una nueva.",
+			memoryCreateTitle: "Nueva memoria",
+			memoryEditTitle: "Editar memoria",
+			memoryFieldName: "Nombre",
+			memoryFieldDescription: "Descripción",
+			memoryFieldType: "Tipo",
+			memoryFieldTags: "Etiquetas",
+			memoryFieldImportance: "Importancia",
+			memoryFieldContent: "Contenido",
+			memoryTagsHint: "Separe las etiquetas con comas",
+			memoryImportanceHint: "0–100; los valores altos se inyectan primero",
+			memorySave: "Guardar",
+			memorySaving: "Guardando…",
+			memorySaved: "Memoria guardada",
+			memoryNameRequired: "Escriba un nombre y un contenido.",
+			memoryStatusDone: "Estado de la memoria actualizado",
+			memoryDeactivate: "Desactivar",
+			memoryArchive: "Archivar",
+			memoryRestore: "Restaurar",
+			memoryDelete: "Eliminar",
+			memoryDeleteConfirm: "Confirmar eliminación",
+			memoryDeleteDescription: "Eliminar «{name}» no se puede deshacer.",
+			memoryDeleting: "Eliminando…",
+			memoryDeleted: "Memoria «{name}» eliminada",
+			memoryExportMarkdown: "Exportar Markdown",
+			memoryExporting: "Exportando…",
+			memoryExportDone: "Se exportó {filename}",
+			memoryExportFailed: "Error al exportar: {message}",
+			memorySettingsTitle: "Captura e inyección",
+			memorySettingsCapture: "Captura automática",
+			memorySettingsCaptureSessionEnd: "Cierre de sesión",
+			memorySettingsInject: "Inyección del índice",
+			memorySettingsIndexGlobal: "Tamaño del índice global",
+			memorySettingsIndexProject: "Tamaño del índice del proyecto",
+			memorySettingsMaxChars: "Presupuesto de caracteres",
+			memorySettingsSave: "Guardar ajustes",
+			memorySettingsSaved: "Ajustes guardados",
+			memoryStatsTitle: "Estadísticas",
+			memoryStatCaptureRuns: "Ejecuciones de captura",
+			memoryStatCapturedEntries: "Entradas capturadas",
+			memoryStatHitRate: "Tasa de acierto",
+			memoryStatOverflow: "Total de desbordamiento",
+			memoryStatNoData: "Sin datos"
 		};
 		/** French dictionary (same key set as `zh`). */
 		const fr = {
@@ -864,7 +1128,73 @@ window.__ModuleLoader__.load({
 			recommendedHint: "Sources de marketplace sélectionnées — ajoutez-en une pour parcourir et installer ses plugins.",
 			addedBadge: "Ajouté",
 			previewAddHint: "Ajoutez la source pour parcourir et installer tous ses plugins.",
-			previewInstallBlocked: "Installable après ajout de la source"
+			previewInstallBlocked: "Installable après ajout de la source",
+			memoryTitle: "Mémoire",
+			memoryScopeLabel: "Portée de la mémoire",
+			memoryScopeGlobal: "Globale",
+			memoryScopeProject: "Projet",
+			memoryProjectLabel: "Projet",
+			memoryProjectEmpty: "Aucun projet détecté pour le moment. Ouvrez une session dans le répertoire d’un projet pour utiliser la mémoire de projet ; la mémoire globale reste toujours disponible.",
+			memorySearchPlaceholder: "Rechercher dans la mémoire",
+			memoryTypeLabel: "Types de mémoire",
+			memoryTypeAll: "Tous",
+			memoryTypePreference: "Préférence",
+			memoryTypeDecision: "Décision",
+			memoryTypeGotcha: "Piège",
+			memoryTypeProject: "Fait du projet",
+			memoryTypeReference: "Référence",
+			memoryStatusActive: "Active",
+			memoryStatusStale: "Désactivée",
+			memoryStatusArchived: "Archivée",
+			memoryNew: "Nouvelle mémoire",
+			memoryRetry: "Réessayer",
+			memoryListTitle: "Mémoires",
+			memoryLoading: "Chargement de la mémoire…",
+			memoryListEmpty: "Aucune mémoire pour le moment. Choisissez « Nouvelle mémoire » pour créer la première.",
+			memoryListEmptyFiltered: "Aucune mémoire ne correspond à ce filtre.",
+			memorySelectHint: "Sélectionnez une mémoire à gauche pour la consulter ou la modifier, ou créez-en une.",
+			memoryCreateTitle: "Nouvelle mémoire",
+			memoryEditTitle: "Modifier la mémoire",
+			memoryFieldName: "Nom",
+			memoryFieldDescription: "Description",
+			memoryFieldType: "Type",
+			memoryFieldTags: "Étiquettes",
+			memoryFieldImportance: "Importance",
+			memoryFieldContent: "Contenu",
+			memoryTagsHint: "Séparez les étiquettes par des virgules",
+			memoryImportanceHint: "0–100 ; les valeurs élevées sont injectées en premier",
+			memorySave: "Enregistrer",
+			memorySaving: "Enregistrement…",
+			memorySaved: "Mémoire enregistrée",
+			memoryNameRequired: "Saisissez un nom et un contenu.",
+			memoryStatusDone: "Statut de la mémoire mis à jour",
+			memoryDeactivate: "Désactiver",
+			memoryArchive: "Archiver",
+			memoryRestore: "Restaurer",
+			memoryDelete: "Supprimer",
+			memoryDeleteConfirm: "Confirmer la suppression",
+			memoryDeleteDescription: "La suppression de « {name} » est irréversible.",
+			memoryDeleting: "Suppression…",
+			memoryDeleted: "Mémoire « {name} » supprimée",
+			memoryExportMarkdown: "Exporter en Markdown",
+			memoryExporting: "Exportation…",
+			memoryExportDone: "{filename} exporté",
+			memoryExportFailed: "Échec de l’export : {message}",
+			memorySettingsTitle: "Capture et injection",
+			memorySettingsCapture: "Capture automatique",
+			memorySettingsCaptureSessionEnd: "Fin de session",
+			memorySettingsInject: "Injection dans l’index",
+			memorySettingsIndexGlobal: "Taille de l’index global",
+			memorySettingsIndexProject: "Taille de l’index du projet",
+			memorySettingsMaxChars: "Budget de caractères",
+			memorySettingsSave: "Enregistrer les réglages",
+			memorySettingsSaved: "Réglages enregistrés",
+			memoryStatsTitle: "Statistiques",
+			memoryStatCaptureRuns: "Exécutions de capture",
+			memoryStatCapturedEntries: "Entrées capturées",
+			memoryStatHitRate: "Taux de réussite",
+			memoryStatOverflow: "Total de débordement",
+			memoryStatNoData: "Aucune donnée"
 		};
 		/** German dictionary (same key set as `zh`). */
 		const de = {
@@ -1034,7 +1364,73 @@ window.__ModuleLoader__.load({
 			recommendedHint: "Ausgewählte Marketplace-Quellen – fügen Sie eine hinzu, um deren Plugins zu durchstöbern und zu installieren.",
 			addedBadge: "Hinzugefügt",
 			previewAddHint: "Fügen Sie die Quelle hinzu, um alle Plugins zu durchstöbern und zu installieren.",
-			previewInstallBlocked: "Nach Hinzufügen der Quelle installierbar"
+			previewInstallBlocked: "Nach Hinzufügen der Quelle installierbar",
+			memoryTitle: "Gedächtnis",
+			memoryScopeLabel: "Gedächtnisbereich",
+			memoryScopeGlobal: "Global",
+			memoryScopeProject: "Projekt",
+			memoryProjectLabel: "Projekt",
+			memoryProjectEmpty: "Noch keine Projekte erkannt. Öffnen Sie eine Sitzung im Verzeichnis eines Projekts, um das Projektgedächtnis zu nutzen; das globale Gedächtnis ist immer verfügbar.",
+			memorySearchPlaceholder: "Gedächtnis durchsuchen",
+			memoryTypeLabel: "Gedächtnistypen",
+			memoryTypeAll: "Alle",
+			memoryTypePreference: "Präferenz",
+			memoryTypeDecision: "Entscheidung",
+			memoryTypeGotcha: "Stolperfalle",
+			memoryTypeProject: "Projektfakt",
+			memoryTypeReference: "Referenz",
+			memoryStatusActive: "Aktiv",
+			memoryStatusStale: "Deaktiviert",
+			memoryStatusArchived: "Archiviert",
+			memoryNew: "Neues Gedächtnis",
+			memoryRetry: "Erneut versuchen",
+			memoryListTitle: "Gedächtniseinträge",
+			memoryLoading: "Gedächtnis wird geladen…",
+			memoryListEmpty: "Noch keine Einträge. Wählen Sie „Neues Gedächtnis“, um den ersten zu erstellen.",
+			memoryListEmptyFiltered: "Keine Einträge entsprechen diesem Filter.",
+			memorySelectHint: "Wählen Sie links einen Eintrag zum Anzeigen oder Bearbeiten oder erstellen Sie einen neuen.",
+			memoryCreateTitle: "Neues Gedächtnis",
+			memoryEditTitle: "Gedächtnis bearbeiten",
+			memoryFieldName: "Name",
+			memoryFieldDescription: "Beschreibung",
+			memoryFieldType: "Typ",
+			memoryFieldTags: "Tags",
+			memoryFieldImportance: "Wichtigkeit",
+			memoryFieldContent: "Inhalt",
+			memoryTagsHint: "Tags durch Kommas trennen",
+			memoryImportanceHint: "0–100; höhere Werte werden zuerst injiziert",
+			memorySave: "Speichern",
+			memorySaving: "Speichern…",
+			memorySaved: "Gedächtnis gespeichert",
+			memoryNameRequired: "Geben Sie Name und Inhalt ein.",
+			memoryStatusDone: "Gedächtnisstatus aktualisiert",
+			memoryDeactivate: "Deaktivieren",
+			memoryArchive: "Archivieren",
+			memoryRestore: "Wiederherstellen",
+			memoryDelete: "Löschen",
+			memoryDeleteConfirm: "Löschen bestätigen",
+			memoryDeleteDescription: "Das Löschen von „{name}“ kann nicht rückgängig gemacht werden.",
+			memoryDeleting: "Löschen…",
+			memoryDeleted: "Gedächtnis „{name}“ gelöscht",
+			memoryExportMarkdown: "Markdown exportieren",
+			memoryExporting: "Exportieren…",
+			memoryExportDone: "{filename} exportiert",
+			memoryExportFailed: "Export fehlgeschlagen: {message}",
+			memorySettingsTitle: "Erfassung und Injektion",
+			memorySettingsCapture: "Automatische Erfassung",
+			memorySettingsCaptureSessionEnd: "Sitzungsende-Abgleich",
+			memorySettingsInject: "Index-Injektion",
+			memorySettingsIndexGlobal: "Globaler Indexumfang",
+			memorySettingsIndexProject: "Projekt-Indexumfang",
+			memorySettingsMaxChars: "Zeichenbudget gesamt",
+			memorySettingsSave: "Einstellungen speichern",
+			memorySettingsSaved: "Einstellungen gespeichert",
+			memoryStatsTitle: "Statistik",
+			memoryStatCaptureRuns: "Erfassungsläufe",
+			memoryStatCapturedEntries: "Erfasste Einträge",
+			memoryStatHitRate: "Trefferquote",
+			memoryStatOverflow: "Überlauf gesamt",
+			memoryStatNoData: "Keine Daten"
 		};
 		/** Russian dictionary (same key set as `zh`). */
 		const ru = {
@@ -1204,7 +1600,73 @@ window.__ModuleLoader__.load({
 			recommendedHint: "Отобранные источники маркетплейсов — добавьте один, чтобы просматривать и устанавливать его плагины.",
 			addedBadge: "Добавлено",
 			previewAddHint: "Добавьте источник, чтобы просматривать и устанавливать все его плагины.",
-			previewInstallBlocked: "Установка после добавления источника"
+			previewInstallBlocked: "Установка после добавления источника",
+			memoryTitle: "Память",
+			memoryScopeLabel: "Область памяти",
+			memoryScopeGlobal: "Глобальная",
+			memoryScopeProject: "Проект",
+			memoryProjectLabel: "Проект",
+			memoryProjectEmpty: "Проекты пока не обнаружены. Откройте сессию в каталоге проекта, чтобы использовать память проекта; глобальная память доступна всегда.",
+			memorySearchPlaceholder: "Поиск в памяти",
+			memoryTypeLabel: "Типы памяти",
+			memoryTypeAll: "Все",
+			memoryTypePreference: "Предпочтение",
+			memoryTypeDecision: "Решение",
+			memoryTypeGotcha: "Подводный камень",
+			memoryTypeProject: "Факт проекта",
+			memoryTypeReference: "Справка",
+			memoryStatusActive: "Активна",
+			memoryStatusStale: "Отключена",
+			memoryStatusArchived: "В архиве",
+			memoryNew: "Новая память",
+			memoryRetry: "Повторить",
+			memoryListTitle: "Записи памяти",
+			memoryLoading: "Загрузка памяти…",
+			memoryListEmpty: "Записей пока нет. Нажмите «Новая память», чтобы создать первую.",
+			memoryListEmptyFiltered: "Нет записей, подходящих под фильтр.",
+			memorySelectHint: "Выберите запись слева для просмотра или редактирования либо создайте новую.",
+			memoryCreateTitle: "Новая память",
+			memoryEditTitle: "Редактирование памяти",
+			memoryFieldName: "Название",
+			memoryFieldDescription: "Описание",
+			memoryFieldType: "Тип",
+			memoryFieldTags: "Теги",
+			memoryFieldImportance: "Важность",
+			memoryFieldContent: "Содержание",
+			memoryTagsHint: "Разделяйте теги запятыми",
+			memoryImportanceHint: "0–100; чем выше, тем раньше внедряется",
+			memorySave: "Сохранить",
+			memorySaving: "Сохранение…",
+			memorySaved: "Память сохранена",
+			memoryNameRequired: "Укажите название и содержимое.",
+			memoryStatusDone: "Статус памяти обновлен",
+			memoryDeactivate: "Отключить",
+			memoryArchive: "В архив",
+			memoryRestore: "Восстановить",
+			memoryDelete: "Удалить",
+			memoryDeleteConfirm: "Подтвердить удаление",
+			memoryDeleteDescription: "Удаление «{name}» нельзя отменить.",
+			memoryDeleting: "Удаление…",
+			memoryDeleted: "Память «{name}» удалена",
+			memoryExportMarkdown: "Экспорт Markdown",
+			memoryExporting: "Экспорт…",
+			memoryExportDone: "Экспортирован {filename}",
+			memoryExportFailed: "Ошибка экспорта: {message}",
+			memorySettingsTitle: "Захват и внедрение",
+			memorySettingsCapture: "Автоматический захват",
+			memorySettingsCaptureSessionEnd: "Досбор по завершении сессии",
+			memorySettingsInject: "Внедрение индекса",
+			memorySettingsIndexGlobal: "Размер глобального индекса",
+			memorySettingsIndexProject: "Размер индекса проекта",
+			memorySettingsMaxChars: "Общий лимит символов",
+			memorySettingsSave: "Сохранить настройки",
+			memorySettingsSaved: "Настройки сохранены",
+			memoryStatsTitle: "Статистика",
+			memoryStatCaptureRuns: "Запусков захвата",
+			memoryStatCapturedEntries: "Захвачено записей",
+			memoryStatHitRate: "Доля попаданий",
+			memoryStatOverflow: "Переполнение всего",
+			memoryStatNoData: "Нет данных"
 		};
 		/** Portuguese dictionary (same key set as `zh`). */
 		const pt = {
@@ -1374,7 +1836,73 @@ window.__ModuleLoader__.load({
 			recommendedHint: "Fontes de marketplace selecionadas — adicione uma para explorar e instalar os plugins dela.",
 			addedBadge: "Adicionado",
 			previewAddHint: "Adicione a fonte para explorar e instalar todos os plugins dela.",
-			previewInstallBlocked: "Instalável após adicionar a fonte"
+			previewInstallBlocked: "Instalável após adicionar a fonte",
+			memoryTitle: "Memória",
+			memoryScopeLabel: "Escopo da memória",
+			memoryScopeGlobal: "Global",
+			memoryScopeProject: "Projeto",
+			memoryProjectLabel: "Projeto",
+			memoryProjectEmpty: "Nenhum projeto detectado ainda. Abra uma sessão dentro do diretório de um projeto para usar a memória do projeto; a memória global está sempre disponível.",
+			memorySearchPlaceholder: "Pesquisar na memória",
+			memoryTypeLabel: "Tipos de memória",
+			memoryTypeAll: "Todos",
+			memoryTypePreference: "Preferência",
+			memoryTypeDecision: "Decisão",
+			memoryTypeGotcha: "Armadilha",
+			memoryTypeProject: "Fato do projeto",
+			memoryTypeReference: "Referência",
+			memoryStatusActive: "Ativa",
+			memoryStatusStale: "Desativada",
+			memoryStatusArchived: "Arquivada",
+			memoryNew: "Nova memória",
+			memoryRetry: "Tentar novamente",
+			memoryListTitle: "Memórias",
+			memoryLoading: "Carregando memória…",
+			memoryListEmpty: "Ainda não há memórias. Escolha “Nova memória” para criar a primeira.",
+			memoryListEmptyFiltered: "Nenhuma memória corresponde a este filtro.",
+			memorySelectHint: "Selecione uma memória à esquerda para ver ou editar, ou crie uma nova.",
+			memoryCreateTitle: "Nova memória",
+			memoryEditTitle: "Editar memória",
+			memoryFieldName: "Nome",
+			memoryFieldDescription: "Descrição",
+			memoryFieldType: "Tipo",
+			memoryFieldTags: "Etiquetas",
+			memoryFieldImportance: "Importância",
+			memoryFieldContent: "Conteúdo",
+			memoryTagsHint: "Separe as etiquetas com vírgulas",
+			memoryImportanceHint: "0–100; valores maiores são injetados primeiro",
+			memorySave: "Salvar",
+			memorySaving: "Salvando…",
+			memorySaved: "Memória salva",
+			memoryNameRequired: "Informe um nome e um conteúdo.",
+			memoryStatusDone: "Status da memória atualizado",
+			memoryDeactivate: "Desativar",
+			memoryArchive: "Arquivar",
+			memoryRestore: "Restaurar",
+			memoryDelete: "Excluir",
+			memoryDeleteConfirm: "Confirmar exclusão",
+			memoryDeleteDescription: "Excluir “{name}” não pode ser desfeito.",
+			memoryDeleting: "Excluindo…",
+			memoryDeleted: "Memória “{name}” excluída",
+			memoryExportMarkdown: "Exportar Markdown",
+			memoryExporting: "Exportando…",
+			memoryExportDone: "{filename} exportado",
+			memoryExportFailed: "Falha na exportação: {message}",
+			memorySettingsTitle: "Captura e injeção",
+			memorySettingsCapture: "Captura automática",
+			memorySettingsCaptureSessionEnd: "Fechamento de sessão",
+			memorySettingsInject: "Injeção no índice",
+			memorySettingsIndexGlobal: "Tamanho do índice global",
+			memorySettingsIndexProject: "Tamanho do índice do projeto",
+			memorySettingsMaxChars: "Orçamento de caracteres",
+			memorySettingsSave: "Salvar configurações",
+			memorySettingsSaved: "Configurações salvas",
+			memoryStatsTitle: "Estatísticas",
+			memoryStatCaptureRuns: "Execuções de captura",
+			memoryStatCapturedEntries: "Entradas capturadas",
+			memoryStatHitRate: "Taxa de acerto",
+			memoryStatOverflow: "Total de excedente",
+			memoryStatNoData: "Sem dados"
 		};
 		// src/client/api.ts
 		/** Envelope error carrying the host's stable code. */
@@ -2576,13 +3104,13 @@ window.__ModuleLoader__.load({
 			}, [open, triggerRef]);
 		}
 		// \0dsh-css:E:\workspace\dsh-plugins\packages\dsh-agent-extension\src\client\controls.module.css.mjs
-		const css$8 = "._5k4UIq_button{box-sizing:border-box;border-radius:var(--dsw-radius-md);height:36px;color:var(--dsw-alias-label-primary);font:inherit;white-space:nowrap;cursor:pointer;background:0 0;border:0;justify-content:center;align-items:center;gap:6px;padding:0 14px;font-size:14px;font-weight:500;line-height:22px;transition:background .12s,color .12s,opacity .12s;display:inline-flex}._5k4UIq_button:disabled{cursor:not-allowed;opacity:.4}._5k4UIq_button:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}._5k4UIq_primary{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground)}._5k4UIq_secondary{background:var(--dsw-alias-bg-layer-3);box-shadow:inset 0 0 0 var(--dsh-hairline-width,.5px) var(--dsw-alias-border-l3)}._5k4UIq_danger{background:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-label-primary-foreground)}@media (hover:hover){._5k4UIq_primary:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}._5k4UIq_secondary:hover:not(:disabled),._5k4UIq_ghost:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}._5k4UIq_danger:hover:not(:disabled){background:var(--dsw-alias-state-error-secondary)}}._5k4UIq_primary:active:not(:disabled),._5k4UIq_secondary:active:not(:disabled),._5k4UIq_ghost:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active)}._5k4UIq_pill{corner-shape:round;border-radius:999px}._5k4UIq_iconButton{box-sizing:border-box;border-radius:var(--dsw-radius-sm);width:32px;height:32px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;justify-content:center;align-items:center;display:inline-flex}._5k4UIq_iconDanger{color:var(--dsw-alias-state-error-primary)}@media (hover:hover){._5k4UIq_iconButton:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}._5k4UIq_iconButton:disabled{opacity:.45;cursor:not-allowed}._5k4UIq_iconButton:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}._5k4UIq_buttonOutline{box-sizing:border-box;border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:32px;height:32px;box-shadow:inset 0 0 0 var(--dsh-hairline-width,.5px) var(--dsw-alias-border-l3);color:var(--dsw-alias-label-primary);cursor:pointer;border:.5px solid #0000;justify-content:center;align-items:center;padding:0;display:inline-flex}._5k4UIq_buttonOutline:disabled{opacity:.4;cursor:not-allowed}._5k4UIq_buttonOutline:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){._5k4UIq_buttonOutline:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}}._5k4UIq_badge{border:.5px solid var(--dsw-alias-border-l3);corner-shape:round;white-space:nowrap;height:20px;color:var(--dsw-alias-label-secondary);background:0 0;border-radius:999px;flex:none;align-items:center;gap:4px;padding:0 8px;font-size:11px;line-height:1;display:inline-flex}._5k4UIq_badgeSuccess{background:var(--dsw-alias-state-success-tertiary);color:var(--dsw-alias-state-success-primary);border-color:#0000}._5k4UIq_badgeWarn{background:var(--dsw-alias-state-warn-tertiary);color:var(--dsw-alias-state-warn-primary);border-color:#0000}._5k4UIq_badgeError{background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 12%, transparent);color:var(--dsw-alias-state-error-primary);border-color:#0000}._5k4UIq_badgePlain{background:var(--dsw-alias-interactive-bg-hover);border-color:#0000}._5k4UIq_updateBadge{corner-shape:round;white-space:nowrap;height:20px;color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;flex:none;align-items:center;gap:4px;padding:0 8px;font-size:11px;line-height:1;display:inline-flex}._5k4UIq_spinner{border:2px solid color-mix(in srgb, currentColor 30%, transparent);corner-shape:round;border-top-color:currentColor;border-radius:50%;flex:none;width:14px;height:14px;animation:.8s linear infinite _5k4UIq_spin;display:inline-block}._5k4UIq_spinnerLarge{border-width:2.5px;width:20px;height:20px}@keyframes _5k4UIq_spin{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){._5k4UIq_spinner{animation:none}}._5k4UIq_search{flex:none;margin-left:auto;display:inline-flex;position:relative}._5k4UIq_searchActive{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-label-primary)}._5k4UIq_searchBackdrop{z-index:40;background:0 0;position:fixed;inset:0}._5k4UIq_searchPopover{z-index:41;border-radius:var(--dsw-radius-md);background:var(--dsw-menu-surface-fill);width:280px;max-width:calc(100vw - 32px);height:40px;backdrop-filter:var(--dsw-menu-backdrop-filter);box-shadow:var(--dsw-elevation-panel);border:0;align-items:center;gap:8px;padding:0 8px 0 10px;display:flex;position:absolute;top:calc(100% + 6px);right:0}._5k4UIq_searchPopover>svg{color:var(--dsw-alias-label-tertiary);flex:none}._5k4UIq_searchInput{min-width:0;height:100%;color:var(--dsw-alias-label-primary);font:inherit;background:0 0;border:0;outline:none;flex:1;padding:0;font-size:14px}._5k4UIq_searchInput::placeholder{color:var(--dsw-alias-label-tertiary)}._5k4UIq_searchInput::-webkit-search-decoration,._5k4UIq_searchInput::-webkit-search-cancel-button{-webkit-appearance:none;display:none}._5k4UIq_searchClear{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;flex:none;justify-content:center;align-items:center;padding:0;display:flex}._5k4UIq_searchClear:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){._5k4UIq_searchClear:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}._5k4UIq_avatar{border-radius:var(--dsw-radius-md);background:var(--dsw-alias-interactive-bg-hover);width:40px;height:40px;color:var(--dsw-alias-label-secondary);flex:none;justify-content:center;align-items:center;display:flex;overflow:hidden}._5k4UIq_avatarLarge{border-radius:var(--dsw-radius-lg);width:64px;height:64px}._5k4UIq_avatar img{object-fit:contain;width:100%;height:100%}._5k4UIq_placeholder{border:.5px dashed var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);min-height:96px;color:var(--dsw-alias-label-secondary);text-align:center;overflow-wrap:anywhere;justify-content:center;align-items:center;gap:8px;padding:24px 16px;font-size:14px;display:flex}._5k4UIq_placeholderColumn{border:.5px dashed var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);min-height:96px;color:var(--dsw-alias-label-secondary);text-align:center;overflow-wrap:anywhere;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:24px 16px;font-size:14px;display:flex}._5k4UIq_placeholderTitle{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:500}._5k4UIq_placeholderDesc{max-width:420px;font-size:12px}";
-		const tagId$8 = "dsh-agent-extension/controls.module.css";
-		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$8) + "]") === null) {
+		const css$9 = "._5k4UIq_button{box-sizing:border-box;border-radius:var(--dsw-radius-md);height:36px;color:var(--dsw-alias-label-primary);font:inherit;white-space:nowrap;cursor:pointer;background:0 0;border:0;justify-content:center;align-items:center;gap:6px;padding:0 14px;font-size:14px;font-weight:500;line-height:22px;transition:background .12s,color .12s,opacity .12s;display:inline-flex}._5k4UIq_button:disabled{cursor:not-allowed;opacity:.4}._5k4UIq_button:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}._5k4UIq_primary{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground)}._5k4UIq_secondary{background:var(--dsw-alias-bg-layer-3);box-shadow:inset 0 0 0 var(--dsh-hairline-width,.5px) var(--dsw-alias-border-l3)}._5k4UIq_danger{background:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-label-primary-foreground)}@media (hover:hover){._5k4UIq_primary:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}._5k4UIq_secondary:hover:not(:disabled),._5k4UIq_ghost:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}._5k4UIq_danger:hover:not(:disabled){background:var(--dsw-alias-state-error-secondary)}}._5k4UIq_primary:active:not(:disabled),._5k4UIq_secondary:active:not(:disabled),._5k4UIq_ghost:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active)}._5k4UIq_pill{corner-shape:round;border-radius:999px}._5k4UIq_iconButton{box-sizing:border-box;border-radius:var(--dsw-radius-sm);width:32px;height:32px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;justify-content:center;align-items:center;display:inline-flex}._5k4UIq_iconDanger{color:var(--dsw-alias-state-error-primary)}@media (hover:hover){._5k4UIq_iconButton:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}._5k4UIq_iconButton:disabled{opacity:.45;cursor:not-allowed}._5k4UIq_iconButton:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}._5k4UIq_buttonOutline{box-sizing:border-box;border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:32px;height:32px;box-shadow:inset 0 0 0 var(--dsh-hairline-width,.5px) var(--dsw-alias-border-l3);color:var(--dsw-alias-label-primary);cursor:pointer;border:.5px solid #0000;justify-content:center;align-items:center;padding:0;display:inline-flex}._5k4UIq_buttonOutline:disabled{opacity:.4;cursor:not-allowed}._5k4UIq_buttonOutline:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){._5k4UIq_buttonOutline:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}}._5k4UIq_badge{border:.5px solid var(--dsw-alias-border-l3);corner-shape:round;white-space:nowrap;height:20px;color:var(--dsw-alias-label-secondary);background:0 0;border-radius:999px;flex:none;align-items:center;gap:4px;padding:0 8px;font-size:11px;line-height:1;display:inline-flex}._5k4UIq_badgeSuccess{background:var(--dsw-alias-state-success-tertiary);color:var(--dsw-alias-state-success-primary);border-color:#0000}._5k4UIq_badgeWarn{background:var(--dsw-alias-state-warn-tertiary);color:var(--dsw-alias-state-warn-primary);border-color:#0000}._5k4UIq_badgeError{background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 12%, transparent);color:var(--dsw-alias-state-error-primary);border-color:#0000}._5k4UIq_badgePlain{background:var(--dsw-alias-interactive-bg-hover);border-color:#0000}._5k4UIq_updateBadge{corner-shape:round;white-space:nowrap;height:20px;color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;flex:none;align-items:center;gap:4px;padding:0 8px;font-size:11px;line-height:1;display:inline-flex}._5k4UIq_spinner{border:2px solid color-mix(in srgb, currentColor 30%, transparent);corner-shape:round;border-top-color:currentColor;border-radius:50%;flex:none;width:14px;height:14px;animation:.8s linear infinite _5k4UIq_spin;display:inline-block}._5k4UIq_spinnerLarge{border-width:2.5px;width:20px;height:20px}@keyframes _5k4UIq_spin{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){._5k4UIq_spinner{animation:none}}._5k4UIq_search{flex:none;margin-left:auto;display:inline-flex;position:relative}._5k4UIq_searchActive{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-label-primary)}._5k4UIq_searchBackdrop{z-index:40;background:0 0;position:fixed;inset:0}._5k4UIq_searchPopover{z-index:41;border-radius:var(--dsw-radius-md);background:var(--dsw-menu-surface-fill);width:280px;max-width:calc(100vw - 32px);height:40px;backdrop-filter:var(--dsw-menu-backdrop-filter);box-shadow:var(--dsw-elevation-panel);border:0;align-items:center;gap:8px;padding:0 8px 0 10px;display:flex;position:absolute;top:calc(100% + 6px);right:0}._5k4UIq_searchPopover>svg{color:var(--dsw-alias-label-tertiary);flex:none}._5k4UIq_searchInput{min-width:0;height:100%;color:var(--dsw-alias-label-primary);font:inherit;background:0 0;border:0;outline:none;flex:1;padding:0;font-size:14px}._5k4UIq_searchInput::placeholder{color:var(--dsw-alias-label-tertiary)}._5k4UIq_searchInput::-webkit-search-decoration,._5k4UIq_searchInput::-webkit-search-cancel-button{-webkit-appearance:none;display:none}._5k4UIq_searchClear{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;flex:none;justify-content:center;align-items:center;padding:0;display:flex}._5k4UIq_searchClear:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){._5k4UIq_searchClear:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}._5k4UIq_avatar{border-radius:var(--dsw-radius-md);background:var(--dsw-alias-interactive-bg-hover);width:40px;height:40px;color:var(--dsw-alias-label-secondary);flex:none;justify-content:center;align-items:center;display:flex;overflow:hidden}._5k4UIq_avatarLarge{border-radius:var(--dsw-radius-lg);width:64px;height:64px}._5k4UIq_avatar img{object-fit:contain;width:100%;height:100%}._5k4UIq_placeholder{border:.5px dashed var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);min-height:96px;color:var(--dsw-alias-label-secondary);text-align:center;overflow-wrap:anywhere;justify-content:center;align-items:center;gap:8px;padding:24px 16px;font-size:14px;display:flex}._5k4UIq_placeholderColumn{border:.5px dashed var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);min-height:96px;color:var(--dsw-alias-label-secondary);text-align:center;overflow-wrap:anywhere;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:24px 16px;font-size:14px;display:flex}._5k4UIq_placeholderTitle{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:500}._5k4UIq_placeholderDesc{max-width:420px;font-size:12px}";
+		const tagId$9 = "dsh-agent-extension/controls.module.css";
+		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$9) + "]") === null) {
 			const tag = document.createElement("style");
 			tag.dataset.plugin = "dsh-agent-extension";
-			tag.dataset.pluginCss = tagId$8;
-			tag.textContent = css$8;
+			tag.dataset.pluginCss = tagId$9;
+			tag.textContent = css$9;
 			document.head.appendChild(tag);
 		}
 		var controls_module_css_default = {
@@ -2823,13 +3351,13 @@ window.__ModuleLoader__.load({
 			};
 		}
 		// \0dsh-css:E:\workspace\dsh-plugins\packages\dsh-agent-extension\src\client\panel.module.css.mjs
-		const css$7 = ".X-8QFa_root{height:100%;min-height:0;color:var(--dsw-alias-label-primary);overflow-wrap:break-word;font-size:14px;line-height:1.5;position:relative;overflow:hidden auto;container-type:inline-size}.X-8QFa_root *{box-sizing:border-box}.X-8QFa_page{flex-direction:column;gap:20px;width:100%;max-width:896px;min-height:100%;margin:0 auto;padding:20px 16px 32px;display:flex;position:relative}@container (width>=1024px){.X-8QFa_page{padding-left:32px;padding-right:32px}}.X-8QFa_header{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px 16px;width:100%;max-width:896px;margin:0 auto;padding:20px 16px 0;display:flex}@container (width>=1024px){.X-8QFa_header{padding-left:32px;padding-right:32px}}.X-8QFa_topbar{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;display:flex}.X-8QFa_title{overflow-wrap:anywhere;letter-spacing:-.01em;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:18px;font-weight:600}.X-8QFa_titleRow{align-items:center;gap:8px;min-width:0;display:flex}.X-8QFa_actions{flex-wrap:wrap;align-items:center;gap:8px;display:flex}.X-8QFa_toolbar{flex-wrap:wrap;align-items:center;gap:12px 16px;display:flex}.X-8QFa_toolbarTrail{flex-wrap:wrap;flex:auto;justify-content:flex-end;align-items:center;gap:12px;min-width:0;display:flex}.X-8QFa_segmented{flex-wrap:wrap;align-items:center;gap:6px;display:inline-flex}.X-8QFa_segment{corner-shape:round;color:var(--dsw-alias-label-secondary);font:inherit;white-space:nowrap;cursor:pointer;background:0 0;border:0;border-radius:999px;align-items:center;gap:6px;padding:4px 12px;font-size:14px;font-weight:500;transition:background .12s,color .12s;display:inline-flex}.X-8QFa_segment:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}.X-8QFa_segment[aria-pressed=true],.X-8QFa_segment[aria-selected=true]{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-label-primary)}@media (hover:hover){.X-8QFa_segment:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.X-8QFa_section{flex-direction:column;display:flex}.X-8QFa_sectionHead{justify-content:space-between;align-items:baseline;gap:8px;padding:0 8px 8px;display:flex}.X-8QFa_sectionTitle{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:16px;font-weight:500}.X-8QFa_sectionCount{white-space:nowrap;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.X-8QFa_divider{background:var(--dsw-alias-border-l2);height:.5px}.X-8QFa_grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 24px;margin-top:8px;display:grid}.X-8QFa_recHint{color:var(--dsw-alias-label-secondary);margin:0 8px;font-size:13px}.X-8QFa_recList{flex-direction:column;margin-top:8px;display:flex}.X-8QFa_recRow{border-radius:var(--dsw-radius-sm);width:100%;font:inherit;text-align:left;cursor:pointer;background:0 0;border:0;align-items:center;gap:16px;padding:12px 8px;display:flex}.X-8QFa_recRow:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.X-8QFa_recRow:hover{background:var(--dsw-alias-interactive-bg-hover)}}.X-8QFa_recRow+.X-8QFa_recRow{border-top:.5px solid var(--dsw-alias-border-l3)}.X-8QFa_recMain{flex:1;min-width:0}.X-8QFa_recHead{align-items:center;gap:8px;min-width:0;display:flex}.X-8QFa_recName{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px;font-weight:500}.X-8QFa_recDesc{color:var(--dsw-alias-label-secondary);margin-top:2px;font-size:13px}.X-8QFa_recLocation{color:var(--dsw-alias-label-tertiary);word-break:break-all;margin-top:4px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}.X-8QFa_recAction{flex:none;align-items:center;gap:8px;display:flex}.X-8QFa_recChevron{color:var(--dsw-alias-label-tertiary);display:inline-flex}.X-8QFa_pluginDesc{color:var(--dsw-alias-label-primary);white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 8px 0;font-size:14px}.X-8QFa_gridSingle{grid-template-columns:minmax(0,1fr);margin-top:8px;display:grid}@container (width<=640px){.X-8QFa_grid,.X-8QFa_gridSingle{grid-template-columns:minmax(0,1fr)}}.X-8QFa_collapseRow{border-radius:var(--dsw-radius-md);width:100%;color:var(--dsw-alias-label-secondary);font:inherit;text-align:left;white-space:nowrap;cursor:pointer;background:0 0;border:0;align-items:center;gap:8px;margin-top:8px;padding:8px;font-size:14px;display:flex}.X-8QFa_collapseRow:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.X-8QFa_collapseRow:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.X-8QFa_collapseAvatars{flex:none;align-items:center;gap:6px;display:flex}.X-8QFa_collapseLabel{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.X-8QFa_errorBanner{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);white-space:pre-wrap;word-break:break-word;padding:10px 12px;font-size:13px}.X-8QFa_warningBanner{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-warn-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-state-warn-tertiary);color:var(--dsw-alias-state-warn-primary);word-break:break-word;align-items:flex-start;gap:8px;padding:10px 12px;font-size:13px;display:flex}.X-8QFa_warningBanner>span{overflow-wrap:anywhere;min-width:0}.X-8QFa_inlineButton{color:inherit;font:inherit;cursor:pointer;background:0 0;border:0;align-items:center;gap:4px;padding:0;font-size:13px;display:inline-flex}@media (hover:hover){.X-8QFa_inlineButton:hover{text-decoration:underline}}.X-8QFa_warningBanner .X-8QFa_inlineButton{margin-left:auto}.X-8QFa_footer{color:var(--dsw-alias-label-secondary);flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding-top:8px;font-size:12px;display:flex}.X-8QFa_runtimeRow{color:var(--dsw-alias-label-secondary);flex-wrap:wrap;align-items:center;gap:8px;padding-top:8px;font-size:12px;display:flex}.X-8QFa_back{border-radius:var(--dsw-radius-sm);width:fit-content;height:28px;color:var(--dsw-alias-label-secondary);font:inherit;white-space:nowrap;cursor:pointer;background:0 0;border:0;align-items:center;gap:6px;margin-left:-8px;padding:0 8px;font-size:14px;display:inline-flex}.X-8QFa_back:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.X-8QFa_back:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.X-8QFa_mono{color:var(--dsw-alias-label-secondary);word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}.X-8QFa_listBlock{flex-direction:column;gap:6px;display:flex}.X-8QFa_listTitle{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500}.X-8QFa_listRow{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);overflow-wrap:anywhere;flex-wrap:wrap;align-items:center;gap:8px;min-width:0;padding:8px 10px;font-size:13px;display:flex}.X-8QFa_listRowMain{text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;overflow:hidden}";
-		const tagId$7 = "dsh-agent-extension/panel.module.css";
-		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$7) + "]") === null) {
+		const css$8 = ".X-8QFa_root{height:100%;min-height:0;color:var(--dsw-alias-label-primary);overflow-wrap:break-word;font-size:14px;line-height:1.5;position:relative;overflow:hidden auto;container-type:inline-size}.X-8QFa_root *{box-sizing:border-box}.X-8QFa_page{flex-direction:column;gap:20px;width:100%;max-width:896px;min-height:100%;margin:0 auto;padding:20px 16px 32px;display:flex;position:relative}@container (width>=1024px){.X-8QFa_page{padding-left:32px;padding-right:32px}}.X-8QFa_header{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px 16px;width:100%;max-width:896px;margin:0 auto;padding:20px 16px 0;display:flex}@container (width>=1024px){.X-8QFa_header{padding-left:32px;padding-right:32px}}.X-8QFa_topbar{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;display:flex}.X-8QFa_title{overflow-wrap:anywhere;letter-spacing:-.01em;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:18px;font-weight:600}.X-8QFa_titleRow{align-items:center;gap:8px;min-width:0;display:flex}.X-8QFa_actions{flex-wrap:wrap;align-items:center;gap:8px;display:flex}.X-8QFa_toolbar{flex-wrap:wrap;align-items:center;gap:12px 16px;display:flex}.X-8QFa_toolbarTrail{flex-wrap:wrap;flex:auto;justify-content:flex-end;align-items:center;gap:12px;min-width:0;display:flex}.X-8QFa_segmented{flex-wrap:wrap;align-items:center;gap:6px;display:inline-flex}.X-8QFa_segment{corner-shape:round;color:var(--dsw-alias-label-secondary);font:inherit;white-space:nowrap;cursor:pointer;background:0 0;border:0;border-radius:999px;align-items:center;gap:6px;padding:4px 12px;font-size:14px;font-weight:500;transition:background .12s,color .12s;display:inline-flex}.X-8QFa_segment:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}.X-8QFa_segment[aria-pressed=true],.X-8QFa_segment[aria-selected=true]{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-label-primary)}@media (hover:hover){.X-8QFa_segment:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.X-8QFa_section{flex-direction:column;display:flex}.X-8QFa_sectionHead{justify-content:space-between;align-items:baseline;gap:8px;padding:0 8px 8px;display:flex}.X-8QFa_sectionTitle{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:16px;font-weight:500}.X-8QFa_sectionCount{white-space:nowrap;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.X-8QFa_divider{background:var(--dsw-alias-border-l2);height:.5px}.X-8QFa_grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 24px;margin-top:8px;display:grid}.X-8QFa_recHint{color:var(--dsw-alias-label-secondary);margin:0 8px;font-size:13px}.X-8QFa_recList{flex-direction:column;margin-top:8px;display:flex}.X-8QFa_recRow{border-radius:var(--dsw-radius-sm);width:100%;font:inherit;text-align:left;cursor:pointer;background:0 0;border:0;align-items:center;gap:16px;padding:12px 8px;display:flex}.X-8QFa_recRow:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.X-8QFa_recRow:hover{background:var(--dsw-alias-interactive-bg-hover)}}.X-8QFa_recRow+.X-8QFa_recRow{border-top:.5px solid var(--dsw-alias-border-l3)}.X-8QFa_recMain{flex:1;min-width:0}.X-8QFa_recHead{align-items:center;gap:8px;min-width:0;display:flex}.X-8QFa_recName{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px;font-weight:500}.X-8QFa_recDesc{color:var(--dsw-alias-label-secondary);margin-top:2px;font-size:13px}.X-8QFa_recLocation{color:var(--dsw-alias-label-tertiary);word-break:break-all;margin-top:4px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}.X-8QFa_recAction{flex:none;align-items:center;gap:8px;display:flex}.X-8QFa_recChevron{color:var(--dsw-alias-label-tertiary);display:inline-flex}.X-8QFa_pluginDesc{color:var(--dsw-alias-label-primary);white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 8px 0;font-size:14px}.X-8QFa_gridSingle{grid-template-columns:minmax(0,1fr);margin-top:8px;display:grid}@container (width<=640px){.X-8QFa_grid,.X-8QFa_gridSingle{grid-template-columns:minmax(0,1fr)}}.X-8QFa_collapseRow{border-radius:var(--dsw-radius-md);width:100%;color:var(--dsw-alias-label-secondary);font:inherit;text-align:left;white-space:nowrap;cursor:pointer;background:0 0;border:0;align-items:center;gap:8px;margin-top:8px;padding:8px;font-size:14px;display:flex}.X-8QFa_collapseRow:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.X-8QFa_collapseRow:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.X-8QFa_collapseAvatars{flex:none;align-items:center;gap:6px;display:flex}.X-8QFa_collapseLabel{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.X-8QFa_errorBanner{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);white-space:pre-wrap;word-break:break-word;padding:10px 12px;font-size:13px}.X-8QFa_warningBanner{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-warn-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-state-warn-tertiary);color:var(--dsw-alias-state-warn-primary);word-break:break-word;align-items:flex-start;gap:8px;padding:10px 12px;font-size:13px;display:flex}.X-8QFa_warningBanner>span{overflow-wrap:anywhere;min-width:0}.X-8QFa_inlineButton{color:inherit;font:inherit;cursor:pointer;background:0 0;border:0;align-items:center;gap:4px;padding:0;font-size:13px;display:inline-flex}@media (hover:hover){.X-8QFa_inlineButton:hover{text-decoration:underline}}.X-8QFa_warningBanner .X-8QFa_inlineButton{margin-left:auto}.X-8QFa_footer{color:var(--dsw-alias-label-secondary);flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding-top:8px;font-size:12px;display:flex}.X-8QFa_runtimeRow{color:var(--dsw-alias-label-secondary);flex-wrap:wrap;align-items:center;gap:8px;padding-top:8px;font-size:12px;display:flex}.X-8QFa_back{border-radius:var(--dsw-radius-sm);width:fit-content;height:28px;color:var(--dsw-alias-label-secondary);font:inherit;white-space:nowrap;cursor:pointer;background:0 0;border:0;align-items:center;gap:6px;margin-left:-8px;padding:0 8px;font-size:14px;display:inline-flex}.X-8QFa_back:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.X-8QFa_back:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.X-8QFa_mono{color:var(--dsw-alias-label-secondary);word-break:break-all;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}.X-8QFa_listBlock{flex-direction:column;gap:6px;display:flex}.X-8QFa_listTitle{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500}.X-8QFa_listRow{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);overflow-wrap:anywhere;flex-wrap:wrap;align-items:center;gap:8px;min-width:0;padding:8px 10px;font-size:13px;display:flex}.X-8QFa_listRowMain{text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;overflow:hidden}";
+		const tagId$8 = "dsh-agent-extension/panel.module.css";
+		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$8) + "]") === null) {
 			const tag = document.createElement("style");
 			tag.dataset.plugin = "dsh-agent-extension";
-			tag.dataset.pluginCss = tagId$7;
-			tag.textContent = css$7;
+			tag.dataset.pluginCss = tagId$8;
+			tag.textContent = css$8;
 			document.head.appendChild(tag);
 		}
 		var panel_module_css_default = {
@@ -2919,13 +3447,13 @@ window.__ModuleLoader__.load({
 			});
 		}
 		// \0dsh-css:E:\workspace\dsh-plugins\packages\dsh-agent-extension\src\client\Menu.module.css.mjs
-		const css$6 = ".mPZFjG_wrap{display:inline-flex;position:relative}.mPZFjG_trigger{border-radius:var(--dsw-radius-sm);width:32px;height:32px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;justify-content:center;align-items:center;display:inline-flex}.mPZFjG_trigger:disabled{cursor:not-allowed}.mPZFjG_trigger:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.mPZFjG_trigger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.mPZFjG_backdrop{z-index:40;background:0 0;position:fixed;inset:0}.mPZFjG_menu{z-index:41;border-radius:var(--dsw-radius-lg);background:var(--dsw-menu-surface-fill);min-width:168px;backdrop-filter:var(--dsw-menu-backdrop-filter);box-shadow:var(--dsw-elevation-panel);border:0;padding:4px;position:absolute;top:calc(100% + 4px);right:0}.mPZFjG_item{border-radius:var(--dsw-radius-md);width:100%;color:var(--dsw-alias-label-primary);font:inherit;text-align:left;white-space:nowrap;cursor:pointer;background:0 0;border:0;align-items:center;gap:8px;padding:7px 10px;font-size:14px;display:flex;overflow:hidden}.mPZFjG_item:disabled{opacity:.4;cursor:not-allowed}.mPZFjG_item:focus-visible{background:var(--dsw-alias-interactive-bg-hover);outline:none}@media (hover:hover){.mPZFjG_item:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}}.mPZFjG_itemDanger{color:var(--dsw-alias-state-error-primary)}.mPZFjG_separator{background:var(--dsw-alias-border-l2);height:.5px;margin:4px 6px}";
-		const tagId$6 = "dsh-agent-extension/Menu.module.css";
-		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$6) + "]") === null) {
+		const css$7 = ".mPZFjG_wrap{display:inline-flex;position:relative}.mPZFjG_trigger{border-radius:var(--dsw-radius-sm);width:32px;height:32px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;justify-content:center;align-items:center;display:inline-flex}.mPZFjG_trigger:disabled{cursor:not-allowed}.mPZFjG_trigger:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.mPZFjG_trigger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.mPZFjG_backdrop{z-index:40;background:0 0;position:fixed;inset:0}.mPZFjG_menu{z-index:41;border-radius:var(--dsw-radius-lg);background:var(--dsw-menu-surface-fill);min-width:168px;backdrop-filter:var(--dsw-menu-backdrop-filter);box-shadow:var(--dsw-elevation-panel);border:0;padding:4px;position:absolute;top:calc(100% + 4px);right:0}.mPZFjG_item{border-radius:var(--dsw-radius-md);width:100%;color:var(--dsw-alias-label-primary);font:inherit;text-align:left;white-space:nowrap;cursor:pointer;background:0 0;border:0;align-items:center;gap:8px;padding:7px 10px;font-size:14px;display:flex;overflow:hidden}.mPZFjG_item:disabled{opacity:.4;cursor:not-allowed}.mPZFjG_item:focus-visible{background:var(--dsw-alias-interactive-bg-hover);outline:none}@media (hover:hover){.mPZFjG_item:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}}.mPZFjG_itemDanger{color:var(--dsw-alias-state-error-primary)}.mPZFjG_separator{background:var(--dsw-alias-border-l2);height:.5px;margin:4px 6px}";
+		const tagId$7 = "dsh-agent-extension/Menu.module.css";
+		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$7) + "]") === null) {
 			const tag = document.createElement("style");
 			tag.dataset.plugin = "dsh-agent-extension";
-			tag.dataset.pluginCss = tagId$6;
-			tag.textContent = css$6;
+			tag.dataset.pluginCss = tagId$7;
+			tag.textContent = css$7;
 			document.head.appendChild(tag);
 		}
 		var Menu_module_css_default = {
@@ -3061,13 +3589,13 @@ window.__ModuleLoader__.load({
 			});
 		}
 		// \0dsh-css:E:\workspace\dsh-plugins\packages\dsh-agent-extension\src\client\Switch.module.css.mjs
-		const css$5 = ".G-jj1a_switch{box-sizing:border-box;corner-shape:round;background:var(--dsw-alias-border-l3);cursor:pointer;border:0;border-radius:999px;flex:none;width:36px;height:20px;padding:2px;transition:background .15s;position:relative}.G-jj1a_switch[aria-checked=true]{background:var(--dsw-alias-brand-primary)}.G-jj1a_switch:disabled{cursor:not-allowed;opacity:.5}.G-jj1a_switch:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}.G-jj1a_thumb{corner-shape:round;background:var(--dsw-alias-label-primary-foreground);border-radius:50%;width:16px;height:16px;transition:transform .12s;display:block}.G-jj1a_switch[aria-checked=false] .G-jj1a_thumb{background:var(--dsw-alias-switch-thumb)}.G-jj1a_switch[aria-checked=true] .G-jj1a_thumb{transform:translate(16px)}";
-		const tagId$5 = "dsh-agent-extension/Switch.module.css";
-		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$5) + "]") === null) {
+		const css$6 = ".G-jj1a_switch{box-sizing:border-box;corner-shape:round;background:var(--dsw-alias-border-l3);cursor:pointer;border:0;border-radius:999px;flex:none;width:36px;height:20px;padding:2px;transition:background .15s;position:relative}.G-jj1a_switch[aria-checked=true]{background:var(--dsw-alias-brand-primary)}.G-jj1a_switch:disabled{cursor:not-allowed;opacity:.5}.G-jj1a_switch:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}.G-jj1a_thumb{corner-shape:round;background:var(--dsw-alias-label-primary-foreground);border-radius:50%;width:16px;height:16px;transition:transform .12s;display:block}.G-jj1a_switch[aria-checked=false] .G-jj1a_thumb{background:var(--dsw-alias-switch-thumb)}.G-jj1a_switch[aria-checked=true] .G-jj1a_thumb{transform:translate(16px)}";
+		const tagId$6 = "dsh-agent-extension/Switch.module.css";
+		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$6) + "]") === null) {
 			const tag = document.createElement("style");
 			tag.dataset.plugin = "dsh-agent-extension";
-			tag.dataset.pluginCss = tagId$5;
-			tag.textContent = css$5;
+			tag.dataset.pluginCss = tagId$6;
+			tag.textContent = css$6;
 			document.head.appendChild(tag);
 		}
 		var Switch_module_css_default = {
@@ -3101,13 +3629,13 @@ window.__ModuleLoader__.load({
 			});
 		}
 		// \0dsh-css:E:\workspace\dsh-plugins\packages\dsh-agent-extension\src\client\StoreCard.module.css.mjs
-		const css$4 = ".Ye8fha_card{box-sizing:border-box;border-radius:var(--dsw-radius-md);width:100%;min-width:0;color:inherit;font:inherit;text-align:left;cursor:pointer;background:0 0;border:0;align-items:center;gap:12px;padding:12px 8px;transition:background .12s;display:flex}.Ye8fha_card:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:-2px}@media (hover:hover){.Ye8fha_card:hover{background:var(--dsw-alias-interactive-bg-hover)}}.Ye8fha_body{flex-direction:column;flex:1;min-width:0;display:flex}.Ye8fha_titleLine{align-items:center;gap:6px;min-width:0;display:flex}.Ye8fha_title{text-overflow:ellipsis;white-space:nowrap;flex-shrink:1;min-width:0;font-size:14px;font-weight:500;line-height:20px;overflow:hidden}.Ye8fha_desc{min-height:20px;color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;margin-top:2px;font-size:13px;line-height:20px;overflow:hidden}.Ye8fha_sub{color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;margin-top:1px;font-size:12px;line-height:18px;overflow:hidden}.Ye8fha_warning{color:var(--dsw-alias-state-warn-primary);text-overflow:ellipsis;white-space:nowrap;align-items:center;gap:4px;margin-top:2px;font-size:12px;display:flex;overflow:hidden}.Ye8fha_actions{flex:none;align-items:center;gap:6px;display:flex;position:relative}";
-		const tagId$4 = "dsh-agent-extension/StoreCard.module.css";
-		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$4) + "]") === null) {
+		const css$5 = ".Ye8fha_card{box-sizing:border-box;border-radius:var(--dsw-radius-md);width:100%;min-width:0;color:inherit;font:inherit;text-align:left;cursor:pointer;background:0 0;border:0;align-items:center;gap:12px;padding:12px 8px;transition:background .12s;display:flex}.Ye8fha_card:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:-2px}@media (hover:hover){.Ye8fha_card:hover{background:var(--dsw-alias-interactive-bg-hover)}}.Ye8fha_body{flex-direction:column;flex:1;min-width:0;display:flex}.Ye8fha_titleLine{align-items:center;gap:6px;min-width:0;display:flex}.Ye8fha_title{text-overflow:ellipsis;white-space:nowrap;flex-shrink:1;min-width:0;font-size:14px;font-weight:500;line-height:20px;overflow:hidden}.Ye8fha_desc{min-height:20px;color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;margin-top:2px;font-size:13px;line-height:20px;overflow:hidden}.Ye8fha_sub{color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;margin-top:1px;font-size:12px;line-height:18px;overflow:hidden}.Ye8fha_warning{color:var(--dsw-alias-state-warn-primary);text-overflow:ellipsis;white-space:nowrap;align-items:center;gap:4px;margin-top:2px;font-size:12px;display:flex;overflow:hidden}.Ye8fha_actions{flex:none;align-items:center;gap:6px;display:flex;position:relative}";
+		const tagId$5 = "dsh-agent-extension/StoreCard.module.css";
+		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$5) + "]") === null) {
 			const tag = document.createElement("style");
 			tag.dataset.plugin = "dsh-agent-extension";
-			tag.dataset.pluginCss = tagId$4;
-			tag.textContent = css$4;
+			tag.dataset.pluginCss = tagId$5;
+			tag.textContent = css$5;
 			document.head.appendChild(tag);
 		}
 		var StoreCard_module_css_default = {
@@ -3750,13 +4278,13 @@ window.__ModuleLoader__.load({
 			});
 		}
 		// \0dsh-css:E:\workspace\dsh-plugins\packages\dsh-agent-extension\src\client\DetailView.module.css.mjs
-		const css$3 = ".LeSgqW_detail{gap:32px}.LeSgqW_head{flex-wrap:wrap;align-items:flex-start;gap:16px;min-width:0;display:flex}.LeSgqW_headMain{flex-direction:column;flex:1;gap:4px;min-width:0;display:flex}.LeSgqW_titleLine{flex-wrap:wrap;align-items:center;gap:8px;min-width:0;display:flex}.LeSgqW_title{word-break:break-word;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:18px;font-weight:500}.LeSgqW_desc{color:var(--dsw-alias-label-secondary);white-space:pre-line;overflow-wrap:anywhere;margin:0;font-size:14px}.LeSgqW_warningLine{overflow-wrap:anywhere;color:var(--dsw-alias-state-warn-primary);flex-wrap:wrap;align-items:center;gap:6px;font-size:14px;display:flex}.LeSgqW_actions{flex-wrap:wrap;flex:none;align-items:center;gap:8px;margin-left:auto;display:flex}.LeSgqW_compHead{border-bottom:.5px solid var(--dsw-alias-border-l2);align-items:baseline;gap:8px;padding-bottom:8px;display:flex}.LeSgqW_compTitle{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:16px;font-weight:600}.LeSgqW_compCount{color:var(--dsw-alias-label-secondary);font-size:14px}.LeSgqW_compList{flex-direction:column;margin-top:4px;display:flex}.LeSgqW_compRow{border-bottom:.5px solid color-mix(in srgb, var(--dsw-alias-border-l2) 55%, transparent);align-items:center;gap:12px;min-width:0;padding:10px 0;display:flex}.LeSgqW_compRow:last-child{border-bottom:0}.LeSgqW_compIcon{border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);width:28px;height:28px;color:var(--dsw-alias-label-secondary);flex:none;justify-content:center;align-items:center;display:flex}.LeSgqW_compBody{flex-direction:column;flex:1;min-width:0;display:flex}.LeSgqW_compName{max-width:100%;color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500;overflow:hidden}.LeSgqW_compDesc{max-width:100%;color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;margin-top:2px;font-size:14px;overflow:hidden}.LeSgqW_compSide{flex:none;align-items:center;gap:8px;display:flex}.LeSgqW_compSideStack{align-items:center;gap:8px;display:flex}.LeSgqW_info{flex-direction:column;gap:10px;display:flex}.LeSgqW_infoRow{grid-template-columns:128px minmax(0,1fr);align-items:baseline;gap:12px;display:grid}.LeSgqW_infoLabel{color:var(--dsw-alias-label-secondary);white-space:nowrap;font-size:14px}.LeSgqW_infoValue{min-width:0;color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;font-size:14px;overflow:hidden}.LeSgqW_infoValue a{min-width:0;max-width:100%;color:var(--dsw-alias-label-primary);align-items:center;gap:4px;text-decoration:none;display:inline-flex;overflow:hidden}.LeSgqW_infoValue a>span{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.LeSgqW_infoValue a>svg{flex:none}@media (hover:hover){.LeSgqW_infoValue a:hover{color:var(--dsw-alias-link);text-underline-offset:3px;text-decoration:underline dotted}}.LeSgqW_advanced{border-top:.5px solid var(--dsw-alias-border-l2);padding-top:16px}.LeSgqW_advanced summary{overflow-wrap:anywhere;color:var(--dsw-alias-label-secondary);cursor:pointer;align-items:center;gap:8px;font-size:14px;font-weight:500;list-style:none;display:flex}.LeSgqW_advanced summary::-webkit-details-marker{display:none}.LeSgqW_advanced summary:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.LeSgqW_advanced summary:hover{color:var(--dsw-alias-label-primary)}}.LeSgqW_chev{transition:transform .15s;display:inline-flex}.LeSgqW_advanced[open] .LeSgqW_chev{transform:rotate(90deg)}.LeSgqW_advancedBody{flex-direction:column;gap:12px;margin-top:12px;display:flex}";
-		const tagId$3 = "dsh-agent-extension/DetailView.module.css";
-		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$3) + "]") === null) {
+		const css$4 = ".LeSgqW_detail{gap:32px}.LeSgqW_head{flex-wrap:wrap;align-items:flex-start;gap:16px;min-width:0;display:flex}.LeSgqW_headMain{flex-direction:column;flex:1;gap:4px;min-width:0;display:flex}.LeSgqW_titleLine{flex-wrap:wrap;align-items:center;gap:8px;min-width:0;display:flex}.LeSgqW_title{word-break:break-word;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:18px;font-weight:500}.LeSgqW_desc{color:var(--dsw-alias-label-secondary);white-space:pre-line;overflow-wrap:anywhere;margin:0;font-size:14px}.LeSgqW_warningLine{overflow-wrap:anywhere;color:var(--dsw-alias-state-warn-primary);flex-wrap:wrap;align-items:center;gap:6px;font-size:14px;display:flex}.LeSgqW_actions{flex-wrap:wrap;flex:none;align-items:center;gap:8px;margin-left:auto;display:flex}.LeSgqW_compHead{border-bottom:.5px solid var(--dsw-alias-border-l2);align-items:baseline;gap:8px;padding-bottom:8px;display:flex}.LeSgqW_compTitle{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:16px;font-weight:600}.LeSgqW_compCount{color:var(--dsw-alias-label-secondary);font-size:14px}.LeSgqW_compList{flex-direction:column;margin-top:4px;display:flex}.LeSgqW_compRow{border-bottom:.5px solid color-mix(in srgb, var(--dsw-alias-border-l2) 55%, transparent);align-items:center;gap:12px;min-width:0;padding:10px 0;display:flex}.LeSgqW_compRow:last-child{border-bottom:0}.LeSgqW_compIcon{border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);width:28px;height:28px;color:var(--dsw-alias-label-secondary);flex:none;justify-content:center;align-items:center;display:flex}.LeSgqW_compBody{flex-direction:column;flex:1;min-width:0;display:flex}.LeSgqW_compName{max-width:100%;color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500;overflow:hidden}.LeSgqW_compDesc{max-width:100%;color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;margin-top:2px;font-size:14px;overflow:hidden}.LeSgqW_compSide{flex:none;align-items:center;gap:8px;display:flex}.LeSgqW_compSideStack{align-items:center;gap:8px;display:flex}.LeSgqW_info{flex-direction:column;gap:10px;display:flex}.LeSgqW_infoRow{grid-template-columns:128px minmax(0,1fr);align-items:baseline;gap:12px;display:grid}.LeSgqW_infoLabel{color:var(--dsw-alias-label-secondary);white-space:nowrap;font-size:14px}.LeSgqW_infoValue{min-width:0;color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;font-size:14px;overflow:hidden}.LeSgqW_infoValue a{min-width:0;max-width:100%;color:var(--dsw-alias-label-primary);align-items:center;gap:4px;text-decoration:none;display:inline-flex;overflow:hidden}.LeSgqW_infoValue a>span{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.LeSgqW_infoValue a>svg{flex:none}@media (hover:hover){.LeSgqW_infoValue a:hover{color:var(--dsw-alias-link);text-underline-offset:3px;text-decoration:underline dotted}}.LeSgqW_advanced{border-top:.5px solid var(--dsw-alias-border-l2);padding-top:16px}.LeSgqW_advanced summary{overflow-wrap:anywhere;color:var(--dsw-alias-label-secondary);cursor:pointer;align-items:center;gap:8px;font-size:14px;font-weight:500;list-style:none;display:flex}.LeSgqW_advanced summary::-webkit-details-marker{display:none}.LeSgqW_advanced summary:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.LeSgqW_advanced summary:hover{color:var(--dsw-alias-label-primary)}}.LeSgqW_chev{transition:transform .15s;display:inline-flex}.LeSgqW_advanced[open] .LeSgqW_chev{transform:rotate(90deg)}.LeSgqW_advancedBody{flex-direction:column;gap:12px;margin-top:12px;display:flex}";
+		const tagId$4 = "dsh-agent-extension/DetailView.module.css";
+		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$4) + "]") === null) {
 			const tag = document.createElement("style");
 			tag.dataset.plugin = "dsh-agent-extension";
-			tag.dataset.pluginCss = tagId$3;
-			tag.textContent = css$3;
+			tag.dataset.pluginCss = tagId$4;
+			tag.textContent = css$4;
 			document.head.appendChild(tag);
 		}
 		var DetailView_module_css_default = {
@@ -4554,12 +5082,1258 @@ window.__ModuleLoader__.load({
 				]
 			});
 		}
+		// \0dsh-css:E:\workspace\dsh-plugins\packages\dsh-agent-extension\src\client\memory.module.css.mjs
+		const css$3 = ".Iw3mRa_view{gap:20px}.Iw3mRa_topbar{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px 16px;display:flex}.Iw3mRa_scopeRow{flex-wrap:wrap;align-items:center;gap:12px;min-width:0;display:flex}.Iw3mRa_segmented{flex-wrap:wrap;align-items:center;gap:6px;display:inline-flex}.Iw3mRa_projectSelect{flex:0 260px;width:auto;min-width:0}.Iw3mRa_actions{flex-wrap:wrap;align-items:center;gap:8px;margin-left:auto;display:flex}.Iw3mRa_toolbar{flex-wrap:wrap;align-items:center;gap:12px 16px;display:flex}.Iw3mRa_searchWrap{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-3);min-width:0;height:36px;color:var(--dsw-alias-label-tertiary);flex:240px;align-items:center;gap:8px;padding:0 10px;display:flex}.Iw3mRa_searchWrap>svg{flex:none}.Iw3mRa_searchInput{min-width:0;height:100%;color:var(--dsw-alias-label-primary);font:inherit;background:0 0;border:0;outline:none;flex:1;padding:0;font-size:14px}.Iw3mRa_searchInput::placeholder{color:var(--dsw-alias-label-tertiary)}.Iw3mRa_searchInput::-webkit-search-decoration,.Iw3mRa_searchInput::-webkit-search-cancel-button{-webkit-appearance:none;display:none}.Iw3mRa_searchClear{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_searchClear:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.Iw3mRa_searchClear:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.Iw3mRa_workspace{grid-template-columns:minmax(0,5fr) minmax(0,7fr);align-items:start;gap:20px;display:grid}@container (width<=720px){.Iw3mRa_workspace{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_listPane,.Iw3mRa_editorPane{flex-direction:column;gap:8px;min-width:0;display:flex}.Iw3mRa_listHead{justify-content:space-between;align-items:baseline;gap:8px;padding:0 8px 8px;display:flex}.Iw3mRa_sectionTitle{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:16px;font-weight:500}.Iw3mRa_sectionCount{white-space:nowrap;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.Iw3mRa_entryList{flex-direction:column;display:flex}.Iw3mRa_entryRow{border-radius:var(--dsw-radius-sm);width:100%;min-width:0;color:inherit;font:inherit;text-align:left;cursor:pointer;background:0 0;border:0;align-items:flex-start;gap:12px;padding:10px 8px;transition:background .12s;display:flex}.Iw3mRa_entryRow:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}.Iw3mRa_entryRow[aria-pressed=true]{background:var(--dsw-alias-interactive-bg-active)}.Iw3mRa_entryRow+.Iw3mRa_entryRow{border-top:.5px solid var(--dsw-alias-border-l3)}@media (hover:hover){.Iw3mRa_entryRow:hover{background:var(--dsw-alias-interactive-bg-hover)}}.Iw3mRa_entryMain{flex-direction:column;flex:1;gap:4px;min-width:0;display:flex}.Iw3mRa_entryName{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px;font-weight:500}.Iw3mRa_entryDesc{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-secondary);font-size:13px}.Iw3mRa_entryMeta{flex-wrap:wrap;align-items:center;gap:6px;display:flex}.Iw3mRa_entryTime{color:var(--dsw-alias-label-tertiary);font-size:12px}.Iw3mRa_editor{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);flex-direction:column;gap:12px;min-width:0;padding:16px;display:flex}.Iw3mRa_editorHead{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;display:flex}.Iw3mRa_formGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;display:grid}@container (width<=720px){.Iw3mRa_formGrid{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_field{flex-direction:column;gap:4px;min-width:0;display:flex}.Iw3mRa_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500}.Iw3mRa_fieldHint{color:var(--dsw-alias-label-tertiary);font-size:11px}.Iw3mRa_input{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:100%;min-width:0;height:36px;color:var(--dsw-alias-label-primary);font:inherit;padding:0 10px;font-size:14px}.Iw3mRa_input:focus-visible,.Iw3mRa_textarea:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}.Iw3mRa_textarea{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:100%;min-height:180px;color:var(--dsw-alias-label-primary);font:inherit;resize:vertical;padding:8px 10px;font-size:14px;line-height:1.5}.Iw3mRa_formActions{flex-wrap:wrap;align-items:center;gap:8px;padding-top:4px;display:flex}.Iw3mRa_formActionsRight{flex-wrap:wrap;flex:auto;justify-content:flex-end;align-items:center;gap:8px;min-width:0;display:flex}.Iw3mRa_confirmArea{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;display:flex}.Iw3mRa_confirmText{color:var(--dsw-alias-state-error-primary);overflow-wrap:anywhere;font-size:13px}.Iw3mRa_card{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);flex-direction:column;gap:12px;min-width:0;padding:16px;display:flex}.Iw3mRa_settingList{flex-direction:column;display:flex}.Iw3mRa_settingRow{justify-content:space-between;align-items:center;gap:12px;padding:8px 0;display:flex}.Iw3mRa_settingRow+.Iw3mRa_settingRow{border-top:.5px solid var(--dsw-alias-border-l3)}.Iw3mRa_settingLabel{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px}.Iw3mRa_numberGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;display:grid}@container (width<=720px){.Iw3mRa_numberGrid{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_divider{background:var(--dsw-alias-border-l2);height:.5px}.Iw3mRa_statsHead{align-items:baseline;gap:8px;display:flex}.Iw3mRa_statsTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:14px;font-weight:500}.Iw3mRa_statGrid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;display:grid}.Iw3mRa_stat{border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);flex-direction:column;gap:2px;padding:10px 12px;display:flex}.Iw3mRa_statLabel{color:var(--dsw-alias-label-secondary);font-size:12px}.Iw3mRa_statValue{color:var(--dsw-alias-label-primary);font-size:16px;font-weight:600}.Iw3mRa_cardActions{align-items:center;gap:8px;display:flex}.Iw3mRa_errorBox{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);flex-wrap:wrap;align-items:flex-start;gap:8px;padding:10px 12px;font-size:13px;display:flex}.Iw3mRa_errorText{overflow-wrap:anywhere;white-space:pre-wrap;flex:160px;min-width:0}";
+		const tagId$3 = "dsh-agent-extension/memory.module.css";
+		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$3) + "]") === null) {
+			const tag = document.createElement("style");
+			tag.dataset.plugin = "dsh-agent-extension";
+			tag.dataset.pluginCss = tagId$3;
+			tag.textContent = css$3;
+			document.head.appendChild(tag);
+		}
+		var memory_module_css_default = {
+			"actions": "Iw3mRa_actions",
+			"card": "Iw3mRa_card",
+			"cardActions": "Iw3mRa_cardActions",
+			"confirmArea": "Iw3mRa_confirmArea",
+			"confirmText": "Iw3mRa_confirmText",
+			"divider": "Iw3mRa_divider",
+			"editor": "Iw3mRa_editor",
+			"editorHead": "Iw3mRa_editorHead",
+			"editorPane": "Iw3mRa_editorPane",
+			"entryDesc": "Iw3mRa_entryDesc",
+			"entryList": "Iw3mRa_entryList",
+			"entryMain": "Iw3mRa_entryMain",
+			"entryMeta": "Iw3mRa_entryMeta",
+			"entryName": "Iw3mRa_entryName",
+			"entryRow": "Iw3mRa_entryRow",
+			"entryTime": "Iw3mRa_entryTime",
+			"errorBox": "Iw3mRa_errorBox",
+			"errorText": "Iw3mRa_errorText",
+			"field": "Iw3mRa_field",
+			"fieldHint": "Iw3mRa_fieldHint",
+			"fieldLabel": "Iw3mRa_fieldLabel",
+			"formActions": "Iw3mRa_formActions",
+			"formActionsRight": "Iw3mRa_formActionsRight",
+			"formGrid": "Iw3mRa_formGrid",
+			"input": "Iw3mRa_input",
+			"listHead": "Iw3mRa_listHead",
+			"listPane": "Iw3mRa_listPane",
+			"numberGrid": "Iw3mRa_numberGrid",
+			"projectSelect": "Iw3mRa_projectSelect",
+			"scopeRow": "Iw3mRa_scopeRow",
+			"searchClear": "Iw3mRa_searchClear",
+			"searchInput": "Iw3mRa_searchInput",
+			"searchWrap": "Iw3mRa_searchWrap",
+			"sectionCount": "Iw3mRa_sectionCount",
+			"sectionTitle": "Iw3mRa_sectionTitle",
+			"segmented": "Iw3mRa_segmented",
+			"settingLabel": "Iw3mRa_settingLabel",
+			"settingList": "Iw3mRa_settingList",
+			"settingRow": "Iw3mRa_settingRow",
+			"stat": "Iw3mRa_stat",
+			"statGrid": "Iw3mRa_statGrid",
+			"statLabel": "Iw3mRa_statLabel",
+			"statValue": "Iw3mRa_statValue",
+			"statsHead": "Iw3mRa_statsHead",
+			"statsTitle": "Iw3mRa_statsTitle",
+			"textarea": "Iw3mRa_textarea",
+			"toolbar": "Iw3mRa_toolbar",
+			"topbar": "Iw3mRa_topbar",
+			"view": "Iw3mRa_view",
+			"workspace": "Iw3mRa_workspace"
+		};
+		// src/client/MemoryView.tsx
+		/**
+		* Memory tab of the Agent Extension panel: scope switch (global / project),
+		* search and type filter, entry list, detail editor (create / edit / save /
+		* deactivate / archive / restore / two-step delete), capture-injection
+		* settings, statistics, and the Markdown export button.
+		*
+		* The view owns its local state (the hub snapshot only carries the section
+		* tab) and talks to the host's `/memory/*` routes through `api()`; all copy
+		* comes from `t()` and every toast goes through `actions.toast`.
+		*
+		* @module dsh-agent-extension/client/MemoryView
+		*/
+		const TYPE_VALUES = [
+			"preference",
+			"decision",
+			"gotcha",
+			"project",
+			"reference"
+		];
+		const TYPE_LABEL_KEYS = {
+			preference: "memoryTypePreference",
+			decision: "memoryTypeDecision",
+			gotcha: "memoryTypeGotcha",
+			project: "memoryTypeProject",
+			reference: "memoryTypeReference"
+		};
+		const STATUS_LABEL_KEYS = {
+			active: "memoryStatusActive",
+			stale: "memoryStatusStale",
+			archived: "memoryStatusArchived"
+		};
+		const DEFAULT_SETTINGS = {
+			captureEnabled: true,
+			captureSessionEnd: true,
+			injectEnabled: true,
+			indexLimitGlobal: 50,
+			indexLimitProject: 30,
+			maxChars: 12e3
+		};
+		const EMPTY_FORM = {
+			name: "",
+			description: "",
+			type: "preference",
+			tags: "",
+			importance: 50,
+			content: ""
+		};
+		/** Loose JSON object guard. */
+		function record(value) {
+			return value !== null && typeof value === "object" && !Array.isArray(value) ? value : {};
+		}
+		/** Coerce to a trimmed string; missing values become the fallback. */
+		function text(value, fallback = "") {
+			return typeof value === "string" ? value : typeof value === "number" ? String(value) : fallback;
+		}
+		/** Coerce to a clamped integer; NaN falls back. */
+		function integer(value, min, max, fallback) {
+			const parsed = typeof value === "number" ? value : typeof value === "string" && value.trim() !== "" ? Number(value) : NaN;
+			if (!Number.isFinite(parsed)) return fallback;
+			return Math.min(max, Math.max(min, Math.round(parsed)));
+		}
+		/** Normalize one list row. */
+		function normalizeSummary(raw) {
+			const item = record(raw);
+			return {
+				id: text(item.id),
+				name: text(item.name),
+				description: text(item.description),
+				type: text(item.type),
+				tags: Array.isArray(item.tags) ? item.tags.filter((tag) => typeof tag === "string") : [],
+				importance: integer(item.importance, 0, 100, 50),
+				status: text(item.status),
+				reinforcement: integer(item.reinforcement, 0, Number.MAX_SAFE_INTEGER, 0),
+				createdAt: text(item.createdAt),
+				updatedAt: text(item.updatedAt)
+			};
+		}
+		/** Normalize one full entry. */
+		function normalizeEntry(raw) {
+			const item = record(raw);
+			return {
+				...normalizeSummary(item),
+				content: text(item.content),
+				originSessionId: text(item.originSessionId),
+				supersedes: Array.isArray(item.supersedes) ? item.supersedes.filter((id) => typeof id === "string") : [],
+				obsoleteVotes: integer(item.obsoleteVotes, 0, Number.MAX_SAFE_INTEGER, 0)
+			};
+		}
+		/** Normalize the projects array, newest `lastSeen` first. */
+		function normalizeProjects(raw) {
+			const list = Array.isArray(raw) ? raw : [];
+			const projects = [];
+			for (const entry of list) {
+				const item = record(entry);
+				const key = text(item.key);
+				if (key === "") continue;
+				projects.push({
+					key,
+					displayName: text(item.displayName) || key,
+					source: text(item.source),
+					remote: text(item.remote),
+					lastSeen: text(item.lastSeen),
+					entryCount: integer(item.entryCount, 0, Number.MAX_SAFE_INTEGER, 0)
+				});
+			}
+			return projects.sort((left, right) => timeOf(right.lastSeen) - timeOf(left.lastSeen));
+		}
+		function timeOf(value) {
+			const time = Date.parse(value);
+			return Number.isFinite(time) ? time : 0;
+		}
+		/** Normalize the settings block. */
+		function normalizeSettings(raw) {
+			const item = record(raw);
+			return {
+				captureEnabled: item.captureEnabled !== false,
+				captureSessionEnd: item.captureSessionEnd !== false,
+				injectEnabled: item.injectEnabled !== false,
+				indexLimitGlobal: integer(item.indexLimitGlobal, 0, 200, DEFAULT_SETTINGS.indexLimitGlobal),
+				indexLimitProject: integer(item.indexLimitProject, 0, 200, DEFAULT_SETTINGS.indexLimitProject),
+				maxChars: integer(item.maxChars, 1e3, 4e4, DEFAULT_SETTINGS.maxChars)
+			};
+		}
+		/** Normalize the stats block. */
+		function normalizeStats(raw) {
+			const item = record(raw);
+			const sessions = (Array.isArray(item.sessions) ? item.sessions : []).map((entry) => {
+				const session = record(entry);
+				return {
+					sessionId: text(session.sessionId),
+					injected: integer(session.injected, 0, Number.MAX_SAFE_INTEGER, 0),
+					injectedUsed: integer(session.injectedUsed, 0, Number.MAX_SAFE_INTEGER, 0),
+					overflow: integer(session.overflow, 0, Number.MAX_SAFE_INTEGER, 0),
+					updatedAt: text(session.updatedAt)
+				};
+			});
+			return {
+				captureRuns: integer(item.captureRuns, 0, Number.MAX_SAFE_INTEGER, 0),
+				capturedEntries: integer(item.capturedEntries, 0, Number.MAX_SAFE_INTEGER, 0),
+				sessions
+			};
+		}
+		/** Form values of one loaded entry (tags join back to a comma list). */
+		function formOf(entry) {
+			const type = TYPE_VALUES.find((value) => value === entry.type) ?? "preference";
+			return {
+				name: entry.name,
+				description: entry.description,
+				type,
+				tags: entry.tags.join(", "),
+				importance: entry.importance,
+				content: entry.content
+			};
+		}
+		/** Split the comma-separated tag field. */
+		function parseTags(value) {
+			return value.split(/[,，]/u).map((tag) => tag.trim()).filter((tag) => tag !== "");
+		}
+		/** Localized type label; unknown values fall back to the raw server text. */
+		function typeLabel(value, t) {
+			const type = TYPE_VALUES.find((entry) => entry === value);
+			return type ? t(TYPE_LABEL_KEYS[type]) : value;
+		}
+		/** Localized status label; unknown values fall back to the raw server text. */
+		function statusLabel(value, t) {
+			const status = value === "active" || value === "stale" || value === "archived" ? value : null;
+			return status ? t(STATUS_LABEL_KEYS[status]) : value;
+		}
+		/** Badge tone of one status. */
+		function statusTone(value) {
+			return value === "active" ? "success" : value === "stale" ? "warn" : "plain";
+		}
+		/**
+		* Trigger a browser download of an exported Markdown file.
+		* Throws when the environment has no object-URL support so the caller can
+		* degrade with a toast (jsdom and some embedded webviews lack it).
+		*/
+		function downloadFile(filename, content) {
+			if (typeof document === "undefined") throw new Error("download unsupported");
+			const createObjectURL = typeof URL !== "undefined" && typeof URL.createObjectURL === "function" ? URL.createObjectURL.bind(URL) : null;
+			if (createObjectURL === null) throw new Error("object URL unsupported");
+			const href = createObjectURL(new Blob([content], { type: "text/markdown;charset=utf-8" }));
+			const anchor = document.createElement("a");
+			anchor.href = href;
+			anchor.download = filename;
+			anchor.rel = "noopener";
+			document.body.append(anchor);
+			anchor.click();
+			anchor.remove();
+			if (typeof URL.revokeObjectURL === "function") URL.revokeObjectURL(href);
+		}
+		/** Compute the aggregate hit rate of the session stats. */
+		function hitRateOf(stats) {
+			const sessions = stats?.sessions ?? [];
+			const injected = sessions.reduce((sum, item) => sum + item.injected, 0);
+			const used = sessions.reduce((sum, item) => sum + item.injectedUsed, 0);
+			if (injected <= 0) return "";
+			return `${Math.round(used / injected * 100)}%`;
+		}
+		/** Overflow total across sessions. */
+		function overflowOf(stats) {
+			return (stats?.sessions ?? []).reduce((sum, item) => sum + item.overflow, 0);
+		}
+		/** Render the memory tab. */
+		function MemoryView({ actions, t }) {
+			const [stateReady, setStateReady] = (0, react.useState)(false);
+			const [stateBusy, setStateBusy] = (0, react.useState)(false);
+			const [stateError, setStateError] = (0, react.useState)("");
+			const [stateToken, setStateToken] = (0, react.useState)(0);
+			const [projects, setProjects] = (0, react.useState)([]);
+			const [stats, setStats] = (0, react.useState)(null);
+			const [draft, setDraft] = (0, react.useState)(DEFAULT_SETTINGS);
+			const [scope, setScope] = (0, react.useState)("global");
+			const [project, setProject] = (0, react.useState)("");
+			const [query, setQuery] = (0, react.useState)("");
+			const [appliedQuery, setAppliedQuery] = (0, react.useState)("");
+			const [typeFilter, setTypeFilter] = (0, react.useState)("");
+			const [entries, setEntries] = (0, react.useState)([]);
+			const [listReady, setListReady] = (0, react.useState)(false);
+			const [listBusy, setListBusy] = (0, react.useState)(false);
+			const [listError, setListError] = (0, react.useState)("");
+			const [listToken, setListToken] = (0, react.useState)(0);
+			const [selectedId, setSelectedId] = (0, react.useState)(null);
+			const [entry, setEntry] = (0, react.useState)(null);
+			const [creating, setCreating] = (0, react.useState)(false);
+			const [detailStatus, setDetailStatus] = (0, react.useState)("idle");
+			const [detailError, setDetailError] = (0, react.useState)("");
+			const [form, setForm] = (0, react.useState)(EMPTY_FORM);
+			const [saveBusy, setSaveBusy] = (0, react.useState)(false);
+			const [statusBusy, setStatusBusy] = (0, react.useState)(false);
+			const [deleteBusy, setDeleteBusy] = (0, react.useState)(false);
+			const [confirmDelete, setConfirmDelete] = (0, react.useState)(false);
+			const [settingsBusy, setSettingsBusy] = (0, react.useState)(false);
+			const [exportBusy, setExportBusy] = (0, react.useState)(false);
+			const userChoseRef = (0, react.useRef)(false);
+			const detailSeq = (0, react.useRef)(0);
+			(0, react.useEffect)(() => {
+				let cancelled = false;
+				setStateBusy(true);
+				setStateError("");
+				(async () => {
+					try {
+						const data = await api("/memory/state");
+						if (cancelled) return;
+						const nextProjects = normalizeProjects(data.projects);
+						setProjects(nextProjects);
+						setStats(normalizeStats(data.stats));
+						setDraft(normalizeSettings(data.settings));
+						if (!userChoseRef.current) {
+							const latest = nextProjects[0];
+							setScope(latest ? "project" : "global");
+							setProject(latest ? latest.key : "");
+						} else setProject((current) => current === "" ? nextProjects[0]?.key ?? "" : nextProjects.some((item) => item.key === current) ? current : nextProjects[0]?.key ?? "");
+						setStateReady(true);
+					} catch (error) {
+						if (!cancelled) setStateError(errorMessageFor(error, t));
+					} finally {
+						if (!cancelled) setStateBusy(false);
+					}
+				})();
+				return () => {
+					cancelled = true;
+				};
+			}, [stateToken, t]);
+			(0, react.useEffect)(() => {
+				if (query === appliedQuery) return;
+				const timer = setTimeout(() => {
+					setAppliedQuery(query);
+				}, 300);
+				return () => {
+					clearTimeout(timer);
+				};
+			}, [query, appliedQuery]);
+			(0, react.useEffect)(() => {
+				if (!stateReady) return;
+				if (scope === "project" && project === "") {
+					setEntries([]);
+					setListReady(true);
+					setListError("");
+					return;
+				}
+				setListBusy(true);
+				setListError("");
+				let cancelled = false;
+				const params = new URLSearchParams();
+				params.set("scope", scope);
+				if (scope === "project") params.set("project", project);
+				params.set("query", appliedQuery);
+				if (typeFilter !== "") params.set("type", typeFilter);
+				params.set("includeArchived", "1");
+				(async () => {
+					try {
+						const data = await api(`/memory/list?${params.toString()}`);
+						if (cancelled) return;
+						const list = Array.isArray(data.entries) ? data.entries : [];
+						setEntries(list.map(normalizeSummary));
+						setListReady(true);
+					} catch (error) {
+						if (!cancelled) {
+							setListError(errorMessageFor(error, t));
+							setListReady(true);
+						}
+					} finally {
+						if (!cancelled) setListBusy(false);
+					}
+				})();
+				return () => {
+					cancelled = true;
+				};
+			}, [
+				stateReady,
+				scope,
+				project,
+				appliedQuery,
+				typeFilter,
+				listToken,
+				t
+			]);
+			const latestProjectKey = (list) => list[0]?.key ?? "";
+			const closeEditor = () => {
+				detailSeq.current += 1;
+				setSelectedId(null);
+				setEntry(null);
+				setCreating(false);
+				setConfirmDelete(false);
+				setDetailStatus("idle");
+				setDetailError("");
+			};
+			const chooseScope = (next) => {
+				userChoseRef.current = true;
+				setScope(next);
+				closeEditor();
+				if (next === "project" && project === "") setProject(latestProjectKey(projects));
+			};
+			const chooseProject = (next) => {
+				userChoseRef.current = true;
+				setProject(next);
+				closeEditor();
+			};
+			const startCreate = () => {
+				detailSeq.current += 1;
+				setCreating(true);
+				setSelectedId(null);
+				setEntry(null);
+				setForm(EMPTY_FORM);
+				setDetailStatus("idle");
+				setDetailError("");
+				setConfirmDelete(false);
+			};
+			const openEntry = (id) => {
+				const seq = ++detailSeq.current;
+				setCreating(false);
+				setSelectedId(id);
+				setEntry(null);
+				setForm(EMPTY_FORM);
+				setConfirmDelete(false);
+				setDetailStatus("loading");
+				setDetailError("");
+				const params = new URLSearchParams();
+				params.set("scope", scope);
+				if (scope === "project") params.set("project", project);
+				params.set("id", id);
+				(async () => {
+					try {
+						const data = await api(`/memory/get?${params.toString()}`);
+						if (seq !== detailSeq.current) return;
+						const loaded = normalizeEntry(data.entry);
+						setEntry(loaded);
+						setForm(formOf(loaded));
+						setDetailStatus("ready");
+					} catch (error) {
+						if (seq !== detailSeq.current) return;
+						setDetailError(errorMessageFor(error, t));
+						setDetailStatus("error");
+					}
+				})();
+			};
+			const saveEntry = async () => {
+				if (saveBusy) return;
+				const name = form.name.trim();
+				if (name === "" || form.content.trim() === "") {
+					actions.toast("warn", t("memoryNameRequired"));
+					return;
+				}
+				if (scope === "project" && project === "") {
+					actions.toast("warn", t("memoryProjectEmpty"));
+					return;
+				}
+				setSaveBusy(true);
+				try {
+					const body = {
+						scope,
+						name,
+						description: form.description.trim(),
+						type: form.type,
+						content: form.content,
+						tags: parseTags(form.tags),
+						importance: form.importance
+					};
+					if (scope === "project") body.project = project;
+					if (!creating && entry) body.id = entry.id;
+					const saved = normalizeEntry((await api("/memory/save", {
+						method: "POST",
+						body
+					})).entry);
+					setEntry(saved);
+					setForm(formOf(saved));
+					setSelectedId(saved.id);
+					setCreating(false);
+					setDetailStatus("ready");
+					actions.toast("success", t("memorySaved"));
+					setListToken((token) => token + 1);
+				} catch (error) {
+					actions.toast("error", errorMessageFor(error, t));
+				} finally {
+					setSaveBusy(false);
+				}
+			};
+			const changeStatus = async (status) => {
+				if (entry === null || statusBusy) return;
+				setStatusBusy(true);
+				try {
+					const body = {
+						scope,
+						id: entry.id,
+						status
+					};
+					if (scope === "project") body.project = project;
+					const updated = normalizeEntry((await api("/memory/status", {
+						method: "POST",
+						body
+					})).entry);
+					setEntry(updated);
+					setForm(formOf(updated));
+					setConfirmDelete(false);
+					actions.toast("success", t("memoryStatusDone"));
+					setListToken((token) => token + 1);
+				} catch (error) {
+					actions.toast("error", errorMessageFor(error, t));
+				} finally {
+					setStatusBusy(false);
+				}
+			};
+			const removeEntry = async () => {
+				if (entry === null || deleteBusy) return;
+				setDeleteBusy(true);
+				try {
+					const body = {
+						scope,
+						id: entry.id
+					};
+					if (scope === "project") body.project = project;
+					await api("/memory/delete", {
+						method: "POST",
+						body
+					});
+					actions.toast("success", t("memoryDeleted", { name: entry.name }));
+					closeEditor();
+					setListToken((token) => token + 1);
+				} catch (error) {
+					actions.toast("error", errorMessageFor(error, t));
+				} finally {
+					setDeleteBusy(false);
+				}
+			};
+			const saveSettings = async () => {
+				if (settingsBusy) return;
+				setSettingsBusy(true);
+				try {
+					const data = await api("/memory/settings", {
+						method: "POST",
+						body: draft
+					});
+					setDraft(normalizeSettings(data.settings));
+					actions.toast("success", t("memorySettingsSaved"));
+				} catch (error) {
+					actions.toast("error", errorMessageFor(error, t));
+				} finally {
+					setSettingsBusy(false);
+				}
+			};
+			const exportMarkdown = async () => {
+				if (exportBusy || scope === "project" && project === "") return;
+				setExportBusy(true);
+				try {
+					const body = { scope };
+					if (scope === "project") body.project = project;
+					const data = await api("/memory/export", {
+						method: "POST",
+						body
+					});
+					const filename = text(data.filename) || "memory.md";
+					downloadFile(filename, text(data.content));
+					actions.toast("success", t("memoryExportDone", { filename }));
+				} catch (error) {
+					actions.toast("error", t("memoryExportFailed", { message: errorMessageFor(error, t) }));
+				} finally {
+					setExportBusy(false);
+				}
+			};
+			const submitSearch = () => {
+				if (query === appliedQuery) setListToken((token) => token + 1);
+				else setAppliedQuery(query);
+			};
+			const projectRequired = scope === "project" && project === "";
+			const projectMissing = scope === "project" && projects.length === 0;
+			const hitRate = hitRateOf(stats);
+			const showEditor = creating || selectedId !== null;
+			const typeOptions = [{
+				value: "",
+				label: t("memoryTypeAll")
+			}, ...TYPE_VALUES.map((value) => ({
+				value,
+				label: t(TYPE_LABEL_KEYS[value])
+			}))];
+			let workspace = null;
+			if (!stateReady) workspace = stateError !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+				className: memory_module_css_default.errorBox,
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+					className: memory_module_css_default.errorText,
+					children: stateError
+				}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+					variant: "secondary",
+					icon: "refresh",
+					onClick: () => setStateToken((token) => token + 1),
+					children: t("memoryRetry")
+				})]
+			}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(LoadingBlock, { text: t("memoryLoading") });
+			else if (projectMissing) workspace = /* @__PURE__ */ (0, react_jsx_runtime.jsx)(EmptyBlock, {
+				title: t("memoryScopeProject"),
+				description: t("memoryProjectEmpty")
+			});
+			else workspace = /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+				className: memory_module_css_default.workspace,
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+					className: memory_module_css_default.listPane,
+					"aria-label": t("memoryListTitle"),
+					children: [
+						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							className: memory_module_css_default.listHead,
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {
+								className: memory_module_css_default.sectionTitle,
+								children: t("memoryListTitle")
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								className: memory_module_css_default.sectionCount,
+								children: String(entries.length)
+							})]
+						}),
+						stateError !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							className: memory_module_css_default.errorBox,
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								className: memory_module_css_default.errorText,
+								children: stateError
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+								variant: "secondary",
+								icon: "refresh",
+								onClick: () => setStateToken((token) => token + 1),
+								children: t("memoryRetry")
+							})]
+						}) : null,
+						listError !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							className: memory_module_css_default.errorBox,
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								className: memory_module_css_default.errorText,
+								children: listError
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+								variant: "secondary",
+								icon: "refresh",
+								onClick: () => setListToken((token) => token + 1),
+								children: t("memoryRetry")
+							})]
+						}) : null,
+						!listReady && listBusy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(LoadingBlock, { text: t("memoryLoading") }) : null,
+						listReady && listError === "" && entries.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(EmptyBlock, { description: appliedQuery !== "" || typeFilter !== "" ? t("memoryListEmptyFiltered") : t("memoryListEmpty") }) : null,
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+							className: memory_module_css_default.entryList,
+							children: entries.map((item) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+								type: "button",
+								className: memory_module_css_default.entryRow,
+								"aria-pressed": selectedId === item.id,
+								onClick: () => openEntry(item.id),
+								children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+									className: memory_module_css_default.entryMain,
+									children: [
+										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.entryName,
+											children: item.name
+										}),
+										item.description !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.entryDesc,
+											children: item.description
+										}) : null,
+										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+											className: memory_module_css_default.entryMeta,
+											children: [
+												/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
+													tone: "plain",
+													children: typeLabel(item.type, t)
+												}),
+												/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
+													tone: statusTone(item.status),
+													children: statusLabel(item.status, t)
+												}),
+												formatTime(item.updatedAt) !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+													className: memory_module_css_default.entryTime,
+													children: formatTime(item.updatedAt)
+												}) : null
+											]
+										})
+									]
+								})
+							}, item.id))
+						})
+					]
+				}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("section", {
+					className: memory_module_css_default.editorPane,
+					"aria-label": t("memoryEditTitle"),
+					children: !showEditor ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(EmptyBlock, { description: t("memorySelectHint") }) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						className: memory_module_css_default.editor,
+						children: [
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: memory_module_css_default.editorHead,
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {
+									className: memory_module_css_default.sectionTitle,
+									children: creating ? t("memoryCreateTitle") : t("memoryEditTitle")
+								}), entry !== null && !creating ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
+									tone: statusTone(entry.status),
+									children: statusLabel(entry.status, t)
+								}) : null]
+							}),
+							detailStatus === "loading" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(LoadingBlock, { text: t("memoryLoading") }) : null,
+							detailStatus === "error" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: memory_module_css_default.errorBox,
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+									className: memory_module_css_default.errorText,
+									children: detailError
+								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+									variant: "secondary",
+									icon: "refresh",
+									onClick: () => {
+										if (selectedId !== null) openEntry(selectedId);
+									},
+									children: t("memoryRetry")
+								})]
+							}) : null,
+							detailStatus === "idle" || detailStatus === "ready" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								style: columnGap(12),
+								children: [
+									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+										className: memory_module_css_default.formGrid,
+										children: [
+											/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+												className: memory_module_css_default.field,
+												children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+													className: memory_module_css_default.fieldLabel,
+													children: t("memoryFieldName")
+												}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+													className: memory_module_css_default.input,
+													type: "text",
+													"aria-label": t("memoryFieldName"),
+													value: form.name,
+													onChange: (event) => {
+														setForm((current) => ({
+															...current,
+															name: event.target.value
+														}));
+													}
+												})]
+											}),
+											/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+												className: memory_module_css_default.field,
+												children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+													className: memory_module_css_default.fieldLabel,
+													children: t("memoryFieldDescription")
+												}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+													className: memory_module_css_default.input,
+													type: "text",
+													"aria-label": t("memoryFieldDescription"),
+													value: form.description,
+													onChange: (event) => {
+														setForm((current) => ({
+															...current,
+															description: event.target.value
+														}));
+													}
+												})]
+											}),
+											/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+												className: memory_module_css_default.field,
+												children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+													className: memory_module_css_default.fieldLabel,
+													children: t("memoryFieldType")
+												}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("select", {
+													className: memory_module_css_default.input,
+													"aria-label": t("memoryFieldType"),
+													value: form.type,
+													onChange: (event) => {
+														const next = TYPE_VALUES.find((value) => value === event.target.value) ?? "preference";
+														setForm((current) => ({
+															...current,
+															type: next
+														}));
+													},
+													children: TYPE_VALUES.map((value) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
+														value,
+														children: t(TYPE_LABEL_KEYS[value])
+													}, value))
+												})]
+											}),
+											/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+												className: memory_module_css_default.field,
+												children: [
+													/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+														className: memory_module_css_default.fieldLabel,
+														children: t("memoryFieldImportance")
+													}),
+													/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+														className: memory_module_css_default.input,
+														type: "number",
+														min: 0,
+														max: 100,
+														"aria-label": t("memoryFieldImportance"),
+														value: form.importance,
+														onChange: (event) => {
+															setForm((current) => ({
+																...current,
+																importance: integer(event.target.value, 0, 100, current.importance)
+															}));
+														}
+													}),
+													/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+														className: memory_module_css_default.fieldHint,
+														children: t("memoryImportanceHint")
+													})
+												]
+											})
+										]
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+										className: memory_module_css_default.field,
+										children: [
+											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+												className: memory_module_css_default.fieldLabel,
+												children: t("memoryFieldTags")
+											}),
+											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+												className: memory_module_css_default.input,
+												type: "text",
+												"aria-label": t("memoryFieldTags"),
+												value: form.tags,
+												onChange: (event) => {
+													setForm((current) => ({
+														...current,
+														tags: event.target.value
+													}));
+												}
+											}),
+											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+												className: memory_module_css_default.fieldHint,
+												children: t("memoryTagsHint")
+											})
+										]
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+										className: memory_module_css_default.field,
+										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.fieldLabel,
+											children: t("memoryFieldContent")
+										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("textarea", {
+											className: memory_module_css_default.textarea,
+											rows: 8,
+											"aria-label": t("memoryFieldContent"),
+											value: form.content,
+											onChange: (event) => {
+												setForm((current) => ({
+													...current,
+													content: event.target.value
+												}));
+											}
+										})]
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+										className: memory_module_css_default.formActions,
+										children: [
+											/* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Button, {
+												variant: "primary",
+												disabled: saveBusy || projectRequired,
+												onClick: () => {
+													saveEntry();
+												},
+												children: [saveBusy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Spinner, {}) : null, saveBusy ? t("memorySaving") : t("memorySave")]
+											}),
+											/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+												variant: "secondary",
+												onClick: closeEditor,
+												children: t("cancel")
+											}),
+											entry !== null && !creating ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+												className: memory_module_css_default.formActionsRight,
+												children: [
+													entry.status !== "active" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+														variant: "ghost",
+														icon: "check",
+														disabled: statusBusy,
+														onClick: () => {
+															changeStatus("active");
+														},
+														children: t("memoryRestore")
+													}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+														variant: "ghost",
+														icon: "power",
+														disabled: statusBusy,
+														onClick: () => {
+															changeStatus("stale");
+														},
+														children: t("memoryDeactivate")
+													}),
+													entry.status !== "archived" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+														variant: "ghost",
+														icon: "folder",
+														disabled: statusBusy,
+														onClick: () => {
+															changeStatus("archived");
+														},
+														children: t("memoryArchive")
+													}) : null,
+													confirmDelete ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+														className: memory_module_css_default.confirmArea,
+														role: "group",
+														"aria-label": t("memoryDelete"),
+														children: [
+															/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+																className: memory_module_css_default.confirmText,
+																children: t("memoryDeleteDescription", { name: entry.name })
+															}),
+															/* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Button, {
+																variant: "danger",
+																disabled: deleteBusy,
+																onClick: () => {
+																	removeEntry();
+																},
+																children: [deleteBusy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Spinner, {}) : null, deleteBusy ? t("memoryDeleting") : t("memoryDeleteConfirm")]
+															}),
+															/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+																variant: "secondary",
+																onClick: () => setConfirmDelete(false),
+																children: t("cancel")
+															})
+														]
+													}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+														variant: "danger",
+														icon: "trash",
+														onClick: () => setConfirmDelete(true),
+														children: t("memoryDelete")
+													})
+												]
+											}) : null
+										]
+									})
+								]
+							}) : null
+						]
+					})
+				})]
+			});
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+				className: `${panel_module_css_default.page} ${memory_module_css_default.view}`,
+				role: "region",
+				"aria-label": t("memoryTitle"),
+				children: [
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("header", {
+						className: memory_module_css_default.topbar,
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							className: memory_module_css_default.scopeRow,
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: memory_module_css_default.segmented,
+								role: "group",
+								"aria-label": t("memoryScopeLabel"),
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+									type: "button",
+									className: panel_module_css_default.segment,
+									"aria-pressed": scope === "global",
+									onClick: () => chooseScope("global"),
+									children: t("memoryScopeGlobal")
+								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+									type: "button",
+									className: panel_module_css_default.segment,
+									"aria-pressed": scope === "project",
+									onClick: () => chooseScope("project"),
+									children: t("memoryScopeProject")
+								})]
+							}), scope === "project" && projects.length > 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("select", {
+								className: `${memory_module_css_default.input} ${memory_module_css_default.projectSelect}`,
+								"aria-label": t("memoryProjectLabel"),
+								value: project,
+								onChange: (event) => chooseProject(event.target.value),
+								children: projects.map((item) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
+									value: item.key,
+									children: `${item.displayName} (${item.entryCount})`
+								}, item.key))
+							}) : null]
+						}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							className: memory_module_css_default.actions,
+							children: [
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+									variant: "primary",
+									icon: "plus",
+									disabled: projectMissing,
+									onClick: startCreate,
+									children: t("memoryNew")
+								}),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Button, {
+									variant: "secondary",
+									icon: "download",
+									disabled: exportBusy || projectRequired,
+									onClick: () => {
+										exportMarkdown();
+									},
+									children: [exportBusy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Spinner, {}) : null, exportBusy ? t("memoryExporting") : t("memoryExportMarkdown")]
+								}),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)(IconButton, {
+									icon: "refresh",
+									title: stateBusy || listBusy ? t("refreshing") : t("refresh"),
+									busy: stateBusy || listBusy,
+									disabled: stateBusy || listBusy,
+									onClick: () => {
+										setStateToken((token) => token + 1);
+										setListToken((token) => token + 1);
+									}
+								})
+							]
+						})]
+					}),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						className: memory_module_css_default.toolbar,
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							className: memory_module_css_default.searchWrap,
+							children: [
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Icon, {
+									name: "search",
+									size: 16
+								}),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+									className: memory_module_css_default.searchInput,
+									type: "search",
+									value: query,
+									placeholder: t("memorySearchPlaceholder"),
+									"aria-label": t("memorySearchPlaceholder"),
+									onChange: (event) => {
+										setQuery(event.target.value);
+									},
+									onKeyDown: (event) => {
+										if (event.key !== "Enter") return;
+										event.preventDefault();
+										submitSearch();
+									}
+								}),
+								query !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+									type: "button",
+									className: memory_module_css_default.searchClear,
+									title: t("clearSearch"),
+									"aria-label": t("clearSearch"),
+									onClick: () => {
+										setQuery("");
+										setAppliedQuery("");
+									},
+									children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Icon, {
+										name: "x",
+										size: 14
+									})
+								}) : null
+							]
+						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+							className: memory_module_css_default.segmented,
+							role: "group",
+							"aria-label": t("memoryTypeLabel"),
+							children: typeOptions.map((option) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+								type: "button",
+								className: panel_module_css_default.segment,
+								"aria-pressed": typeFilter === option.value,
+								onClick: () => setTypeFilter(option.value),
+								children: option.label
+							}, option.value === "" ? "all" : option.value))
+						})]
+					}),
+					workspace,
+					stateReady ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+						className: memory_module_css_default.card,
+						"aria-label": t("memorySettingsTitle"),
+						children: [
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {
+								className: memory_module_css_default.sectionTitle,
+								children: t("memorySettingsTitle")
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: memory_module_css_default.settingList,
+								children: [
+									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+										className: memory_module_css_default.settingRow,
+										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.settingLabel,
+											children: t("memorySettingsCapture")
+										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Switch, {
+											checked: draft.captureEnabled,
+											label: t("memorySettingsCapture"),
+											onChange: (next) => {
+												setDraft((current) => ({
+													...current,
+													captureEnabled: next
+												}));
+											}
+										})]
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+										className: memory_module_css_default.settingRow,
+										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.settingLabel,
+											children: t("memorySettingsCaptureSessionEnd")
+										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Switch, {
+											checked: draft.captureSessionEnd,
+											label: t("memorySettingsCaptureSessionEnd"),
+											onChange: (next) => {
+												setDraft((current) => ({
+													...current,
+													captureSessionEnd: next
+												}));
+											}
+										})]
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+										className: memory_module_css_default.settingRow,
+										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.settingLabel,
+											children: t("memorySettingsInject")
+										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Switch, {
+											checked: draft.injectEnabled,
+											label: t("memorySettingsInject"),
+											onChange: (next) => {
+												setDraft((current) => ({
+													...current,
+													injectEnabled: next
+												}));
+											}
+										})]
+									})
+								]
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: memory_module_css_default.numberGrid,
+								children: [
+									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+										className: memory_module_css_default.field,
+										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.fieldLabel,
+											children: t("memorySettingsIndexGlobal")
+										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+											className: memory_module_css_default.input,
+											type: "number",
+											min: 0,
+											max: 200,
+											"aria-label": t("memorySettingsIndexGlobal"),
+											value: draft.indexLimitGlobal,
+											onChange: (event) => {
+												setDraft((current) => ({
+													...current,
+													indexLimitGlobal: integer(event.target.value, 0, 200, current.indexLimitGlobal)
+												}));
+											}
+										})]
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+										className: memory_module_css_default.field,
+										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.fieldLabel,
+											children: t("memorySettingsIndexProject")
+										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+											className: memory_module_css_default.input,
+											type: "number",
+											min: 0,
+											max: 200,
+											"aria-label": t("memorySettingsIndexProject"),
+											value: draft.indexLimitProject,
+											onChange: (event) => {
+												setDraft((current) => ({
+													...current,
+													indexLimitProject: integer(event.target.value, 0, 200, current.indexLimitProject)
+												}));
+											}
+										})]
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+										className: memory_module_css_default.field,
+										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.fieldLabel,
+											children: t("memorySettingsMaxChars")
+										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+											className: memory_module_css_default.input,
+											type: "number",
+											min: 1e3,
+											max: 4e4,
+											step: 500,
+											"aria-label": t("memorySettingsMaxChars"),
+											value: draft.maxChars,
+											onChange: (event) => {
+												setDraft((current) => ({
+													...current,
+													maxChars: integer(event.target.value, 1e3, 4e4, current.maxChars)
+												}));
+											}
+										})]
+									})
+								]
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", { className: memory_module_css_default.divider }),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+								className: memory_module_css_default.statsHead,
+								children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", {
+									className: memory_module_css_default.statsTitle,
+									children: t("memoryStatsTitle")
+								})
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: memory_module_css_default.statGrid,
+								children: [
+									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+										className: memory_module_css_default.stat,
+										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.statLabel,
+											children: t("memoryStatCaptureRuns")
+										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.statValue,
+											children: String(stats?.captureRuns ?? 0)
+										})]
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+										className: memory_module_css_default.stat,
+										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.statLabel,
+											children: t("memoryStatCapturedEntries")
+										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.statValue,
+											children: String(stats?.capturedEntries ?? 0)
+										})]
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+										className: memory_module_css_default.stat,
+										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.statLabel,
+											children: t("memoryStatHitRate")
+										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.statValue,
+											children: hitRate !== "" ? hitRate : t("memoryStatNoData")
+										})]
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+										className: memory_module_css_default.stat,
+										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.statLabel,
+											children: t("memoryStatOverflow")
+										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.statValue,
+											children: String(overflowOf(stats))
+										})]
+									})
+								]
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+								className: memory_module_css_default.cardActions,
+								children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Button, {
+									variant: "primary",
+									disabled: settingsBusy,
+									onClick: () => {
+										saveSettings();
+									},
+									children: [settingsBusy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Spinner, {}) : null, t("memorySettingsSave")]
+								})
+							})
+						]
+					}) : null
+				]
+			});
+		}
 		// src/client/Panel.tsx
 		/**
 		* Main panel of the store: hosts the section header (plugins / memory /
 		* skills), the three plugin views (store / manage / detail), keeps the store
 		* list's scroll position across view switches, and renders the migration /
-		* API banners. Memory and skills are placeholders for now.
+		* API banners. The memory tab renders its own self-contained view; skills is
+		* still a placeholder.
 		*
 		* @module dsh-agent-extension/client/Panel
 		*/
@@ -4600,11 +6374,14 @@ window.__ModuleLoader__.load({
 			const pluginsSection = state.sectionTab === "plugins";
 			let body;
 			let withHeader = true;
-			if (!pluginsSection) body = /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+			if (!pluginsSection) body = state.sectionTab === "memory" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(MemoryView, {
+				actions,
+				t
+			}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				className: panel_module_css_default.page,
 				children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(EmptyBlock, {
 					title: t("comingSoon"),
-					description: state.sectionTab === "memory" ? t("memoryPlaceholder") : t("skillsPlaceholder")
+					description: t("skillsPlaceholder")
 				})
 			});
 			else if (state.status === "loading" && !snapshot) body = /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {

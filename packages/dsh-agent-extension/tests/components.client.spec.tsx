@@ -250,23 +250,20 @@ describe('Panel', () => {
     expect(setSectionTab).toHaveBeenCalledWith('memory')
   })
 
-  it('renders the memory and skills placeholders instead of the plugin store', () => {
+  it('renders the skills placeholder instead of the plugin store (memory has its own view)', () => {
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
-    for (const [tab, placeholder] of [['memory', t('memoryPlaceholder')], ['skills', t('skillsPlaceholder')]] as const) {
-      cleanup()
-      render(
-        <Panel
-          useHub={stubHub({ ...initialHubState(), status: 'ready', sectionTab: tab }).useHub}
-          actions={controller.actions}
-          t={t}
-        />,
-      )
-      expect(screen.getByRole('tab', { name: tab === 'memory' ? t('tabMemory') : t('tabSkills') }).getAttribute('aria-selected')).toBe('true')
-      expect(screen.getByText(t('comingSoon'))).toBeTruthy()
-      expect(screen.getByText(placeholder)).toBeTruthy()
-      expect(screen.queryByPlaceholderText(t('searchPlaceholder'))).toBeNull()
-      expect(screen.queryByRole('button', { name: t('searchPlaceholder') })).toBeNull()
-    }
+    render(
+      <Panel
+        useHub={stubHub({ ...initialHubState(), status: 'ready', sectionTab: 'skills' }).useHub}
+        actions={controller.actions}
+        t={t}
+      />,
+    )
+    expect(screen.getByRole('tab', { name: t('tabSkills') }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByText(t('comingSoon'))).toBeTruthy()
+    expect(screen.getByText(t('skillsPlaceholder'))).toBeTruthy()
+    expect(screen.queryByPlaceholderText(t('searchPlaceholder'))).toBeNull()
+    expect(screen.queryByRole('button', { name: t('searchPlaceholder') })).toBeNull()
   })
 })
 

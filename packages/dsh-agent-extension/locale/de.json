@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Agent-Erweiterung",
-    "description": "Fügt Agent-Plugin-Marktplätze hinzu, installiert Plugins im Claude-Code-Format und schaltet ihre Skills, Befehle, Hooks und MCP-Server einzeln ein oder aus."
+    "title": "Agent Extension",
+    "description": "Agent-Erweiterungen in DSH verwalten — Plugin-Marktplätze, Installation/Update/Rollback, Umschalten einzelner Fähigkeiten und integriertes sitzungsübergreifendes Gedächtnis (global + projektbezogen, automatische Erfassung, Abruf auf Anfrage)."
   }
 }

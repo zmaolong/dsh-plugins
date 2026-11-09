@@ -23,7 +23,8 @@ export interface CommandDescriptor {
   name: string
   description: string
   input?: { hint?: string }
-  handler: (input: { rawInput?: unknown }) => Promise<CommandOutcome> | CommandOutcome
+  /** The real host invocation also carries the receiving agent and a signal. */
+  handler: (input: { rawInput?: unknown, agent?: AgentLike, signal?: AbortSignal }) => Promise<CommandOutcome> | CommandOutcome
 }
 
 /** Host command handler outcome. */
@@ -144,7 +145,7 @@ export interface HubConfig {
   hooks?: boolean | undefined
 }
 
-/** The host Context face the hub uses; unknown members stay reachable as `unknown`. */
+/** The host Context face the hub and the memory runtime use; unknown members stay reachable as `unknown`. */
 export interface HostContext {
   /** Service lookup; may return undefined while services are pending. */
   get<T>(name: string): T | undefined
@@ -158,4 +159,120 @@ export interface HostContext {
   commands?: CommandsService
   skills?: SkillsService
   webServer?: WebServerService
+  systemPrompt?: SystemPromptService
+  tools?: ToolsService
+}
+
+/** One registered prompt section (`ctx.systemPrompt.section`). */
+export interface PromptSectionLike {
+  name: string
+  order: number
+  text: string | ((context: AssembleContextLike) => string)
+  interpolate?: boolean
+  complete?: boolean
+}
+
+/** One registered dynamic runtime context (`ctx.systemPrompt.context`). */
+export interface PromptContextLike {
+  name: string
+  order: number
+  text: string | ((context: AssembleContextLike) => string)
+  interpolate?: boolean
+  required?: boolean
+}
+
+/** Per-assembly context handed to prompt providers. */
+export interface AssembleContextLike {
+  agent?: AgentLike | undefined
+  signal?: AbortSignal | undefined
+}
+
+/** Host prompt registry (`ctx.systemPrompt`). */
+export interface SystemPromptService {
+  section(section: PromptSectionLike): () => void
+  context(context: PromptContextLike): () => void
+}
+
+/** One model-facing tool declaration plus its declaration and runner. */
+export interface ToolDefinitionLike {
+  name: string
+  description: string
+  parameters: Record<string, unknown>
+  output: {
+    schema: Record<string, unknown>
+    render: (args: unknown, value: unknown) => Array<{ type: 'text', text: string }>
+  }
+  execute(args: unknown, exec: ToolRunContextLike): Promise<unknown>
+}
+
+/** Execution identity handed to a tool runner. */
+export interface ToolRunContextLike {
+  agent?: AgentLike | undefined
+  signal?: AbortSignal | undefined
+}
+
+/** Host tool registry (`ctx.tools`). */
+export interface ToolsService {
+  register(definition: ToolDefinitionLike, options?: {
+    when?: (context: { agent: AgentLike, signal?: AbortSignal }) => boolean
+  }): () => void
+}
+
+/** One live session event as the `session/event` listener receives it. */
+export interface SessionEventLike {
+  type: string
+  seq: number
+  time?: number
+  data: unknown
+}
+
+/** Session header fields the memory runtime reads. */
+export interface SessionHeaderLike {
+  cwd?: string
+  parentSession?: string
+  origin?: 'subagent'
+}
+
+/** Live session fields the memory runtime reads. */
+export interface SessionLike {
+  id?: string
+  header?: SessionHeaderLike
+  requestHeader?: () => { config?: { provider?: string, model?: string } } | undefined
+}
+
+/** Live agent fields the memory runtime reads. */
+export interface AgentLike {
+  id?: string
+  session?: SessionLike
+  ctx?: unknown
+  options?: { provider?: string, model?: string }
+}
+
+/** One auxiliary model request (`ctx.llm.stream`). */
+export interface LlmStreamOptionsLike {
+  provider: string
+  model: string
+  messages: Array<{ role: 'system' | 'user' | 'assistant', content: string }>
+  system?: string
+  maxTokens?: number
+  temperature?: number
+  sessionId?: string
+  purpose?: string
+  signal?: AbortSignal
+}
+
+/** Minimal stream chunk shape: extraction only reads text deltas. */
+export interface LlmStreamChunkLike {
+  type: string
+  text?: string
+}
+
+/** Host LLM seam (`ctx.llm`). */
+export interface LlmService {
+  stream(options: LlmStreamOptionsLike): AsyncIterable<LlmStreamChunkLike>
+}
+
+/** Raw `session/flush` checkpoint payload. */
+export interface SessionService {
+  get?(id: string): SessionLike | undefined
 }

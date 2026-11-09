@@ -21,6 +21,7 @@
 import { readFileSync } from 'node:fs'
 
 import { asHubError, hubError } from './hub.ts'
+import { dispatchMemoryGet, dispatchMemoryPost, isMemoryGetRoute, isMemoryPostRoute } from './memory-routes.ts'
 import {
   MAX_ICON_BYTES,
   buildDescribe,
@@ -29,6 +30,7 @@ import {
   resolveStoreIconFile,
 } from './ui-data.ts'
 import type { AgentPluginHub } from './hub.ts'
+import type { MemoryStore } from './memory/store.ts'
 import type { WebRequest } from './host.ts'
 import type { ServerResponse, IncomingMessage } from 'node:http'
 
@@ -239,8 +241,9 @@ export interface UiRoutesStatus {
  *
  * @param ctx - host cordis context.
  * @param hub - the hub instance.
+ * @param memory - memory store mounted under the same prefix; omitted in tests that only exercise the store panel.
  */
-export function mountUiRoutes(ctx: unknown, hub: AgentPluginHub): UiRoutesStatus {
+export function mountUiRoutes(ctx: unknown, hub: AgentPluginHub, memory?: MemoryStore): UiRoutesStatus {
   const webServer = (ctx as { get?: (name: string) => unknown } | null)?.get?.('webServer')
     ?? (ctx as { webServer?: unknown } | null)?.webServer
   if (!webServer || typeof (webServer as { register?: unknown }).register !== 'function') {
@@ -271,6 +274,23 @@ export function mountUiRoutes(ctx: unknown, hub: AgentPluginHub): UiRoutesStatus
     const route = url.pathname.slice(API_PREFIX.length) || '/'
     const method = String(request.method ?? 'GET').toUpperCase()
     try {
+      if (isMemoryGetRoute(route) || isMemoryPostRoute(route)) {
+        if (memory === undefined) {
+          sendJson(response, 503, { ok: false, error: '记忆服务未就绪', code: 'internal' })
+          return
+        }
+        if (isMemoryGetRoute(route) && method === 'GET') {
+          sendJson(response, 200, { ok: true, data: await dispatchMemoryGet(memory, route, url.searchParams) })
+          return
+        }
+        if (isMemoryPostRoute(route) && method === 'POST') {
+          const body = await readJsonBody(request)
+          sendJson(response, 200, { ok: true, data: await dispatchMemoryPost(memory, route, body) })
+          return
+        }
+        sendJson(response, 405, { ok: false, error: `不支持的请求方法：${method}`, code: 'method_not_allowed' })
+        return
+      }
       if (method === 'GET' && route === '/store') {
         sendJson(response, 200, { ok: true, data: await buildStoreSnapshot(hub) })
         return

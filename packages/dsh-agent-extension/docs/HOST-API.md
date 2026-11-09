@@ -576,3 +576,28 @@ lastRefreshed/display/owner/featured/plugins[]/refreshError/warnings`；
 | MCP | 无运行时挂载接口 | 只解析/展示清单并标注「未生效」，不 spawn 进程 |
 
 宿主服务是否就绪会反映在 `/store.runtime`；`StoreSnapshot.warnings` 保留最近错误。
+## 8. 记忆数据面（memory，schema v1）
+
+与商店面板共用 `/agent-plugin/api` 前缀、信封、回环同源校验与单写语义；数据目录为
+`<home>/memory/`，与 `state.json` 等商店数据互不依赖。
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/memory/state` | `{settings, projects[], stats}`；projects 含 `entryCount`，stats 含最近会话注入/命中率 |
+| GET | `/memory/list` | 查询参数 `scope=global|project`、`project`、`query`、`type`、`includeArchived=0|1` |
+| GET | `/memory/get` | 查询参数 `scope`、`project`、`id` |
+| POST | `/memory/save` | `{scope, project?, id?, name, description, type, content, tags?, importance?, supersedes?}`；同指纹只强化 |
+| POST | `/memory/status` | `{scope, project?, id, status: active|stale|archived}` |
+| POST | `/memory/delete` | `{scope, project?, id}` |
+| POST | `/memory/settings` | 部分字段：`captureEnabled`/`captureSessionEnd`/`injectEnabled`/`indexLimitGlobal`/`indexLimitProject`/`maxChars` |
+| POST | `/memory/export` | `{scope, project?}` → `{filename, content}` |
+
+条目字段：`id/name/description/type/scope/project/tags/importance/status/reinforcement/
+obsoleteVotes/supersedes/originSessionId/createdAt/updatedAt/content`。类型为
+`preference|decision|gotcha|project|reference`；`stale` 不注入但仍可检索，`archived` 默认不可见。
+
+模型侧同源能力：`memory_search` / `memory_get` / `memory_save` / `memory_forget` 工具、
+`/remember`、`/forget`、`/memory` 命令，以及 `systemPrompt.context` 注入的有界索引。
+
+项目身份文件：项目内 `.dsh/agent-extension/memory/config.json`（只含 `projectKey/identity/source`），
+自动加入 `<git common dir>/info/exclude`。

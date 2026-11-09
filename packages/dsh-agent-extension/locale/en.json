@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Agent Extension",
-    "description": "Add agent plugin marketplaces, install Claude Code plugins, and toggle their skills, commands, hooks and MCP servers."
+    "description": "Manage agent extensions in DSH — plugin marketplaces, install/update/rollback, per-item capability toggles, and built-in cross-session memory (global + project scopes, automatic capture, on-demand recall)."
   }
 }

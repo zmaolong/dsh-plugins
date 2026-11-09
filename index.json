@@ -40,8 +40,8 @@
         "zh-cn": "智能体扩展"
       },
       "description": {
-        "en": "Manage agent extensions in DSH — agent plugins, skills, MCP servers and more: personal marketplaces, install/update/rollback, per-item capability toggles, and a ZCode-style store panel.",
-        "zh-cn": "在 DSH 里管理智能体扩展（插件、技能、MCP 等）：个人市场源、安装/更新/回滚、能力逐项启停，以及 ZCode 风格商店面板。"
+        "en": "Manage agent extensions in DSH — plugin marketplaces, install/update/rollback, per-item capability toggles, and built-in cross-session memory (global + project scopes, automatic capture, on-demand recall).",
+        "zh-cn": "在 DSH 里管理智能体扩展：插件市场与逐项启停，并内置跨会话记忆（全局 + 项目双作用域、自动捕获、按需召回）。"
       },
       "homepage": "https://github.com/zmaolong/dsh-plugins/tree/release-0.0.1/packages/dsh-agent-extension",
       "repository": {
@@ -55,10 +55,21 @@
           "codebuddy",
           "zcode",
           "marketplace",
+          "memory",
           "store"
         ]
       },
       "versions": [
+        {
+          "version": "0.0.1-preview.5",
+          "publishTimestamp": 1794219006,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/zmaolong/dsh-plugins",
+            "commit": "110a752b5603b32e4b4ee680f1d09e0f2cd1c772",
+            "path": "packages/dsh-agent-extension"
+          }
+        },
         {
           "version": "0.0.1-preview.4",
           "publishTimestamp": 1794218978,
@@ -138,11 +149,11 @@
       "versions": [
         {
           "version": "0.0.1-preview.6",
-          "publishTimestamp": 1794218978,
+          "publishTimestamp": 1794219006,
           "source": {
             "type": "git",
             "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "da56505d6101e9af7fe49823f2dfbeb5138680d9",
+            "commit": "110a752b5603b32e4b4ee680f1d09e0f2cd1c772",
             "path": "packages/dsh-remote-ctrl"
           }
         },

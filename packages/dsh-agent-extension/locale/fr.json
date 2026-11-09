@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Extension d'agent",
-    "description": "Ajoutez des places de marché de plugins d'agent, installez des plugins au format Claude Code et activez ou désactivez leurs skills, commandes, hooks et serveurs MCP un par un."
+    "title": "Agent Extension",
+    "description": "Gérez les extensions d'agents dans DSH — places de marché de plugins, installation/mise à jour/retour arrière, bascules par capacité et mémoire inter-sessions intégrée (globale + par projet, capture automatique, rappel à la demande)."
   }
 }
