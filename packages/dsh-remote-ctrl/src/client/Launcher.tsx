@@ -4,8 +4,15 @@
  * The dialog is a real modal: it portals beside `#root`, paints the shared
  * mask token over every column, keeps its own focus (`Tab` cycles inside,
  * `Escape` and a mask click close it), and returns focus to the trigger.
- * Polling runs only while the dialog is open; the trigger keeps the amber
- * enabled highlight (ZCode's remote-control entry) while the gateway listens.
+ * Polling runs only while the dialog is open. The trigger gains the host
+ * row-hover fill on hover; its enabled state still paints the glyph amber but
+ * never the fill.
+ *
+ * While the sidebar is expanded the trigger itself does not stay in the
+ * footer actions row: it portals beside the account launcher in the settings
+ * trigger row (`sidebar-row.ts`), so one row carries both the avatar and this
+ * action. The collapsed rail keeps the footer row, which is the only place
+ * with room in 56px of column.
  *
  * @module dsh-remote-ctrl/client/Launcher
  */
@@ -15,6 +22,7 @@ import { createPortal } from 'react-dom'
 import { PanelIcon } from './PanelIcon.tsx'
 import { Panel } from './Panel.tsx'
 import type { PanelProps } from './Panel.tsx'
+import { useSidebarRowAnchor } from './sidebar-row.ts'
 import css from './panel.module.css'
 
 /** Props of Launcher (bound from the slot registration). */
@@ -42,6 +50,7 @@ export function Launcher({ wide, useRemote, actions, t }: LauncherProps): ReactN
   const dialog = useRef<HTMLDivElement>(null)
   const wasOpen = useRef(false)
   const titleId = useId()
+  const { mountRef, anchor } = useSidebarRowAnchor(wide)
 
   // Hand focus back to the trigger once the portal is gone (a focused node
   // inside the removed dialog would otherwise leave focus on <body>).
@@ -100,61 +109,84 @@ export function Launcher({ wide, useRemote, actions, t }: LauncherProps): ReactN
 
   const close = (): void => { setOpen(false) }
 
+  // The mount span only locates the sidebar foot; the row anchor portal host
+  // is the row itself when the shipped structure was found.
+  const mount = <span ref={mountRef} data-remote-ctrl-mount="" style={{ display: 'none' }} />
+
+  const popup = open && createPortal((
+    <div className={css.overlay}>
+      <div className={css.mask} aria-hidden="true" data-remote-ctrl-mask onClick={close} />
+      <div
+        ref={dialog}
+        className={css.dialog}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        data-remote-ctrl-dialog
+      >
+        <header className={css.dialogHeader}>
+          <span className={css.dialogIcon} aria-hidden="true"><PanelIcon size={20} /></span>
+          <span className={css.dialogHeading}>
+            <span className={css.dialogTitle} id={titleId}>{t('title')}</span>
+            <span className={css.dialogSubtitle}>{t('subtitle')}</span>
+          </span>
+        </header>
+        <button type="button" className={css.closeButton} aria-label={t('close')} data-remote-ctrl-close onClick={close}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
+        <div className={css.dialogBody} data-remote-ctrl-dialog-body>
+          <Panel useRemote={useRemote} actions={actions} t={t} />
+        </div>
+      </div>
+    </div>
+  ), document.body)
+
+  const launcher = (
+    <button
+      ref={trigger}
+      type="button"
+      className={css.trigger}
+      aria-label={t('title')}
+      aria-haspopup="dialog"
+      aria-expanded={open}
+      title={listening ? `${t('title')} · ${t('running')}` : t('title')}
+      data-remote-ctrl-trigger
+      data-active={listening}
+      onClick={() => {
+        if (open) {
+          setOpen(false)
+          return
+        }
+        setOpen(true)
+        // ZCode parity: opening the dialog brings the gateway up.
+        if (!listening && !pending) void actions.start()
+      }}
+    >
+      <PanelIcon active={listening} size={wide ? 16 : 18} />
+    </button>
+  )
+
+  // Anchor resolution is one post-mount pass; render nothing meanwhile so the
+  // entry never flashes in the footer row before moving beside the avatar.
+  if (anchor === undefined) return mount
+  if (anchor !== null) {
+    return (
+      <>
+        {mount}
+        {popup}
+        {createPortal(launcher, anchor)}
+      </>
+    )
+  }
   return (
     <div className={wide ? css.layer : `${css.layer} ${css.rail}`}>
-      {open && createPortal((
-        <div className={css.overlay}>
-          <div className={css.mask} aria-hidden="true" data-remote-ctrl-mask onClick={close} />
-          <div
-            ref={dialog}
-            className={css.dialog}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={titleId}
-            tabIndex={-1}
-            data-remote-ctrl-dialog
-          >
-            <header className={css.dialogHeader}>
-              <span className={css.dialogIcon} aria-hidden="true"><PanelIcon size={20} /></span>
-              <span className={css.dialogHeading}>
-                <span className={css.dialogTitle} id={titleId}>{t('title')}</span>
-                <span className={css.dialogSubtitle}>{t('subtitle')}</span>
-              </span>
-            </header>
-            <button type="button" className={css.closeButton} aria-label={t('close')} data-remote-ctrl-close onClick={close}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-                <path d="M18 6 6 18M6 6l12 12" />
-              </svg>
-            </button>
-            <div className={css.dialogBody} data-remote-ctrl-dialog-body>
-              <Panel useRemote={useRemote} actions={actions} t={t} />
-            </div>
-          </div>
-        </div>
-      ), document.body)}
-      <button
-        ref={trigger}
-        type="button"
-        className={css.trigger}
-        aria-label={t('title')}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        title={listening ? `${t('title')} · ${t('running')}` : t('title')}
-        data-remote-ctrl-trigger
-        data-active={listening}
-        onClick={() => {
-          if (open) {
-            setOpen(false)
-            return
-          }
-          setOpen(true)
-          // ZCode parity: opening the dialog brings the gateway up.
-          if (!listening && !pending) void actions.start()
-        }}
-      >
-        <PanelIcon active={listening} size={wide ? 16 : 18} />
-      </button>
+      {mount}
+      {popup}
+      {launcher}
     </div>
   )
 }

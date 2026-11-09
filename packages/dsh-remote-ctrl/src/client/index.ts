@@ -2,7 +2,9 @@
  * Browser half of dsh-remote-ctrl: the Remote Control launcher. This module is
  * the bundle's `apply` (the `window.__ModuleLoader__` handoff is stamped by
  * the build); it registers the dictionaries through the locale service and
- * contributes one slot — the sidebar-foot action that opens the popup.
+ * contributes one slot — the sidebar-foot action that opens the popup. While
+ * the sidebar is expanded the Launcher re-homes that action beside the account
+ * launcher (`sidebar-row.ts`), so the footer keeps a single row.
  *
  * Data comes from the host's loopback `/remote-ctrl/api` prefix; components
  * are pure props components (`useRemote` selector hook + actions) and never

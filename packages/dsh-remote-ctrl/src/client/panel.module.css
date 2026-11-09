@@ -1,8 +1,8 @@
-/* Remote Control: the sidebar-foot trigger (amber while enabled), the
- * frame-wide modal dialog, and the dialog body's two cards. Styling follows
- * the official web conventions: CSS Modules, host `--dsw-alias-*` tokens
- * only, `:hover` behind `@media (hover: hover)`, every fully-round shape
- * paired with `corner-shape: round`. */
+/* Remote Control: the sidebar-foot trigger, the frame-wide modal dialog, and
+ * the dialog body's two cards. Styling follows the official web conventions:
+ * CSS Modules, host `--dsw-alias-*` tokens only, `:hover` behind
+ * `@media (hover: hover)`, every fully-round shape paired with
+ * `corner-shape: round`. */
 
 /* ---------------------------------------------------------- footer entry */
 
@@ -26,8 +26,10 @@
   justify-content: center;
 }
 
-/* The trigger paints no fill in any state: the glyph alone turns amber while
- * the gateway is enabled, matching ZCode's flat footer icon. */
+/* The trigger paints no fill until hover; hovering uses the same row fill as
+ * the account launcher beside it. The gateway's enabled state still colors the
+ * glyph amber, but that highlight never reaches the fill: the background stays
+ * the neutral row fill while enabled. */
 .trigger {
   position: relative;
   display: inline-flex;
@@ -51,6 +53,7 @@
 
 @media (hover: hover) {
   .trigger:hover {
+    background-color: var(--dsw-alias-interactive-bg-hover);
     color: var(--dsw-alias-label-primary);
   }
 }

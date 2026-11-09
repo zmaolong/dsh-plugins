@@ -23,9 +23,11 @@ UI**（0.0.1-preview.1 起删除了自研手机页，改为纯网关）。
   - 配对码三通道：`?token=`（扫码链接）/ `Authorization: Bearer` / 首访种下的
     `dsh-remote-ctrl` 配对 cookie（之后 webUI 自己的请求免带 token）。
 - **侧边栏底部入口 + 全局弹窗**（slots：`sidebar.footer.action`，宿主回环
-  `/remote-ctrl/api` 供数）：侧栏脚**最左侧**一个手机图标（头像行上方），
-  启用时**只有字形变琥珀橙、无底色**；点开是 ZCode 同构的居中弹窗（遮罩 +
-  失焦页面 + 焦点锁在弹窗内，Esc / 点遮罩 / 右上角关闭）：
+  `/remote-ctrl/api` 供数）：侧栏脚一个手机图标；侧栏展开时入口 portal 到设置
+  触发行、紧挨账号头像右侧（缩短账号入口、不再多占一行），收起轨道或该行不可用
+  时回落到自己的脚部动作行；启用时字形保持琥珀橙（ZCode 同款），悬浮底色与账号
+  行同款且不跟着变橙；点开是 ZCode
+  同构的居中弹窗（遮罩 + 失焦页面 + 焦点锁在弹窗内，Esc / 点遮罩 / 右上角关闭）：
   - **点图标即自动启动**网关（已启动时不会重复操作）；
   - 弹窗默认**固定 900×720** 尺寸；左卡：连接状态、停止/启动、复制链接、
     配对码（展示 + 手动刷新，**不提供复制**）、二维码；右卡：**局域网地址切换**
@@ -74,7 +76,7 @@ npm run build        # tsdown：lib/index.js（ESM 宿主半）+ lib/client.js�
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\dsh-remote-ctrl
 ```
 
-装进 `zdebug` 后：点击侧栏底部（头像行上方）的手机图标弹出「远程控制」弹窗；
+装进 `zdebug` 后：点击侧栏底部、账号头像右侧的手机图标弹出「远程控制」弹窗；
 手机打开 `http://<局域网IP>:47291/?token=<配对码>` 即得完整 webUI。
 
 ## 许可
