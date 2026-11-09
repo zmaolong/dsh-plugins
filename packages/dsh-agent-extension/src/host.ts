@@ -252,19 +252,29 @@ export interface AgentLike {
 export interface LlmStreamOptionsLike {
   provider: string
   model: string
-  messages: Array<{ role: 'system' | 'user' | 'assistant', content: string }>
+  messages: Array<{
+    role: 'system' | 'user' | 'assistant'
+    /** The llm seam expects content blocks; plain text must be wrapped by the caller. */
+    content: string | Array<{ type: 'text', text: string }>
+  }>
   system?: string
   maxTokens?: number
   temperature?: number
+  /** Adapter-owned reasoning effort; `'off'` disables thinking where the model supports it. */
+  reasoningEffort?: string
   sessionId?: string
   purpose?: string
   signal?: AbortSignal
 }
 
-/** Minimal stream chunk shape: extraction only reads text deltas. */
+/** Minimal stream chunk shape: extraction reads text deltas and final text blocks. */
 export interface LlmStreamChunkLike {
   type: string
   text?: string
+  /** `block-end` carries the assembled content block. */
+  block?: { type?: string, text?: string }
+  /** `finish` carries the stop reason. */
+  reason?: string
 }
 
 /** Host LLM seam (`ctx.llm`). */

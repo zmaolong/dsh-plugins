@@ -91,6 +91,7 @@ describe('自动捕获：闸门、摘要与提炼', () => {
 
     const invalid = parseExtraction('not json at all')
     expect(invalid).toBeNull()
+    expect(parseExtraction('')).toBeNull()
 
     const fallback = parseExtraction('[{"name":"x","content":"y","type":"unknown","scope":"weird"}]')
     expect(fallback?.[0]).toMatchObject({ type: 'reference', scope: 'project', importance: 50 })
@@ -103,5 +104,22 @@ describe('自动捕获：闸门、摘要与提炼', () => {
     ]))
     expect(many).toHaveLength(3)
     expect(parseExtraction('[{"name":"","content":""}]')).toEqual([])
+  })
+
+  it('解析提炼结果：代码围栏、尾随含括号的说明、字符串内裸换行', () => {
+    const fenced = parseExtraction('说明\n```json\n[{"name":"a","content":"b","type":"gotcha"}]\n```\n(注意：不要存 [草稿])')
+    expect(fenced).toHaveLength(1)
+    expect(fenced?.[0]).toMatchObject({ name: 'a', type: 'gotcha' })
+
+    const trailing = parseExtraction('[{"name":"a","content":"b","type":"decision"}]\n补充：[见上]')
+    expect(trailing).toHaveLength(1)
+
+    const rawNewline = '[{"name":"多行","content":"第一行\n第二行","type":"project"}]'
+    const repaired = parseExtraction(rawNewline)
+    expect(repaired).toHaveLength(1)
+    expect(repaired?.[0]?.content).toContain('第一行')
+
+    const truncated = parseExtraction('[{"name":"a","content":"b"},')
+    expect(truncated).toBeNull()
   })
 })

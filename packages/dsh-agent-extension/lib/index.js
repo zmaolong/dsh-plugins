@@ -5653,8 +5653,8 @@ function gateCapture(digest, options) {
 		reason: "accepted"
 	};
 }
-/** Model request budget of one extraction run. */
-const EXTRACTION_MAX_OUTPUT_TOKENS = 1e3;
+/** Model request budget of one extraction run (reasoning is disabled for this call). */
+const EXTRACTION_MAX_OUTPUT_TOKENS = 2e3;
 /** Stabilizing temperature for extraction. */
 const EXTRACTION_TEMPERATURE = .2;
 /** System instruction of the extraction request. */
@@ -5698,19 +5698,76 @@ function buildExtractionMessages(input) {
 		content: JSON.stringify(user)
 	}];
 }
+/** Escape raw control characters that appear inside JSON string literals (models emit them). */
+function escapeControlCharsInStrings(source) {
+	let out = "";
+	let inString = false;
+	let escaped = false;
+	for (const char of source) {
+		if (inString) {
+			if (escaped) {
+				out += char;
+				escaped = false;
+				continue;
+			}
+			if (char === "\\") {
+				out += char;
+				escaped = true;
+				continue;
+			}
+			if (char === "\"") {
+				out += char;
+				inString = false;
+				continue;
+			}
+			if (char === "\n") {
+				out += "\\n";
+				continue;
+			}
+			if (char === "\r") continue;
+			if (char === "	") {
+				out += "\\t";
+				continue;
+			}
+			out += char;
+			continue;
+		}
+		if (char === "\"") inString = true;
+		out += char;
+	}
+	return out;
+}
+/** Parse one candidate slice; null when it is not a usable JSON array. */
+function parseCandidate(candidate) {
+	const attempts = [
+		candidate,
+		escapeControlCharsInStrings(candidate),
+		escapeControlCharsInStrings(candidate).replace(/,\s*([\]}])/gu, "$1")
+	];
+	for (const attempt of attempts) try {
+		const parsed = JSON.parse(attempt);
+		if (Array.isArray(parsed)) return parsed;
+	} catch {}
+	return null;
+}
 /** Parse the extractor's JSON array; null means the output was unusable. */
 function parseExtraction(raw, max = 3) {
 	const source = typeof raw === "string" ? raw : "";
+	if (source.trim() === "") return null;
+	const candidates = [];
+	const fenced = /```(?:json)?\s*([\s\S]*?)```/iu.exec(source);
+	if (fenced?.[1] !== void 0) candidates.push(fenced[1].trim());
 	const start = source.indexOf("[");
-	const end = source.lastIndexOf("]");
-	if (start === -1 || end <= start) return null;
-	let parsed;
-	try {
-		parsed = JSON.parse(source.slice(start, end + 1));
-	} catch {
-		return null;
+	if (start === -1) return null;
+	const last = source.lastIndexOf("]");
+	if (last > start) candidates.push(source.slice(start, last + 1));
+	for (let index = source.indexOf("]", start); index !== -1; index = source.indexOf("]", index + 1)) candidates.push(source.slice(start, index + 1));
+	let parsed = null;
+	for (const candidate of candidates) {
+		parsed = parseCandidate(candidate);
+		if (parsed !== null) break;
 	}
-	if (!Array.isArray(parsed)) return null;
+	if (parsed === null) return null;
 	const out = [];
 	for (const item of parsed) {
 		if (item === null || typeof item !== "object") continue;
@@ -6706,10 +6763,12 @@ var MemoryRuntime = class {
 		const llm = this.llm();
 		if (llm === null) {
 			this.log("warn", "记忆提炼需要 llm 服务，但宿主尚未提供");
+			this.store.recordCapture(0, true);
 			return;
 		}
 		if (buffer.modelRoute === null) {
 			this.log("warn", "记忆提炼缺少模型路由（会话尚无请求头），跳过");
+			this.store.recordCapture(0, true);
 			return;
 		}
 		const project = buffer.project ?? this.projectForPath(buffer.session.header?.cwd);
@@ -6731,28 +6790,45 @@ var MemoryRuntime = class {
 		});
 		const parts = [];
 		let length = 0;
+		const chunkTypes = /* @__PURE__ */ new Map();
+		let finishReason = "";
 		const stream = llm.stream({
 			provider: buffer.modelRoute.provider,
 			model: buffer.modelRoute.model,
 			messages: messages.map((message) => ({
 				role: message.role,
-				content: message.content
+				content: [{
+					type: "text",
+					text: message.content
+				}]
 			})),
 			maxTokens: EXTRACTION_MAX_OUTPUT_TOKENS,
 			temperature: EXTRACTION_TEMPERATURE,
+			reasoningEffort: "off",
 			purpose: "memory-capture",
 			...buffer.sessionId === "" ? {} : { sessionId: buffer.sessionId },
 			signal: this.abort.signal
 		});
 		for await (const chunk of stream) {
-			if (chunk.type !== "text-delta" || typeof chunk.text !== "string") continue;
-			parts.push(chunk.text);
-			length += chunk.text.length;
+			chunkTypes.set(chunk.type, (chunkTypes.get(chunk.type) ?? 0) + 1);
+			if (chunk.type === "text-delta" && typeof chunk.text === "string") {
+				parts.push(chunk.text);
+				length += chunk.text.length;
+			} else if (chunk.type === "block-end" && chunk.block?.type === "text" && typeof chunk.block.text === "string") {
+				parts.push(chunk.block.text);
+				length += chunk.block.text.length;
+			} else if (chunk.type === "finish") {
+				const reason = chunk.reason;
+				finishReason = reason !== null && typeof reason === "object" && "kind" in reason ? String(reason.kind) : String(reason ?? "");
+			}
 			if (length > EXTRACTION_MAX_CHARS) break;
 		}
-		const items = parseExtraction(parts.join(""));
+		const raw = parts.join("");
+		const items = parseExtraction(raw);
 		if (items === null) {
-			this.log("warn", "记忆提炼返回了无法解析的 JSON，已跳过");
+			const shape = [...chunkTypes].map(([type, count]) => `${type}:${count}`).join(" ");
+			this.log("warn", `记忆提炼返回了无法解析的 JSON，已跳过（长度 ${raw.length}，结束 ${finishReason || "unknown"}，块 ${shape || "none"}，开头：${raw.slice(0, 160).replace(/\s+/gu, " ")}）`);
+			this.store.recordCapture(0, true);
 			return;
 		}
 		let written = 0;

@@ -645,10 +645,12 @@ export class MemoryRuntime {
     const llm = this.llm()
     if (llm === null) {
       this.log('warn', '记忆提炼需要 llm 服务，但宿主尚未提供')
+      this.store.recordCapture(0, true)
       return
     }
     if (buffer.modelRoute === null) {
       this.log('warn', '记忆提炼缺少模型路由（会话尚无请求头），跳过')
+      this.store.recordCapture(0, true)
       return
     }
     const project = buffer.project ?? this.projectForPath(buffer.session.header?.cwd)
@@ -664,25 +666,46 @@ export class MemoryRuntime {
     })
     const parts: string[] = []
     let length = 0
+    const chunkTypes = new Map<string, number>()
+    let finishReason = ''
     const stream = llm.stream({
       provider: buffer.modelRoute.provider,
       model: buffer.modelRoute.model,
-      messages: messages.map(message => ({ role: message.role, content: message.content })),
+      messages: messages.map(message => ({
+        role: message.role,
+        content: [{ type: 'text' as const, text: message.content }],
+      })),
       maxTokens: EXTRACTION_MAX_OUTPUT_TOKENS,
       temperature: EXTRACTION_TEMPERATURE,
+      // Extraction is a parsing task: thinking would consume the output budget
+      // and truncate the JSON array on reasoning-first models.
+      reasoningEffort: 'off',
       purpose: 'memory-capture',
       ...(buffer.sessionId === '' ? {} : { sessionId: buffer.sessionId }),
       signal: this.abort.signal,
     })
     for await (const chunk of stream) {
-      if (chunk.type !== 'text-delta' || typeof chunk.text !== 'string') continue
-      parts.push(chunk.text)
-      length += chunk.text.length
+      chunkTypes.set(chunk.type, (chunkTypes.get(chunk.type) ?? 0) + 1)
+      if (chunk.type === 'text-delta' && typeof chunk.text === 'string') {
+        parts.push(chunk.text)
+        length += chunk.text.length
+      } else if (chunk.type === 'block-end' && chunk.block?.type === 'text' && typeof chunk.block.text === 'string') {
+        parts.push(chunk.block.text)
+        length += chunk.block.text.length
+      } else if (chunk.type === 'finish') {
+        const reason = chunk.reason as unknown
+        finishReason = reason !== null && typeof reason === 'object' && 'kind' in (reason as Record<string, unknown>)
+          ? String((reason as Record<string, unknown>).kind)
+          : String(reason ?? '')
+      }
       if (length > EXTRACTION_MAX_CHARS) break
     }
-    const items = parseExtraction(parts.join(''))
+    const raw = parts.join('')
+    const items = parseExtraction(raw)
     if (items === null) {
-      this.log('warn', '记忆提炼返回了无法解析的 JSON，已跳过')
+      const shape = [...chunkTypes].map(([type, count]) => `${type}:${count}`).join(' ')
+      this.log('warn', `记忆提炼返回了无法解析的 JSON，已跳过（长度 ${raw.length}，结束 ${finishReason || 'unknown'}，块 ${shape || 'none'}，开头：${raw.slice(0, 160).replace(/\s+/gu, ' ')}）`)
+      this.store.recordCapture(0, true)
       return
     }
     let written = 0

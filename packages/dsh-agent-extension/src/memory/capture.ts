@@ -207,8 +207,8 @@ export function gateCapture(
   return { capture: true, reason: 'accepted' }
 }
 
-/** Model request budget of one extraction run. */
-export const EXTRACTION_MAX_OUTPUT_TOKENS = 1000
+/** Model request budget of one extraction run (reasoning is disabled for this call). */
+export const EXTRACTION_MAX_OUTPUT_TOKENS = 2000
 
 /** Stabilizing temperature for extraction. */
 export const EXTRACTION_TEMPERATURE = 0.2
@@ -271,19 +271,89 @@ export function buildExtractionMessages(input: ExtractionInput): Array<{ role: '
   ]
 }
 
+/** Escape raw control characters that appear inside JSON string literals (models emit them). */
+function escapeControlCharsInStrings(source: string): string {
+  let out = ''
+  let inString = false
+  let escaped = false
+  for (const char of source) {
+    if (inString) {
+      if (escaped) {
+        out += char
+        escaped = false
+        continue
+      }
+      if (char === '\\') {
+        out += char
+        escaped = true
+        continue
+      }
+      if (char === '"') {
+        out += char
+        inString = false
+        continue
+      }
+      if (char === '\n') {
+        out += '\\n'
+        continue
+      }
+      if (char === '\r') continue
+      if (char === '\t') {
+        out += '\\t'
+        continue
+      }
+      out += char
+      continue
+    }
+    if (char === '"') inString = true
+    out += char
+  }
+  return out
+}
+
+/** Parse one candidate slice; null when it is not a usable JSON array. */
+function parseCandidate(candidate: string): unknown[] | null {
+  const attempts = [
+    candidate,
+    escapeControlCharsInStrings(candidate),
+    escapeControlCharsInStrings(candidate).replace(/,\s*([\]}])/gu, '$1'),
+  ]
+  for (const attempt of attempts) {
+    try {
+      const parsed = JSON.parse(attempt) as unknown
+      if (Array.isArray(parsed)) return parsed
+    } catch {
+      /* try the next repair */
+    }
+  }
+  return null
+}
+
 /** Parse the extractor's JSON array; null means the output was unusable. */
 export function parseExtraction(raw: unknown, max = 3): ExtractionItem[] | null {
   const source = typeof raw === 'string' ? raw : ''
+  if (source.trim() === '') return null
+
+  // Candidates in preference order: a fenced JSON block, then the widest
+  // bracket span, then progressively shorter spans from the first `[` (models
+  // often append prose that itself contains brackets).
+  const candidates: string[] = []
+  const fenced = /```(?:json)?\s*([\s\S]*?)```/iu.exec(source)
+  if (fenced?.[1] !== undefined) candidates.push(fenced[1].trim())
   const start = source.indexOf('[')
-  const end = source.lastIndexOf(']')
-  if (start === -1 || end <= start) return null
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(source.slice(start, end + 1)) as unknown
-  } catch {
-    return null
+  if (start === -1) return null
+  const last = source.lastIndexOf(']')
+  if (last > start) candidates.push(source.slice(start, last + 1))
+  for (let index = source.indexOf(']', start); index !== -1; index = source.indexOf(']', index + 1)) {
+    candidates.push(source.slice(start, index + 1))
   }
-  if (!Array.isArray(parsed)) return null
+
+  let parsed: unknown[] | null = null
+  for (const candidate of candidates) {
+    parsed = parseCandidate(candidate)
+    if (parsed !== null) break
+  }
+  if (parsed === null) return null
   const out: ExtractionItem[] = []
   for (const item of parsed) {
     if (item === null || typeof item !== 'object') continue
