@@ -70,11 +70,12 @@
   gap: 8px;
 }
 
-.toolbar {
+/* 筛选区纵向堆叠：搜索框独占一行，市场/状态切换另起一行，不与搜索挤在同一行。 */
+.filters {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 16px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
 }
 
 .segmented {

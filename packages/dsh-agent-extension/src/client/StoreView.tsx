@@ -248,7 +248,7 @@ export function StoreView({ useHub, actions, t }: ViewProps): ReactNode {
       <StoreTabs tab={state.storeTab} onChange={actions.setStoreTab} t={t} />
       {state.storeTab === 'sources'
         ? (
-          <div className={css.toolbar}>
+          <div className={css.filters}>
             <SearchBox
               value={query}
               onChange={actions.setQuery}
