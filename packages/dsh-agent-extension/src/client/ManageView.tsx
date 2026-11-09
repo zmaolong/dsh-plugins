@@ -70,14 +70,7 @@ export function ManageView({ useHub, actions, t }: ViewProps): ReactNode {
           <AddMenu t={t} onAdd={actions.openAddSource} />
         </div>
       </header>
-      <div className={css.filters}>
-        <SearchBox
-          value={query}
-          onChange={actions.setManageQuery}
-          placeholder={t('searchPlaceholder')}
-          clearable
-          clearLabel={t('clearSearch')}
-        />
+      <div className={css.toolbar}>
         <div className={css.segmented}>
           {([['all', t('filterAll')], ['enabled', t('filterEnabled')], ['disabled', t('filterDisabled')]] as const).map(([value, label]) => (
             <button
@@ -91,6 +84,13 @@ export function ManageView({ useHub, actions, t }: ViewProps): ReactNode {
             </button>
           ))}
         </div>
+        <SearchBox
+          value={query}
+          onChange={actions.setManageQuery}
+          placeholder={t('searchPlaceholder')}
+          clearable
+          clearLabel={t('clearSearch')}
+        />
       </div>
       {state.error !== '' ? <div className={css.errorBanner}>{state.error}</div> : null}
       <div style={columnGap(32)}>

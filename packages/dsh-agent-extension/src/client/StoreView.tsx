@@ -245,45 +245,47 @@ export function StoreView({ useHub, actions, t }: ViewProps): ReactNode {
           <Button variant="primary" onClick={actions.openManage}>{t('manage')}</Button>
         </div>
       </header>
-      <StoreTabs tab={state.storeTab} onChange={actions.setStoreTab} t={t} />
-      {state.storeTab === 'sources'
-        ? (
-          <div className={css.filters}>
+      <div className={css.toolbar}>
+        <StoreTabs tab={state.storeTab} onChange={actions.setStoreTab} t={t} />
+        {state.storeTab === 'sources'
+          ? (
             <SearchBox
               value={query}
               onChange={actions.setQuery}
               placeholder={t('searchPlaceholder')}
             />
-            {markets.length > 1
-              ? (
-                <div className={css.segmented} role="group" aria-label={t('allSources')}>
+          )
+          : null}
+      </div>
+      {state.storeTab === 'sources' && markets.length > 1
+        ? (
+          <div className={css.toolbar}>
+            <div className={css.segmented} role="group" aria-label={t('allSources')}>
+              <button
+                type="button"
+                className={css.segment}
+                aria-pressed={sourceFilter === ''}
+                onClick={() => actions.setStoreSourceFilter('')}
+              >
+                {t('allSources')}
+              </button>
+              {markets.map(market => {
+                const id = String(market.id ?? '')
+                const title = String(market.title || market.name || market.id)
+                return (
                   <button
+                    key={id}
                     type="button"
                     className={css.segment}
-                    aria-pressed={sourceFilter === ''}
-                    onClick={() => actions.setStoreSourceFilter('')}
+                    aria-pressed={sourceFilter === id}
+                    title={title}
+                    onClick={() => actions.setStoreSourceFilter(id)}
                   >
-                    {t('allSources')}
+                    {title}
                   </button>
-                  {markets.map(market => {
-                    const id = String(market.id ?? '')
-                    const title = String(market.title || market.name || market.id)
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        className={css.segment}
-                        aria-pressed={sourceFilter === id}
-                        title={title}
-                        onClick={() => actions.setStoreSourceFilter(id)}
-                      >
-                        {title}
-                      </button>
-                    )
-                  })}
-                </div>
-              )
-              : null}
+                )
+              })}
+            </div>
           </div>
         )
         : null}

@@ -1,6 +1,6 @@
 {
   "name": "dsh-agent-extension",
-  "version": "0.0.1-preview.1",
+  "version": "0.0.1-preview.2",
   "description": "Agent Extension (智能体扩展) for DSH: manage agent plugins, skills, MCP and more — hosts Claude Code / CodeBuddy / ZCode agent plugins as DSH skills, commands, hooks and MCP, with a ZCode-style store panel.",
   "type": "module",
   "main": "lib/index.js",

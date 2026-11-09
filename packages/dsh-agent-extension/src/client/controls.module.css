@@ -232,9 +232,11 @@
 .search {
   position: relative;
   display: flex;
+  flex: 1 1 14rem;
   align-items: center;
-  width: 100%;
   min-width: 0;
+  margin-left: auto;
+  max-width: 320px;
 }
 
 .search > svg {
