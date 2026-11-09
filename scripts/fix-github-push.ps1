@@ -3,15 +3,20 @@
   修复本机无法 git push GitHub 的问题（改用 SSH key，一次配置长期有效）。
 
 .DESCRIPTION
-  本机推不动 GitHub 的常见原因有三个，脚本按顺序处理：
+  本机推不动 GitHub 的常见原因有四个，脚本按顺序处理：
     1. 全局配置 url.https://github.com/.insteadof=git@github.com: 会把 SSH 地址
        强制改写成 HTTPS，导致本机可用的 SSH key 永远用不上；
     2. ~/.ssh/config 里没有 github.com 的 IdentityFile 条目，ssh 不知道用哪把 key；
-    3. origin 远端是 HTTPS 地址，需要 token / GCM 弹窗，非交互场景会失败。
+    3. origin 远端是 HTTPS 地址，需要 token / GCM 弹窗，非交互场景会失败；
+    4. 网络拦截 github.com:22——TCP 能连上，但 SSH banner 永远等不到，报错是
+       「Connection closed by ... port 22」或「timed out during banner exchange」。
+       注意 git 的 http.proxy 只作用于 HTTPS 拉取，SSH 远端完全不经过它。
+       GitHub 官方提供 ssh.github.com:443 作为备用通道，脚本固定走 443。
 
   脚本做的事：
     - 移除第 1 条全局改写（有多条也会一并移除）；
-    - 在 ~/.ssh/config 追加 Host github.com 条目（已有则跳过，改动前备份）；
+    - 在 ~/.ssh/config 写入/更新 Host github.com 条目，固定走 ssh.github.com:443
+      （已有但仍是 22 的旧条目会就地改写，改动前备份）；
     - 把 origin 改成 SSH 地址；
     - 用 ssh -T 与 git ls-remote 验证。
 
@@ -64,30 +69,36 @@ if ($rewrites.Count -gt 0) {
   Say "全局 $rewriteKey 不存在，跳过"
 }
 
-# ── 3. 写入 ~/.ssh/config 的 Host github.com 条目 ─────────────────
+# ── 3. 写入/更新 ~/.ssh/config 的 Host github.com 条目 ────────────
+# 固定用 ssh.github.com:443：本机网络会拦截 github.com:22，TCP 握手后
+# SSH banner 等不到，git 报「Connection closed by ... port 22」。
 $configPath = Join-Path $sshDir 'config'
+# 必须按 UTF-8 读：Windows PowerShell 5.1 的 Get-Content 默认按 ANSI 解码，
+# 会把中文注释后面的换行吞掉，导致 Host github.com 行识别不出来。
 $configText = ''
-if (Test-Path $configPath) { $configText = Get-Content -Raw -Path $configPath }
-$hasGithubHost = $configText -match '(?m)^\s*Host\s+github\.com\s*$'
-if ($hasGithubHost) {
-  Say '~/.ssh/config 已有 Host github.com 条目，跳过'
+if (Test-Path $configPath) { $configText = [System.IO.File]::ReadAllText($configPath) }
+if ($keyPath.ToLower().StartsWith($sshDir.ToLower())) {
+  $relativeKey = '~/.ssh/' + $keyPath.Substring($sshDir.Length).TrimStart('\', '/')
 } else {
-  if ($keyPath.ToLower().StartsWith($sshDir.ToLower())) {
-    $relativeKey = '~/.ssh/' + $keyPath.Substring($sshDir.Length).TrimStart('\', '/')
-  } else {
-    $relativeKey = $keyPath -replace '\\', '/'
-  }
-  $block = @(
-    ''
-    '# GitHub（由 scripts/fix-github-push.ps1 写入）'
-    'Host github.com'
-    '    HostName github.com'
-    '    User git'
-    "    IdentityFile $relativeKey"
-    '    IdentitiesOnly yes'
-    ''
-  ) -join "`n"
+  $relativeKey = $keyPath -replace '\\', '/'
+}
+$block = @(
+  ''
+  '# GitHub（由 scripts/fix-github-push.ps1 写入）'
+  '# 固定走 ssh.github.com:443：本机网络拦截 github.com:22'
+  'Host github.com'
+  '    HostName ssh.github.com'
+  '    Port 443'
+  '    User git'
+  "    IdentityFile $relativeKey"
+  '    IdentitiesOnly yes'
+  '    StrictHostKeyChecking accept-new'
+  ''
+) -join "`n"
 
+$blockPattern = '(?ms)^[ \t]*Host\s+github\.com\s*\r?\n(?:[ \t]+[^\r\n]*\r?\n)*'
+$existingBlock = [regex]::Match($configText, $blockPattern)
+if (-not $existingBlock.Success) {
   if ($DryRun) {
     Say "将向 $configPath 追加：`n$block"
   } else {
@@ -98,7 +109,28 @@ if ($hasGithubHost) {
       Say "已备份原配置到 $backup"
     }
     [System.IO.File]::AppendAllText($configPath, $block, (New-Object System.Text.UTF8Encoding($false)))
-    Say "已写入 Host github.com 条目"
+    if ([System.IO.File]::ReadAllText($configPath) -notmatch '(?m)^\s*Port\s+443\s*$') {
+      Say "写入 $configPath 失败（权限不足或被沙箱拦截），请确认后重试。"
+      exit 1
+    }
+    Say '已写入 Host github.com 条目（走 ssh.github.com:443）'
+  }
+} elseif ($existingBlock.Value -match 'Port\s+443' -and $existingBlock.Value -match 'ssh\.github\.com') {
+  Say '~/.ssh/config 已有走 443 的 Host github.com 条目，跳过'
+} else {
+  $updated = $configText.Substring(0, $existingBlock.Index) + $block + $configText.Substring($existingBlock.Index + $existingBlock.Length)
+  if ($DryRun) {
+    Say "将把现有 Host github.com 条目改写为 443 通道：`n$($existingBlock.Value)->`n$block"
+  } else {
+    $backup = "$configPath.bak-" + (Get-Date -Format 'yyyyMMdd-HHmmss')
+    Copy-Item -Path $configPath -Destination $backup -Force
+    Say "已备份原配置到 $backup"
+    [System.IO.File]::WriteAllText($configPath, $updated, (New-Object System.Text.UTF8Encoding($false)))
+    if ([System.IO.File]::ReadAllText($configPath) -notmatch '(?m)^\s*Port\s+443\s*$') {
+      Say "写入 $configPath 失败（权限不足或被沙箱拦截），请确认后重试。"
+      exit 1
+    }
+    Say '已把 Host github.com 条目改写为 ssh.github.com:443'
   }
 }
 
@@ -135,8 +167,14 @@ if ($sshOut -match 'successfully authenticated|Hi ') {
   Say 'SSH 认证成功'
 } else {
   Say "SSH 认证可能失败：`n$sshOut"
-  Say '如果提示 Permission denied，请确认该公钥已加到 GitHub → Settings → SSH and GPG keys。'
-  Say '如果 22 端口被网络拦截，改用 HTTPS + PAT：git config --global credential.helper manager，push 时用户名填 GitHub 用户名、密码填 PAT。'
+  if ($sshOut -match 'banner exchange|Connection closed|timed out') {
+    Say '连 ssh.github.com:443 都握不上手：代理/VPN 没有覆盖 443，先确认规则里放行了 443。'
+  } else {
+    Say '如果提示 Permission denied，请确认该公钥已加到 GitHub → Settings → SSH and GPG keys。'
+  }
+  Say '兜底方案：把 origin 换成 HTTPS（git 已配的 http.proxy 会生效）：'
+  Say '  git remote set-url origin https://github.com/zmaolong/dsh-plugins.git'
+  Say '已配置 credential.helper manager，首次 push 弹窗用户名填 GitHub 用户名、密码填 PAT。'
   exit 1
 }
 
