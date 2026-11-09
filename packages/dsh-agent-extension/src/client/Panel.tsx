@@ -1,7 +1,8 @@
 /**
- * Main panel of the store: hosts the three views (store / manage / detail),
- * keeps the store list's scroll position across view switches, and renders
- * the migration / API banners.
+ * Main panel of the store: hosts the section header (plugins / memory /
+ * skills), the three plugin views (store / manage / detail), keeps the store
+ * list's scroll position across view switches, and renders the migration /
+ * API banners. Memory and skills are placeholders for now.
  *
  * @module dsh-agent-extension/client/Panel
  */
@@ -9,11 +10,12 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Button, EmptyBlock, LoadingBlock } from './controls.tsx'
 import { Icon } from './icons.tsx'
+import { Tabs, type TabItem } from './Tabs.tsx'
 import { StoreView } from './StoreView.tsx'
 import { ManageView } from './ManageView.tsx'
 import { DetailView } from './DetailView.tsx'
 import { MarketView } from './MarketView.tsx'
-import { identity, type HubActions, type HubState, type UseHub } from './store.ts'
+import { identity, type HubActions, type HubState, type SectionTab, type UseHub } from './store.ts'
 import type { JsonRecord, Translate } from './presentation.ts'
 import css from './panel.module.css'
 
@@ -22,6 +24,15 @@ export interface PanelProps {
   useHub: UseHub
   actions: HubActions
   t: Translate
+}
+
+/** Section tabs: plugin features now, memory and skills as placeholders. */
+function sectionTabs(t: Translate): ReadonlyArray<TabItem<SectionTab>> {
+  return [
+    { value: 'plugins', label: t('tabPlugins') },
+    { value: 'memory', label: t('tabMemory') },
+    { value: 'skills', label: t('tabSkills') },
+  ]
 }
 
 /** Render the main panel. */
@@ -41,9 +52,22 @@ export function Panel({ useHub, actions, t }: PanelProps): ReactNode {
     lastView.current = state.view
   }, [state.view])
   const snapshot = state.snapshot as JsonRecord | null
+  const pluginsSection = state.sectionTab === 'plugins'
 
   let body: ReactNode
-  if (state.status === 'loading' && !snapshot) {
+  // Drill-down plugin views (manage / market / detail) carry their own back
+  // header, so the section header stays on the section roots only.
+  let withHeader = true
+  if (!pluginsSection) {
+    body = (
+      <div className={css.page}>
+        <EmptyBlock
+          title={t('comingSoon')}
+          description={state.sectionTab === 'memory' ? t('memoryPlaceholder') : t('skillsPlaceholder')}
+        />
+      </div>
+    )
+  } else if (state.status === 'loading' && !snapshot) {
     body = <div className={css.page}><LoadingBlock text={t('catalogLoading')} /></div>
   } else if (!snapshot) {
     body = (
@@ -81,11 +105,33 @@ export function Panel({ useHub, actions, t }: PanelProps): ReactNode {
           ? <MarketView key="market" useHub={useHub} actions={actions} t={t} />
           : <StoreView key="store" useHub={useHub} actions={actions} t={t} />
     body = <div style={{ display: 'flex', flexDirection: 'column' }}>{banners}{view}</div>
+    withHeader = state.view === 'store'
   }
 
   return (
     <div className={css.root} ref={scrollRef}>
-      {body}
+      {withHeader
+        ? (
+          <header className={css.header}>
+            <h1 className={css.title}>{t('title')}</h1>
+            <Tabs
+              items={sectionTabs(t)}
+              value={state.sectionTab}
+              onChange={actions.setSectionTab}
+              label={t('sectionTabsLabel')}
+              idPrefix="aph-section-tab"
+              panelId="aph-section-panel"
+            />
+          </header>
+        )
+        : null}
+      {withHeader
+        ? (
+          <div id="aph-section-panel" role="tabpanel" aria-labelledby={`aph-section-tab-${state.sectionTab}`}>
+            {body}
+          </div>
+        )
+        : body}
     </div>
   )
 }

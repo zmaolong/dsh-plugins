@@ -49,11 +49,15 @@ export interface MarketDetailState {
   data: JsonRecord | null
 }
 
+/** Top-level sections of the extension panel. */
+export type SectionTab = 'plugins' | 'memory' | 'skills'
+
 /** The panel's full client state (single immutable snapshot). */
 export interface HubState {
   status: 'loading' | 'ready' | 'error'
   error: string
   snapshot: JsonRecord | null
+  sectionTab: SectionTab
   view: 'store' | 'manage' | 'market' | 'detail'
   storeTab: 'sources' | 'recommended'
   /** Sources-tab market filter: '' shows every market, otherwise a market id. */
@@ -123,6 +127,7 @@ export function initialHubState(): HubState {
     status: 'loading',
     error: '',
     snapshot: null,
+    sectionTab: 'plugins',
     view: 'store',
     storeTab: 'sources',
     storeSourceFilter: '',
@@ -161,6 +166,7 @@ export interface HubActions {
   load(): Promise<void>
   openStore(): void
   openManage(): void
+  setSectionTab(tab: SectionTab): void
   openDetail(key: string, from?: 'store' | 'market'): void
   backFromDetail(): void
   openMarketDetail(entry: JsonRecord, refresh?: boolean): void
@@ -359,6 +365,9 @@ export function createHubController(options: HubControllerOptions): HubControlle
     },
     openManage() {
       set({ view: 'manage', detailKey: null, detail: null, detailStatus: 'idle', detailError: '' })
+    },
+    setSectionTab(sectionTab: SectionTab) {
+      set({ sectionTab })
     },
     openDetail(key: string, from: 'store' | 'market' = 'store') {
       set({ view: 'detail', detailReturn: from, detailKey: key, detail: null, detailStatus: 'loading', detailError: '' })

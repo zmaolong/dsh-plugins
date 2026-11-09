@@ -195,6 +195,49 @@ describe('Panel', () => {
     expect(screen.getByText(/迁移失败/u)).toBeTruthy()
     expect(screen.getByPlaceholderText(t('searchPlaceholder'))).toBeTruthy()
   })
+
+  it('puts the section tabs where the actions used to be and keeps the store actions in the toolbar', () => {
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const openManage = vi.spyOn(controller.actions, 'openManage')
+    const openSources = vi.spyOn(controller.actions, 'openSources')
+    const setSectionTab = vi.spyOn(controller.actions, 'setSectionTab')
+    const { useHub } = stubHub({
+      ...initialHubState(),
+      status: 'ready',
+      snapshot: { markets: [], items: [], installed: [] },
+    })
+    render(<Panel useHub={useHub} actions={controller.actions} t={t} />)
+    const plugins = screen.getByRole('tab', { name: t('tabPlugins') })
+    expect(plugins.getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('tab', { name: t('tabMemory') })).toBeTruthy()
+    expect(screen.getByRole('tab', { name: t('tabSkills') })).toBeTruthy()
+    // 下移后的操作按钮仍在同一工具行内可用。
+    fireEvent.click(screen.getByRole('button', { name: t('manage') }))
+    expect(openManage).toHaveBeenCalledOnce()
+    fireEvent.click(screen.getByRole('button', { name: t('sources') }))
+    expect(openSources).toHaveBeenCalledOnce()
+    // 子 tab 切换交给控制器。
+    fireEvent.click(screen.getByRole('tab', { name: t('tabMemory') }))
+    expect(setSectionTab).toHaveBeenCalledWith('memory')
+  })
+
+  it('renders the memory and skills placeholders instead of the plugin store', () => {
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    for (const [tab, placeholder] of [['memory', t('memoryPlaceholder')], ['skills', t('skillsPlaceholder')]] as const) {
+      cleanup()
+      render(
+        <Panel
+          useHub={stubHub({ ...initialHubState(), status: 'ready', sectionTab: tab }).useHub}
+          actions={controller.actions}
+          t={t}
+        />,
+      )
+      expect(screen.getByRole('tab', { name: tab === 'memory' ? t('tabMemory') : t('tabSkills') }).getAttribute('aria-selected')).toBe('true')
+      expect(screen.getByText(t('comingSoon'))).toBeTruthy()
+      expect(screen.getByText(placeholder)).toBeTruthy()
+      expect(screen.queryByPlaceholderText(t('searchPlaceholder'))).toBeNull()
+    }
+  })
 })
 
 describe('DetailView', () => {

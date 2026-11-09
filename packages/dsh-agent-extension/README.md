@@ -1,9 +1,9 @@
 # dsh-agent-extension
 
-> **试验性预览版（`0.0.1-preview.2`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
+> **试验性预览版（`0.0.1-preview.3`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
 > npm 上只发布 `preview` dist-tag（`latest` 暂不指向本版本）。
 > 需要安装时请锁定精确版本：
-> `dsh plugin --profile web add dsh-agent-extension@0.0.1-preview.2`。
+> `dsh plugin --profile web add dsh-agent-extension@0.0.1-preview.3`。
 > 版本说明：npm 公开线为 `0.0.1-preview.N`，首个正式版定为 `0.0.1`（预览线的稳定版）；
 > 官方化工具链形态（TypeScript + JSX + CSS Modules + tsdown + vitest，对齐官方插件形态，
 > 破坏性重构、不做旧版兼容）自 `dsh-agent-plugin-hub` 时代的 `0.0.1-preview.6` 延续；
@@ -200,6 +200,10 @@ DSH 的技能、命令、hooks 与 MCP。
 位置：**首页左侧栏**，顺序为 **插件(0) → 智能体扩展(5) → 自动化任务(10) → 上下文洞察(20)**。
 面板由 `src/client/index.ts`（构建产物 `lib/client.js`）注册到 `sidebar.panellist`、
 `main`（key `agent-extension`）与 `shell.overlay`（弹窗 / Toast 框架级浮层）。
+
+- **分区子 tab**：面板顶栏左侧是标题、右侧是「插件 / 记忆 / 技能」三个子 tab；原有商店、
+  详情与插件管理全部收进「插件」分区，原顶栏操作按钮（刷新 / 市场源 / 添加 / 插件管理）
+  下移到商店工具行右侧；「记忆」「技能」当前为占位页，只展示即将上线提示。
 
 - **商店列表**：来源分段只有「个人」；按市场源分组（组间按最近刷新倒序）、组内双列卡片；
   >6 张显示「收起」/「查看 A、B，以及另外 N 个」；搜索按名称/显示名/描述/分类/作者/
@@ -417,7 +421,7 @@ E:\workspace\dsh-plugins\packages\dsh-agent-extension
 
 ## 市场索引
 
-发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 `0.0.1-preview.2`）。在 DSH 插件页 → 发现 → 添加索引源：
+发布分支：`release-0.0.1`（该分支承载当前全部代码，包版本 `0.0.1-preview.3`）。在 DSH 插件页 → 发现 → 添加索引源：
 
 ```text
 https://raw.githubusercontent.com/zmaolong/dsh-plugins/release-0.0.1/index.json

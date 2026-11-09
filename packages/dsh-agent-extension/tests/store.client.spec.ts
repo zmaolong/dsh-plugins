@@ -40,6 +40,17 @@ describe('createHubController', () => {
     expect(controller.store.getSnapshot().loading).toBe(false)
   })
 
+  it('switches the top-level section tab, keeping the plugin view for when it returns', () => {
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    expect(controller.store.getSnapshot().sectionTab).toBe('plugins')
+    controller.actions.openManage()
+    controller.actions.setSectionTab('memory')
+    expect(controller.store.getSnapshot().sectionTab).toBe('memory')
+    controller.actions.setSectionTab('plugins')
+    expect(controller.store.getSnapshot().sectionTab).toBe('plugins')
+    expect(controller.store.getSnapshot().view).toBe('manage')
+  })
+
   it('surfaces load failures as the error state with a localized message', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => jsonResponse({ ok: false, error: 'boom', code: 'internal' })))
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })

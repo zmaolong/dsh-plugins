@@ -1,6 +1,7 @@
 /**
  * Store view: personal sources grouped by market, with search across all
- * groups. The topbar carries refresh, sources, add, and the manage entry.
+ * groups. The toolbar carries the store tabs, the search box, and the
+ * page-level actions (refresh, sources, add, manage).
  *
  * @module dsh-agent-extension/client/StoreView
  */
@@ -8,6 +9,7 @@
 import type { ReactNode } from 'react'
 import { Avatar, Badge, Button, EmptyBlock, IconButton, SearchBox, Spinner, columnGap } from './controls.tsx'
 import { Icon } from './icons.tsx'
+import { Tabs, type TabItem } from './Tabs.tsx'
 import { AddMenu } from './AddMenu.tsx'
 import { StoreCard } from './StoreCard.tsx'
 import { RECOMMENDED_SOURCES, isSourceAdded } from './recommended.ts'
@@ -49,51 +51,6 @@ export function CollapseRow({ hidden, localeId, onExpand, t }: {
       </span>
       <span className={css.collapseLabel}>{label}</span>
     </button>
-  )
-}
-
-/** Store view tabs: added sources (default) and curated recommendations. */
-function StoreTabs({ tab, onChange, t }: {
-  tab: HubState['storeTab']
-  onChange: (tab: HubState['storeTab']) => void
-  t: Translate
-}): ReactNode {
-  const tabs: ReadonlyArray<{ value: HubState['storeTab'], label: string }> = [
-    { value: 'sources', label: t('tabSources') },
-    { value: 'recommended', label: t('tabRecommended') },
-  ]
-  return (
-    <div className={css.segmented} role="tablist" aria-label={t('storeTabsLabel')}>
-      {tabs.map(entry => (
-        <button
-          key={entry.value}
-          type="button"
-          role="tab"
-          id={`aph-store-tab-${entry.value}`}
-          className={css.segment}
-          aria-selected={tab === entry.value}
-          aria-controls="aph-store-panel"
-          tabIndex={tab === entry.value ? 0 : -1}
-          onClick={() => onChange(entry.value)}
-          onKeyDown={(event) => {
-            if (!['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown', 'Home', 'End'].includes(event.key)) return
-            event.preventDefault()
-            const current = tabs.findIndex(item => item.value === tab)
-            const next = event.key === 'Home' ? 0
-              : event.key === 'End' ? tabs.length - 1
-              : event.key === 'ArrowLeft' || event.key === 'ArrowUp'
-                ? (current + tabs.length - 1) % tabs.length
-                : (current + 1) % tabs.length
-            const target = tabs[next]
-            if (!target) return
-            onChange(target.value)
-            event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus()
-          }}
-        >
-          {entry.label}
-        </button>
-      ))}
-    </div>
   )
 }
 
@@ -162,6 +119,10 @@ export function StoreView({ useHub, actions, t }: ViewProps): ReactNode {
   const markets = (snapshot.markets as JsonRecord[] | undefined) ?? []
   const items = (snapshot.items as JsonRecord[] | undefined) ?? []
   const query = state.query
+  const storeTabs: ReadonlyArray<TabItem<HubState['storeTab']>> = [
+    { value: 'sources', label: t('tabSources') },
+    { value: 'recommended', label: t('tabRecommended') },
+  ]
   const searching = query.trim() !== ''
   const sourceFilter = state.storeSourceFilter
   // The source filter scopes both the grouped grid and the search results.
@@ -229,33 +190,39 @@ export function StoreView({ useHub, actions, t }: ViewProps): ReactNode {
 
   return (
     <div className={css.page}>
-      <header className={css.topbar}>
-        <h1 className={css.title}>{t('title')}</h1>
-        <div className={css.actions}>
-          <IconButton
-            icon="refresh"
-            title={state.refreshing ? t('refreshing') : t('refresh')}
-            busy={state.refreshing}
-            disabled={state.refreshing}
-            outline
-            onClick={() => { void actions.refreshAll() }}
-          />
-          <IconButton icon="store" title={t('sources')} outline onClick={actions.openSources} />
-          <AddMenu t={t} onAdd={actions.openAddSource} />
-          <Button variant="primary" onClick={actions.openManage}>{t('manage')}</Button>
-        </div>
-      </header>
       <div className={css.toolbar}>
-        <StoreTabs tab={state.storeTab} onChange={actions.setStoreTab} t={t} />
-        {state.storeTab === 'sources'
-          ? (
-            <SearchBox
-              value={query}
-              onChange={actions.setQuery}
-              placeholder={t('searchPlaceholder')}
+        <Tabs
+          items={storeTabs}
+          value={state.storeTab}
+          onChange={actions.setStoreTab}
+          label={t('storeTabsLabel')}
+          idPrefix="aph-store-tab"
+          panelId="aph-store-panel"
+        />
+        <div className={css.toolbarTrail}>
+          {state.storeTab === 'sources'
+            ? (
+              <SearchBox
+                value={query}
+                onChange={actions.setQuery}
+                placeholder={t('searchPlaceholder')}
+              />
+            )
+            : null}
+          <div className={css.actions}>
+            <IconButton
+              icon="refresh"
+              title={state.refreshing ? t('refreshing') : t('refresh')}
+              busy={state.refreshing}
+              disabled={state.refreshing}
+              outline
+              onClick={() => { void actions.refreshAll() }}
             />
-          )
-          : null}
+            <IconButton icon="store" title={t('sources')} outline onClick={actions.openSources} />
+            <AddMenu t={t} onAdd={actions.openAddSource} />
+            <Button variant="primary" onClick={actions.openManage}>{t('manage')}</Button>
+          </div>
+        </div>
       </div>
       {state.storeTab === 'sources' && markets.length > 1
         ? (
