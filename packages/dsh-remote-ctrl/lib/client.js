@@ -400,6 +400,34 @@ window.__ModuleLoader__.load({
 				}
 			};
 		}
+		// src/client/PanelIcon.tsx
+		/** Render the Remote Control glyph. */
+		function PanelIcon({ size, active }) {
+			const edge = typeof size === "number" ? size : 20;
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
+				width: Math.round(edge),
+				height: Math.round(edge),
+				viewBox: "0 0 24 24",
+				fill: "none",
+				stroke: "currentColor",
+				strokeWidth: active === true ? 2 : 1.7,
+				strokeLinecap: "round",
+				strokeLinejoin: "round",
+				"aria-hidden": true,
+				style: {
+					display: "block",
+					flex: "none"
+				},
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("rect", {
+					x: "5",
+					y: "2",
+					width: "14",
+					height: "20",
+					rx: "2",
+					ry: "2"
+				}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M12 18h.01" })]
+			});
+		}
 		// src/client/qrcode.ts
 		var qrcode = function() {
 			/**
@@ -2951,8 +2979,8 @@ window.__ModuleLoader__.load({
 				return toUTF8Array(s);
 			};
 		})();
-		// \0dsh-css:F:\workspace\dsh-plugins\packages\dsh-remote-ctrl\src\client\panel.module.css.mjs
-		const css = "._p2N8G_root{height:100%;min-height:0;color:var(--dsw-alias-label-primary);overflow-wrap:break-word;font-size:14px;line-height:1.5;overflow:hidden auto}._p2N8G_root *{box-sizing:border-box}._p2N8G_page{flex-direction:column;gap:12px;width:100%;max-width:720px;margin:0 auto;padding:20px 16px 32px;display:flex}._p2N8G_card{border:.5px solid var(--dsw-alias-stroke-subtle,var(--dsw-alias-label-tertiary));border-radius:var(--dsw-radius-lg);background:var(--dsw-alias-surface-card,transparent);flex-direction:column;gap:8px;padding:14px 16px;display:flex}._p2N8G_cardTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:15px;font-weight:600}._p2N8G_hint{color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;margin:0;font-size:12.5px}._p2N8G_errorText{color:var(--dsw-alias-state-danger-primary,#d5455c);overflow-wrap:anywhere;margin:0;font-size:13px}._p2N8G_rowBetween{justify-content:space-between;align-items:center;gap:12px;display:flex}._p2N8G_badgeRunning,._p2N8G_badgeStopped{border-radius:var(--dsw-radius-full,999px);corner-shape:round;flex:none;padding:2px 10px;font-size:12px;font-weight:600}._p2N8G_badgeRunning{background:var(--dsw-alias-state-success-subtle,#309e5729);color:var(--dsw-alias-state-success-primary,#2f9e57)}._p2N8G_badgeStopped{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}._p2N8G_qrBox{border-radius:var(--dsw-radius-md);background:#fff;flex-direction:column;align-items:center;gap:8px;padding:12px;display:flex}._p2N8G_qrInner{width:208px;height:208px}._p2N8G_qrInner svg{width:100%;height:100%;display:block}._p2N8G_qrUrl{color:#1c1917;overflow-wrap:anywhere;text-align:center;max-width:100%;font-family:ui-monospace,Consolas,monospace;font-size:12px}._p2N8G_addressList{flex-direction:column;gap:6px;margin:0;padding:0;list-style:none;display:flex}._p2N8G_addressRow{align-items:center;gap:8px;min-width:0;display:flex}._p2N8G_addressText{border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);overflow-wrap:anywhere;flex:1;min-width:0;padding:6px 10px;font-family:ui-monospace,Consolas,monospace;font-size:12.5px}._p2N8G_scopeBadge{border-radius:var(--dsw-radius-full,999px);corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);flex:none;padding:1px 8px;font-size:11.5px}._p2N8G_button{border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary);cursor:pointer;border:0;flex:none;padding:5px 12px;font-size:12.5px}._p2N8G_button:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){._p2N8G_button:hover{background:var(--dsw-alias-interactive-bg-pressed,var(--dsw-alias-interactive-bg-hover))}}";
+		// \0dsh-css:E:\workspace\dsh-plugins\packages\dsh-remote-ctrl\src\client\panel.module.css.mjs
+		const css = ".n-Kf7q_layer{flex:none;align-items:center;height:42px;margin:8px 0 0 auto;padding:0 6px;display:flex;position:relative}.n-Kf7q_rail{justify-content:center;width:36px;height:36px;margin:4px 0;padding:0}.n-Kf7q_trigger{border-radius:var(--dsw-radius-md);width:32px;height:32px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;flex:none;justify-content:center;align-items:center;padding:0;display:inline-flex;position:relative}.n-Kf7q_rail .n-Kf7q_trigger{width:36px;height:36px}@media (hover:hover){.n-Kf7q_trigger:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.n-Kf7q_trigger[aria-expanded=true]{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}.n-Kf7q_trigger:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}.n-Kf7q_triggerDot{corner-shape:round;background:var(--dsw-alias-state-success-primary);border-radius:50%;width:6px;height:6px;position:absolute;bottom:5px;right:5px}.n-Kf7q_popup{isolation:isolate;z-index:30;border-radius:var(--dsw-radius-md);--dsw-elevation-stroke-color:var(--dsw-alias-border-l1);width:400px;max-width:calc(100vw - 24px);max-height:min(70vh,640px);box-shadow:var(--dsw-elevation-prominent);--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2);border:0;flex-direction:column;display:flex;position:fixed;overflow:hidden}.n-Kf7q_popup:before{z-index:-1;border-radius:inherit;background:var(--dsw-specific-menu);backdrop-filter:var(--dsw-menu-backdrop-filter);content:\"\";pointer-events:none;position:absolute;inset:0}.n-Kf7q_popupHeader{box-sizing:border-box;flex:none;align-items:center;min-height:44px;padding:10px 12px;display:flex}.n-Kf7q_popupTitle{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:500;line-height:20px}.n-Kf7q_popupBody{flex:1;min-height:0;padding:0 12px 12px;overflow-y:auto}.n-Kf7q_page{width:100%;color:var(--dsw-alias-label-primary);overflow-wrap:break-word;flex-direction:column;gap:10px;font-size:13px;line-height:1.5;display:flex}.n-Kf7q_page *{box-sizing:border-box}.n-Kf7q_card{border:.5px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-md);flex-direction:column;gap:8px;padding:12px;display:flex}.n-Kf7q_cardTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:13.5px;font-weight:600;line-height:20px}.n-Kf7q_hint{color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;margin:0;font-size:12.5px}.n-Kf7q_errorText{color:var(--dsw-alias-state-error-primary);overflow-wrap:anywhere;margin:0;font-size:12.5px}.n-Kf7q_rowBetween{justify-content:space-between;align-items:center;gap:12px;display:flex}.n-Kf7q_badgeRunning,.n-Kf7q_badgeStopped{flex:none;align-items:center;gap:5px;font-size:12px;font-weight:500;display:inline-flex}.n-Kf7q_badgeRunning{color:var(--dsw-alias-state-success-primary)}.n-Kf7q_badgeStopped{color:var(--dsw-alias-label-tertiary)}.n-Kf7q_badgeRunning:before,.n-Kf7q_badgeStopped:before{corner-shape:round;content:\"\";background:currentColor;border-radius:50%;width:6px;height:6px}.n-Kf7q_qrBox{border-radius:var(--dsw-radius-md);background:#fff;flex-direction:column;align-items:center;gap:8px;padding:12px;display:flex}.n-Kf7q_qrInner{width:176px;height:176px}.n-Kf7q_qrInner svg{width:100%;height:100%;display:block}.n-Kf7q_qrUrl{color:#1c1917;overflow-wrap:anywhere;text-align:center;max-width:100%;font-family:ui-monospace,Consolas,monospace;font-size:11.5px}.n-Kf7q_addressList{flex-direction:column;gap:6px;margin:0;padding:0;list-style:none;display:flex}.n-Kf7q_addressRow{align-items:center;gap:8px;min-width:0;display:flex}.n-Kf7q_addressText{border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);overflow-wrap:anywhere;flex:1;min-width:0;padding:5px 8px;font-family:ui-monospace,Consolas,monospace;font-size:12px}.n-Kf7q_scopeBadge{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);border-radius:999px;flex:none;padding:1px 8px;font-size:11.5px}.n-Kf7q_button{border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary);cursor:pointer;border:0;flex:none;padding:4px 10px;font-size:12px}.n-Kf7q_button:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.n-Kf7q_button:hover{background:var(--dsw-alias-interactive-bg-pressed,var(--dsw-alias-interactive-bg-hover))}}";
 		const tagId = "dsh-remote-ctrl/panel.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId) + "]") === null) {
 			const tag = document.createElement("style");
@@ -2962,33 +2990,32 @@ window.__ModuleLoader__.load({
 			document.head.appendChild(tag);
 		}
 		var panel_module_css_default = {
-			"addressList": "_p2N8G_addressList",
-			"addressRow": "_p2N8G_addressRow",
-			"addressText": "_p2N8G_addressText",
-			"badgeRunning": "_p2N8G_badgeRunning",
-			"badgeStopped": "_p2N8G_badgeStopped",
-			"button": "_p2N8G_button",
-			"card": "_p2N8G_card",
-			"cardTitle": "_p2N8G_cardTitle",
-			"errorText": "_p2N8G_errorText",
-			"hint": "_p2N8G_hint",
-			"page": "_p2N8G_page",
-			"qrBox": "_p2N8G_qrBox",
-			"qrInner": "_p2N8G_qrInner",
-			"qrUrl": "_p2N8G_qrUrl",
-			"root": "_p2N8G_root",
-			"rowBetween": "_p2N8G_rowBetween",
-			"scopeBadge": "_p2N8G_scopeBadge"
+			"addressList": "n-Kf7q_addressList",
+			"addressRow": "n-Kf7q_addressRow",
+			"addressText": "n-Kf7q_addressText",
+			"badgeRunning": "n-Kf7q_badgeRunning",
+			"badgeStopped": "n-Kf7q_badgeStopped",
+			"button": "n-Kf7q_button",
+			"card": "n-Kf7q_card",
+			"cardTitle": "n-Kf7q_cardTitle",
+			"errorText": "n-Kf7q_errorText",
+			"hint": "n-Kf7q_hint",
+			"layer": "n-Kf7q_layer",
+			"page": "n-Kf7q_page",
+			"popup": "n-Kf7q_popup",
+			"popupBody": "n-Kf7q_popupBody",
+			"popupHeader": "n-Kf7q_popupHeader",
+			"popupTitle": "n-Kf7q_popupTitle",
+			"qrBox": "n-Kf7q_qrBox",
+			"qrInner": "n-Kf7q_qrInner",
+			"qrUrl": "n-Kf7q_qrUrl",
+			"rail": "n-Kf7q_rail",
+			"rowBetween": "n-Kf7q_rowBetween",
+			"scopeBadge": "n-Kf7q_scopeBadge",
+			"trigger": "n-Kf7q_trigger",
+			"triggerDot": "n-Kf7q_triggerDot"
 		};
 		// src/client/Panel.tsx
-		/**
-		* Remote Control panel: server status, per-address LAN URLs, the QR code of
-		* the recommended address (token embedded), the pairing token, and the
-		* connected-device count. Data arrives from the loopback `/remote-ctrl/api`
-		* surface on the host webServer.
-		*
-		* @module dsh-remote-ctrl/client/Panel
-		*/
 		/** QR payload → SVG markup ('' when the payload cannot be encoded). */
 		function qrSvg(payload) {
 			if (payload === "") return "";
@@ -3011,20 +3038,18 @@ window.__ModuleLoader__.load({
 			if (scope === "link-local") return t("scopeLinkLocal");
 			return scope;
 		}
-		/** Render the main panel. */
+		/** Render the popup body. */
 		function Panel({ useRemote, actions, t }) {
 			const state = useRemote(identity);
-			(0, react.useEffect)(() => {
-				actions.init();
-				return () => actions.destroy();
-			}, [actions]);
 			const data = state.data;
-			let body;
-			if (state.status === "loading" && data === null) body = /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-				className: panel_module_css_default.hint,
-				children: t("subtitle")
+			if (state.status === "loading" && data === null) return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+				className: panel_module_css_default.page,
+				children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+					className: panel_module_css_default.hint,
+					children: t("subtitle")
+				})
 			});
-			else if (data === null) body = /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+			if (data === null) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: panel_module_css_default.page,
 				children: [
 					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
@@ -3043,232 +3068,268 @@ window.__ModuleLoader__.load({
 					})
 				]
 			});
-			else {
-				const addresses = Array.isArray(data.addresses) ? data.addresses : [];
-				const qr = qrSvg(data.qrUrl);
-				body = /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-					className: panel_module_css_default.page,
-					children: [
-						state.error !== "" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-							className: panel_module_css_default.errorText,
-							children: state.error
-						}),
-						data.error !== "" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-							className: panel_module_css_default.errorText,
-							children: `${t("serverError")}：${data.error}`
-						}),
-						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
-							className: panel_module_css_default.card,
-							children: [
-								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-									className: panel_module_css_default.rowBetween,
-									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {
-										className: panel_module_css_default.cardTitle,
-										children: t("title")
-									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-										className: data.listening ? panel_module_css_default.badgeRunning : panel_module_css_default.badgeStopped,
-										children: data.listening ? t("running") : t("stopped")
-									})]
-								}),
-								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-									className: panel_module_css_default.hint,
-									children: t("listenAt", {
-										host: data.host,
-										port: data.port
-									})
-								}),
-								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-									className: panel_module_css_default.hint,
-									children: t("clients", { count: data.clientCount })
-								}),
-								!data.upstream.ready && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-									className: panel_module_css_default.hint,
-									children: t("upstreamMissing")
-								})
-							]
-						}),
-						data.listening && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
-							className: panel_module_css_default.card,
-							children: [
-								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {
+			const addresses = Array.isArray(data.addresses) ? data.addresses : [];
+			const qr = qrSvg(data.qrUrl);
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+				className: panel_module_css_default.page,
+				children: [
+					state.error !== "" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+						className: panel_module_css_default.errorText,
+						children: state.error
+					}),
+					data.error !== "" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+						className: panel_module_css_default.errorText,
+						children: `${t("serverError")}：${data.error}`
+					}),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+						className: panel_module_css_default.card,
+						children: [
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: panel_module_css_default.rowBetween,
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {
 									className: panel_module_css_default.cardTitle,
-									children: t("qrTitle")
-								}),
-								qr !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-									className: panel_module_css_default.qrBox,
-									"data-testid": "qr",
-									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-										className: panel_module_css_default.qrInner,
-										dangerouslySetInnerHTML: { __html: qr }
-									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-										className: panel_module_css_default.qrUrl,
-										children: data.qrUrl
-									})]
-								}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-									className: panel_module_css_default.hint,
-									children: data.qrUrl
-								}),
-								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-									className: panel_module_css_default.hint,
-									children: t("qrHint")
-								})
-							]
-						}),
-						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
-							className: panel_module_css_default.card,
-							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {
-								className: panel_module_css_default.cardTitle,
-								children: t("addresses")
-							}), addresses.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+									children: t("title")
+								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+									className: data.listening ? panel_module_css_default.badgeRunning : panel_module_css_default.badgeStopped,
+									children: data.listening ? t("running") : t("stopped")
+								})]
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 								className: panel_module_css_default.hint,
-								children: t("noAddress")
-							}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("ul", {
-								className: panel_module_css_default.addressList,
-								children: addresses.map((entry) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("li", {
-									className: panel_module_css_default.addressRow,
-									children: [
-										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("code", {
-											className: panel_module_css_default.addressText,
-											children: entry.url
-										}),
-										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-											className: panel_module_css_default.scopeBadge,
-											children: scopeLabel(String(entry.scope), t)
-										}),
-										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-											type: "button",
-											className: panel_module_css_default.button,
-											onClick: () => {
-												actions.copy(entry.url, `addr:${entry.url}`);
-											},
-											children: state.copied === `addr:${entry.url}` ? t("copied") : t("copy")
-										})
-									]
-								}, entry.url))
-							})]
-						}),
-						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
-							className: panel_module_css_default.card,
-							children: [
-								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {
-									className: panel_module_css_default.cardTitle,
-									children: t("tokenTitle")
-								}),
-								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-									className: panel_module_css_default.addressRow,
-									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("code", {
+								children: t("listenAt", {
+									host: data.host,
+									port: data.port
+								})
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+								className: panel_module_css_default.hint,
+								children: t("clients", { count: data.clientCount })
+							}),
+							!data.upstream.ready && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+								className: panel_module_css_default.hint,
+								children: t("upstreamMissing")
+							})
+						]
+					}),
+					data.listening && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+						className: panel_module_css_default.card,
+						children: [
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {
+								className: panel_module_css_default.cardTitle,
+								children: t("qrTitle")
+							}),
+							qr !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: panel_module_css_default.qrBox,
+								"data-testid": "qr",
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+									className: panel_module_css_default.qrInner,
+									dangerouslySetInnerHTML: { __html: qr }
+								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+									className: panel_module_css_default.qrUrl,
+									children: data.qrUrl
+								})]
+							}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+								className: panel_module_css_default.hint,
+								children: data.qrUrl
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+								className: panel_module_css_default.hint,
+								children: t("qrHint")
+							})
+						]
+					}),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+						className: panel_module_css_default.card,
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {
+							className: panel_module_css_default.cardTitle,
+							children: t("addresses")
+						}), addresses.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+							className: panel_module_css_default.hint,
+							children: t("noAddress")
+						}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("ul", {
+							className: panel_module_css_default.addressList,
+							children: addresses.map((entry) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("li", {
+								className: panel_module_css_default.addressRow,
+								children: [
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("code", {
 										className: panel_module_css_default.addressText,
-										children: data.token
-									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+										children: entry.url
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										className: panel_module_css_default.scopeBadge,
+										children: scopeLabel(String(entry.scope), t)
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 										type: "button",
 										className: panel_module_css_default.button,
 										onClick: () => {
-											actions.copy(data?.token ?? "", "token");
+											actions.copy(entry.url, `addr:${entry.url}`);
 										},
-										children: state.copied === "token" ? t("copied") : t("copy")
-									})]
-								}),
-								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-									className: panel_module_css_default.hint,
-									children: t("tokenHint")
-								}),
-								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-									className: panel_module_css_default.hint,
-									children: t("securityHint")
-								})
-							]
-						})
-					]
-				});
-			}
-			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-				className: panel_module_css_default.root,
-				children: body
+										children: state.copied === `addr:${entry.url}` ? t("copied") : t("copy")
+									})
+								]
+							}, entry.url))
+						})]
+					}),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+						className: panel_module_css_default.card,
+						children: [
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {
+								className: panel_module_css_default.cardTitle,
+								children: t("tokenTitle")
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: panel_module_css_default.addressRow,
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("code", {
+									className: panel_module_css_default.addressText,
+									children: data.token
+								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+									type: "button",
+									className: panel_module_css_default.button,
+									onClick: () => {
+										actions.copy(data?.token ?? "", "token");
+									},
+									children: state.copied === "token" ? t("copied") : t("copy")
+								})]
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+								className: panel_module_css_default.hint,
+								children: t("tokenHint")
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+								className: panel_module_css_default.hint,
+								children: t("securityHint")
+							})
+						]
+					})
+				]
 			});
 		}
-		// src/client/PanelIcon.tsx
-		/** Render the sidebar entry glyph. */
-		function PanelIcon({ size, active }) {
-			const edge = typeof size === "number" ? size : 20;
-			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("svg", {
-				width: Math.round(edge),
-				height: Math.round(edge),
-				viewBox: "0 0 24 24",
-				fill: "none",
-				stroke: "currentColor",
-				strokeWidth: active === true ? 2 : 1.7,
-				strokeLinecap: "round",
-				strokeLinejoin: "round",
-				"aria-hidden": true,
-				style: {
-					display: "block",
-					flex: "none"
-				},
-				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("rect", {
-					x: "5",
-					y: "2",
-					width: "14",
-					height: "20",
-					rx: "2",
-					ry: "2"
-				}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("path", { d: "M12 18h.01" })]
+		// src/client/Launcher.tsx
+		/**
+		* Sidebar-foot launcher: a compact icon button that opens the Remote Control
+		* popup above itself. The sidebar clips overflow, so the popup is
+		* `position: fixed` and anchors to the trigger's measured box; polling runs
+		* only while the popup is open and keeps its last snapshot between openings.
+		*
+		* @module dsh-remote-ctrl/client/Launcher
+		*/
+		/** Gap between the trigger and the popup. */
+		const POPUP_GAP = 8;
+		/** Render the sidebar-foot launcher and its popup. */
+		function Launcher({ wide, useRemote, actions, t }) {
+			const [open, setOpen] = (0, react.useState)(false);
+			const listening = useRemote((state) => state.data?.listening === true);
+			const root = (0, react.useRef)(null);
+			const [anchor, setAnchor] = (0, react.useState)();
+			(0, react.useLayoutEffect)(() => {
+				if (!open) return;
+				const place = () => {
+					const rect = root.current?.getBoundingClientRect();
+					if (rect === void 0) return;
+					setAnchor({
+						left: rect.left,
+						bottom: window.innerHeight - rect.top + POPUP_GAP
+					});
+				};
+				place();
+				window.addEventListener("resize", place);
+				return () => {
+					window.removeEventListener("resize", place);
+				};
+			}, [open]);
+			(0, react.useEffect)(() => {
+				if (!open) return;
+				actions.init();
+				return () => {
+					actions.destroy();
+				};
+			}, [actions, open]);
+			(0, react.useEffect)(() => {
+				if (!open) return;
+				const dismiss = (event) => {
+					if (event.target instanceof Node && root.current?.contains(event.target) === true) return;
+					setOpen(false);
+				};
+				const escape = (event) => {
+					if (event.key === "Escape") setOpen(false);
+				};
+				document.addEventListener("pointerdown", dismiss, true);
+				document.addEventListener("keydown", escape);
+				return () => {
+					document.removeEventListener("pointerdown", dismiss, true);
+					document.removeEventListener("keydown", escape);
+				};
+			}, [open]);
+			const style = anchor === void 0 ? void 0 : {
+				left: anchor.left,
+				bottom: anchor.bottom
+			};
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+				ref: root,
+				className: wide ? panel_module_css_default.layer : `${panel_module_css_default.layer} ${panel_module_css_default.rail}`,
+				children: [open && style !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+					className: panel_module_css_default.popup,
+					style,
+					role: "dialog",
+					"aria-label": t("title"),
+					"data-remote-ctrl-popup": true,
+					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("header", {
+						className: panel_module_css_default.popupHeader,
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+							className: panel_module_css_default.popupTitle,
+							children: t("title")
+						})
+					}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: panel_module_css_default.popupBody,
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Panel, {
+							useRemote,
+							actions,
+							t
+						})
+					})]
+				}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
+					type: "button",
+					className: panel_module_css_default.trigger,
+					"aria-label": t("title"),
+					"aria-haspopup": "dialog",
+					"aria-expanded": open,
+					title: t("title"),
+					"data-remote-ctrl-trigger": true,
+					onClick: () => {
+						setOpen((value) => !value);
+					},
+					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(PanelIcon, { size: wide ? 16 : 18 }), listening && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+						className: panel_module_css_default.dot,
+						"aria-hidden": true
+					})]
+				})]
 			});
 		}
 		// src/client/index.ts
 		/** Required browser services for slots and localized copy. */
 		const inject = ["slots", "locale"];
-		/** The panel id shared by the sidebar entry and the main panel. */
-		const PANEL_ID = "remote-ctrl";
 		/**
-		* Contribute the Remote Control entry and panel.
+		* Contribute the Remote Control launcher to the sidebar foot.
 		* @param ctx - the browser plugin context.
 		*/
 		function apply(ctx) {
 			ctx.effect(() => {
 				ctx.locale.register(NS, dictionaries);
 			}, "dsh-remote-ctrl: dictionaries");
-			const locale = ctx.locale;
-			const bound = typeof locale?.bind === "function" ? locale.bind(NS) : null;
-			const getLocaleId = () => {
-				try {
-					return String(locale?.getLocale?.().active ?? "").toLowerCase() || "zh";
-				} catch {
-					return "zh";
-				}
-			};
-			const staticDict = () => {
-				const id = getLocaleId();
-				const exact = dictionaries[id];
-				if (exact !== void 0) return exact;
-				const prefix = Object.keys(dictionaries).find((key) => id.startsWith(key));
-				return prefix !== void 0 ? dictionaries[prefix] : dictionaries.zh;
-			};
-			const t = (key, vars) => {
-				let text = typeof bound === "function" ? bound(key) : "";
-				if (typeof text !== "string" || text === "") text = staticDict()[key] ?? key;
-				if (vars !== void 0) for (const name of Object.keys(vars)) text = text.split(`{${name}}`).join(String(vars[name]));
-				return text;
-			};
 			const controller = createRemoteController();
 			ctx.effect(() => () => controller.actions.destroy(), "dsh-remote-ctrl: controller");
-			ctx.slots.inject("sidebar.panellist", () => ctx.slots.register({
-				name: "sidebar.panellist",
-				id: PANEL_ID,
-				order: 6,
-				label: () => t("tab"),
-				locale: NS
-			}, PanelIcon));
-			ctx.slots.inject("main", () => ctx.slots.register({
-				name: "main",
-				key: PANEL_ID,
+			ctx.slots.inject("sidebar.footer.action", () => ctx.slots.register({
+				name: "sidebar.footer.action",
+				id: "remote-ctrl",
+				order: 0,
 				locale: NS,
 				inject: () => ({
 					hooks: { remote: controller.store },
 					actions: controller.actions
 				})
-			}, Panel));
+			}, Launcher));
 		}
-		exports.PANEL_ID = PANEL_ID;
 		exports.apply = apply;
 		exports.inject = inject;
 		return module.exports;

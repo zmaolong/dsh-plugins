@@ -1,6 +1,6 @@
 {
   "name": "dsh-remote-ctrl",
-  "version": "0.0.1-preview.1",
+  "version": "0.0.1-preview.2",
   "description": "Remote Control (远程控制) for DSH: a pairing-token LAN gateway that reverse-proxies the full, responsive DSH web UI to phones on the local network.",
   "type": "module",
   "main": "lib/index.js",

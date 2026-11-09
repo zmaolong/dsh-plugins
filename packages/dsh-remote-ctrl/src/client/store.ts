@@ -95,14 +95,17 @@ async function writeClipboard(value: string): Promise<boolean> {
 }
 
 /** The panel controller: polling, copy feedback, teardown. */
+export interface PanelActions {
+  init: () => void
+  load: () => void
+  copy: (value: string, key: string) => Promise<void>
+  destroy: () => void
+}
+
+/** The panel controller: polling, copy feedback, teardown. */
 export function createRemoteController(): {
   store: SnapshotStore<PanelState>
-  actions: {
-    init: () => void
-    load: () => void
-    copy: (value: string, key: string) => Promise<void>
-    destroy: () => void
-  }
+  actions: PanelActions
 } {
   const { store, get, update } = createSnapshotStore<PanelState>(initialPanelState)
   let timer: ReturnType<typeof setInterval> | null = null

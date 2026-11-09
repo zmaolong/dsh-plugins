@@ -294,7 +294,27 @@ ctx.slots.inject('shell.overlay', () => ctx.slots.register({
 }, () => h(OverlayHost, { /* ... */ })))
 ```
 
-常用槽位：`sidebar.panellist`、`main`、`shell.overlay`。`order` 用于排序（本仓库约定：插件 0 / 智能体扩展 5 / 自动化任务 10 / 上下文洞察 20，🟡 实机顺序）。
+常用槽位：`sidebar.panellist`、`main`、`shell.overlay`、`sidebar.footer.action`。`order` 用于排序（本仓库约定：插件 0 / 智能体扩展 5 / 自动化任务 10 / 上下文洞察 20，🟡 实机顺序）。
+
+### 4.3.1 侧栏脚「图标 + 弹窗」🟡
+
+想要「一个可点击的图标，点开弹窗」而不是占一个主面板时，用 `sidebar.footer.action`（官方槽位说明：Optional actions beside Settings at the sidebar foot）：
+
+```js
+ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
+  name: 'sidebar.footer.action',
+  id: 'my-plugin',            // 列表槽位必填；复用自己的 id，不占用别人的 id
+  order: 0,
+  locale: 'myPlugin',
+  inject: () => ({ hooks: { remote: myStore }, actions: myActions }),
+}, Launcher))                 // 组件拿 wide（宽栏/56px 轨道）+ inject 面 + t
+```
+
+实测要点（🟡 真机 0.2.2-rc.1 实测）：
+
+- 该槽位渲染在**设置/头像行的正上方**（`.footArea` 是纵向排列：`footerActions` 行在上、`settingsArea` 行在下）。**头像那一行没有追加位**——`sidebar.settings` 是单槽、内部只有 `settings.launcher`（账号入口，被 ui-settings-account 占用）与 `settings.trigger`，第三方插件无法把图标插到头像右侧；`sidebar.footer.action` 就是官方给的最接近座位；
+- 槽位外层容器是 `display:flex` 的行：宽栏下条目靠右放（`margin-left:auto`），轨道态容器 `justify-content:center`，图标做 36×36；宿主会按条目根元素给 flex 布局，**不要再给条目 `width:100%`**（同槽位还有官方 ui-cordis 的全宽行，双全宽会互相挤压）；
+- 侧栏会裁掉 overflow，弹窗用 `position: fixed` + 触发元素 `getBoundingClientRect()` 量出 `left/bottom`（官方 ui-cordis 同法），配 `max-width: calc(100vw - 24px)`；点外部 / Esc 关闭，打开期间才轮询数据面。
 
 ### 4.4 数据面与安全
 

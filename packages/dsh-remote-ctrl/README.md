@@ -1,6 +1,6 @@
 # dsh-remote-ctrl
 
-> **试验性预览版（`0.0.1-preview.1`）**：仅供内部试验，接口与能力随时可能变化。
+> **试验性预览版（`0.0.1-preview.2`）**：仅供内部试验，接口与能力随时可能变化。
 > 版本线与仓库一致：npm 只发 `preview` dist-tag，首个正式版定为 `0.0.1`。
 
 DSH 的**远程控制**插件：一个带配对码的**局域网访问网关**。宿主 web UI 只绑
@@ -20,9 +20,11 @@ UI**（0.0.1-preview.1 起删除了自研手机页，改为纯网关）。
   - SSE/分块响应直通不缓冲，WebSocket upgrade 原样中继；
   - 配对码三通道：`?token=`（扫码链接）/ `Authorization: Bearer` / 首访种下的
     `dsh-remote-ctrl` 配对 cookie（之后 webUI 自己的请求免带 token）。
-- **桌面端面板**（slots 侧栏入口 + 主面板，宿主回环 `/remote-ctrl/api` 供数）：
-  网关状态、上游就绪状态、各局域网地址链接、二维码（推荐私网地址 + 配对码）、
-  配对码展示/复制、活跃连接数。
+- **侧边栏底部图标 + 弹窗**（slots：`sidebar.footer.action`，宿主回环
+  `/remote-ctrl/api` 供数）：侧栏脚（头像行正上方、设置行旁）一个可点击的
+  手机图标，点开即弹出面板——网关状态、上游就绪状态、各局域网地址链接、
+  二维码（推荐私网地址 + 配对码）、配对码展示/复制、活跃连接数；运行中
+  时图标带绿点，弹窗打开期间才轮询（点外部或 Esc 关闭）。
 
 ## 安全模型
 
@@ -61,8 +63,8 @@ npm run build        # tsdown：lib/index.js（ESM 宿主半）+ lib/client.js�
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\dsh-remote-ctrl
 ```
 
-装进 `zdebug` 后：桌面面板在侧栏「远程控制」；手机打开
-`http://<局域网IP>:31080/?token=<配对码>` 即得完整 webUI。
+装进 `zdebug` 后：点击侧栏底部（头像行上方）的手机图标弹出「远程控制」面板；
+手机打开 `http://<局域网IP>:31080/?token=<配对码>` 即得完整 webUI。
 
 ## 许可
 

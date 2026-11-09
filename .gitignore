@@ -1,5 +1,6 @@
 node_modules/
 *.log
+.npm-cache/
 .DS_Store
 Thumbs.db
 .zcode

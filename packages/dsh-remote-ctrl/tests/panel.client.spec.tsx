@@ -1,15 +1,16 @@
 // @vitest-environment jsdom
 
 /**
- * Panel behavior specs: user-visible behavior only (roles, labels,
- * callbacks), never hashed class names. Components receive stub hooks and a
- * real controller store.
+ * Launcher and popup behavior specs: user-visible behavior only (roles,
+ * labels, callbacks), never hashed class names. Components receive stub hooks
+ * and real controller actions.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 
 import { Panel, qrSvg } from '../src/client/Panel.tsx'
-import { createRemoteController, identity, type PanelState, type UseRemote } from '../src/client/store.ts'
+import { Launcher } from '../src/client/Launcher.tsx'
+import { createRemoteController, identity, type PanelActions, type PanelState, type UseRemote } from '../src/client/store.ts'
 import { zh } from '../src/client/locales.ts'
 import type { PanelStatus } from '../src/remote-ctrl.ts'
 
@@ -33,6 +34,10 @@ function stubRemote(state: PanelState): { useRemote: UseRemote } {
   return { useRemote }
 }
 
+function panelActions(overrides: Partial<PanelActions> = {}): PanelActions {
+  return { init: vi.fn(), load: vi.fn(), copy: vi.fn(), destroy: vi.fn(), ...overrides }
+}
+
 function runningState(overrides: Partial<PanelStatus> = {}): PanelState {
   const data: PanelStatus = {
     active: true,
@@ -54,10 +59,58 @@ function runningState(overrides: Partial<PanelStatus> = {}): PanelState {
   return { status: 'ready', error: '', data, copied: null }
 }
 
+describe('Launcher', () => {
+  it('renders the sidebar-foot icon and opens the popup on click', () => {
+    const actions = panelActions()
+    render(<Launcher wide useRemote={stubRemote(runningState()).useRemote} actions={actions} t={t} />)
+    const trigger = screen.getByRole('button', { name: t('title') })
+    expect(trigger.getAttribute('aria-haspopup')).toBe('dialog')
+    expect(trigger.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByRole('dialog')).toBeNull()
+
+    fireEvent.click(trigger)
+    expect(trigger.getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByRole('dialog', { name: t('title') })).toBeDefined()
+    expect(screen.getByTestId('qr')).toBeDefined()
+    expect(actions.init).toHaveBeenCalledTimes(1)
+  })
+
+  it('polls only while the popup is open', () => {
+    const actions = panelActions()
+    render(<Launcher wide={false} useRemote={stubRemote(runningState()).useRemote} actions={actions} t={t} />)
+    expect(actions.init).not.toHaveBeenCalled()
+    const trigger = screen.getByRole('button', { name: t('title') })
+
+    fireEvent.click(trigger)
+    expect(actions.init).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(trigger)
+    expect(actions.destroy).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('dismisses on an outside pointer press and on Escape', () => {
+    const actions = panelActions()
+    render(<Launcher wide useRemote={stubRemote(runningState()).useRemote} actions={actions} t={t} />)
+    const trigger = screen.getByRole('button', { name: t('title') })
+
+    fireEvent.click(trigger)
+    expect(screen.getByRole('dialog')).toBeDefined()
+    fireEvent.pointerDown(document.body)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(actions.destroy).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(trigger)
+    expect(screen.getByRole('dialog')).toBeDefined()
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(actions.destroy).toHaveBeenCalledTimes(2)
+  })
+})
+
 describe('Panel', () => {
   it('shows running status, addresses, token and connected devices', () => {
-    const copy = vi.fn()
-    render(<Panel useRemote={stubRemote(runningState()).useRemote} actions={{ init: () => {}, load: () => {}, copy, destroy: () => {} }} t={t} />)
+    render(<Panel useRemote={stubRemote(runningState()).useRemote} actions={panelActions()} t={t} />)
     expect(screen.getByText(t('running'))).toBeDefined()
     expect(screen.getByText('http://192.168.1.5:31080/')).toBeDefined()
     expect(screen.getByText('http://10.0.0.2:31080/')).toBeDefined()
@@ -68,21 +121,21 @@ describe('Panel', () => {
   })
 
   it('hands the address and token to copy actions', () => {
-    const copy = vi.fn()
-    render(<Panel useRemote={stubRemote(runningState()).useRemote} actions={{ init: () => {}, load: () => {}, copy, destroy: () => {} }} t={t} />)
+    const actions = panelActions()
+    render(<Panel useRemote={stubRemote(runningState()).useRemote} actions={actions} t={t} />)
     // 多个复制按钮（两行地址 + token）：点第一行（推荐地址）
     const buttons = screen.getAllByRole('button', { name: t('copy') })
     expect(buttons.length).toBe(3)
     fireEvent.click(buttons[0] ?? document.body)
-    expect(copy).toHaveBeenCalledWith('http://192.168.1.5:31080/', 'addr:http://192.168.1.5:31080/')
+    expect(actions.copy).toHaveBeenCalledWith('http://192.168.1.5:31080/', 'addr:http://192.168.1.5:31080/')
     fireEvent.click(buttons[2] ?? document.body)
-    expect(copy).toHaveBeenCalledWith('tkn-value', 'token')
+    expect(actions.copy).toHaveBeenCalledWith('tkn-value', 'token')
   })
 
   it('renders the stopped state without a QR and shows server errors', () => {
     render(<Panel
       useRemote={stubRemote(runningState({ listening: false, error: '端口被占用', clientCount: 0 })).useRemote}
-      actions={{ init: () => {}, load: () => {}, copy: vi.fn(), destroy: () => {} }}
+      actions={panelActions()}
       t={t}
     />)
     expect(screen.getByText(t('stopped'))).toBeDefined()
@@ -93,22 +146,22 @@ describe('Panel', () => {
   it('hints that the host web service is still pending', () => {
     render(<Panel
       useRemote={stubRemote(runningState({ upstream: { origin: '', ready: false } })).useRemote}
-      actions={{ init: () => {}, load: () => {}, copy: vi.fn(), destroy: () => {} }}
+      actions={panelActions()}
       t={t}
     />)
     expect(screen.getByText('宿主 web 服务尚未就绪：网关已启动，等宿主就绪后刷新手机页面即可。')).toBeDefined()
   })
 
   it('renders the api-unavailable state with a retry that reloads', () => {
-    const load = vi.fn()
+    const actions = panelActions()
     render(<Panel
       useRemote={stubRemote({ status: 'error', error: 'HTTP 403', data: null, copied: null }).useRemote}
-      actions={{ init: () => {}, load, copy: vi.fn(), destroy: () => {} }}
+      actions={actions}
       t={t}
     />)
     expect(screen.getByText('面板数据面不可用：HTTP 403')).toBeDefined()
     fireEvent.click(screen.getByRole('button', { name: t('retry') }))
-    expect(load).toHaveBeenCalled()
+    expect(actions.load).toHaveBeenCalled()
   })
 })
 

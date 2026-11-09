@@ -1,47 +1,163 @@
-/* Remote Control panel: page column, status card, QR card, address list,
- * token card. Styling follows the hub/official conventions: CSS Modules,
+/* Remote Control launcher and popup: the sidebar-foot icon, the fixed popup it
+ * opens above itself, and the popup body (status card, QR card, address list,
+ * token card). Styling follows the official web conventions: CSS Modules,
  * host `--dsw-alias-*` tokens only, `:hover` behind `@media (hover: hover)`,
- * no fully-round radii (so no corner-shape pairing is needed). */
+ * every fully-round shape paired with `corner-shape: round`. */
 
-.root {
-  height: 100%;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  color: var(--dsw-alias-label-primary);
-  font-size: 14px;
-  line-height: 1.5;
-  overflow-wrap: break-word;
+/* The footer-action row is a flex row: an auto left margin keeps the lone
+ * icon at the row's right end, which is the sidebar-foot corner above the
+ * account row. */
+.layer {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  height: 42px;
+  margin: 8px 0 0 auto;
+  padding: 0 6px;
 }
 
-.root * {
+.rail {
+  width: 36px;
+  height: 36px;
+  margin: 4px 0;
+  padding: 0;
+  justify-content: center;
+}
+
+.trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--dsw-radius-md);
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  cursor: pointer;
+}
+
+.rail .trigger {
+  width: 36px;
+  height: 36px;
+}
+
+@media (hover: hover) {
+  .trigger:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+
+.trigger[aria-expanded='true'] {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.trigger:focus-visible {
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 2px;
+}
+
+/* Running-state badge on the glyph: the gateway is listening right now. */
+.triggerDot {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--dsw-alias-state-success-primary);
+}
+
+/* Fixed so the sidebar's overflow clip cannot cut the popup; `left`/`bottom`
+ * are measured from the trigger before paint. */
+.popup {
+  position: fixed;
+  isolation: isolate;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  width: 400px;
+  max-width: calc(100vw - 24px);
+  max-height: min(70vh, 640px);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--dsw-radius-md);
+  --dsw-elevation-stroke-color: var(--dsw-alias-border-l1);
+  box-shadow: var(--dsw-elevation-prominent);
+  --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2);
+  --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
+}
+
+.popup::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--dsw-specific-menu);
+  backdrop-filter: var(--dsw-menu-backdrop-filter);
+  content: '';
+  pointer-events: none;
+}
+
+.popupHeader {
+  flex: none;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 10px 12px;
   box-sizing: border-box;
+}
+
+.popupTitle {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--dsw-alias-label-primary);
+}
+
+.popupBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 12px 12px;
 }
 
 .page {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 20px 16px 32px;
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: break-word;
+}
+
+.page * {
+  box-sizing: border-box;
 }
 
 .card {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 14px 16px;
-  border: 0.5px solid var(--dsw-alias-stroke-subtle, var(--dsw-alias-label-tertiary));
-  border-radius: var(--dsw-radius-lg);
-  background: var(--dsw-alias-surface-card, transparent);
+  padding: 12px;
+  border: 0.5px solid var(--dsw-alias-border-l1);
+  border-radius: var(--dsw-radius-md);
 }
 
 .cardTitle {
   margin: 0;
-  font-size: 15px;
+  font-size: 13.5px;
   font-weight: 600;
+  line-height: 20px;
   color: var(--dsw-alias-label-primary);
 }
 
@@ -54,8 +170,8 @@
 
 .errorText {
   margin: 0;
-  font-size: 13px;
-  color: var(--dsw-alias-state-danger-primary, #d5455c);
+  font-size: 12.5px;
+  color: var(--dsw-alias-state-error-primary);
   overflow-wrap: anywhere;
 }
 
@@ -69,26 +185,29 @@
 .badgeRunning,
 .badgeStopped {
   flex: none;
-  padding: 2px 10px;
-  border-radius: var(--dsw-radius-full, 999px);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 12px;
-  font-weight: 600;
-}
-
-/* 宿主全局 superellipse 会把 999px 压方：全圆形状必须配 corner-shape: round。 */
-.badgeRunning,
-.badgeStopped {
-  corner-shape: round;
+  font-weight: 500;
 }
 
 .badgeRunning {
-  background: var(--dsw-alias-state-success-subtle, rgba(48, 158, 87, 0.16));
-  color: var(--dsw-alias-state-success-primary, #2f9e57);
+  color: var(--dsw-alias-state-success-primary);
 }
 
 .badgeStopped {
-  background: var(--dsw-alias-interactive-bg-hover);
-  color: var(--dsw-alias-label-secondary);
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.badgeRunning::before,
+.badgeStopped::before {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  corner-shape: round;
+  background: currentColor;
+  content: '';
 }
 
 .qrBox {
@@ -103,8 +222,8 @@
 }
 
 .qrInner {
-  width: 208px;
-  height: 208px;
+  width: 176px;
+  height: 176px;
 }
 
 .qrInner svg {
@@ -116,7 +235,7 @@
 .qrUrl {
   max-width: 100%;
   font-family: ui-monospace, Consolas, monospace;
-  font-size: 12px;
+  font-size: 11.5px;
   color: #1c1917;
   overflow-wrap: anywhere;
   text-align: center;
@@ -141,18 +260,18 @@
 .addressText {
   flex: 1;
   min-width: 0;
-  padding: 6px 10px;
+  padding: 5px 8px;
   border-radius: var(--dsw-radius-sm);
   background: var(--dsw-alias-interactive-bg-hover);
   font-family: ui-monospace, Consolas, monospace;
-  font-size: 12.5px;
+  font-size: 12px;
   overflow-wrap: anywhere;
 }
 
 .scopeBadge {
   flex: none;
   padding: 1px 8px;
-  border-radius: var(--dsw-radius-full, 999px);
+  border-radius: 999px;
   corner-shape: round;
   background: var(--dsw-alias-interactive-bg-hover);
   color: var(--dsw-alias-label-secondary);
@@ -161,12 +280,12 @@
 
 .button {
   flex: none;
-  padding: 5px 12px;
+  padding: 4px 10px;
   border: 0;
   border-radius: var(--dsw-radius-sm);
   background: var(--dsw-alias-interactive-bg-hover);
   color: var(--dsw-alias-label-primary);
-  font-size: 12.5px;
+  font-size: 12px;
   cursor: pointer;
 }
 
