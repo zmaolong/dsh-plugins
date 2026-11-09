@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import clsx from 'clsx'
 import { Button, IconButton, Spinner } from './controls.tsx'
 import { Icon } from './icons.tsx'
 import { useEscapeClose } from './overlay-hooks.ts'
@@ -16,12 +17,13 @@ import { formatTime, errorMessageFor, orderMarkets, type JsonRecord, type Transl
 import css from './dialogs.module.css'
 
 /** Shell of every dialog: mask, card, header, body, footer. */
-export function DialogShell({ t, title, children, footer, narrow = false, onClose }: {
+export function DialogShell({ t, title, children, footer, narrow = false, wide = false, onClose }: {
   t: Translate
   title: string
   children: ReactNode
   footer?: ReactNode
   narrow?: boolean
+  wide?: boolean
   onClose?: () => void
 }): ReactNode {
   const dialogRef = useRef<HTMLDivElement | null>(null)
@@ -41,7 +43,7 @@ export function DialogShell({ t, title, children, footer, narrow = false, onClos
     }}>
       <div
         ref={dialogRef}
-        className={narrow ? `${css.dialog} ${css.dialogNarrow}` : css.dialog}
+        className={clsx(css.dialog, narrow && css.dialogNarrow, wide && css.dialogWide)}
         role="dialog"
         aria-modal="true"
         aria-label={title}

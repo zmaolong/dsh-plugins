@@ -229,22 +229,9 @@
   text-overflow: ellipsis;
 }
 
-/* List on the left, detail editor on the right; one column on narrow panels. */
-.workspace {
-  display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  align-items: start;
-  gap: 20px;
-}
-
-@container (max-width: 720px) {
-  .workspace {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.listPane,
-.editorPane {
+/* Entry list takes the full row: a responsive card grid that wraps narrower
+ * as the panel widens; the detail editor opens in a dialog on top. */
+.listPane {
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -275,53 +262,38 @@
   color: var(--dsw-alias-label-tertiary);
 }
 
-.entryList {
-  display: flex;
-  flex-direction: column;
+.entryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
 }
 
-.entryRow {
+.entryCard {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  width: 100%;
+  flex-direction: column;
+  gap: 6px;
   min-width: 0;
-  padding: 10px 8px;
-  border: 0;
-  border-radius: var(--dsw-radius-sm);
-  background: transparent;
+  padding: 14px;
+  border: 0.5px solid var(--dsw-alias-border-l3);
+  border-radius: var(--dsw-radius-md);
+  background: var(--dsw-alias-bg-layer-3);
   color: inherit;
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background 0.12s ease;
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
 
-.entryRow:focus-visible {
+.entryCard:focus-visible {
   outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
   outline-offset: 2px;
 }
 
-.entryRow[aria-pressed='true'] {
-  background: var(--dsw-alias-interactive-bg-active);
-}
-
-.entryRow + .entryRow {
-  border-top: 0.5px solid var(--dsw-alias-border-l3);
-}
-
 @media (hover: hover) {
-  .entryRow:hover {
+  .entryCard:hover {
+    border-color: var(--dsw-alias-border-l4);
     background: var(--dsw-alias-interactive-bg-hover);
   }
-}
-
-.entryMain {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
 }
 
 .entryTitleRow {
@@ -353,7 +325,11 @@
 }
 
 .entryDesc {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   min-width: 0;
+  overflow: hidden;
   overflow-wrap: anywhere;
   font-size: 13px;
   color: var(--dsw-alias-label-secondary);
@@ -393,23 +369,18 @@
   color: var(--dsw-alias-label-tertiary);
 }
 
-/* Detail editor card. */
+/* Detail editor lives in a DialogShell: no card chrome of its own, just the
+ * vertical rhythm; the status badge sits on its own line above the form. */
 .editor {
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-width: 0;
-  padding: 16px;
-  border: 0.5px solid var(--dsw-alias-border-l3);
-  border-radius: var(--dsw-radius-md);
 }
 
-.editorHead {
+.editorStatus {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
 }
 
 .formGrid {

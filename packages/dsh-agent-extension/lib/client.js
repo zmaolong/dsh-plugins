@@ -208,7 +208,6 @@ window.__ModuleLoader__.load({
 			memoryLoading: "正在加载记忆…",
 			memoryListEmpty: "还没有记忆条目。点击「新建记忆」创建第一条。",
 			memoryListEmptyFiltered: "没有匹配的记忆条目。",
-			memorySelectHint: "从左侧选择一条记忆进行查看和编辑，或新建一条。",
 			memoryCreateTitle: "新建记忆",
 			memoryEditTitle: "编辑记忆",
 			memoryFieldName: "名称",
@@ -444,7 +443,6 @@ window.__ModuleLoader__.load({
 			memoryLoading: "Loading memory…",
 			memoryListEmpty: "No memories yet. Choose “New memory” to create the first one.",
 			memoryListEmptyFiltered: "No memories match this filter.",
-			memorySelectHint: "Select a memory on the left to view or edit it, or create a new one.",
 			memoryCreateTitle: "New memory",
 			memoryEditTitle: "Edit memory",
 			memoryFieldName: "Name",
@@ -680,7 +678,6 @@ window.__ModuleLoader__.load({
 			memoryLoading: "メモリを読み込み中…",
 			memoryListEmpty: "メモリはまだありません。「メモリを作成」から最初の1件を作成してください。",
 			memoryListEmptyFiltered: "条件に一致するメモリがありません。",
-			memorySelectHint: "左の一覧からメモリを選択して表示・編集するか、新規作成してください。",
 			memoryCreateTitle: "メモリを作成",
 			memoryEditTitle: "メモリを編集",
 			memoryFieldName: "名前",
@@ -916,7 +913,6 @@ window.__ModuleLoader__.load({
 			memoryLoading: "Cargando memoria…",
 			memoryListEmpty: "Aún no hay memorias. Elija «Nueva memoria» para crear la primera.",
 			memoryListEmptyFiltered: "Ninguna memoria coincide con este filtro.",
-			memorySelectHint: "Seleccione una memoria a la izquierda para verla o editarla, o cree una nueva.",
 			memoryCreateTitle: "Nueva memoria",
 			memoryEditTitle: "Editar memoria",
 			memoryFieldName: "Nombre",
@@ -1152,7 +1148,6 @@ window.__ModuleLoader__.load({
 			memoryLoading: "Chargement de la mémoire…",
 			memoryListEmpty: "Aucune mémoire pour le moment. Choisissez « Nouvelle mémoire » pour créer la première.",
 			memoryListEmptyFiltered: "Aucune mémoire ne correspond à ce filtre.",
-			memorySelectHint: "Sélectionnez une mémoire à gauche pour la consulter ou la modifier, ou créez-en une.",
 			memoryCreateTitle: "Nouvelle mémoire",
 			memoryEditTitle: "Modifier la mémoire",
 			memoryFieldName: "Nom",
@@ -1388,7 +1383,6 @@ window.__ModuleLoader__.load({
 			memoryLoading: "Gedächtnis wird geladen…",
 			memoryListEmpty: "Noch keine Einträge. Wählen Sie „Neues Gedächtnis“, um den ersten zu erstellen.",
 			memoryListEmptyFiltered: "Keine Einträge entsprechen diesem Filter.",
-			memorySelectHint: "Wählen Sie links einen Eintrag zum Anzeigen oder Bearbeiten oder erstellen Sie einen neuen.",
 			memoryCreateTitle: "Neues Gedächtnis",
 			memoryEditTitle: "Gedächtnis bearbeiten",
 			memoryFieldName: "Name",
@@ -1624,7 +1618,6 @@ window.__ModuleLoader__.load({
 			memoryLoading: "Загрузка памяти…",
 			memoryListEmpty: "Записей пока нет. Нажмите «Новая память», чтобы создать первую.",
 			memoryListEmptyFiltered: "Нет записей, подходящих под фильтр.",
-			memorySelectHint: "Выберите запись слева для просмотра или редактирования либо создайте новую.",
 			memoryCreateTitle: "Новая память",
 			memoryEditTitle: "Редактирование памяти",
 			memoryFieldName: "Название",
@@ -1860,7 +1853,6 @@ window.__ModuleLoader__.load({
 			memoryLoading: "Carregando memória…",
 			memoryListEmpty: "Ainda não há memórias. Escolha “Nova memória” para criar a primeira.",
 			memoryListEmptyFiltered: "Nenhuma memória corresponde a este filtro.",
-			memorySelectHint: "Selecione uma memória à esquerda para ver ou editar, ou crie uma nova.",
 			memoryCreateTitle: "Nova memória",
 			memoryEditTitle: "Editar memória",
 			memoryFieldName: "Nome",
@@ -5089,7 +5081,7 @@ window.__ModuleLoader__.load({
 			});
 		}
 		// \0dsh-css:E:\workspace\dsh-plugins\packages\dsh-agent-extension\src\client\dialogs.module.css.mjs
-		const css$3 = ".pJiaRa_mask{background:var(--dsw-alias-bg-mask-3);backdrop-filter:var(--dsw-mask-blur);pointer-events:auto;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.pJiaRa_dialog{box-sizing:border-box;border-radius:var(--dsw-radius-panel);background:var(--dsw-alias-bg-layer-2);width:min(480px,100vw - 32px);max-height:calc(100vh - 80px);box-shadow:var(--dsw-elevation-prominent);pointer-events:auto;border:0;flex-direction:column;gap:16px;padding:16px 0;display:flex}.pJiaRa_dialog:focus{outline:none}.pJiaRa_dialogNarrow{width:min(420px,100vw - 32px)}.pJiaRa_head{align-items:center;gap:8px;padding:0 12px 0 16px;display:flex}.pJiaRa_title{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-primary);flex:1;margin:0;font-size:16px;font-weight:500;overflow:hidden}.pJiaRa_body{overflow-wrap:anywhere;flex-direction:column;gap:12px;min-height:0;padding:0 16px;display:flex;overflow-y:auto}.pJiaRa_foot{flex-wrap:wrap;justify-content:flex-end;gap:8px;padding:0 16px;display:flex}.pJiaRa_footInline{justify-content:flex-end;width:100%;display:flex}.pJiaRa_field{flex-direction:column;gap:6px;display:flex}.pJiaRa_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px}.pJiaRa_fieldHint{color:var(--dsw-alias-label-tertiary);font-size:12px}.pJiaRa_input{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);width:100%;height:36px;color:var(--dsw-alias-label-primary);font:inherit;padding:0 12px;font-size:14px}.pJiaRa_input::placeholder{color:var(--dsw-alias-label-tertiary)}@media (hover:hover){.pJiaRa_input:hover{border-color:var(--dsw-alias-border-l4)}}.pJiaRa_input:focus{border-color:var(--dsw-alias-border-l4);outline:none}.pJiaRa_risk{border-radius:var(--dsw-radius-md);background:var(--dsw-alias-state-warn-tertiary);color:var(--dsw-alias-state-warn-primary);word-break:break-word;align-items:flex-start;gap:8px;padding:12px;font-size:13px;display:flex}.pJiaRa_risk>span{overflow-wrap:anywhere;min-width:0}.pJiaRa_check{color:var(--dsw-alias-label-secondary);cursor:pointer;word-break:break-word;align-items:flex-start;gap:8px;font-size:13px;display:flex}.pJiaRa_check>span{overflow-wrap:anywhere;min-width:0}.pJiaRa_check input{accent-color:var(--dsw-alias-brand-primary);flex:none;margin:3px 0 0}.pJiaRa_confirmMessage{color:var(--dsw-alias-label-secondary);white-space:pre-wrap;font-size:14px}.pJiaRa_error{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);white-space:pre-wrap;word-break:break-word;padding:10px 12px;font-size:13px}.pJiaRa_sourceList{flex-direction:column;gap:2px;max-height:min(420px,60vh);display:flex;overflow-y:auto}.pJiaRa_emptyRow{border:.5px dashed var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);min-height:96px;color:var(--dsw-alias-label-secondary);text-align:center;justify-content:center;align-items:center;padding:24px 16px;font-size:14px;display:flex}.pJiaRa_sourceRow{border-radius:var(--dsw-radius-sm);align-items:center;gap:12px;padding:8px;display:flex}@media (hover:hover){.pJiaRa_sourceRow:hover{background:var(--dsw-alias-interactive-bg-hover)}}.pJiaRa_sourceMain{flex-direction:column;flex:1;min-width:0;display:flex}.pJiaRa_sourceName{color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500;overflow:hidden}.pJiaRa_sourceSub{color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;margin-top:2px;font-size:12px;overflow:hidden}.pJiaRa_sourceError{color:var(--dsw-alias-state-error-primary);white-space:pre-wrap;word-break:break-word;align-items:flex-start;gap:4px;margin-top:4px;font-size:12px;display:flex}";
+		const css$3 = ".pJiaRa_mask{background:var(--dsw-alias-bg-mask-3);backdrop-filter:var(--dsw-mask-blur);pointer-events:auto;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.pJiaRa_dialog{box-sizing:border-box;border-radius:var(--dsw-radius-panel);background:var(--dsw-alias-bg-layer-2);width:min(480px,100vw - 32px);max-height:calc(100vh - 80px);box-shadow:var(--dsw-elevation-prominent);pointer-events:auto;border:0;flex-direction:column;gap:16px;padding:16px 0;display:flex}.pJiaRa_dialog:focus{outline:none}.pJiaRa_dialogNarrow{width:min(420px,100vw - 32px)}.pJiaRa_dialogWide{width:min(640px,100vw - 32px)}.pJiaRa_head{align-items:center;gap:8px;padding:0 12px 0 16px;display:flex}.pJiaRa_title{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-primary);flex:1;margin:0;font-size:16px;font-weight:500;overflow:hidden}.pJiaRa_body{overflow-wrap:anywhere;flex-direction:column;gap:12px;min-height:0;padding:0 16px;display:flex;overflow-y:auto}.pJiaRa_foot{flex-wrap:wrap;justify-content:flex-end;gap:8px;padding:0 16px;display:flex}.pJiaRa_footInline{justify-content:flex-end;width:100%;display:flex}.pJiaRa_field{flex-direction:column;gap:6px;display:flex}.pJiaRa_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px}.pJiaRa_fieldHint{color:var(--dsw-alias-label-tertiary);font-size:12px}.pJiaRa_input{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);width:100%;height:36px;color:var(--dsw-alias-label-primary);font:inherit;padding:0 12px;font-size:14px}.pJiaRa_input::placeholder{color:var(--dsw-alias-label-tertiary)}@media (hover:hover){.pJiaRa_input:hover{border-color:var(--dsw-alias-border-l4)}}.pJiaRa_input:focus{border-color:var(--dsw-alias-border-l4);outline:none}.pJiaRa_risk{border-radius:var(--dsw-radius-md);background:var(--dsw-alias-state-warn-tertiary);color:var(--dsw-alias-state-warn-primary);word-break:break-word;align-items:flex-start;gap:8px;padding:12px;font-size:13px;display:flex}.pJiaRa_risk>span{overflow-wrap:anywhere;min-width:0}.pJiaRa_check{color:var(--dsw-alias-label-secondary);cursor:pointer;word-break:break-word;align-items:flex-start;gap:8px;font-size:13px;display:flex}.pJiaRa_check>span{overflow-wrap:anywhere;min-width:0}.pJiaRa_check input{accent-color:var(--dsw-alias-brand-primary);flex:none;margin:3px 0 0}.pJiaRa_confirmMessage{color:var(--dsw-alias-label-secondary);white-space:pre-wrap;font-size:14px}.pJiaRa_error{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);white-space:pre-wrap;word-break:break-word;padding:10px 12px;font-size:13px}.pJiaRa_sourceList{flex-direction:column;gap:2px;max-height:min(420px,60vh);display:flex;overflow-y:auto}.pJiaRa_emptyRow{border:.5px dashed var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);min-height:96px;color:var(--dsw-alias-label-secondary);text-align:center;justify-content:center;align-items:center;padding:24px 16px;font-size:14px;display:flex}.pJiaRa_sourceRow{border-radius:var(--dsw-radius-sm);align-items:center;gap:12px;padding:8px;display:flex}@media (hover:hover){.pJiaRa_sourceRow:hover{background:var(--dsw-alias-interactive-bg-hover)}}.pJiaRa_sourceMain{flex-direction:column;flex:1;min-width:0;display:flex}.pJiaRa_sourceName{color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500;overflow:hidden}.pJiaRa_sourceSub{color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;margin-top:2px;font-size:12px;overflow:hidden}.pJiaRa_sourceError{color:var(--dsw-alias-state-error-primary);white-space:pre-wrap;word-break:break-word;align-items:flex-start;gap:4px;margin-top:4px;font-size:12px;display:flex}";
 		const tagId$3 = "dsh-agent-extension/dialogs.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$3) + "]") === null) {
 			const tag = document.createElement("style");
@@ -5104,6 +5096,7 @@ window.__ModuleLoader__.load({
 			"confirmMessage": "pJiaRa_confirmMessage",
 			"dialog": "pJiaRa_dialog",
 			"dialogNarrow": "pJiaRa_dialogNarrow",
+			"dialogWide": "pJiaRa_dialogWide",
 			"emptyRow": "pJiaRa_emptyRow",
 			"error": "pJiaRa_error",
 			"field": "pJiaRa_field",
@@ -5133,7 +5126,7 @@ window.__ModuleLoader__.load({
 		* @module dsh-agent-extension/client/dialogs
 		*/
 		/** Shell of every dialog: mask, card, header, body, footer. */
-		function DialogShell({ t, title, children, footer, narrow = false, onClose }) {
+		function DialogShell({ t, title, children, footer, narrow = false, wide = false, onClose }) {
 			const dialogRef = (0, react.useRef)(null);
 			(0, react.useEffect)(() => {
 				if (typeof document === "undefined") return void 0;
@@ -5153,7 +5146,7 @@ window.__ModuleLoader__.load({
 				},
 				children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					ref: dialogRef,
-					className: narrow ? `${dialogs_module_css_default.dialog} ${dialogs_module_css_default.dialogNarrow}` : dialogs_module_css_default.dialog,
+					className: clsx(dialogs_module_css_default.dialog, narrow && dialogs_module_css_default.dialogNarrow, wide && dialogs_module_css_default.dialogWide),
 					role: "dialog",
 					"aria-modal": "true",
 					"aria-label": title,
@@ -5429,7 +5422,7 @@ window.__ModuleLoader__.load({
 			});
 		}
 		// \0dsh-css:E:\workspace\dsh-plugins\packages\dsh-agent-extension\src\client\memory.module.css.mjs
-		const css$2 = ".Iw3mRa_view{gap:20px}.Iw3mRa_topbar{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px 16px;display:flex}.Iw3mRa_scopeRow{flex:none;align-items:center;gap:12px;min-width:0;display:flex}.Iw3mRa_segmented{flex-wrap:wrap;align-items:center;gap:6px;display:inline-flex}.Iw3mRa_projectSelect{flex:0 220px;width:auto;min-width:0}.Iw3mRa_actions{flex-wrap:wrap;align-items:center;gap:8px;margin-left:auto;display:flex}.Iw3mRa_searchWrap{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-3);min-width:200px;max-width:480px;height:36px;color:var(--dsw-alias-label-tertiary);flex:220px;align-items:center;gap:8px;padding:0 10px;display:flex}.Iw3mRa_searchWrap>svg{flex:none}.Iw3mRa_searchInput{min-width:0;height:100%;color:var(--dsw-alias-label-primary);font:inherit;background:0 0;border:0;outline:none;flex:1;padding:0;font-size:14px}.Iw3mRa_searchInput::placeholder{color:var(--dsw-alias-label-tertiary)}.Iw3mRa_searchInput::-webkit-search-decoration,.Iw3mRa_searchInput::-webkit-search-cancel-button{-webkit-appearance:none;display:none}.Iw3mRa_searchClear{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_searchClear:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.Iw3mRa_searchClear:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.Iw3mRa_filterWrap{flex:none;display:inline-flex;position:relative}.Iw3mRa_filterWrap:focus{outline:none}.Iw3mRa_filterTrigger{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;justify-content:center;align-items:center;padding:0;display:flex;position:relative}.Iw3mRa_filterTrigger:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_filterTrigger:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.Iw3mRa_filterDot{corner-shape:round;background:var(--dsw-alias-state-business-primary);border-radius:999px;width:6px;height:6px;position:absolute;top:2px;right:2px}.Iw3mRa_menuBackdrop{z-index:40;background:0 0;position:fixed;inset:0}.Iw3mRa_filterMenu{z-index:41;border-radius:var(--dsw-radius-lg);background:var(--dsw-menu-surface-fill);min-width:160px;backdrop-filter:var(--dsw-menu-backdrop-filter);box-shadow:var(--dsw-elevation-panel);border:0;padding:4px;position:absolute;top:calc(100% + 4px);right:0}.Iw3mRa_filterItem{border-radius:var(--dsw-radius-md);width:100%;color:var(--dsw-alias-label-primary);font:inherit;text-align:left;white-space:nowrap;cursor:pointer;background:0 0;border:0;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;font-size:14px;display:flex}.Iw3mRa_filterItem:focus-visible{background:var(--dsw-alias-interactive-bg-hover);outline:none}@media (hover:hover){.Iw3mRa_filterItem:hover{background:var(--dsw-alias-interactive-bg-hover)}}.Iw3mRa_filterItem[aria-checked=true]{color:var(--dsw-alias-state-business-primary)}.Iw3mRa_filterItemText{text-overflow:ellipsis;min-width:0;overflow:hidden}.Iw3mRa_workspace{grid-template-columns:minmax(0,5fr) minmax(0,7fr);align-items:start;gap:20px;display:grid}@container (width<=720px){.Iw3mRa_workspace{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_listPane,.Iw3mRa_editorPane{flex-direction:column;gap:8px;min-width:0;display:flex}.Iw3mRa_listHead{justify-content:space-between;align-items:baseline;gap:8px;padding:0 8px 8px;display:flex}.Iw3mRa_sectionTitle{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:16px;font-weight:500}.Iw3mRa_sectionCount{white-space:nowrap;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.Iw3mRa_entryList{flex-direction:column;display:flex}.Iw3mRa_entryRow{border-radius:var(--dsw-radius-sm);width:100%;min-width:0;color:inherit;font:inherit;text-align:left;cursor:pointer;background:0 0;border:0;align-items:flex-start;gap:12px;padding:10px 8px;transition:background .12s;display:flex}.Iw3mRa_entryRow:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}.Iw3mRa_entryRow[aria-pressed=true]{background:var(--dsw-alias-interactive-bg-active)}.Iw3mRa_entryRow+.Iw3mRa_entryRow{border-top:.5px solid var(--dsw-alias-border-l3)}@media (hover:hover){.Iw3mRa_entryRow:hover{background:var(--dsw-alias-interactive-bg-hover)}}.Iw3mRa_entryMain{flex-direction:column;flex:1;gap:4px;min-width:0;display:flex}.Iw3mRa_entryTitleRow{align-items:center;gap:6px;min-width:0;display:flex}.Iw3mRa_entryName{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px;font-weight:500}.Iw3mRa_entryImportance{corner-shape:round;background:color-mix(in srgb, var(--dsw-alias-state-warn-primary) 14%, transparent);color:var(--dsw-alias-state-warn-primary);border-radius:999px;flex:none;padding:0 6px;font-size:11px;font-weight:600;line-height:18px}.Iw3mRa_entryDesc{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-secondary);font-size:13px}.Iw3mRa_entryMeta{flex-wrap:wrap;align-items:center;gap:6px;display:flex}.Iw3mRa_entryTime{color:var(--dsw-alias-label-tertiary);font-size:12px}.Iw3mRa_entryTag{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:120px;color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;border-radius:999px;flex:none;padding:0 6px;font-size:11px;line-height:18px;overflow:hidden}.Iw3mRa_entryTagMore{color:var(--dsw-alias-label-tertiary);flex:none;font-size:11px}.Iw3mRa_editor{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);flex-direction:column;gap:12px;min-width:0;padding:16px;display:flex}.Iw3mRa_editorHead{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;display:flex}.Iw3mRa_formGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;display:grid}@container (width<=720px){.Iw3mRa_formGrid{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_field{flex-direction:column;gap:4px;min-width:0;display:flex}.Iw3mRa_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500}.Iw3mRa_fieldHint{color:var(--dsw-alias-label-tertiary);font-size:11px}.Iw3mRa_input{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:100%;min-width:0;height:36px;color:var(--dsw-alias-label-primary);font:inherit;padding:0 10px;font-size:14px}.Iw3mRa_input:focus-visible,.Iw3mRa_textarea:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}.Iw3mRa_textarea{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:100%;min-height:180px;color:var(--dsw-alias-label-primary);font:inherit;resize:vertical;padding:8px 10px;font-size:14px;line-height:1.5}.Iw3mRa_formActions{flex-wrap:wrap;align-items:center;gap:8px;padding-top:4px;display:flex}.Iw3mRa_formActionsRight{flex-wrap:wrap;flex:auto;justify-content:flex-end;align-items:center;gap:8px;min-width:0;display:flex}.Iw3mRa_confirmArea{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;display:flex}.Iw3mRa_confirmText{color:var(--dsw-alias-state-error-primary);overflow-wrap:anywhere;font-size:13px}.Iw3mRa_dialogPortal{z-index:40;position:fixed;inset:0}.Iw3mRa_settingList{flex-direction:column;display:flex}.Iw3mRa_settingRow{justify-content:space-between;align-items:center;gap:12px;padding:8px 0;display:flex}.Iw3mRa_settingRow+.Iw3mRa_settingRow{border-top:.5px solid var(--dsw-alias-border-l3)}.Iw3mRa_settingLabel{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px}.Iw3mRa_numberGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;display:grid}@container (width<=720px){.Iw3mRa_numberGrid{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_divider{background:var(--dsw-alias-border-l2);height:.5px}.Iw3mRa_statsTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:14px;font-weight:500}.Iw3mRa_statGrid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;display:grid}.Iw3mRa_stat{border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);flex-direction:column;gap:2px;padding:10px 12px;display:flex}.Iw3mRa_statLabel{color:var(--dsw-alias-label-secondary);font-size:12px}.Iw3mRa_statValue{color:var(--dsw-alias-label-primary);font-size:16px;font-weight:600}.Iw3mRa_errorBox{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);flex-wrap:wrap;align-items:flex-start;gap:8px;padding:10px 12px;font-size:13px;display:flex}.Iw3mRa_errorText{overflow-wrap:anywhere;white-space:pre-wrap;flex:160px;min-width:0}";
+		const css$2 = ".Iw3mRa_view{gap:20px}.Iw3mRa_topbar{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px 16px;display:flex}.Iw3mRa_scopeRow{flex:none;align-items:center;gap:12px;min-width:0;display:flex}.Iw3mRa_segmented{flex-wrap:wrap;align-items:center;gap:6px;display:inline-flex}.Iw3mRa_projectSelect{flex:0 220px;width:auto;min-width:0}.Iw3mRa_actions{flex-wrap:wrap;align-items:center;gap:8px;margin-left:auto;display:flex}.Iw3mRa_searchWrap{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-3);min-width:200px;max-width:480px;height:36px;color:var(--dsw-alias-label-tertiary);flex:220px;align-items:center;gap:8px;padding:0 10px;display:flex}.Iw3mRa_searchWrap>svg{flex:none}.Iw3mRa_searchInput{min-width:0;height:100%;color:var(--dsw-alias-label-primary);font:inherit;background:0 0;border:0;outline:none;flex:1;padding:0;font-size:14px}.Iw3mRa_searchInput::placeholder{color:var(--dsw-alias-label-tertiary)}.Iw3mRa_searchInput::-webkit-search-decoration,.Iw3mRa_searchInput::-webkit-search-cancel-button{-webkit-appearance:none;display:none}.Iw3mRa_searchClear{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_searchClear:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.Iw3mRa_searchClear:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.Iw3mRa_filterWrap{flex:none;display:inline-flex;position:relative}.Iw3mRa_filterWrap:focus{outline:none}.Iw3mRa_filterTrigger{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;justify-content:center;align-items:center;padding:0;display:flex;position:relative}.Iw3mRa_filterTrigger:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_filterTrigger:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.Iw3mRa_filterDot{corner-shape:round;background:var(--dsw-alias-state-business-primary);border-radius:999px;width:6px;height:6px;position:absolute;top:2px;right:2px}.Iw3mRa_menuBackdrop{z-index:40;background:0 0;position:fixed;inset:0}.Iw3mRa_filterMenu{z-index:41;border-radius:var(--dsw-radius-lg);background:var(--dsw-menu-surface-fill);min-width:160px;backdrop-filter:var(--dsw-menu-backdrop-filter);box-shadow:var(--dsw-elevation-panel);border:0;padding:4px;position:absolute;top:calc(100% + 4px);right:0}.Iw3mRa_filterItem{border-radius:var(--dsw-radius-md);width:100%;color:var(--dsw-alias-label-primary);font:inherit;text-align:left;white-space:nowrap;cursor:pointer;background:0 0;border:0;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;font-size:14px;display:flex}.Iw3mRa_filterItem:focus-visible{background:var(--dsw-alias-interactive-bg-hover);outline:none}@media (hover:hover){.Iw3mRa_filterItem:hover{background:var(--dsw-alias-interactive-bg-hover)}}.Iw3mRa_filterItem[aria-checked=true]{color:var(--dsw-alias-state-business-primary)}.Iw3mRa_filterItemText{text-overflow:ellipsis;min-width:0;overflow:hidden}.Iw3mRa_listPane{flex-direction:column;gap:8px;min-width:0;display:flex}.Iw3mRa_listHead{justify-content:space-between;align-items:baseline;gap:8px;padding:0 8px 8px;display:flex}.Iw3mRa_sectionTitle{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:16px;font-weight:500}.Iw3mRa_sectionCount{white-space:nowrap;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.Iw3mRa_entryGrid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;display:grid}.Iw3mRa_entryCard{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-3);min-width:0;color:inherit;font:inherit;text-align:left;cursor:pointer;flex-direction:column;gap:6px;padding:14px;transition:background .12s,border-color .12s;display:flex}.Iw3mRa_entryCard:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.Iw3mRa_entryCard:hover{border-color:var(--dsw-alias-border-l4);background:var(--dsw-alias-interactive-bg-hover)}}.Iw3mRa_entryTitleRow{align-items:center;gap:6px;min-width:0;display:flex}.Iw3mRa_entryName{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px;font-weight:500}.Iw3mRa_entryImportance{corner-shape:round;background:color-mix(in srgb, var(--dsw-alias-state-warn-primary) 14%, transparent);color:var(--dsw-alias-state-warn-primary);border-radius:999px;flex:none;padding:0 6px;font-size:11px;font-weight:600;line-height:18px}.Iw3mRa_entryDesc{-webkit-line-clamp:2;overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-secondary);-webkit-box-orient:vertical;font-size:13px;display:-webkit-box;overflow:hidden}.Iw3mRa_entryMeta{flex-wrap:wrap;align-items:center;gap:6px;display:flex}.Iw3mRa_entryTime{color:var(--dsw-alias-label-tertiary);font-size:12px}.Iw3mRa_entryTag{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:120px;color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;border-radius:999px;flex:none;padding:0 6px;font-size:11px;line-height:18px;overflow:hidden}.Iw3mRa_entryTagMore{color:var(--dsw-alias-label-tertiary);flex:none;font-size:11px}.Iw3mRa_editor{flex-direction:column;gap:12px;min-width:0;display:flex}.Iw3mRa_editorStatus{align-items:center;display:flex}.Iw3mRa_formGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;display:grid}@container (width<=720px){.Iw3mRa_formGrid{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_field{flex-direction:column;gap:4px;min-width:0;display:flex}.Iw3mRa_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500}.Iw3mRa_fieldHint{color:var(--dsw-alias-label-tertiary);font-size:11px}.Iw3mRa_input{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:100%;min-width:0;height:36px;color:var(--dsw-alias-label-primary);font:inherit;padding:0 10px;font-size:14px}.Iw3mRa_input:focus-visible,.Iw3mRa_textarea:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}.Iw3mRa_textarea{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:100%;min-height:180px;color:var(--dsw-alias-label-primary);font:inherit;resize:vertical;padding:8px 10px;font-size:14px;line-height:1.5}.Iw3mRa_formActions{flex-wrap:wrap;align-items:center;gap:8px;padding-top:4px;display:flex}.Iw3mRa_formActionsRight{flex-wrap:wrap;flex:auto;justify-content:flex-end;align-items:center;gap:8px;min-width:0;display:flex}.Iw3mRa_confirmArea{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;display:flex}.Iw3mRa_confirmText{color:var(--dsw-alias-state-error-primary);overflow-wrap:anywhere;font-size:13px}.Iw3mRa_dialogPortal{z-index:40;position:fixed;inset:0}.Iw3mRa_settingList{flex-direction:column;display:flex}.Iw3mRa_settingRow{justify-content:space-between;align-items:center;gap:12px;padding:8px 0;display:flex}.Iw3mRa_settingRow+.Iw3mRa_settingRow{border-top:.5px solid var(--dsw-alias-border-l3)}.Iw3mRa_settingLabel{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px}.Iw3mRa_numberGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;display:grid}@container (width<=720px){.Iw3mRa_numberGrid{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_divider{background:var(--dsw-alias-border-l2);height:.5px}.Iw3mRa_statsTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:14px;font-weight:500}.Iw3mRa_statGrid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;display:grid}.Iw3mRa_stat{border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);flex-direction:column;gap:2px;padding:10px 12px;display:flex}.Iw3mRa_statLabel{color:var(--dsw-alias-label-secondary);font-size:12px}.Iw3mRa_statValue{color:var(--dsw-alias-label-primary);font-size:16px;font-weight:600}.Iw3mRa_errorBox{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);flex-wrap:wrap;align-items:flex-start;gap:8px;padding:10px 12px;font-size:13px;display:flex}.Iw3mRa_errorText{overflow-wrap:anywhere;white-space:pre-wrap;flex:160px;min-width:0}";
 		const tagId$2 = "dsh-agent-extension/memory.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$2) + "]") === null) {
 			const tag = document.createElement("style");
@@ -5445,15 +5438,13 @@ window.__ModuleLoader__.load({
 			"dialogPortal": "Iw3mRa_dialogPortal",
 			"divider": "Iw3mRa_divider",
 			"editor": "Iw3mRa_editor",
-			"editorHead": "Iw3mRa_editorHead",
-			"editorPane": "Iw3mRa_editorPane",
+			"editorStatus": "Iw3mRa_editorStatus",
+			"entryCard": "Iw3mRa_entryCard",
 			"entryDesc": "Iw3mRa_entryDesc",
+			"entryGrid": "Iw3mRa_entryGrid",
 			"entryImportance": "Iw3mRa_entryImportance",
-			"entryList": "Iw3mRa_entryList",
-			"entryMain": "Iw3mRa_entryMain",
 			"entryMeta": "Iw3mRa_entryMeta",
 			"entryName": "Iw3mRa_entryName",
-			"entryRow": "Iw3mRa_entryRow",
 			"entryTag": "Iw3mRa_entryTag",
 			"entryTagMore": "Iw3mRa_entryTagMore",
 			"entryTime": "Iw3mRa_entryTime",
@@ -5495,17 +5486,16 @@ window.__ModuleLoader__.load({
 			"statsTitle": "Iw3mRa_statsTitle",
 			"textarea": "Iw3mRa_textarea",
 			"topbar": "Iw3mRa_topbar",
-			"view": "Iw3mRa_view",
-			"workspace": "Iw3mRa_workspace"
+			"view": "Iw3mRa_view"
 		};
 		// src/client/MemoryView.tsx
 		/**
 		* Memory tab of the Agent Extension panel: one compact toolbar row (scope
 		* switch, project select, search with a type-filter dropdown, and the action
-		* icons), the entry list beside the detail editor (create / edit / save /
-		* deactivate / archive / restore / two-step delete), the Markdown export,
-		* and a settings dialog (capture-injection switches and limits persist
-		* immediately; per-session statistics live there too).
+		* icons), the entry list as a full-width card grid, a wide detail dialog for
+		* create / edit / save / deactivate / archive / restore / two-step delete,
+		* the Markdown export, and a settings dialog (capture-injection switches and
+		* limits persist immediately; per-session statistics live there too).
 		*
 		* The view owns its local state (the hub snapshot only carries the section
 		* tab) and talks to the host's `/memory/*` routes through `api()`; all copy
@@ -6064,353 +6054,97 @@ window.__ModuleLoader__.load({
 				title: t("memoryScopeProject"),
 				description: t("memoryProjectEmpty")
 			});
-			else workspace = /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-				className: memory_module_css_default.workspace,
-				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
-					className: memory_module_css_default.listPane,
-					"aria-label": t("memoryListTitle"),
-					children: [
-						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-							className: memory_module_css_default.listHead,
-							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {
-								className: memory_module_css_default.sectionTitle,
-								children: t("memoryListTitle")
-							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-								className: memory_module_css_default.sectionCount,
-								children: String(entries.length)
-							})]
-						}),
-						stateError !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-							className: memory_module_css_default.errorBox,
-							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-								className: memory_module_css_default.errorText,
-								children: stateError
-							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
-								variant: "secondary",
-								icon: "refresh",
-								onClick: () => setStateToken((token) => token + 1),
-								children: t("memoryRetry")
-							})]
-						}) : null,
-						listError !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-							className: memory_module_css_default.errorBox,
-							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-								className: memory_module_css_default.errorText,
-								children: listError
-							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
-								variant: "secondary",
-								icon: "refresh",
-								onClick: () => setListToken((token) => token + 1),
-								children: t("memoryRetry")
-							})]
-						}) : null,
-						!listReady && listBusy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(LoadingBlock, { text: t("memoryLoading") }) : null,
-						listReady && listError === "" && entries.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(EmptyBlock, { description: appliedQuery !== "" || typeFilter !== "" ? t("memoryListEmptyFiltered") : t("memoryListEmpty") }) : null,
-						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-							className: memory_module_css_default.entryList,
-							children: entries.map((item) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-								type: "button",
-								className: memory_module_css_default.entryRow,
-								"aria-pressed": selectedId === item.id,
-								onClick: () => openEntry(item.id),
-								children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-									className: memory_module_css_default.entryMain,
+			else workspace = /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+				className: memory_module_css_default.listPane,
+				"aria-label": t("memoryListTitle"),
+				children: [
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						className: memory_module_css_default.listHead,
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {
+							className: memory_module_css_default.sectionTitle,
+							children: t("memoryListTitle")
+						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+							className: memory_module_css_default.sectionCount,
+							children: String(entries.length)
+						})]
+					}),
+					stateError !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						className: memory_module_css_default.errorBox,
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+							className: memory_module_css_default.errorText,
+							children: stateError
+						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+							variant: "secondary",
+							icon: "refresh",
+							onClick: () => setStateToken((token) => token + 1),
+							children: t("memoryRetry")
+						})]
+					}) : null,
+					listError !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						className: memory_module_css_default.errorBox,
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+							className: memory_module_css_default.errorText,
+							children: listError
+						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+							variant: "secondary",
+							icon: "refresh",
+							onClick: () => setListToken((token) => token + 1),
+							children: t("memoryRetry")
+						})]
+					}) : null,
+					!listReady && listBusy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(LoadingBlock, { text: t("memoryLoading") }) : null,
+					listReady && listError === "" && entries.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(EmptyBlock, { description: appliedQuery !== "" || typeFilter !== "" ? t("memoryListEmptyFiltered") : t("memoryListEmpty") }) : null,
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: memory_module_css_default.entryGrid,
+						children: entries.map((item) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
+							type: "button",
+							className: memory_module_css_default.entryCard,
+							onClick: () => openEntry(item.id),
+							children: [
+								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+									className: memory_module_css_default.entryTitleRow,
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										className: memory_module_css_default.entryName,
+										children: item.name
+									}), item.importance >= 80 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										className: memory_module_css_default.entryImportance,
+										title: t("memoryFieldImportance"),
+										children: String(item.importance)
+									}) : null]
+								}),
+								item.description !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+									className: memory_module_css_default.entryDesc,
+									children: item.description
+								}) : null,
+								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+									className: memory_module_css_default.entryMeta,
 									children: [
-										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-											className: memory_module_css_default.entryTitleRow,
-											children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: memory_module_css_default.entryName,
-												children: item.name
-											}), item.importance >= 80 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: memory_module_css_default.entryImportance,
-												title: t("memoryFieldImportance"),
-												children: String(item.importance)
-											}) : null]
+										/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
+											tone: "plain",
+											children: typeLabel(item.type, t)
 										}),
-										item.description !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-											className: memory_module_css_default.entryDesc,
-											children: item.description
+										item.status !== "active" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
+											tone: statusTone(item.status),
+											children: statusLabel(item.status, t)
 										}) : null,
-										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-											className: memory_module_css_default.entryMeta,
-											children: [
-												/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
-													tone: "plain",
-													children: typeLabel(item.type, t)
-												}),
-												item.status !== "active" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
-													tone: statusTone(item.status),
-													children: statusLabel(item.status, t)
-												}) : null,
-												item.tags.slice(0, 2).map((tag, index) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-													className: memory_module_css_default.entryTag,
-													children: tag
-												}, `${index}-${tag}`)),
-												item.tags.length > 2 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-													className: memory_module_css_default.entryTagMore,
-													children: `+${item.tags.length - 2}`
-												}) : null,
-												formatTime(item.updatedAt) !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-													className: memory_module_css_default.entryTime,
-													children: formatTime(item.updatedAt)
-												}) : null
-											]
-										})
+										item.tags.slice(0, 2).map((tag, index) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.entryTag,
+											children: tag
+										}, `${index}-${tag}`)),
+										item.tags.length > 2 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.entryTagMore,
+											children: `+${item.tags.length - 2}`
+										}) : null,
+										formatTime(item.updatedAt) !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.entryTime,
+											children: formatTime(item.updatedAt)
+										}) : null
 									]
 								})
-							}, item.id))
-						})
-					]
-				}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("section", {
-					className: memory_module_css_default.editorPane,
-					"aria-label": t("memoryEditTitle"),
-					children: !showEditor ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(EmptyBlock, { description: t("memorySelectHint") }) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: memory_module_css_default.editor,
-						children: [
-							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-								className: memory_module_css_default.editorHead,
-								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {
-									className: memory_module_css_default.sectionTitle,
-									children: creating ? t("memoryCreateTitle") : t("memoryEditTitle")
-								}), entry !== null && !creating ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
-									tone: statusTone(entry.status),
-									children: statusLabel(entry.status, t)
-								}) : null]
-							}),
-							detailStatus === "loading" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(LoadingBlock, { text: t("memoryLoading") }) : null,
-							detailStatus === "error" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-								className: memory_module_css_default.errorBox,
-								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-									className: memory_module_css_default.errorText,
-									children: detailError
-								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
-									variant: "secondary",
-									icon: "refresh",
-									onClick: () => {
-										if (selectedId !== null) openEntry(selectedId);
-									},
-									children: t("memoryRetry")
-								})]
-							}) : null,
-							detailStatus === "idle" || detailStatus === "ready" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-								style: columnGap(12),
-								children: [
-									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-										className: memory_module_css_default.formGrid,
-										children: [
-											/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
-												className: memory_module_css_default.field,
-												children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-													className: memory_module_css_default.fieldLabel,
-													children: t("memoryFieldName")
-												}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
-													className: memory_module_css_default.input,
-													type: "text",
-													"aria-label": t("memoryFieldName"),
-													value: form.name,
-													onChange: (event) => {
-														setForm((current) => ({
-															...current,
-															name: event.target.value
-														}));
-													}
-												})]
-											}),
-											/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
-												className: memory_module_css_default.field,
-												children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-													className: memory_module_css_default.fieldLabel,
-													children: t("memoryFieldDescription")
-												}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
-													className: memory_module_css_default.input,
-													type: "text",
-													"aria-label": t("memoryFieldDescription"),
-													value: form.description,
-													onChange: (event) => {
-														setForm((current) => ({
-															...current,
-															description: event.target.value
-														}));
-													}
-												})]
-											}),
-											/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
-												className: memory_module_css_default.field,
-												children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-													className: memory_module_css_default.fieldLabel,
-													children: t("memoryFieldType")
-												}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("select", {
-													className: memory_module_css_default.input,
-													"aria-label": t("memoryFieldType"),
-													value: form.type,
-													onChange: (event) => {
-														const next = TYPE_VALUES.find((value) => value === event.target.value) ?? "preference";
-														setForm((current) => ({
-															...current,
-															type: next
-														}));
-													},
-													children: TYPE_VALUES.map((value) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
-														value,
-														children: t(TYPE_LABEL_KEYS[value])
-													}, value))
-												})]
-											}),
-											/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
-												className: memory_module_css_default.field,
-												children: [
-													/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-														className: memory_module_css_default.fieldLabel,
-														children: t("memoryFieldImportance")
-													}),
-													/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
-														className: memory_module_css_default.input,
-														type: "number",
-														min: 0,
-														max: 100,
-														"aria-label": t("memoryFieldImportance"),
-														value: form.importance,
-														onChange: (event) => {
-															setForm((current) => ({
-																...current,
-																importance: integer(event.target.value, 0, 100, current.importance)
-															}));
-														}
-													}),
-													/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-														className: memory_module_css_default.fieldHint,
-														children: t("memoryImportanceHint")
-													})
-												]
-											})
-										]
-									}),
-									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
-										className: memory_module_css_default.field,
-										children: [
-											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: memory_module_css_default.fieldLabel,
-												children: t("memoryFieldTags")
-											}),
-											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
-												className: memory_module_css_default.input,
-												type: "text",
-												"aria-label": t("memoryFieldTags"),
-												value: form.tags,
-												onChange: (event) => {
-													setForm((current) => ({
-														...current,
-														tags: event.target.value
-													}));
-												}
-											}),
-											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: memory_module_css_default.fieldHint,
-												children: t("memoryTagsHint")
-											})
-										]
-									}),
-									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
-										className: memory_module_css_default.field,
-										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-											className: memory_module_css_default.fieldLabel,
-											children: t("memoryFieldContent")
-										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("textarea", {
-											className: memory_module_css_default.textarea,
-											rows: 8,
-											"aria-label": t("memoryFieldContent"),
-											value: form.content,
-											onChange: (event) => {
-												setForm((current) => ({
-													...current,
-													content: event.target.value
-												}));
-											}
-										})]
-									}),
-									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-										className: memory_module_css_default.formActions,
-										children: [
-											/* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Button, {
-												variant: "primary",
-												disabled: saveBusy || projectRequired,
-												onClick: () => {
-													saveEntry();
-												},
-												children: [saveBusy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Spinner, {}) : null, saveBusy ? t("memorySaving") : t("memorySave")]
-											}),
-											/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
-												variant: "secondary",
-												onClick: closeEditor,
-												children: t("cancel")
-											}),
-											entry !== null && !creating ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-												className: memory_module_css_default.formActionsRight,
-												children: [
-													entry.status !== "active" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
-														variant: "ghost",
-														icon: "check",
-														disabled: statusBusy,
-														onClick: () => {
-															changeStatus("active");
-														},
-														children: t("memoryRestore")
-													}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
-														variant: "ghost",
-														icon: "power",
-														disabled: statusBusy,
-														onClick: () => {
-															changeStatus("stale");
-														},
-														children: t("memoryDeactivate")
-													}),
-													entry.status !== "archived" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
-														variant: "ghost",
-														icon: "folder",
-														disabled: statusBusy,
-														onClick: () => {
-															changeStatus("archived");
-														},
-														children: t("memoryArchive")
-													}) : null,
-													confirmDelete ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-														className: memory_module_css_default.confirmArea,
-														role: "group",
-														"aria-label": t("memoryDelete"),
-														children: [
-															/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-																className: memory_module_css_default.confirmText,
-																children: t("memoryDeleteDescription", { name: entry.name })
-															}),
-															/* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Button, {
-																variant: "danger",
-																disabled: deleteBusy,
-																onClick: () => {
-																	removeEntry();
-																},
-																children: [deleteBusy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Spinner, {}) : null, deleteBusy ? t("memoryDeleting") : t("memoryDeleteConfirm")]
-															}),
-															/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
-																variant: "secondary",
-																onClick: () => setConfirmDelete(false),
-																children: t("cancel")
-															})
-														]
-													}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
-														variant: "danger",
-														icon: "trash",
-														onClick: () => setConfirmDelete(true),
-														children: t("memoryDelete")
-													})
-												]
-											}) : null
-										]
-									})
-								]
-							}) : null
-						]
+							]
+						}, item.id))
 					})
-				})]
+				]
 			});
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: `${panel_module_css_default.page} ${memory_module_css_default.view}`,
@@ -6575,6 +6309,255 @@ window.__ModuleLoader__.load({
 						]
 					}),
 					workspace,
+					stateReady && showEditor ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: memory_module_css_default.dialogPortal,
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(DialogShell, {
+							t,
+							title: creating ? t("memoryCreateTitle") : t("memoryEditTitle"),
+							wide: true,
+							onClose: closeEditor,
+							children: [
+								entry !== null && !creating ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+									className: memory_module_css_default.editorStatus,
+									children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
+										tone: statusTone(entry.status),
+										children: statusLabel(entry.status, t)
+									})
+								}) : null,
+								detailStatus === "loading" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(LoadingBlock, { text: t("memoryLoading") }) : null,
+								detailStatus === "error" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+									className: memory_module_css_default.errorBox,
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										className: memory_module_css_default.errorText,
+										children: detailError
+									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+										variant: "secondary",
+										icon: "refresh",
+										onClick: () => {
+											if (selectedId !== null) openEntry(selectedId);
+										},
+										children: t("memoryRetry")
+									})]
+								}) : null,
+								detailStatus === "idle" || detailStatus === "ready" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+									style: columnGap(12),
+									children: [
+										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+											className: memory_module_css_default.formGrid,
+											children: [
+												/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+													className: memory_module_css_default.field,
+													children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+														className: memory_module_css_default.fieldLabel,
+														children: t("memoryFieldName")
+													}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+														className: memory_module_css_default.input,
+														type: "text",
+														"aria-label": t("memoryFieldName"),
+														value: form.name,
+														onChange: (event) => {
+															setForm((current) => ({
+																...current,
+																name: event.target.value
+															}));
+														}
+													})]
+												}),
+												/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+													className: memory_module_css_default.field,
+													children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+														className: memory_module_css_default.fieldLabel,
+														children: t("memoryFieldDescription")
+													}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+														className: memory_module_css_default.input,
+														type: "text",
+														"aria-label": t("memoryFieldDescription"),
+														value: form.description,
+														onChange: (event) => {
+															setForm((current) => ({
+																...current,
+																description: event.target.value
+															}));
+														}
+													})]
+												}),
+												/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+													className: memory_module_css_default.field,
+													children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+														className: memory_module_css_default.fieldLabel,
+														children: t("memoryFieldType")
+													}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("select", {
+														className: memory_module_css_default.input,
+														"aria-label": t("memoryFieldType"),
+														value: form.type,
+														onChange: (event) => {
+															const next = TYPE_VALUES.find((value) => value === event.target.value) ?? "preference";
+															setForm((current) => ({
+																...current,
+																type: next
+															}));
+														},
+														children: TYPE_VALUES.map((value) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
+															value,
+															children: t(TYPE_LABEL_KEYS[value])
+														}, value))
+													})]
+												}),
+												/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+													className: memory_module_css_default.field,
+													children: [
+														/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+															className: memory_module_css_default.fieldLabel,
+															children: t("memoryFieldImportance")
+														}),
+														/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+															className: memory_module_css_default.input,
+															type: "number",
+															min: 0,
+															max: 100,
+															"aria-label": t("memoryFieldImportance"),
+															value: form.importance,
+															onChange: (event) => {
+																setForm((current) => ({
+																	...current,
+																	importance: integer(event.target.value, 0, 100, current.importance)
+																}));
+															}
+														}),
+														/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+															className: memory_module_css_default.fieldHint,
+															children: t("memoryImportanceHint")
+														})
+													]
+												})
+											]
+										}),
+										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+											className: memory_module_css_default.field,
+											children: [
+												/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+													className: memory_module_css_default.fieldLabel,
+													children: t("memoryFieldTags")
+												}),
+												/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+													className: memory_module_css_default.input,
+													type: "text",
+													"aria-label": t("memoryFieldTags"),
+													value: form.tags,
+													onChange: (event) => {
+														setForm((current) => ({
+															...current,
+															tags: event.target.value
+														}));
+													}
+												}),
+												/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+													className: memory_module_css_default.fieldHint,
+													children: t("memoryTagsHint")
+												})
+											]
+										}),
+										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+											className: memory_module_css_default.field,
+											children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+												className: memory_module_css_default.fieldLabel,
+												children: t("memoryFieldContent")
+											}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("textarea", {
+												className: memory_module_css_default.textarea,
+												rows: 8,
+												"aria-label": t("memoryFieldContent"),
+												value: form.content,
+												onChange: (event) => {
+													setForm((current) => ({
+														...current,
+														content: event.target.value
+													}));
+												}
+											})]
+										}),
+										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+											className: memory_module_css_default.formActions,
+											children: [
+												/* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Button, {
+													variant: "primary",
+													disabled: saveBusy || projectRequired,
+													onClick: () => {
+														saveEntry();
+													},
+													children: [saveBusy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Spinner, {}) : null, saveBusy ? t("memorySaving") : t("memorySave")]
+												}),
+												/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+													variant: "secondary",
+													onClick: closeEditor,
+													children: t("cancel")
+												}),
+												entry !== null && !creating ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+													className: memory_module_css_default.formActionsRight,
+													children: [
+														entry.status !== "active" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+															variant: "ghost",
+															icon: "check",
+															disabled: statusBusy,
+															onClick: () => {
+																changeStatus("active");
+															},
+															children: t("memoryRestore")
+														}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+															variant: "ghost",
+															icon: "power",
+															disabled: statusBusy,
+															onClick: () => {
+																changeStatus("stale");
+															},
+															children: t("memoryDeactivate")
+														}),
+														entry.status !== "archived" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+															variant: "ghost",
+															icon: "folder",
+															disabled: statusBusy,
+															onClick: () => {
+																changeStatus("archived");
+															},
+															children: t("memoryArchive")
+														}) : null,
+														confirmDelete ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+															className: memory_module_css_default.confirmArea,
+															role: "group",
+															"aria-label": t("memoryDelete"),
+															children: [
+																/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+																	className: memory_module_css_default.confirmText,
+																	children: t("memoryDeleteDescription", { name: entry.name })
+																}),
+																/* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Button, {
+																	variant: "danger",
+																	disabled: deleteBusy,
+																	onClick: () => {
+																		removeEntry();
+																	},
+																	children: [deleteBusy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Spinner, {}) : null, deleteBusy ? t("memoryDeleting") : t("memoryDeleteConfirm")]
+																}),
+																/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+																	variant: "secondary",
+																	onClick: () => setConfirmDelete(false),
+																	children: t("cancel")
+																})
+															]
+														}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+															variant: "danger",
+															icon: "trash",
+															onClick: () => setConfirmDelete(true),
+															children: t("memoryDelete")
+														})
+													]
+												}) : null
+											]
+										})
+									]
+								}) : null
+							]
+						})
+					}) : null,
 					stateReady && settingsOpen ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: memory_module_css_default.dialogPortal,
 						children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(DialogShell, {

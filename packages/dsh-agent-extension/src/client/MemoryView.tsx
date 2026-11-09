@@ -1,10 +1,10 @@
 /**
  * Memory tab of the Agent Extension panel: one compact toolbar row (scope
  * switch, project select, search with a type-filter dropdown, and the action
- * icons), the entry list beside the detail editor (create / edit / save /
- * deactivate / archive / restore / two-step delete), the Markdown export,
- * and a settings dialog (capture-injection switches and limits persist
- * immediately; per-session statistics live there too).
+ * icons), the entry list as a full-width card grid, a wide detail dialog for
+ * create / edit / save / deactivate / archive / restore / two-step delete,
+ * the Markdown export, and a settings dialog (capture-injection switches and
+ * limits persist immediately; per-session statistics live there too).
  *
  * The view owns its local state (the hub snapshot only carries the section
  * tab) and talks to the host's `/memory/*` routes through `api()`; all copy
@@ -671,231 +671,73 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
     )
   } else {
     workspace = (
-      <div className={css.workspace}>
-        <section className={css.listPane} aria-label={t('memoryListTitle')}>
-          <div className={css.listHead}>
-            <h2 className={css.sectionTitle}>{t('memoryListTitle')}</h2>
-            <span className={css.sectionCount}>{String(entries.length)}</span>
-          </div>
-          {stateError !== ''
-            ? (
-              <div className={css.errorBox}>
-                <span className={css.errorText}>{stateError}</span>
-                <Button variant="secondary" icon="refresh" onClick={() => setStateToken(token => token + 1)}>
-                  {t('memoryRetry')}
-                </Button>
-              </div>
-            )
-            : null}
-          {listError !== ''
-            ? (
-              <div className={css.errorBox}>
-                <span className={css.errorText}>{listError}</span>
-                <Button variant="secondary" icon="refresh" onClick={() => setListToken(token => token + 1)}>
-                  {t('memoryRetry')}
-                </Button>
-              </div>
-            )
-            : null}
-          {!listReady && listBusy ? <LoadingBlock text={t('memoryLoading')} /> : null}
-          {listReady && listError === '' && entries.length === 0
-            ? (
-              <EmptyBlock
-                description={appliedQuery !== '' || typeFilter !== '' ? t('memoryListEmptyFiltered') : t('memoryListEmpty')}
-              />
-            )
-            : null}
-          <div className={css.entryList}>
-            {entries.map(item => (
-              <button
-                key={item.id}
-                type="button"
-                className={css.entryRow}
-                aria-pressed={selectedId === item.id}
-                onClick={() => openEntry(item.id)}
-              >
-                <span className={css.entryMain}>
-                  <span className={css.entryTitleRow}>
-                    <span className={css.entryName}>{item.name}</span>
-                    {item.importance >= 80
-                      ? <span className={css.entryImportance} title={t('memoryFieldImportance')}>{String(item.importance)}</span>
-                      : null}
-                  </span>
-                  {item.description !== '' ? <span className={css.entryDesc}>{item.description}</span> : null}
-                  <span className={css.entryMeta}>
-                    <Badge tone="plain">{typeLabel(item.type, t)}</Badge>
-                    {item.status !== 'active'
-                      ? <Badge tone={statusTone(item.status)}>{statusLabel(item.status, t)}</Badge>
-                      : null}
-                    {item.tags.slice(0, 2).map((tag, index) => (
-                      <span key={`${index}-${tag}`} className={css.entryTag}>{tag}</span>
-                    ))}
-                    {item.tags.length > 2
-                      ? <span className={css.entryTagMore}>{`+${item.tags.length - 2}`}</span>
-                      : null}
-                    {formatTime(item.updatedAt) !== ''
-                      ? <span className={css.entryTime}>{formatTime(item.updatedAt)}</span>
-                      : null}
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className={css.editorPane} aria-label={t('memoryEditTitle')}>
-          {!showEditor
-            ? <EmptyBlock description={t('memorySelectHint')} />
-            : (
-              <div className={css.editor}>
-                <div className={css.editorHead}>
-                  <h2 className={css.sectionTitle}>{creating ? t('memoryCreateTitle') : t('memoryEditTitle')}</h2>
-                  {entry !== null && !creating
-                    ? <Badge tone={statusTone(entry.status)}>{statusLabel(entry.status, t)}</Badge>
-                    : null}
-                </div>
-                {detailStatus === 'loading' ? <LoadingBlock text={t('memoryLoading')} /> : null}
-                {detailStatus === 'error'
-                  ? (
-                    <div className={css.errorBox}>
-                      <span className={css.errorText}>{detailError}</span>
-                      <Button
-                        variant="secondary"
-                        icon="refresh"
-                        onClick={() => { if (selectedId !== null) openEntry(selectedId) }}
-                      >
-                        {t('memoryRetry')}
-                      </Button>
-                    </div>
-                  )
+      <section className={css.listPane} aria-label={t('memoryListTitle')}>
+        <div className={css.listHead}>
+          <h2 className={css.sectionTitle}>{t('memoryListTitle')}</h2>
+          <span className={css.sectionCount}>{String(entries.length)}</span>
+        </div>
+        {stateError !== ''
+          ? (
+            <div className={css.errorBox}>
+              <span className={css.errorText}>{stateError}</span>
+              <Button variant="secondary" icon="refresh" onClick={() => setStateToken(token => token + 1)}>
+                {t('memoryRetry')}
+              </Button>
+            </div>
+          )
+          : null}
+        {listError !== ''
+          ? (
+            <div className={css.errorBox}>
+              <span className={css.errorText}>{listError}</span>
+              <Button variant="secondary" icon="refresh" onClick={() => setListToken(token => token + 1)}>
+                {t('memoryRetry')}
+              </Button>
+            </div>
+          )
+          : null}
+        {!listReady && listBusy ? <LoadingBlock text={t('memoryLoading')} /> : null}
+        {listReady && listError === '' && entries.length === 0
+          ? (
+            <EmptyBlock
+              description={appliedQuery !== '' || typeFilter !== '' ? t('memoryListEmptyFiltered') : t('memoryListEmpty')}
+            />
+          )
+          : null}
+        <div className={css.entryGrid}>
+          {entries.map(item => (
+            <button
+              key={item.id}
+              type="button"
+              className={css.entryCard}
+              onClick={() => openEntry(item.id)}
+            >
+              <span className={css.entryTitleRow}>
+                <span className={css.entryName}>{item.name}</span>
+                {item.importance >= 80
+                  ? <span className={css.entryImportance} title={t('memoryFieldImportance')}>{String(item.importance)}</span>
                   : null}
-                {detailStatus === 'idle' || detailStatus === 'ready'
-                  ? (
-                    <div style={columnGap(12)}>
-                      <div className={css.formGrid}>
-                        <label className={css.field}>
-                          <span className={css.fieldLabel}>{t('memoryFieldName')}</span>
-                          <input
-                            className={css.input}
-                            type="text"
-                            aria-label={t('memoryFieldName')}
-                            value={form.name}
-                            onChange={(event) => { setForm(current => ({ ...current, name: event.target.value })) }}
-                          />
-                        </label>
-                        <label className={css.field}>
-                          <span className={css.fieldLabel}>{t('memoryFieldDescription')}</span>
-                          <input
-                            className={css.input}
-                            type="text"
-                            aria-label={t('memoryFieldDescription')}
-                            value={form.description}
-                            onChange={(event) => { setForm(current => ({ ...current, description: event.target.value })) }}
-                          />
-                        </label>
-                        <label className={css.field}>
-                          <span className={css.fieldLabel}>{t('memoryFieldType')}</span>
-                          <select
-                            className={css.input}
-                            aria-label={t('memoryFieldType')}
-                            value={form.type}
-                            onChange={(event) => {
-                              const next = TYPE_VALUES.find(value => value === event.target.value) ?? 'preference'
-                              setForm(current => ({ ...current, type: next }))
-                            }}
-                          >
-                            {TYPE_VALUES.map(value => <option key={value} value={value}>{t(TYPE_LABEL_KEYS[value])}</option>)}
-                          </select>
-                        </label>
-                        <label className={css.field}>
-                          <span className={css.fieldLabel}>{t('memoryFieldImportance')}</span>
-                          <input
-                            className={css.input}
-                            type="number"
-                            min={0}
-                            max={100}
-                            aria-label={t('memoryFieldImportance')}
-                            value={form.importance}
-                            onChange={(event) => {
-                              setForm(current => ({ ...current, importance: integer(event.target.value, 0, 100, current.importance) }))
-                            }}
-                          />
-                          <span className={css.fieldHint}>{t('memoryImportanceHint')}</span>
-                        </label>
-                      </div>
-                      <label className={css.field}>
-                        <span className={css.fieldLabel}>{t('memoryFieldTags')}</span>
-                        <input
-                          className={css.input}
-                          type="text"
-                          aria-label={t('memoryFieldTags')}
-                          value={form.tags}
-                          onChange={(event) => { setForm(current => ({ ...current, tags: event.target.value })) }}
-                        />
-                        <span className={css.fieldHint}>{t('memoryTagsHint')}</span>
-                      </label>
-                      <label className={css.field}>
-                        <span className={css.fieldLabel}>{t('memoryFieldContent')}</span>
-                        <textarea
-                          className={css.textarea}
-                          rows={8}
-                          aria-label={t('memoryFieldContent')}
-                          value={form.content}
-                          onChange={(event) => { setForm(current => ({ ...current, content: event.target.value })) }}
-                        />
-                      </label>
-                      <div className={css.formActions}>
-                        <Button variant="primary" disabled={saveBusy || projectRequired} onClick={() => { void saveEntry() }}>
-                          {saveBusy ? <Spinner /> : null}{saveBusy ? t('memorySaving') : t('memorySave')}
-                        </Button>
-                        <Button variant="secondary" onClick={closeEditor}>{t('cancel')}</Button>
-                        {entry !== null && !creating
-                          ? (
-                            <span className={css.formActionsRight}>
-                              {entry.status !== 'active'
-                                ? (
-                                  <Button variant="ghost" icon="check" disabled={statusBusy} onClick={() => { void changeStatus('active') }}>
-                                    {t('memoryRestore')}
-                                  </Button>
-                                )
-                                : (
-                                  <Button variant="ghost" icon="power" disabled={statusBusy} onClick={() => { void changeStatus('stale') }}>
-                                    {t('memoryDeactivate')}
-                                  </Button>
-                                )}
-                              {entry.status !== 'archived'
-                                ? (
-                                  <Button variant="ghost" icon="folder" disabled={statusBusy} onClick={() => { void changeStatus('archived') }}>
-                                    {t('memoryArchive')}
-                                  </Button>
-                                )
-                                : null}
-                              {confirmDelete
-                                ? (
-                                  <span className={css.confirmArea} role="group" aria-label={t('memoryDelete')}>
-                                    <span className={css.confirmText}>{t('memoryDeleteDescription', { name: entry.name })}</span>
-                                    <Button variant="danger" disabled={deleteBusy} onClick={() => { void removeEntry() }}>
-                                      {deleteBusy ? <Spinner /> : null}{deleteBusy ? t('memoryDeleting') : t('memoryDeleteConfirm')}
-                                    </Button>
-                                    <Button variant="secondary" onClick={() => setConfirmDelete(false)}>{t('cancel')}</Button>
-                                  </span>
-                                )
-                                : (
-                                  <Button variant="danger" icon="trash" onClick={() => setConfirmDelete(true)}>
-                                    {t('memoryDelete')}
-                                  </Button>
-                                )}
-                            </span>
-                          )
-                          : null}
-                      </div>
-                    </div>
-                  )
+              </span>
+              {item.description !== '' ? <span className={css.entryDesc}>{item.description}</span> : null}
+              <span className={css.entryMeta}>
+                <Badge tone="plain">{typeLabel(item.type, t)}</Badge>
+                {item.status !== 'active'
+                  ? <Badge tone={statusTone(item.status)}>{statusLabel(item.status, t)}</Badge>
                   : null}
-              </div>
-            )}
-        </section>
-      </div>
+                {item.tags.slice(0, 2).map((tag, index) => (
+                  <span key={`${index}-${tag}`} className={css.entryTag}>{tag}</span>
+                ))}
+                {item.tags.length > 2
+                  ? <span className={css.entryTagMore}>{`+${item.tags.length - 2}`}</span>
+                  : null}
+                {formatTime(item.updatedAt) !== ''
+                  ? <span className={css.entryTime}>{formatTime(item.updatedAt)}</span>
+                  : null}
+              </span>
+            </button>
+          ))}
+        </div>
+      </section>
     )
   }
 
@@ -1029,6 +871,165 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
       </header>
 
       {workspace}
+
+      {stateReady && showEditor
+        ? (
+          <div className={css.dialogPortal}>
+            <DialogShell
+              t={t}
+              title={creating ? t('memoryCreateTitle') : t('memoryEditTitle')}
+              wide
+              onClose={closeEditor}
+            >
+              {entry !== null && !creating
+                ? (
+                  <div className={css.editorStatus}>
+                    <Badge tone={statusTone(entry.status)}>{statusLabel(entry.status, t)}</Badge>
+                  </div>
+                )
+                : null}
+              {detailStatus === 'loading' ? <LoadingBlock text={t('memoryLoading')} /> : null}
+              {detailStatus === 'error'
+                ? (
+                  <div className={css.errorBox}>
+                    <span className={css.errorText}>{detailError}</span>
+                    <Button
+                      variant="secondary"
+                      icon="refresh"
+                      onClick={() => { if (selectedId !== null) openEntry(selectedId) }}
+                    >
+                      {t('memoryRetry')}
+                    </Button>
+                  </div>
+                )
+                : null}
+              {detailStatus === 'idle' || detailStatus === 'ready'
+                ? (
+                  <div style={columnGap(12)}>
+                    <div className={css.formGrid}>
+                      <label className={css.field}>
+                        <span className={css.fieldLabel}>{t('memoryFieldName')}</span>
+                        <input
+                          className={css.input}
+                          type="text"
+                          aria-label={t('memoryFieldName')}
+                          value={form.name}
+                          onChange={(event) => { setForm(current => ({ ...current, name: event.target.value })) }}
+                        />
+                      </label>
+                      <label className={css.field}>
+                        <span className={css.fieldLabel}>{t('memoryFieldDescription')}</span>
+                        <input
+                          className={css.input}
+                          type="text"
+                          aria-label={t('memoryFieldDescription')}
+                          value={form.description}
+                          onChange={(event) => { setForm(current => ({ ...current, description: event.target.value })) }}
+                        />
+                      </label>
+                      <label className={css.field}>
+                        <span className={css.fieldLabel}>{t('memoryFieldType')}</span>
+                        <select
+                          className={css.input}
+                          aria-label={t('memoryFieldType')}
+                          value={form.type}
+                          onChange={(event) => {
+                            const next = TYPE_VALUES.find(value => value === event.target.value) ?? 'preference'
+                            setForm(current => ({ ...current, type: next }))
+                          }}
+                        >
+                          {TYPE_VALUES.map(value => <option key={value} value={value}>{t(TYPE_LABEL_KEYS[value])}</option>)}
+                        </select>
+                      </label>
+                      <label className={css.field}>
+                        <span className={css.fieldLabel}>{t('memoryFieldImportance')}</span>
+                        <input
+                          className={css.input}
+                          type="number"
+                          min={0}
+                          max={100}
+                          aria-label={t('memoryFieldImportance')}
+                          value={form.importance}
+                          onChange={(event) => {
+                            setForm(current => ({ ...current, importance: integer(event.target.value, 0, 100, current.importance) }))
+                          }}
+                        />
+                        <span className={css.fieldHint}>{t('memoryImportanceHint')}</span>
+                      </label>
+                    </div>
+                    <label className={css.field}>
+                      <span className={css.fieldLabel}>{t('memoryFieldTags')}</span>
+                      <input
+                        className={css.input}
+                        type="text"
+                        aria-label={t('memoryFieldTags')}
+                        value={form.tags}
+                        onChange={(event) => { setForm(current => ({ ...current, tags: event.target.value })) }}
+                      />
+                      <span className={css.fieldHint}>{t('memoryTagsHint')}</span>
+                    </label>
+                    <label className={css.field}>
+                      <span className={css.fieldLabel}>{t('memoryFieldContent')}</span>
+                      <textarea
+                        className={css.textarea}
+                        rows={8}
+                        aria-label={t('memoryFieldContent')}
+                        value={form.content}
+                        onChange={(event) => { setForm(current => ({ ...current, content: event.target.value })) }}
+                      />
+                    </label>
+                    <div className={css.formActions}>
+                      <Button variant="primary" disabled={saveBusy || projectRequired} onClick={() => { void saveEntry() }}>
+                        {saveBusy ? <Spinner /> : null}{saveBusy ? t('memorySaving') : t('memorySave')}
+                      </Button>
+                      <Button variant="secondary" onClick={closeEditor}>{t('cancel')}</Button>
+                      {entry !== null && !creating
+                        ? (
+                          <span className={css.formActionsRight}>
+                            {entry.status !== 'active'
+                              ? (
+                                <Button variant="ghost" icon="check" disabled={statusBusy} onClick={() => { void changeStatus('active') }}>
+                                  {t('memoryRestore')}
+                                </Button>
+                              )
+                              : (
+                                <Button variant="ghost" icon="power" disabled={statusBusy} onClick={() => { void changeStatus('stale') }}>
+                                  {t('memoryDeactivate')}
+                                </Button>
+                              )}
+                            {entry.status !== 'archived'
+                              ? (
+                                <Button variant="ghost" icon="folder" disabled={statusBusy} onClick={() => { void changeStatus('archived') }}>
+                                  {t('memoryArchive')}
+                                </Button>
+                              )
+                              : null}
+                            {confirmDelete
+                              ? (
+                                <span className={css.confirmArea} role="group" aria-label={t('memoryDelete')}>
+                                  <span className={css.confirmText}>{t('memoryDeleteDescription', { name: entry.name })}</span>
+                                  <Button variant="danger" disabled={deleteBusy} onClick={() => { void removeEntry() }}>
+                                    {deleteBusy ? <Spinner /> : null}{deleteBusy ? t('memoryDeleting') : t('memoryDeleteConfirm')}
+                                  </Button>
+                                  <Button variant="secondary" onClick={() => setConfirmDelete(false)}>{t('cancel')}</Button>
+                                </span>
+                              )
+                              : (
+                                <Button variant="danger" icon="trash" onClick={() => setConfirmDelete(true)}>
+                                  {t('memoryDelete')}
+                                </Button>
+                              )}
+                          </span>
+                        )
+                        : null}
+                    </div>
+                  </div>
+                )
+                : null}
+            </DialogShell>
+          </div>
+        )
+        : null}
 
       {stateReady && settingsOpen
         ? (
