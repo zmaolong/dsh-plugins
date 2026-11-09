@@ -14,6 +14,7 @@ import { MarketView } from '../src/client/MarketView.tsx'
 import { DetailView } from '../src/client/DetailView.tsx'
 import { StoreCard } from '../src/client/StoreCard.tsx'
 import { Switch } from '../src/client/Switch.tsx'
+import { SearchBox } from '../src/client/controls.tsx'
 import { Menu } from '../src/client/Menu.tsx'
 import { DialogShell } from '../src/client/dialogs.tsx'
 import { OverlayHost } from '../src/client/OverlayHost.tsx'
@@ -67,6 +68,33 @@ describe('Switch', () => {
     render(<Switch checked={false} onChange={onChange} label="s" disabled />)
     fireEvent.click(screen.getByRole('switch', { name: 's' }))
     expect(onChange).not.toHaveBeenCalled()
+  })
+})
+
+describe('SearchBox (compact trigger + floating input)', () => {
+  it('shows only the icon trigger until clicked, reports typing, closes on Escape and restores focus', () => {
+    const onChange = vi.fn()
+    render(<SearchBox value="" onChange={onChange} placeholder="搜索插件" clearable clearLabel="清除搜索" />)
+    const trigger = screen.getByRole('button', { name: '搜索插件' })
+    expect(trigger.getAttribute('aria-expanded')).toBe('false')
+    expect(screen.queryByPlaceholderText('搜索插件')).toBeNull()
+    fireEvent.click(trigger)
+    expect(trigger.getAttribute('aria-expanded')).toBe('true')
+    const input = screen.getByPlaceholderText('搜索插件')
+    expect(document.activeElement).toBe(input)
+    fireEvent.change(input, { target: { value: 'abc' } })
+    expect(onChange).toHaveBeenCalledWith('abc')
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByPlaceholderText('搜索插件')).toBeNull()
+    expect(document.activeElement).toBe(trigger)
+  })
+
+  it('offers clearing while a query is present and keeps it after closing', () => {
+    const onChange = vi.fn()
+    render(<SearchBox value="demo" onChange={onChange} placeholder="搜索插件" clearable clearLabel="清除搜索" />)
+    fireEvent.click(screen.getByRole('button', { name: '搜索插件' }))
+    fireEvent.click(screen.getByRole('button', { name: '清除搜索' }))
+    expect(onChange).toHaveBeenCalledWith('')
   })
 })
 
@@ -193,6 +221,7 @@ describe('Panel', () => {
     })
     render(<Panel useHub={useHub} actions={controller.actions} t={t} />)
     expect(screen.getByText(/迁移失败/u)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: t('searchPlaceholder') }))
     expect(screen.getByPlaceholderText(t('searchPlaceholder'))).toBeTruthy()
   })
 
@@ -236,6 +265,7 @@ describe('Panel', () => {
       expect(screen.getByText(t('comingSoon'))).toBeTruthy()
       expect(screen.getByText(placeholder)).toBeTruthy()
       expect(screen.queryByPlaceholderText(t('searchPlaceholder'))).toBeNull()
+      expect(screen.queryByRole('button', { name: t('searchPlaceholder') })).toBeNull()
     }
   })
 })
@@ -280,6 +310,9 @@ describe('StoreView', () => {
     render(<StoreView useHub={useHub} actions={controller.actions} t={t} />)
     const sources = screen.getByRole('tab', { name: t('tabSources') })
     expect(sources.getAttribute('aria-selected')).toBe('true')
+    const search = screen.getByRole('button', { name: t('searchPlaceholder') })
+    expect(search.getAttribute('aria-expanded')).toBe('false')
+    fireEvent.click(search)
     expect(screen.getByPlaceholderText(t('searchPlaceholder'))).toBeTruthy()
     fireEvent.click(screen.getByRole('tab', { name: t('tabRecommended') }))
     expect(setStoreTab).toHaveBeenCalledWith('recommended')
@@ -306,6 +339,7 @@ describe('StoreView', () => {
     expect(screen.getByText('Superpowers 技能合集')).toBeTruthy()
     expect(screen.getByText('Matt Pocock 技能市场')).toBeTruthy()
     expect(screen.queryByPlaceholderText(t('searchPlaceholder'))).toBeNull()
+    expect(screen.queryByRole('button', { name: t('searchPlaceholder') })).toBeNull()
     const row = within(screen.getByRole('tabpanel')).getByRole('button', { name: /claude-plugins-official/u })
     fireEvent.click(within(row).getByRole('button', { name: t('add') }))
     expect(addRecommendedSource).toHaveBeenCalledWith({

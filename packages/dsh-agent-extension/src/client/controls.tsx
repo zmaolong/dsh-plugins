@@ -8,9 +8,10 @@
  * @module dsh-agent-extension/client/controls
  */
 
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import clsx from 'clsx'
 import { Icon } from './icons.tsx'
+import { useEscapeClose, useFocusRestore } from './overlay-hooks.ts'
 import { iconSrc, type ResolvedDisplay } from './presentation.ts'
 import css from './controls.module.css'
 
@@ -96,8 +97,11 @@ export function UpdateBadge({ label }: { label: string }): ReactNode {
 }
 
 /**
- * Search input with an optional clear affordance.
- * @param props.clearable - show the clear button while text is present.
+ * Compact search control: an outlined icon button with the same 32px geometry
+ * as the toolbar icon buttons; clicking it floats an input field below the
+ * trigger. The trigger stays marked while a query is active, closing keeps the
+ * query, and focus returns to the trigger on close.
+ * @param props.clearable - show a clear affordance while text is present.
  */
 export function SearchBox({ value, onChange, placeholder, clearable = false, clearLabel }: {
   value: string
@@ -106,28 +110,64 @@ export function SearchBox({ value, onChange, placeholder, clearable = false, cle
   clearable?: boolean
   clearLabel?: string | undefined
 }): ReactNode {
-  const clearableNow = clearable && value !== ''
+  const [open, setOpen] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  const popoverId = useId()
+  useEscapeClose(open, () => { setOpen(false) })
+  useFocusRestore(triggerRef, open)
+  useEffect(() => {
+    if (!open) return
+    const input = inputRef.current
+    if (!input) return
+    input.focus()
+    input.select()
+  }, [open])
+  const filtering = value !== ''
   return (
-    <div className={clsx(css.search, clearableNow && css.searchClearable)}>
-      <Icon name="search" size={16} />
-      <input
-        type="search"
-        value={value}
-        placeholder={placeholder}
+    <div className={css.search}>
+      <button
+        type="button"
+        ref={triggerRef}
+        className={clsx(css.buttonOutline, filtering && css.searchActive)}
+        title={placeholder}
         aria-label={placeholder}
-        onChange={event => onChange(event.target.value)}
-      />
-      {clearableNow
+        aria-expanded={open}
+        aria-controls={open ? popoverId : undefined}
+        onClick={() => { setOpen(current => !current) }}
+      >
+        <Icon name="search" size={16} />
+      </button>
+      {open
         ? (
-          <button
-            type="button"
-            className={css.searchClear}
-            title={clearLabel}
-            aria-label={clearLabel}
-            onClick={() => onChange('')}
-          >
-            <Icon name="x" size={14} />
-          </button>
+          <div>
+            <div className={css.searchBackdrop} onClick={() => { setOpen(false) }} />
+            <div id={popoverId} className={css.searchPopover}>
+              <Icon name="search" size={16} />
+              <input
+                ref={inputRef}
+                type="search"
+                className={css.searchInput}
+                value={value}
+                placeholder={placeholder}
+                aria-label={placeholder}
+                onChange={event => onChange(event.target.value)}
+              />
+              {clearable && filtering
+                ? (
+                  <button
+                    type="button"
+                    className={css.searchClear}
+                    title={clearLabel}
+                    aria-label={clearLabel}
+                    onClick={() => onChange('')}
+                  >
+                    <Icon name="x" size={14} />
+                  </button>
+                )
+                : null}
+            </div>
+          </div>
         )
         : null}
     </div>

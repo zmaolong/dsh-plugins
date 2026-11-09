@@ -206,6 +206,8 @@ export function StoreView({ useHub, actions, t }: ViewProps): ReactNode {
                 value={query}
                 onChange={actions.setQuery}
                 placeholder={t('searchPlaceholder')}
+                clearable
+                clearLabel={t('clearSearch')}
               />
             )
             : null}

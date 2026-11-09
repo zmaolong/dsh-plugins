@@ -2546,8 +2546,37 @@ window.__ModuleLoader__.load({
 				})
 			});
 		}
+		// src/client/overlay-hooks.ts
+		/**
+		* Overlay behavior hooks shared by menus and dialogs: Escape-close (capture
+		* phase) and focus restore to the trigger on close.
+		*
+		* @module dsh-agent-extension/client/overlay-hooks
+		*/
+		/** While open, close on Escape (capture phase so the host shortcut does not double-fire). */
+		function useEscapeClose(open, onClose) {
+			(0, react.useEffect)(() => {
+				if (!open || typeof document === "undefined" || typeof document.addEventListener !== "function") return void 0;
+				const onKeyDown = (event) => {
+					if (event.key === "Escape") {
+						event.stopPropagation();
+						onClose();
+					}
+				};
+				document.addEventListener("keydown", onKeyDown, true);
+				return () => document.removeEventListener("keydown", onKeyDown, true);
+			}, [open, onClose]);
+		}
+		/** Restore focus to the trigger on the open → closed transition. */
+		function useFocusRestore(triggerRef, open) {
+			const wasOpen = (0, react.useRef)(false);
+			(0, react.useEffect)(() => {
+				if (wasOpen.current && !open && triggerRef.current && typeof triggerRef.current.focus === "function") triggerRef.current.focus();
+				wasOpen.current = open;
+			}, [open, triggerRef]);
+		}
 		// \0dsh-css:E:\workspace\dsh-plugins\packages\dsh-agent-extension\src\client\controls.module.css.mjs
-		const css$8 = "._5k4UIq_button{box-sizing:border-box;border-radius:var(--dsw-radius-md);height:36px;color:var(--dsw-alias-label-primary);font:inherit;white-space:nowrap;cursor:pointer;background:0 0;border:0;justify-content:center;align-items:center;gap:6px;padding:0 14px;font-size:14px;font-weight:500;line-height:22px;transition:background .12s,color .12s,opacity .12s;display:inline-flex}._5k4UIq_button:disabled{cursor:not-allowed;opacity:.4}._5k4UIq_button:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}._5k4UIq_primary{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground)}._5k4UIq_secondary{background:var(--dsw-alias-bg-layer-3);box-shadow:inset 0 0 0 var(--dsh-hairline-width,.5px) var(--dsw-alias-border-l3)}._5k4UIq_danger{background:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-label-primary-foreground)}@media (hover:hover){._5k4UIq_primary:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}._5k4UIq_secondary:hover:not(:disabled),._5k4UIq_ghost:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}._5k4UIq_danger:hover:not(:disabled){background:var(--dsw-alias-state-error-secondary)}}._5k4UIq_primary:active:not(:disabled),._5k4UIq_secondary:active:not(:disabled),._5k4UIq_ghost:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active)}._5k4UIq_pill{corner-shape:round;border-radius:999px}._5k4UIq_iconButton{box-sizing:border-box;border-radius:var(--dsw-radius-sm);width:32px;height:32px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;justify-content:center;align-items:center;display:inline-flex}._5k4UIq_iconDanger{color:var(--dsw-alias-state-error-primary)}@media (hover:hover){._5k4UIq_iconButton:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}._5k4UIq_iconButton:disabled{opacity:.45;cursor:not-allowed}._5k4UIq_iconButton:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}._5k4UIq_buttonOutline{box-sizing:border-box;border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:32px;height:32px;box-shadow:inset 0 0 0 var(--dsh-hairline-width,.5px) var(--dsw-alias-border-l3);color:var(--dsw-alias-label-primary);cursor:pointer;border:.5px solid #0000;justify-content:center;align-items:center;padding:0;display:inline-flex}._5k4UIq_buttonOutline:disabled{opacity:.4;cursor:not-allowed}._5k4UIq_buttonOutline:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){._5k4UIq_buttonOutline:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}}._5k4UIq_badge{border:.5px solid var(--dsw-alias-border-l3);corner-shape:round;white-space:nowrap;height:20px;color:var(--dsw-alias-label-secondary);background:0 0;border-radius:999px;flex:none;align-items:center;gap:4px;padding:0 8px;font-size:11px;line-height:1;display:inline-flex}._5k4UIq_badgeSuccess{background:var(--dsw-alias-state-success-tertiary);color:var(--dsw-alias-state-success-primary);border-color:#0000}._5k4UIq_badgeWarn{background:var(--dsw-alias-state-warn-tertiary);color:var(--dsw-alias-state-warn-primary);border-color:#0000}._5k4UIq_badgeError{background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 12%, transparent);color:var(--dsw-alias-state-error-primary);border-color:#0000}._5k4UIq_badgePlain{background:var(--dsw-alias-interactive-bg-hover);border-color:#0000}._5k4UIq_updateBadge{corner-shape:round;white-space:nowrap;height:20px;color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;flex:none;align-items:center;gap:4px;padding:0 8px;font-size:11px;line-height:1;display:inline-flex}._5k4UIq_spinner{border:2px solid color-mix(in srgb, currentColor 30%, transparent);corner-shape:round;border-top-color:currentColor;border-radius:50%;flex:none;width:14px;height:14px;animation:.8s linear infinite _5k4UIq_spin;display:inline-block}._5k4UIq_spinnerLarge{border-width:2.5px;width:20px;height:20px}@keyframes _5k4UIq_spin{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){._5k4UIq_spinner{animation:none}}._5k4UIq_search{flex:14rem;align-items:center;min-width:0;max-width:320px;margin-left:auto;display:flex;position:relative}._5k4UIq_search>svg{color:var(--dsw-alias-label-tertiary);pointer-events:none;position:absolute;left:12px}._5k4UIq_search input{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-2);width:100%;height:36px;color:var(--dsw-alias-label-primary);font:inherit;padding:0 12px 0 36px;font-size:14px}._5k4UIq_search input::placeholder{color:var(--dsw-alias-label-tertiary)}@media (hover:hover){._5k4UIq_search input:hover{border-color:var(--dsw-alias-border-l4)}}._5k4UIq_search input:focus{border-color:var(--dsw-alias-border-l4);outline:none}._5k4UIq_searchClearable input{padding-right:36px}._5k4UIq_searchClear{border-radius:var(--dsw-radius-sm);width:28px;height:28px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;justify-content:center;align-items:center;display:flex;position:absolute;right:4px}@media (hover:hover){._5k4UIq_searchClear:hover{background:var(--dsw-alias-interactive-bg-hover)}}._5k4UIq_avatar{border-radius:var(--dsw-radius-md);background:var(--dsw-alias-interactive-bg-hover);width:40px;height:40px;color:var(--dsw-alias-label-secondary);flex:none;justify-content:center;align-items:center;display:flex;overflow:hidden}._5k4UIq_avatarLarge{border-radius:var(--dsw-radius-lg);width:64px;height:64px}._5k4UIq_avatar img{object-fit:contain;width:100%;height:100%}._5k4UIq_placeholder{border:.5px dashed var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);min-height:96px;color:var(--dsw-alias-label-secondary);text-align:center;overflow-wrap:anywhere;justify-content:center;align-items:center;gap:8px;padding:24px 16px;font-size:14px;display:flex}._5k4UIq_placeholderColumn{border:.5px dashed var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);min-height:96px;color:var(--dsw-alias-label-secondary);text-align:center;overflow-wrap:anywhere;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:24px 16px;font-size:14px;display:flex}._5k4UIq_placeholderTitle{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:500}._5k4UIq_placeholderDesc{max-width:420px;font-size:12px}";
+		const css$8 = "._5k4UIq_button{box-sizing:border-box;border-radius:var(--dsw-radius-md);height:36px;color:var(--dsw-alias-label-primary);font:inherit;white-space:nowrap;cursor:pointer;background:0 0;border:0;justify-content:center;align-items:center;gap:6px;padding:0 14px;font-size:14px;font-weight:500;line-height:22px;transition:background .12s,color .12s,opacity .12s;display:inline-flex}._5k4UIq_button:disabled{cursor:not-allowed;opacity:.4}._5k4UIq_button:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}._5k4UIq_primary{background:var(--dsw-alias-button-primary-fill);color:var(--dsw-alias-label-primary-foreground)}._5k4UIq_secondary{background:var(--dsw-alias-bg-layer-3);box-shadow:inset 0 0 0 var(--dsh-hairline-width,.5px) var(--dsw-alias-border-l3)}._5k4UIq_danger{background:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-label-primary-foreground)}@media (hover:hover){._5k4UIq_primary:hover:not(:disabled){background:var(--dsw-alias-button-primary-hover)}._5k4UIq_secondary:hover:not(:disabled),._5k4UIq_ghost:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}._5k4UIq_danger:hover:not(:disabled){background:var(--dsw-alias-state-error-secondary)}}._5k4UIq_primary:active:not(:disabled),._5k4UIq_secondary:active:not(:disabled),._5k4UIq_ghost:active:not(:disabled){background:var(--dsw-alias-interactive-bg-active)}._5k4UIq_pill{corner-shape:round;border-radius:999px}._5k4UIq_iconButton{box-sizing:border-box;border-radius:var(--dsw-radius-sm);width:32px;height:32px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;justify-content:center;align-items:center;display:inline-flex}._5k4UIq_iconDanger{color:var(--dsw-alias-state-error-primary)}@media (hover:hover){._5k4UIq_iconButton:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}._5k4UIq_iconButton:disabled{opacity:.45;cursor:not-allowed}._5k4UIq_iconButton:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}._5k4UIq_buttonOutline{box-sizing:border-box;border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:32px;height:32px;box-shadow:inset 0 0 0 var(--dsh-hairline-width,.5px) var(--dsw-alias-border-l3);color:var(--dsw-alias-label-primary);cursor:pointer;border:.5px solid #0000;justify-content:center;align-items:center;padding:0;display:inline-flex}._5k4UIq_buttonOutline:disabled{opacity:.4;cursor:not-allowed}._5k4UIq_buttonOutline:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){._5k4UIq_buttonOutline:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}}._5k4UIq_badge{border:.5px solid var(--dsw-alias-border-l3);corner-shape:round;white-space:nowrap;height:20px;color:var(--dsw-alias-label-secondary);background:0 0;border-radius:999px;flex:none;align-items:center;gap:4px;padding:0 8px;font-size:11px;line-height:1;display:inline-flex}._5k4UIq_badgeSuccess{background:var(--dsw-alias-state-success-tertiary);color:var(--dsw-alias-state-success-primary);border-color:#0000}._5k4UIq_badgeWarn{background:var(--dsw-alias-state-warn-tertiary);color:var(--dsw-alias-state-warn-primary);border-color:#0000}._5k4UIq_badgeError{background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 12%, transparent);color:var(--dsw-alias-state-error-primary);border-color:#0000}._5k4UIq_badgePlain{background:var(--dsw-alias-interactive-bg-hover);border-color:#0000}._5k4UIq_updateBadge{corner-shape:round;white-space:nowrap;height:20px;color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-state-success-tertiary);border-radius:999px;flex:none;align-items:center;gap:4px;padding:0 8px;font-size:11px;line-height:1;display:inline-flex}._5k4UIq_spinner{border:2px solid color-mix(in srgb, currentColor 30%, transparent);corner-shape:round;border-top-color:currentColor;border-radius:50%;flex:none;width:14px;height:14px;animation:.8s linear infinite _5k4UIq_spin;display:inline-block}._5k4UIq_spinnerLarge{border-width:2.5px;width:20px;height:20px}@keyframes _5k4UIq_spin{to{transform:rotate(360deg)}}@media (prefers-reduced-motion:reduce){._5k4UIq_spinner{animation:none}}._5k4UIq_search{flex:none;margin-left:auto;display:inline-flex;position:relative}._5k4UIq_searchActive{background:var(--dsw-alias-interactive-bg-active);color:var(--dsw-alias-label-primary)}._5k4UIq_searchBackdrop{z-index:40;background:0 0;position:fixed;inset:0}._5k4UIq_searchPopover{z-index:41;border-radius:var(--dsw-radius-md);background:var(--dsw-menu-surface-fill);width:280px;max-width:calc(100vw - 32px);height:40px;backdrop-filter:var(--dsw-menu-backdrop-filter);box-shadow:var(--dsw-elevation-panel);border:0;align-items:center;gap:8px;padding:0 8px 0 10px;display:flex;position:absolute;top:calc(100% + 6px);right:0}._5k4UIq_searchPopover>svg{color:var(--dsw-alias-label-tertiary);flex:none}._5k4UIq_searchInput{min-width:0;height:100%;color:var(--dsw-alias-label-primary);font:inherit;background:0 0;border:0;outline:none;flex:1;padding:0;font-size:14px}._5k4UIq_searchInput::placeholder{color:var(--dsw-alias-label-tertiary)}._5k4UIq_searchInput::-webkit-search-decoration,._5k4UIq_searchInput::-webkit-search-cancel-button{-webkit-appearance:none;display:none}._5k4UIq_searchClear{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;flex:none;justify-content:center;align-items:center;padding:0;display:flex}._5k4UIq_searchClear:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){._5k4UIq_searchClear:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}._5k4UIq_avatar{border-radius:var(--dsw-radius-md);background:var(--dsw-alias-interactive-bg-hover);width:40px;height:40px;color:var(--dsw-alias-label-secondary);flex:none;justify-content:center;align-items:center;display:flex;overflow:hidden}._5k4UIq_avatarLarge{border-radius:var(--dsw-radius-lg);width:64px;height:64px}._5k4UIq_avatar img{object-fit:contain;width:100%;height:100%}._5k4UIq_placeholder{border:.5px dashed var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);min-height:96px;color:var(--dsw-alias-label-secondary);text-align:center;overflow-wrap:anywhere;justify-content:center;align-items:center;gap:8px;padding:24px 16px;font-size:14px;display:flex}._5k4UIq_placeholderColumn{border:.5px dashed var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);min-height:96px;color:var(--dsw-alias-label-secondary);text-align:center;overflow-wrap:anywhere;flex-direction:column;justify-content:center;align-items:center;gap:12px;padding:24px 16px;font-size:14px;display:flex}._5k4UIq_placeholderTitle{color:var(--dsw-alias-label-primary);font-size:14px;font-weight:500}._5k4UIq_placeholderDesc{max-width:420px;font-size:12px}";
 		const tagId$8 = "dsh-agent-extension/controls.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$8) + "]") === null) {
 			const tag = document.createElement("style");
@@ -2577,8 +2606,11 @@ window.__ModuleLoader__.load({
 			"placeholderTitle": "_5k4UIq_placeholderTitle",
 			"primary": "_5k4UIq_primary",
 			"search": "_5k4UIq_search",
+			"searchActive": "_5k4UIq_searchActive",
+			"searchBackdrop": "_5k4UIq_searchBackdrop",
 			"searchClear": "_5k4UIq_searchClear",
-			"searchClearable": "_5k4UIq_searchClearable",
+			"searchInput": "_5k4UIq_searchInput",
+			"searchPopover": "_5k4UIq_searchPopover",
 			"secondary": "_5k4UIq_secondary",
 			"spin": "_5k4UIq_spin",
 			"spinner": "_5k4UIq_spinner",
@@ -2658,37 +2690,81 @@ window.__ModuleLoader__.load({
 			});
 		}
 		/**
-		* Search input with an optional clear affordance.
-		* @param props.clearable - show the clear button while text is present.
+		* Compact search control: an outlined icon button with the same 32px geometry
+		* as the toolbar icon buttons; clicking it floats an input field below the
+		* trigger. The trigger stays marked while a query is active, closing keeps the
+		* query, and focus returns to the trigger on close.
+		* @param props.clearable - show a clear affordance while text is present.
 		*/
 		function SearchBox({ value, onChange, placeholder, clearable = false, clearLabel }) {
-			const clearableNow = clearable && value !== "";
+			const [open, setOpen] = (0, react.useState)(false);
+			const triggerRef = (0, react.useRef)(null);
+			const inputRef = (0, react.useRef)(null);
+			const popoverId = (0, react.useId)();
+			useEscapeClose(open, () => {
+				setOpen(false);
+			});
+			useFocusRestore(triggerRef, open);
+			(0, react.useEffect)(() => {
+				if (!open) return;
+				const input = inputRef.current;
+				if (!input) return;
+				input.focus();
+				input.select();
+			}, [open]);
+			const filtering = value !== "";
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-				className: clsx(controls_module_css_default.search, clearableNow && controls_module_css_default.searchClearable),
-				children: [
-					/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Icon, {
+				className: controls_module_css_default.search,
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+					type: "button",
+					ref: triggerRef,
+					className: clsx(controls_module_css_default.buttonOutline, filtering && controls_module_css_default.searchActive),
+					title: placeholder,
+					"aria-label": placeholder,
+					"aria-expanded": open,
+					"aria-controls": open ? popoverId : void 0,
+					onClick: () => {
+						setOpen((current) => !current);
+					},
+					children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Icon, {
 						name: "search",
 						size: 16
-					}),
-					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
-						type: "search",
-						value,
-						placeholder,
-						"aria-label": placeholder,
-						onChange: (event) => onChange(event.target.value)
-					}),
-					clearableNow ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
-						type: "button",
-						className: controls_module_css_default.searchClear,
-						title: clearLabel,
-						"aria-label": clearLabel,
-						onClick: () => onChange(""),
-						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Icon, {
-							name: "x",
-							size: 14
-						})
-					}) : null
-				]
+					})
+				}), open ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+					className: controls_module_css_default.searchBackdrop,
+					onClick: () => {
+						setOpen(false);
+					}
+				}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+					id: popoverId,
+					className: controls_module_css_default.searchPopover,
+					children: [
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Icon, {
+							name: "search",
+							size: 16
+						}),
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+							ref: inputRef,
+							type: "search",
+							className: controls_module_css_default.searchInput,
+							value,
+							placeholder,
+							"aria-label": placeholder,
+							onChange: (event) => onChange(event.target.value)
+						}),
+						clearable && filtering ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+							type: "button",
+							className: controls_module_css_default.searchClear,
+							title: clearLabel,
+							"aria-label": clearLabel,
+							onClick: () => onChange(""),
+							children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Icon, {
+								name: "x",
+								size: 14
+							})
+						}) : null
+					]
+				})] }) : null]
 			});
 		}
 		/**
@@ -2841,35 +2917,6 @@ window.__ModuleLoader__.load({
 					children: entry.label
 				}, entry.value))
 			});
-		}
-		// src/client/overlay-hooks.ts
-		/**
-		* Overlay behavior hooks shared by menus and dialogs: Escape-close (capture
-		* phase) and focus restore to the trigger on close.
-		*
-		* @module dsh-agent-extension/client/overlay-hooks
-		*/
-		/** While open, close on Escape (capture phase so the host shortcut does not double-fire). */
-		function useEscapeClose(open, onClose) {
-			(0, react.useEffect)(() => {
-				if (!open || typeof document === "undefined" || typeof document.addEventListener !== "function") return void 0;
-				const onKeyDown = (event) => {
-					if (event.key === "Escape") {
-						event.stopPropagation();
-						onClose();
-					}
-				};
-				document.addEventListener("keydown", onKeyDown, true);
-				return () => document.removeEventListener("keydown", onKeyDown, true);
-			}, [open, onClose]);
-		}
-		/** Restore focus to the trigger on the open → closed transition. */
-		function useFocusRestore(triggerRef, open) {
-			const wasOpen = (0, react.useRef)(false);
-			(0, react.useEffect)(() => {
-				if (wasOpen.current && !open && triggerRef.current && typeof triggerRef.current.focus === "function") triggerRef.current.focus();
-				wasOpen.current = open;
-			}, [open, triggerRef]);
 		}
 		// \0dsh-css:E:\workspace\dsh-plugins\packages\dsh-agent-extension\src\client\Menu.module.css.mjs
 		const css$6 = ".mPZFjG_wrap{display:inline-flex;position:relative}.mPZFjG_trigger{border-radius:var(--dsw-radius-sm);width:32px;height:32px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;justify-content:center;align-items:center;display:inline-flex}.mPZFjG_trigger:disabled{cursor:not-allowed}.mPZFjG_trigger:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.mPZFjG_trigger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.mPZFjG_backdrop{z-index:40;background:0 0;position:fixed;inset:0}.mPZFjG_menu{z-index:41;border-radius:var(--dsw-radius-lg);background:var(--dsw-menu-surface-fill);min-width:168px;backdrop-filter:var(--dsw-menu-backdrop-filter);box-shadow:var(--dsw-elevation-panel);border:0;padding:4px;position:absolute;top:calc(100% + 4px);right:0}.mPZFjG_item{border-radius:var(--dsw-radius-md);width:100%;color:var(--dsw-alias-label-primary);font:inherit;text-align:left;white-space:nowrap;cursor:pointer;background:0 0;border:0;align-items:center;gap:8px;padding:7px 10px;font-size:14px;display:flex;overflow:hidden}.mPZFjG_item:disabled{opacity:.4;cursor:not-allowed}.mPZFjG_item:focus-visible{background:var(--dsw-alias-interactive-bg-hover);outline:none}@media (hover:hover){.mPZFjG_item:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover)}}.mPZFjG_itemDanger{color:var(--dsw-alias-state-error-primary)}.mPZFjG_separator{background:var(--dsw-alias-border-l2);height:.5px;margin:4px 6px}";
@@ -3444,7 +3491,9 @@ window.__ModuleLoader__.load({
 							children: [state.storeTab === "sources" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(SearchBox, {
 								value: query,
 								onChange: actions.setQuery,
-								placeholder: t("searchPlaceholder")
+								placeholder: t("searchPlaceholder"),
+								clearable: true,
+								clearLabel: t("clearSearch")
 							}) : null, /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 								className: panel_module_css_default.actions,
 								children: [
