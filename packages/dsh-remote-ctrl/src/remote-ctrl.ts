@@ -12,13 +12,20 @@ import { randomUUID } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 import os from 'node:os'
 import { join } from 'node:path'
-import { loadOrCreateToken } from './auth.ts'
+import { loadEnabled, loadOrCreateToken, mintToken, saveEnabled, saveToken } from './auth.ts'
 import { lanAddresses } from './ip.ts'
 import { RcServer, type UpstreamHandle } from './server.ts'
 import type { ConnectionService, HostContext, RemoteCtrlConfig, WebServerService } from './host.ts'
 
 /** Package version surfaced in logs. */
-export const REMOTE_CTRL_VERSION = '0.0.1-preview.1'
+export const REMOTE_CTRL_VERSION = '0.0.1-preview.4'
+
+/**
+ * Default listener port. High and uncommon on purpose: it sits below the
+ * OS ephemeral range (49152+), so the gateway rarely collides with another
+ * service or with an outgoing connection's temporary port.
+ */
+export const DEFAULT_PORT = 47291
 
 const LOG_PREFIX = 'dsh-remote-ctrl: '
 
@@ -31,6 +38,8 @@ export interface PanelAddress {
 
 /** Status payload the desktop panel renders. */
 export interface PanelStatus {
+  /** Whether the user wants the gateway running (persisted intent). */
+  enabled: boolean
   active: boolean
   listening: boolean
   error: string
@@ -39,6 +48,8 @@ export interface PanelStatus {
   addresses: PanelAddress[]
   recommendedUrl: string
   qrUrl: string
+  /** Whether the pairing token comes from config (and so cannot be rotated). */
+  tokenPinned: boolean
   token: string
   clientCount: number
   upstream: { origin: string, ready: boolean }
@@ -60,7 +71,11 @@ export class RemoteCtrl {
   private readonly configPort: number
   private readonly configToken: string
   private server: RcServer | null = null
+  private listenPending: Promise<void> | null = null
   private token = ''
+  private readonly tokenPinned: boolean
+  private enabled = true
+  private disposed = false
   private webServer: WebServerService | null = null
   private connection: ConnectionService | null = null
   private cachedAuthCookie: string | null = null
@@ -74,11 +89,15 @@ export class RemoteCtrl {
     const host = config.host?.trim() ?? ''
     this.configHost = host !== '' ? host : '0.0.0.0'
     const port = Number(config.port)
-    this.configPort = Number.isFinite(port) && port >= 0 && port <= 65535 ? Math.trunc(port) : 31080
+    this.configPort = Number.isFinite(port) && port >= 0 && port <= 65535 ? Math.trunc(port) : DEFAULT_PORT
     this.configToken = typeof config.token === 'string' ? config.token : ''
+    this.tokenPinned = this.configToken.trim() !== ''
   }
 
-  /** Create the token and start listening; failures degrade to status, never throw. */
+  /**
+   * Load the persisted state and start listening when the user left the
+   * gateway enabled; failures degrade to status, never throw.
+   */
   start(): void {
     try {
       mkdirSync(this.home, { recursive: true })
@@ -87,11 +106,42 @@ export class RemoteCtrl {
     }
     try {
       this.token = loadOrCreateToken(this.home, this.configToken)
+      this.enabled = loadEnabled(this.home)
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       this.token = randomUUID().replace(/-/gu, '')
+      this.enabled = true
       this.warnings.push(`配对码无法持久化（${message}），本次运行使用临时配对码`)
       this.log('warn', `配对码无法持久化到 ${this.home}：${message}；本次运行使用临时配对码`)
+    }
+    if (this.enabled) {
+      this.startServer()
+      return
+    }
+    this.log('info', '远程控制处于停止状态（remote-ctrl.json 的 enabled=false），在面板里点「启动」即可恢复')
+  }
+
+  /** User intent: run the gateway. Persists the intent and starts listening. */
+  async enable(): Promise<void> {
+    this.enabled = true
+    this.persistEnabled()
+    this.startServer()
+    await this.listenPending
+  }
+
+  /** User intent: keep the gateway down. Persists the intent and closes the listener. */
+  disable(): void {
+    this.enabled = false
+    this.persistEnabled()
+    this.stopServer()
+  }
+
+  /** Create the listener unless one is already up; a previous failure retries. */
+  private startServer(): void {
+    if (this.disposed) return
+    if (this.server !== null) {
+      if (this.server.listening) return
+      this.stopServer()
     }
     const server = new RcServer({
       host: this.configHost,
@@ -101,11 +151,58 @@ export class RemoteCtrl {
       log: (level, message) => this.log(level, message),
     })
     this.server = server
-    server.listen().catch(error => {
+    this.listenPending = server.listen().catch(error => {
       const message = error instanceof Error ? error.message : String(error)
       server.listenError = message
       this.log('error', `启动局域网网关失败（host=${this.configHost} port=${this.configPort}，端口被占用？）：${message}`)
     })
+  }
+
+  /** Close the listener without changing the persisted intent. */
+  private stopServer(): void {
+    this.server?.dispose()
+    this.server = null
+    this.listenPending = null
+  }
+
+  /**
+   * Rotate the pairing token: mint a fresh one, persist it (keeping the
+   * enabled intent) and rebind the listener so old pairings stop working.
+   * A token pinned in config cannot rotate. Resolves once the listener is
+   * back up (or its failure is reported), so the caller can answer with a
+   * settled status.
+   *
+   * @returns whether the token actually changed.
+   */
+  async refreshToken(): Promise<boolean> {
+    if (this.tokenPinned) return false
+    const token = mintToken()
+    try {
+      saveToken(this.home, token, this.enabled)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      this.log('warn', `刷新配对码失败：无法写入 ${this.home}（${message}）`)
+      return false
+    }
+    this.token = token
+    if (this.server !== null) {
+      this.stopServer()
+      this.startServer()
+      await this.listenPending
+    }
+    this.log('info', '配对码已刷新：旧配对码立即失效，手机需重新扫码')
+    return true
+  }
+
+  /** Persist the enabled intent beside the token; failure stays local. */
+  private persistEnabled(): void {
+    try {
+      saveEnabled(this.home, this.token, this.enabled)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      this.warnings.push(`启用状态无法持久化（${message}）`)
+      this.log('warn', `启用状态无法持久化到 ${this.home}：${message}`)
+    }
   }
 
   log(level: 'debug' | 'info' | 'warn' | 'error', message: string): void {
@@ -213,6 +310,7 @@ export class RemoteCtrl {
     const origin = (recommended?.url ?? `http://127.0.0.1:${port}/`).replace(/\/+$/u, '')
     const upstreamOrigin = this.hostOrigin() ?? ''
     return {
+      enabled: this.enabled,
       active: server !== null,
       listening: server?.listening ?? false,
       error: server?.listenError ?? '',
@@ -221,6 +319,7 @@ export class RemoteCtrl {
       addresses,
       recommendedUrl: `${origin}/`,
       qrUrl: `${origin}/?token=${encodeURIComponent(this.token)}`,
+      tokenPinned: this.tokenPinned,
       token: this.token,
       clientCount: server?.connectionCount ?? 0,
       upstream: { origin: upstreamOrigin, ready: upstreamOrigin !== '' && this.connection !== null },
@@ -229,6 +328,7 @@ export class RemoteCtrl {
 
   /** Tear down server. */
   dispose(): void {
-    this.server?.dispose()
+    this.disposed = true
+    this.stopServer()
   }
 }

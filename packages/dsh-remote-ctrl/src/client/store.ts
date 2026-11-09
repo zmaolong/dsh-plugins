@@ -24,10 +24,12 @@ export interface PanelState {
   error: string
   data: PanelStatus | null
   copied: string | null
+  /** A start/stop request is in flight. */
+  pending: boolean
 }
 
 /** Initial state before the first poll lands. */
-export const initialPanelState: PanelState = { status: 'loading', error: '', data: null, copied: null }
+export const initialPanelState: PanelState = { status: 'loading', error: '', data: null, copied: null, pending: false }
 
 /** Identity selector for `useRemote` when the whole snapshot is needed. */
 export function identity(state: PanelState): PanelState {
@@ -96,9 +98,19 @@ async function writeClipboard(value: string): Promise<boolean> {
 
 /** The panel controller: polling, copy feedback, teardown. */
 export interface PanelActions {
+  /** Start polling the status API (opening the dialog). */
   init: () => void
+  /** Read the status once (retry). */
   load: () => void
+  /** Copy a value to the clipboard and flash its key as copied. */
   copy: (value: string, key: string) => Promise<void>
+  /** Turn the gateway on (persisted on the host). */
+  start: () => Promise<void>
+  /** Turn the gateway off (persisted on the host). */
+  stop: () => Promise<void>
+  /** Rotate the pairing token on the host (old pairings stop working). */
+  refreshToken: () => Promise<void>
+  /** Stop polling (closing the dialog, plugin disposal). */
   destroy: () => void
 }
 
@@ -117,6 +129,19 @@ export function createRemoteController(): {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       update(previous => ({ ...previous, status: previous.data === null ? 'error' : 'ready', error: message }))
+    }
+  }
+
+  // Start/stop/token-refresh flip host state and answer with the new status,
+  // so the dialog never renders a half-updated state.
+  const mutate = async (path: '/start' | '/stop' | '/token/refresh'): Promise<void> => {
+    update(previous => ({ ...previous, pending: true }))
+    try {
+      const data = await api<PanelStatus>(path, { method: 'POST' })
+      update(previous => ({ ...previous, pending: false, status: 'ready', error: '', data }))
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      update(previous => ({ ...previous, pending: false, error: message }))
     }
   }
 
@@ -139,6 +164,9 @@ export function createRemoteController(): {
           if (get().copied === key) update(previous => ({ ...previous, copied: null }))
         }, 1500)
       },
+      start: () => mutate('/start'),
+      stop: () => mutate('/stop'),
+      refreshToken: () => mutate('/token/refresh'),
       destroy: () => {
         if (timer !== null) {
           clearInterval(timer)

@@ -313,8 +313,10 @@ ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
 实测要点（🟡 真机 0.2.2-rc.1 实测）：
 
 - 该槽位渲染在**设置/头像行的正上方**（`.footArea` 是纵向排列：`footerActions` 行在上、`settingsArea` 行在下）。**头像那一行没有追加位**——`sidebar.settings` 是单槽、内部只有 `settings.launcher`（账号入口，被 ui-settings-account 占用）与 `settings.trigger`，第三方插件无法把图标插到头像右侧；`sidebar.footer.action` 就是官方给的最接近座位；
-- 槽位外层容器是 `display:flex` 的行：宽栏下条目靠右放（`margin-left:auto`），轨道态容器 `justify-content:center`，图标做 36×36；宿主会按条目根元素给 flex 布局，**不要再给条目 `width:100%`**（同槽位还有官方 ui-cordis 的全宽行，双全宽会互相挤压）；
-- 侧栏会裁掉 overflow，弹窗用 `position: fixed` + 触发元素 `getBoundingClientRect()` 量出 `left/bottom`（官方 ui-cordis 同法），配 `max-width: calc(100vw - 24px)`；点外部 / Esc 关闭，打开期间才轮询数据面。
+- 槽位外层容器是 `display:flex` 的行：条目默认落在行**最左侧**（需要靠右才加 `margin-left:auto`），轨道态容器 `justify-content:center`，图标做 36×36；宿主会按条目根元素给 flex 布局，**不要再给条目 `width:100%`**（同槽位还有官方 ui-cordis 的全宽行，双全宽会互相挤压）；
+- 条目「启用中」的状态用 `data-active` + 语义 token 表达（如 `--dsw-alias-state-warn-primary/-tertiary` 做琥珀高亮），同槽位官方条目 `ui-cordis` 的 `data-active` 也是这个约定；
+- 需要「全局弹窗」时不要贴着触发器做 fixed 小浮层：`createPortal` 到 `document.body`，遮罩用 `--dsw-alias-bg-mask-1` + `backdrop-filter: var(--dsw-mask-blur)`（官方 Modal 同样的两个 token），面板用 `--dsw-radius-panel` + `--dsw-elevation-prominent`（宽高参照 `ui-settings-general` 的 800px 面板）；`role="dialog" aria-modal="true"`，自己管焦点：打开聚焦面板、`Tab` 在弹窗内循环、`Esc`/遮罩点击/关闭按钮关闭、关闭后焦点回触发器（实测有效）；
+- 面板里要「启停服务 / 换配对码」时，走宿主回环的数据面（如 `POST /my-plugin/api/start|stop|token/refresh`，沿用 `isAdmitted` 回环+同源+JSON 校验），接口返回最新 status 由客户端整体替换，状态意图持久化在插件自己的 home 文件里；监听器 stop 只是 `server.close()`，重启宿主后由持久意图决定是否自动监听。
 
 ### 4.4 数据面与安全
 

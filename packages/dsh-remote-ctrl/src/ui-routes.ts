@@ -1,18 +1,29 @@
 /**
  * Desktop panel data plane, mounted on the host webServer (loopback only —
  * the phone never talks to this surface; it uses the plugin's own LAN
- * server). Read-only today: `GET /remote-ctrl/api/status` returns everything
- * the panel renders (listening state, per-address URLs, QR payload, token,
- * connected clients). Mirrors the dsh-agent-extension admission fence.
+ * server). `GET /remote-ctrl/api/status` returns everything the panel
+ * renders (intent, listening state, per-address URLs, QR payload, token,
+ * connected clients); `POST /status/start` and `POST /status/stop` flip the
+ * persisted enable intent and the listener. Mirrors the dsh-agent-extension
+ * admission fence.
  *
  * @module dsh-remote-ctrl/ui-routes
  */
 
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import type { RemoteCtrl } from './remote-ctrl.ts'
+import type { PanelStatus } from './remote-ctrl.ts'
 
 const API_PREFIX = '/remote-ctrl/api'
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]'])
+
+/** The controller face this data plane drives (RemoteCtrl satisfies it). */
+export interface PanelApiTarget {
+  panelStatus(): PanelStatus
+  enable(): void | Promise<void>
+  disable(): void
+  refreshToken(): boolean | Promise<boolean>
+  log(level: 'debug' | 'info' | 'warn' | 'error', message: string): void
+}
 
 /** Hostname of the Host header (port stripped; IPv6 keeps its brackets). */
 function hostnameOf(hostHeader: unknown): string {
@@ -56,7 +67,7 @@ export interface UiRoutesStatus {
  * Mount the panel API on the host webServer. Synchronous first; the caller
  * falls back to `ctx.inject(['webServer'], …)` when the service is pending.
  */
-export function mountUiRoutes(ctx: unknown, ctrl: RemoteCtrl): UiRoutesStatus {
+export function mountUiRoutes(ctx: unknown, ctrl: PanelApiTarget): UiRoutesStatus {
   const source = ctx as { get?: (name: string) => unknown, webServer?: unknown } | null
   const webServer = source?.get?.('webServer') ?? source?.webServer
   const inactive = (reason: string): UiRoutesStatus => ({ active: false, reason, path: API_PREFIX, dispose: () => {} })
@@ -64,6 +75,18 @@ export function mountUiRoutes(ctx: unknown, ctrl: RemoteCtrl): UiRoutesStatus {
     return inactive('宿主未提供 webServer 服务，桌面面板数据面不可用')
   }
   const handle = (request: IncomingMessage, response: ServerResponse): void => {
+    void routeRequest(request, response).catch(error => {
+      const message = error instanceof Error ? error.message : String(error)
+      ctrl.log('warn', `面板 API 处理失败：${message}`)
+      if (!response.headersSent) {
+        sendJson(response, 500, { ok: false, error: `面板 API 处理失败：${message}`, code: 'internal_error' })
+      } else {
+        response.destroy()
+      }
+    })
+  }
+  /** Route one admitted request; start/token-refresh wait for the listener. */
+  async function routeRequest(request: IncomingMessage, response: ServerResponse): Promise<void> {
     if (!isAdmitted(request)) {
       sendJson(response, 403, { ok: false, error: '拒绝访问：面板 API 只允许本机回环页面的同源请求', code: 'forbidden' })
       return
@@ -83,6 +106,32 @@ export function mountUiRoutes(ctx: unknown, ctrl: RemoteCtrl): UiRoutesStatus {
     }
     if (route === '/status') {
       sendJson(response, 405, { ok: false, error: `不支持的请求方法：${method}`, code: 'method_not_allowed' })
+      return
+    }
+    if (route === '/start' || route === '/stop') {
+      if (method !== 'POST') {
+        sendJson(response, 405, { ok: false, error: `不支持的请求方法：${method}`, code: 'method_not_allowed' })
+        return
+      }
+      if (route === '/start') await ctrl.enable()
+      else ctrl.disable()
+      sendJson(response, 200, { ok: true, data: ctrl.panelStatus() })
+      return
+    }
+    if (route === '/token/refresh') {
+      if (method !== 'POST') {
+        sendJson(response, 405, { ok: false, error: `不支持的请求方法：${method}`, code: 'method_not_allowed' })
+        return
+      }
+      if (!await ctrl.refreshToken()) {
+        sendJson(response, 409, {
+          ok: false,
+          error: '配对码来自 cordis.patch.yml 的 config.token，无法在面板里刷新',
+          code: 'token_pinned',
+        })
+        return
+      }
+      sendJson(response, 200, { ok: true, data: ctrl.panelStatus() })
       return
     }
     sendJson(response, 404, { ok: false, error: `未知接口：${route}`, code: 'not_found' })

@@ -93,17 +93,58 @@ function localHostNames() {
 const STATE_VERSION = 1;
 /** Name of the pairing cookie minted on the first authenticated response. */
 const PAIRING_COOKIE = "dsh-remote-ctrl";
-function writeState(file, token) {
-	writeFileSync(file, `${JSON.stringify({
+function writeState(file, state) {
+	const enabledField = state.enabled === void 0 ? {} : { enabled: state.enabled };
+	const persisted = {
 		version: STATE_VERSION,
-		token
-	}, null, 2)}\n`, "utf8");
+		token: state.token,
+		...enabledField
+	};
+	writeFileSync(file, `${JSON.stringify(persisted, null, 2)}\n`, "utf8");
+}
+/** Read the persisted state, or null when it is missing/unreadable. */
+function readState(home) {
+	try {
+		return JSON.parse(readFileSync(join(home, "remote-ctrl.json"), "utf8"));
+	} catch {
+		return null;
+	}
+}
+/**
+* Whether the user left the LAN gateway enabled. Absent state (first run,
+* legacy token-only file) means enabled.
+*/
+function loadEnabled(home) {
+	return readState(home)?.enabled !== false;
+}
+/** Persist the user's enabled intent next to the token. */
+function saveEnabled(home, token, enabled) {
+	mkdirSync(home, { recursive: true });
+	writeState(join(home, "remote-ctrl.json"), {
+		version: STATE_VERSION,
+		token,
+		enabled
+	});
+}
+/** Persist a replacement pairing token, keeping the enabled intent. */
+function saveToken(home, token, enabled) {
+	mkdirSync(home, { recursive: true });
+	writeState(join(home, "remote-ctrl.json"), {
+		version: STATE_VERSION,
+		token,
+		enabled
+	});
+}
+/** Mint a fresh pairing token (manual rotation). */
+function mintToken() {
+	return randomBytes(24).toString("base64url");
 }
 /**
 * Resolve the pairing token: an explicitly configured one wins; otherwise
 * the persisted one is reused so QR codes stay valid across restarts; a
 * fresh random token is minted and persisted on first run. Legacy state
-* without a version marker is migrated in place (same token, adds version).
+* without a version marker is migrated in place (same token, adds version,
+* keeps the enabled intent).
 */
 function loadOrCreateToken(home, configured) {
 	const trimmed = configured.trim();
@@ -113,13 +154,23 @@ function loadOrCreateToken(home, configured) {
 		const parsed = JSON.parse(readFileSync(file, "utf8"));
 		const token = typeof parsed.token === "string" ? parsed.token : "";
 		if (token !== "") {
-			if (parsed.version !== STATE_VERSION) writeState(file, token);
+			if (parsed.version !== STATE_VERSION) {
+				const enabledField = typeof parsed.enabled === "boolean" ? { enabled: parsed.enabled } : {};
+				writeState(file, {
+					version: STATE_VERSION,
+					token,
+					...enabledField
+				});
+			}
 			return token;
 		}
 	} catch {}
 	mkdirSync(home, { recursive: true });
 	const token = randomBytes(24).toString("base64url");
-	writeState(file, token);
+	writeState(file, {
+		version: STATE_VERSION,
+		token
+	});
 	return token;
 }
 /** Hostname of the Host header (port stripped; IPv6 keeps its brackets). */
@@ -577,7 +628,13 @@ var RcServer = class {
 * @module dsh-remote-ctrl/remote-ctrl
 */
 /** Package version surfaced in logs. */
-const REMOTE_CTRL_VERSION = "0.0.1-preview.1";
+const REMOTE_CTRL_VERSION = "0.0.1-preview.4";
+/**
+* Default listener port. High and uncommon on purpose: it sits below the
+* OS ephemeral range (49152+), so the gateway rarely collides with another
+* service or with an outgoing connection's temporary port.
+*/
+const DEFAULT_PORT = 47291;
 const LOG_PREFIX = "dsh-remote-ctrl: ";
 /** Resolve the persistence home: config → env → ~/.dsh/remote-ctrl. */
 function resolveHome(configured) {
@@ -595,7 +652,11 @@ var RemoteCtrl = class {
 	configPort;
 	configToken;
 	server = null;
+	listenPending = null;
 	token = "";
+	tokenPinned;
+	enabled = true;
+	disposed = false;
 	webServer = null;
 	connection = null;
 	cachedAuthCookie = null;
@@ -606,21 +667,53 @@ var RemoteCtrl = class {
 		const host = config.host?.trim() ?? "";
 		this.configHost = host !== "" ? host : "0.0.0.0";
 		const port = Number(config.port);
-		this.configPort = Number.isFinite(port) && port >= 0 && port <= 65535 ? Math.trunc(port) : 31080;
+		this.configPort = Number.isFinite(port) && port >= 0 && port <= 65535 ? Math.trunc(port) : DEFAULT_PORT;
 		this.configToken = typeof config.token === "string" ? config.token : "";
+		this.tokenPinned = this.configToken.trim() !== "";
 	}
-	/** Create the token and start listening; failures degrade to status, never throw. */
+	/**
+	* Load the persisted state and start listening when the user left the
+	* gateway enabled; failures degrade to status, never throw.
+	*/
 	start() {
 		try {
 			mkdirSync(this.home, { recursive: true });
 		} catch {}
 		try {
 			this.token = loadOrCreateToken(this.home, this.configToken);
+			this.enabled = loadEnabled(this.home);
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
 			this.token = randomUUID().replace(/-/gu, "");
+			this.enabled = true;
 			this.warnings.push(`配对码无法持久化（${message}），本次运行使用临时配对码`);
 			this.log("warn", `配对码无法持久化到 ${this.home}：${message}；本次运行使用临时配对码`);
+		}
+		if (this.enabled) {
+			this.startServer();
+			return;
+		}
+		this.log("info", "远程控制处于停止状态（remote-ctrl.json 的 enabled=false），在面板里点「启动」即可恢复");
+	}
+	/** User intent: run the gateway. Persists the intent and starts listening. */
+	async enable() {
+		this.enabled = true;
+		this.persistEnabled();
+		this.startServer();
+		await this.listenPending;
+	}
+	/** User intent: keep the gateway down. Persists the intent and closes the listener. */
+	disable() {
+		this.enabled = false;
+		this.persistEnabled();
+		this.stopServer();
+	}
+	/** Create the listener unless one is already up; a previous failure retries. */
+	startServer() {
+		if (this.disposed) return;
+		if (this.server !== null) {
+			if (this.server.listening) return;
+			this.stopServer();
 		}
 		const server = new RcServer({
 			host: this.configHost,
@@ -630,11 +723,55 @@ var RemoteCtrl = class {
 			log: (level, message) => this.log(level, message)
 		});
 		this.server = server;
-		server.listen().catch((error) => {
+		this.listenPending = server.listen().catch((error) => {
 			const message = error instanceof Error ? error.message : String(error);
 			server.listenError = message;
 			this.log("error", `启动局域网网关失败（host=${this.configHost} port=${this.configPort}，端口被占用？）：${message}`);
 		});
+	}
+	/** Close the listener without changing the persisted intent. */
+	stopServer() {
+		this.server?.dispose();
+		this.server = null;
+		this.listenPending = null;
+	}
+	/**
+	* Rotate the pairing token: mint a fresh one, persist it (keeping the
+	* enabled intent) and rebind the listener so old pairings stop working.
+	* A token pinned in config cannot rotate. Resolves once the listener is
+	* back up (or its failure is reported), so the caller can answer with a
+	* settled status.
+	*
+	* @returns whether the token actually changed.
+	*/
+	async refreshToken() {
+		if (this.tokenPinned) return false;
+		const token = mintToken();
+		try {
+			saveToken(this.home, token, this.enabled);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			this.log("warn", `刷新配对码失败：无法写入 ${this.home}（${message}）`);
+			return false;
+		}
+		this.token = token;
+		if (this.server !== null) {
+			this.stopServer();
+			this.startServer();
+			await this.listenPending;
+		}
+		this.log("info", "配对码已刷新：旧配对码立即失效，手机需重新扫码");
+		return true;
+	}
+	/** Persist the enabled intent beside the token; failure stays local. */
+	persistEnabled() {
+		try {
+			saveEnabled(this.home, this.token, this.enabled);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			this.warnings.push(`启用状态无法持久化（${message}）`);
+			this.log("warn", `启用状态无法持久化到 ${this.home}：${message}`);
+		}
 	}
 	log(level, message) {
 		const line = `${LOG_PREFIX}${message}`;
@@ -732,6 +869,7 @@ var RemoteCtrl = class {
 		const origin = ((addresses.find((entry) => entry.scope === "private") ?? addresses[0] ?? null)?.url ?? `http://127.0.0.1:${port}/`).replace(/\/+$/u, "");
 		const upstreamOrigin = this.hostOrigin() ?? "";
 		return {
+			enabled: this.enabled,
 			active: server !== null,
 			listening: server?.listening ?? false,
 			error: server?.listenError ?? "",
@@ -740,6 +878,7 @@ var RemoteCtrl = class {
 			addresses,
 			recommendedUrl: `${origin}/`,
 			qrUrl: `${origin}/?token=${encodeURIComponent(this.token)}`,
+			tokenPinned: this.tokenPinned,
 			token: this.token,
 			clientCount: server?.connectionCount ?? 0,
 			upstream: {
@@ -750,7 +889,8 @@ var RemoteCtrl = class {
 	}
 	/** Tear down server. */
 	dispose() {
-		this.server?.dispose();
+		this.disposed = true;
+		this.stopServer();
 	}
 };
 // src/ui-routes.ts
@@ -802,6 +942,19 @@ function mountUiRoutes(ctx, ctrl) {
 	});
 	if (!webServer || typeof webServer.register !== "function") return inactive("宿主未提供 webServer 服务，桌面面板数据面不可用");
 	const handle = (request, response) => {
+		routeRequest(request, response).catch((error) => {
+			const message = error instanceof Error ? error.message : String(error);
+			ctrl.log("warn", `面板 API 处理失败：${message}`);
+			if (!response.headersSent) sendJson(response, 500, {
+				ok: false,
+				error: `面板 API 处理失败：${message}`,
+				code: "internal_error"
+			});
+			else response.destroy();
+		});
+	};
+	/** Route one admitted request; start/token-refresh wait for the listener. */
+	async function routeRequest(request, response) {
 		if (!isAdmitted(request)) {
 			sendJson(response, 403, {
 				ok: false,
@@ -834,12 +987,52 @@ function mountUiRoutes(ctx, ctrl) {
 			});
 			return;
 		}
+		if (route === "/start" || route === "/stop") {
+			if (method !== "POST") {
+				sendJson(response, 405, {
+					ok: false,
+					error: `不支持的请求方法：${method}`,
+					code: "method_not_allowed"
+				});
+				return;
+			}
+			if (route === "/start") await ctrl.enable();
+			else ctrl.disable();
+			sendJson(response, 200, {
+				ok: true,
+				data: ctrl.panelStatus()
+			});
+			return;
+		}
+		if (route === "/token/refresh") {
+			if (method !== "POST") {
+				sendJson(response, 405, {
+					ok: false,
+					error: `不支持的请求方法：${method}`,
+					code: "method_not_allowed"
+				});
+				return;
+			}
+			if (!await ctrl.refreshToken()) {
+				sendJson(response, 409, {
+					ok: false,
+					error: "配对码来自 cordis.patch.yml 的 config.token，无法在面板里刷新",
+					code: "token_pinned"
+				});
+				return;
+			}
+			sendJson(response, 200, {
+				ok: true,
+				data: ctrl.panelStatus()
+			});
+			return;
+		}
 		sendJson(response, 404, {
 			ok: false,
 			error: `未知接口：${route}`,
 			code: "not_found"
 		});
-	};
+	}
 	const dispose = webServer.register({
 		kind: "prefix",
 		path: API_PREFIX,

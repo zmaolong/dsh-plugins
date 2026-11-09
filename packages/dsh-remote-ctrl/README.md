@@ -1,17 +1,19 @@
 # dsh-remote-ctrl
 
-> **试验性预览版（`0.0.1-preview.2`）**：仅供内部试验，接口与能力随时可能变化。
+> **试验性预览版（`0.0.1-preview.4`）**：仅供内部试验，接口与能力随时可能变化。
 > 版本线与仓库一致：npm 只发 `preview` dist-tag，首个正式版定为 `0.0.1`。
 
 DSH 的**远程控制**插件：一个带配对码的**局域网访问网关**。宿主 web UI 只绑
-回环且拒绝通配地址，本插件自起一个 `node:http` 网关（默认 `0.0.0.0:31080`）
+回环且拒绝通配地址，本插件自起一个 `node:http` 网关（默认 `0.0.0.0:47291`）
 把**完整、自适应的 DSH Web UI** 反代给局域网内的手机——会话、流式输出、
 发送消息、工具审批、智能体提问全部是宿主原生能力，本插件**不做任何业务
 UI**（0.0.1-preview.1 起删除了自研手机页，改为纯网关）。
 
 ## 组成
 
-- **网关**（`0.0.0.0:31080`，可配）：配对码门 → 反代宿主 webServer（`getOrigin()`）。
+- **网关**（`0.0.0.0:47291`，可配）：配对码门 → 反代宿主 webServer（`getOrigin()`）。
+  - 端口默认取高位、非常见端口 **47291**，且低于系统临时端口起点（49152），
+    避免与其它服务或系统临时连接撞车；
   - 上游鉴权照搬宿主 browser-auth：`ctx.connection.authenticatedUrl()` 服务端
     代换 launch token 得到签名 `dsh-auth-*` cookie，缓存后注入上游请求，并把
     cookie 下发给手机（宿主重启后 401 自动重换一次并重放）；
@@ -20,16 +22,24 @@ UI**（0.0.1-preview.1 起删除了自研手机页，改为纯网关）。
   - SSE/分块响应直通不缓冲，WebSocket upgrade 原样中继；
   - 配对码三通道：`?token=`（扫码链接）/ `Authorization: Bearer` / 首访种下的
     `dsh-remote-ctrl` 配对 cookie（之后 webUI 自己的请求免带 token）。
-- **侧边栏底部图标 + 弹窗**（slots：`sidebar.footer.action`，宿主回环
-  `/remote-ctrl/api` 供数）：侧栏脚（头像行正上方、设置行旁）一个可点击的
-  手机图标，点开即弹出面板——网关状态、上游就绪状态、各局域网地址链接、
-  二维码（推荐私网地址 + 配对码）、配对码展示/复制、活跃连接数；运行中
-  时图标带绿点，弹窗打开期间才轮询（点外部或 Esc 关闭）。
+- **侧边栏底部入口 + 全局弹窗**（slots：`sidebar.footer.action`，宿主回环
+  `/remote-ctrl/api` 供数）：侧栏脚**最左侧**一个手机图标（头像行上方），
+  启用时**橙色高亮**；点开是 ZCode 同构的居中弹窗（遮罩 + 失焦页面 + 焦点
+  锁在弹窗内，Esc / 点遮罩 / 右上角关闭）：
+  - 左卡：连接状态、上游就绪、已连接设备、「停止/启动」、复制链接、
+    选中地址的二维码；
+  - 右卡：**局域网地址切换**（单选，默认推荐私网地址）——切换后二维码与
+    「复制链接」的结果随之改变；配对码展示/复制与**手动刷新**（二次确认，
+    旧码立即失效）。
+  - 弹窗打开期间才轮询数据面。
 
 ## 安全模型
 
 - **配对码**：首启生成 24 字节随机码并持久化到 `home/remote-ctrl.json`
-  （重启不变，二维码长期有效）；持有配对码 = 获得完整 webUI 访问权。
+  （重启不变，默认长期有效，只有手动「刷新配对码」才会更换）；持有配对码 =
+  获得完整 webUI 访问权。`config.token` 固定的配对码不能在面板里刷新。
+- **可停用**：面板里「停止」会立刻关闭局域网监听并把 `enabled: false` 写入
+  `home/remote-ctrl.json`，宿主重启后仍保持停止；「启动」恢复监听（配对码不变）。
 - **Host 校验**：Host 头必须是本机地址（防 DNS rebinding）。
 - **跨站防护**：写请求要求同源 Origin，拒绝浏览器声明的
   `sec-fetch-site: cross-site`（与 dsh-agent-extension 的 fence 同构）。
@@ -42,10 +52,10 @@ UI**（0.0.1-preview.1 起删除了自研手机页，改为纯网关）。
     - id: remote-ctrl
       name: 'dsh-remote-ctrl'
       config:
-        home: ''          # 配对码持久化目录；留空 → DSH_REMOTE_CTRL_HOME → ~/.dsh/remote-ctrl
+        home: ''          # 配对码/启用状态持久化目录；留空 → DSH_REMOTE_CTRL_HOME → ~/.dsh/remote-ctrl
         host: '0.0.0.0'   # 网关监听地址；0.0.0.0 = 所有网卡（推荐）
-        port: 31080       # 网关端口
-        token: ''         # 留空 = 首启生成并持久化；填写则用固定配对码
+        port: 47291       # 网关端口（高位非常见端口，可改）
+        token: ''         # 留空 = 首启生成并持久化、面板里可刷新；填写则固定配对码
 ```
 
 ## 开发
@@ -53,8 +63,8 @@ UI**（0.0.1-preview.1 起删除了自研手机页，改为纯网关）。
 ```powershell
 cd packages\dsh-remote-ctrl
 npm run check        # tsc --noEmit（node + client 双程序）
-npm test             # vitest run（离线；proxy 用例带假上游模拟宿主 browser-auth）
-npm run build        # tsdown：lib/index.js（ESM 宿主半）+ lib/client.js（面板）
+npm test             # vitest run（离线；proxy/lifecycle 用例起真回环监听）
+npm run build        # tsdown：lib/index.js（ESM 宿主半）+ lib/client.js（弹窗）
 ```
 
 真实宿主调试：
@@ -63,8 +73,8 @@ npm run build        # tsdown：lib/index.js（ESM 宿主半）+ lib/client.js�
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\dsh-remote-ctrl
 ```
 
-装进 `zdebug` 后：点击侧栏底部（头像行上方）的手机图标弹出「远程控制」面板；
-手机打开 `http://<局域网IP>:31080/?token=<配对码>` 即得完整 webUI。
+装进 `zdebug` 后：点击侧栏底部（头像行上方）的手机图标弹出「远程控制」弹窗；
+手机打开 `http://<局域网IP>:47291/?token=<配对码>` 即得完整 webUI。
 
 ## 许可
 

@@ -1,20 +1,21 @@
-/* Remote Control launcher and popup: the sidebar-foot icon, the fixed popup it
- * opens above itself, and the popup body (status card, QR card, address list,
- * token card). Styling follows the official web conventions: CSS Modules,
- * host `--dsw-alias-*` tokens only, `:hover` behind `@media (hover: hover)`,
- * every fully-round shape paired with `corner-shape: round`. */
+/* Remote Control: the sidebar-foot trigger (amber while enabled), the
+ * frame-wide modal dialog, and the dialog body's two cards. Styling follows
+ * the official web conventions: CSS Modules, host `--dsw-alias-*` tokens
+ * only, `:hover` behind `@media (hover: hover)`, every fully-round shape
+ * paired with `corner-shape: round`. */
 
-/* The footer-action row is a flex row: an auto left margin keeps the lone
- * icon at the row's right end, which is the sidebar-foot corner above the
- * account row. */
+/* ---------------------------------------------------------- footer entry */
+
+/* The footer-action row is a flex row: the entry sits at its left end (the
+ * sidebar-foot corner, left of the account row below). */
 .layer {
   position: relative;
   flex: none;
   display: flex;
   align-items: center;
   height: 42px;
-  margin: 8px 0 0 auto;
-  padding: 0 6px;
+  margin: 8px 0 0;
+  padding: 0 0 0 2px;
 }
 
 .rail {
@@ -58,82 +59,148 @@
   color: var(--dsw-alias-label-primary);
 }
 
+/* Enabled: the entry reads as active — amber glyph on the soft amber fill,
+ * independent of hover/expanded state (ZCode's remote-control entry). */
+.trigger[data-active='true'] {
+  color: var(--dsw-alias-state-warn-primary);
+  background: var(--dsw-alias-state-warn-tertiary);
+}
+
+@media (hover: hover) {
+  .trigger[data-active='true']:hover {
+    background: var(--dsw-alias-state-warn-secondary);
+  }
+}
+
 .trigger:focus-visible {
   outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
   outline-offset: 2px;
 }
 
-/* Running-state badge on the glyph: the gateway is listening right now. */
-.triggerDot {
-  position: absolute;
-  right: 5px;
-  bottom: 5px;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  corner-shape: round;
-  background: var(--dsw-alias-state-success-primary);
+/* ------------------------------------------------------------- modal shell */
+
+/* Full-viewport layer (official Modal primitive): the mask token dims and
+ * blurs every column behind the dialog. */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Fixed so the sidebar's overflow clip cannot cut the popup; `left`/`bottom`
- * are measured from the trigger before paint. */
-.popup {
-  position: fixed;
-  isolation: isolate;
-  z-index: 30;
+.mask {
+  position: absolute;
+  inset: var(--dsh-frame-chrome-top, 0px) 0 0;
+  background: var(--dsw-alias-bg-mask-1);
+  backdrop-filter: var(--dsw-mask-blur);
+}
+
+.dialog {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
-  width: 400px;
-  max-width: calc(100vw - 24px);
-  max-height: min(70vh, 640px);
+  width: 900px;
+  max-width: calc(100vw - 48px);
+  max-height: min(760px, calc(100vh - 2 * max(24px, var(--dsh-frame-overlay-top, 24px))));
   overflow: hidden;
-  border: 0;
-  border-radius: var(--dsw-radius-md);
-  --dsw-elevation-stroke-color: var(--dsw-alias-border-l1);
+  border-radius: var(--dsw-radius-panel);
+  background: var(--dsw-alias-bg-layer-2);
   box-shadow: var(--dsw-elevation-prominent);
   --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2);
   --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
 }
 
-.popup::before {
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--dsw-specific-menu);
-  backdrop-filter: var(--dsw-menu-backdrop-filter);
-  content: '';
-  pointer-events: none;
+.dialog:focus {
+  outline: none;
 }
 
-.popupHeader {
+.dialogHeader {
   flex: none;
   display: flex;
   align-items: center;
-  min-height: 44px;
-  padding: 10px 12px;
+  gap: 10px;
+  padding: 20px 56px 12px 20px;
   box-sizing: border-box;
 }
 
-.popupTitle {
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 20px;
+.dialogIcon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 0.5px solid var(--dsw-alias-border-l1);
+  border-radius: var(--dsw-radius-md);
+  background: var(--dsw-alias-bg-layer-1);
   color: var(--dsw-alias-label-primary);
 }
 
-.popupBody {
+.dialogHeading {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dialogTitle {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  color: var(--dsw-alias-label-primary);
+}
+
+.dialogSubtitle {
+  font-size: 12.5px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.closeButton {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--dsw-radius-sm);
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .closeButton:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+
+.closeButton:focus-visible {
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 2px;
+}
+
+.dialogBody {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 0 12px 12px;
+  padding: 0 20px 20px;
 }
+
+/* -------------------------------------------------------------- dialog body */
 
 .page {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  width: 100%;
+  gap: 16px;
   color: var(--dsw-alias-label-primary);
   font-size: 13px;
   line-height: 1.5;
@@ -144,13 +211,46 @@
   box-sizing: border-box;
 }
 
+.grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1.45fr) minmax(300px, 1fr);
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px;
+  gap: 12px;
+  padding: 16px;
   border: 0.5px solid var(--dsw-alias-border-l1);
-  border-radius: var(--dsw-radius-md);
+  border-radius: var(--dsw-radius-lg);
+}
+
+.cardHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.cardIcon {
+  flex: none;
+  display: inline-flex;
+  margin-top: 2px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.cardTitles {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .cardTitle {
@@ -164,6 +264,15 @@
 .hint {
   margin: 0;
   font-size: 12.5px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+  overflow-wrap: anywhere;
+}
+
+.detail {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 18px;
   color: var(--dsw-alias-label-secondary);
   overflow-wrap: anywhere;
 }
@@ -171,72 +280,170 @@
 .errorText {
   margin: 0;
   font-size: 12.5px;
+  line-height: 18px;
   color: var(--dsw-alias-state-error-primary);
   overflow-wrap: anywhere;
 }
 
-.rowBetween {
+.connectionCard {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--dsw-radius-md);
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.connectionRow {
+  display: flex;
+  align-items: flex-start;
   gap: 12px;
+  justify-content: space-between;
 }
 
-.badgeRunning,
-.badgeStopped {
-  flex: none;
-  display: inline-flex;
+.connectionText {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.statusRow {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  font-weight: 500;
+  gap: 8px;
 }
 
-.badgeRunning {
-  color: var(--dsw-alias-state-success-primary);
+.statusRunning,
+.statusStopped {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
 }
 
-.badgeStopped {
+.statusRunning {
+  color: var(--dsw-alias-label-primary);
+}
+
+.statusStopped {
   color: var(--dsw-alias-label-tertiary);
 }
 
-.badgeRunning::before,
-.badgeStopped::before {
+.statusTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.statusDot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
   corner-shape: round;
-  background: currentColor;
-  content: '';
+  background: var(--dsw-alias-state-idle-primary);
 }
 
-.qrBox {
+.statusTag[data-on='true'] .statusDot {
+  background: var(--dsw-alias-state-success-primary);
+}
+
+.copyRow {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding: 12px;
-  border-radius: var(--dsw-radius-md);
-  /* 二维码必须保持浅底高对比以便扫描，与主题无关，属内容要求而非主题色。 */
+  gap: 12px;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 0.5px solid var(--dsw-alias-border-l1);
+}
+
+.outlineButton,
+.actionButton {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: var(--dsw-radius-sm);
+  font-family: inherit;
+  font-size: 12.5px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-primary);
+  cursor: pointer;
+}
+
+.outlineButton {
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  background: transparent;
+}
+
+.actionButton {
+  border: 0;
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+@media (hover: hover) {
+  .outlineButton:hover:not(:disabled),
+  .actionButton:hover:not(:disabled) {
+    background: var(--dsw-alias-interactive-bg-pressed, var(--dsw-alias-border-l1));
+  }
+}
+
+.outlineButton:disabled,
+.actionButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.outlineButton:focus-visible,
+.actionButton:focus-visible {
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 2px;
+}
+
+/* QR codes need a light, high-contrast tile to stay scannable in any theme;
+ * that is a content requirement, not a theme color. */
+.qrArea {
+  display: flex;
+  flex: 1;
+  min-height: 232px;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  border: 1px dashed var(--dsw-alias-border-l2);
+  border-radius: var(--dsw-radius-lg);
   background: #ffffff;
 }
 
-.qrInner {
-  width: 176px;
-  height: 176px;
+.qrImage {
+  width: 224px;
+  height: 224px;
 }
 
-.qrInner svg {
+.qrImage svg {
+  display: block;
   width: 100%;
   height: 100%;
-  display: block;
 }
 
-.qrUrl {
-  max-width: 100%;
+.qrLink {
+  margin: 0;
   font-family: ui-monospace, Consolas, monospace;
-  font-size: 11.5px;
-  color: #1c1917;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--dsw-alias-label-tertiary);
   overflow-wrap: anywhere;
   text-align: center;
 }
@@ -245,57 +452,116 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
 }
 
-.addressRow {
+.addressOption {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.addressText {
-  flex: 1;
-  min-width: 0;
-  padding: 5px 8px;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0.5px solid var(--dsw-alias-border-l1);
   border-radius: var(--dsw-radius-sm);
-  background: var(--dsw-alias-interactive-bg-hover);
-  font-family: ui-monospace, Consolas, monospace;
-  font-size: 12px;
-  overflow-wrap: anywhere;
-}
-
-.scopeBadge {
-  flex: none;
-  padding: 1px 8px;
-  border-radius: 999px;
-  corner-shape: round;
-  background: var(--dsw-alias-interactive-bg-hover);
-  color: var(--dsw-alias-label-secondary);
-  font-size: 11.5px;
-}
-
-.button {
-  flex: none;
-  padding: 4px 10px;
-  border: 0;
-  border-radius: var(--dsw-radius-sm);
-  background: var(--dsw-alias-interactive-bg-hover);
+  background: transparent;
   color: var(--dsw-alias-label-primary);
-  font-size: 12px;
+  font: inherit;
+  text-align: left;
   cursor: pointer;
 }
 
-.button:focus-visible {
+@media (hover: hover) {
+  .addressOption:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+  }
+}
+
+.addressOption[data-checked='true'] {
+  border-color: var(--dsw-alias-brand-primary);
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.addressOption:focus-visible {
   outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
   outline-offset: 2px;
 }
 
-@media (hover: hover) {
-  .button:hover {
-    background: var(--dsw-alias-interactive-bg-pressed, var(--dsw-alias-interactive-bg-hover));
-  }
+.addressHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.addressIp {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 18px;
+}
+
+.scopeTag,
+.recommendTag {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.recommendTag {
+  background: transparent;
+  border: 0.5px solid var(--dsw-alias-border-l2);
+  color: var(--dsw-alias-brand-primary);
+}
+
+.addressUrl {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--dsw-alias-label-tertiary);
+  overflow-wrap: anywhere;
+}
+
+.tokenSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 0.5px solid var(--dsw-alias-border-l1);
+}
+
+.tokenRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tokenValue {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: var(--dsw-radius-sm);
+  background: var(--dsw-alias-interactive-bg-hover);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+
+.tokenActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stateBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 4px;
 }

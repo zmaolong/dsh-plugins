@@ -41,18 +41,56 @@ export type GateResult =
 interface RemoteCtrlState {
   version: number
   token: string
+  /** User intent; `false` keeps the gateway down across restarts (absent = enabled). */
+  enabled?: boolean
 }
 
-function writeState(file: string, token: string): void {
-  const state: RemoteCtrlState = { version: STATE_VERSION, token }
-  writeFileSync(file, `${JSON.stringify(state, null, 2)}\n`, 'utf8')
+function writeState(file: string, state: RemoteCtrlState): void {
+  const enabledField = state.enabled === undefined ? {} : { enabled: state.enabled }
+  const persisted: RemoteCtrlState = { version: STATE_VERSION, token: state.token, ...enabledField }
+  writeFileSync(file, `${JSON.stringify(persisted, null, 2)}\n`, 'utf8')
+}
+
+/** Read the persisted state, or null when it is missing/unreadable. */
+function readState(home: string): RemoteCtrlState | null {
+  try {
+    return JSON.parse(readFileSync(join(home, 'remote-ctrl.json'), 'utf8')) as RemoteCtrlState
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Whether the user left the LAN gateway enabled. Absent state (first run,
+ * legacy token-only file) means enabled.
+ */
+export function loadEnabled(home: string): boolean {
+  return readState(home)?.enabled !== false
+}
+
+/** Persist the user's enabled intent next to the token. */
+export function saveEnabled(home: string, token: string, enabled: boolean): void {
+  mkdirSync(home, { recursive: true })
+  writeState(join(home, 'remote-ctrl.json'), { version: STATE_VERSION, token, enabled })
+}
+
+/** Persist a replacement pairing token, keeping the enabled intent. */
+export function saveToken(home: string, token: string, enabled: boolean): void {
+  mkdirSync(home, { recursive: true })
+  writeState(join(home, 'remote-ctrl.json'), { version: STATE_VERSION, token, enabled })
+}
+
+/** Mint a fresh pairing token (manual rotation). */
+export function mintToken(): string {
+  return randomBytes(24).toString('base64url')
 }
 
 /**
  * Resolve the pairing token: an explicitly configured one wins; otherwise
  * the persisted one is reused so QR codes stay valid across restarts; a
  * fresh random token is minted and persisted on first run. Legacy state
- * without a version marker is migrated in place (same token, adds version).
+ * without a version marker is migrated in place (same token, adds version,
+ * keeps the enabled intent).
  */
 export function loadOrCreateToken(home: string, configured: string): string {
   const trimmed = configured.trim()
@@ -62,7 +100,10 @@ export function loadOrCreateToken(home: string, configured: string): string {
     const parsed = JSON.parse(readFileSync(file, 'utf8')) as Partial<RemoteCtrlState>
     const token = typeof parsed.token === 'string' ? parsed.token : ''
     if (token !== '') {
-      if (parsed.version !== STATE_VERSION) writeState(file, token)
+      if (parsed.version !== STATE_VERSION) {
+        const enabledField = typeof parsed.enabled === 'boolean' ? { enabled: parsed.enabled } : {}
+        writeState(file, { version: STATE_VERSION, token, ...enabledField })
+      }
       return token
     }
   } catch {
@@ -70,7 +111,7 @@ export function loadOrCreateToken(home: string, configured: string): string {
   }
   mkdirSync(home, { recursive: true })
   const token = randomBytes(24).toString('base64url')
-  writeState(file, token)
+  writeState(file, { version: STATE_VERSION, token })
   return token
 }
 
