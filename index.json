@@ -5,8 +5,8 @@
     "zh-cn": "DSH 插件源"
   },
   "description": {
-    "en": "An open registry of DeepSeek Harness plugins. Currently includes Agent Plugin Hub, which hosts Claude Code, CodeBuddy and ZCode agent plugins as native DSH skills, commands, hooks and MCP servers.",
-    "zh-cn": "DeepSeek Harness 插件源，目前收录智能体插件中心（Agent Plugin Hub）：在 DSH 内托管 Claude Code、CodeBuddy、ZCode 等智能体插件，并将其能力映射为 DSH 技能、命令、hooks 与 MCP。"
+    "en": "An open registry of DeepSeek Harness plugins. Currently includes Agent Extension, which hosts Claude Code, CodeBuddy and ZCode agent plugins as native DSH skills, commands, hooks and MCP servers.",
+    "zh-cn": "DeepSeek Harness 插件源，目前收录智能体扩展（Agent Extension）：在 DSH 内托管 Claude Code、CodeBuddy、ZCode 等智能体插件，并将其能力映射为 DSH 技能、命令、hooks 与 MCP。"
   },
   "metadata": {
     "categories": {
@@ -34,23 +34,23 @@
   },
   "plugins": [
     {
-      "name": "dsh-agent-plugin-hub",
+      "name": "dsh-agent-extension",
       "title": {
-        "en": "Agent Plugins",
-        "zh-cn": "智能体插件"
+        "en": "Agent Extension",
+        "zh-cn": "智能体扩展"
       },
       "description": {
-        "en": "Host Claude Code / CodeBuddy / ZCode agent plugins in DSH: personal marketplaces, install/update/rollback, per-item capability toggles, and a ZCode-style plugin store panel.",
-        "zh-cn": "在 DSH 里托管 Claude Code / CodeBuddy / ZCode 等智能体插件：个人市场源、安装/更新/回滚、能力逐项启停，以及 ZCode 风格插件商店面板。"
+        "en": "Manage agent extensions in DSH — agent plugins, skills, MCP servers and more: personal marketplaces, install/update/rollback, per-item capability toggles, and a ZCode-style store panel.",
+        "zh-cn": "在 DSH 里管理智能体扩展（插件、技能、MCP 等）：个人市场源、安装/更新/回滚、能力逐项启停，以及 ZCode 风格商店面板。"
       },
-      "homepage": "https://github.com/zmaolong/dsh-plugins/tree/release-0.0.1/packages/dsh-agent-plugin-hub",
+      "homepage": "https://github.com/zmaolong/dsh-plugins/tree/release-0.0.1/packages/dsh-agent-extension",
       "repository": {
         "url": "https://github.com/zmaolong/dsh-plugins"
       },
       "metadata": {
         "category": "tool",
         "keywords": [
-          "agent-plugin",
+          "agent-extension",
           "claude",
           "codebuddy",
           "zcode",
@@ -60,133 +60,13 @@
       },
       "versions": [
         {
-          "version": "0.0.1-preview.9",
-          "publishTimestamp": 1794138431,
+          "version": "0.0.1-preview.0",
+          "publishTimestamp": 1794182731,
           "source": {
             "type": "git",
             "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "c509843248913b7a1eb9d3891b0bc0b29c4f0455",
-            "path": "packages/dsh-agent-plugin-hub"
-          }
-        },
-        {
-          "version": "0.0.1-preview.8",
-          "publishTimestamp": 1794136464,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "3b3f9375132c8b865f11249dad4d3c683f218014",
-            "path": "packages/dsh-agent-plugin-hub"
-          }
-        },
-        {
-          "version": "0.0.1-preview.7",
-          "publishTimestamp": 1794131625,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "9c2990d59d2386248812502887b024ab6e2e3889",
-            "path": "packages/dsh-agent-plugin-hub"
-          }
-        },
-        {
-          "version": "0.0.1-preview.6",
-          "publishTimestamp": 1794123188,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "6d660ba70a14c1784f0436fdbfcd47d99712f38e",
-            "path": "packages/dsh-agent-plugin-hub"
-          }
-        },
-        {
-          "version": "0.0.1-preview.5",
-          "publishTimestamp": 1794109250,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "269f8f0163a25399baa16ff712436320e2546d43",
-            "path": "packages/dsh-agent-plugin-hub"
-          }
-        },
-        {
-          "version": "0.0.1-preview.4",
-          "publishTimestamp": 1794107749,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "b9368c7aae5ced5323e737e27f9c78fb3cec9dab",
-            "path": "packages/dsh-agent-plugin-hub"
-          }
-        },
-        {
-          "version": "0.0.1-preview.3",
-          "publishTimestamp": 1794106669,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "e7af9ee387175fa09d444fff506883a11f1b4d11",
-            "path": "packages/dsh-agent-plugin-hub"
-          }
-        },
-        {
-          "version": "0.0.1-preview.2",
-          "publishTimestamp": 1794104402,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "92c43e33fd0f121519521953b15ecd4b94e304fb",
-            "path": "packages/dsh-agent-plugin-hub"
-          }
-        },
-        {
-          "version": "0.0.1-preview.13",
-          "publishTimestamp": 1794178830,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "7554620352910fe5eb10fcf0e9270c790d9e8323",
-            "path": "packages/dsh-agent-plugin-hub"
-          }
-        },
-        {
-          "version": "0.0.1-preview.12",
-          "publishTimestamp": 1794143804,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "cb645bf89cf758126c52c2d5c68ea25ccf07dc64",
-            "path": "packages/dsh-agent-plugin-hub"
-          }
-        },
-        {
-          "version": "0.0.1-preview.11",
-          "publishTimestamp": 1794142685,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "86e8e9e45338294aef017b332ab422736199a954",
-            "path": "packages/dsh-agent-plugin-hub"
-          }
-        },
-        {
-          "version": "0.0.1-preview.10",
-          "publishTimestamp": 1794139109,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "f9d6a1fef0f0970d15a6b4b2a70908f3afddc824",
-            "path": "packages/dsh-agent-plugin-hub"
-          }
-        },
-        {
-          "version": "0.0.1-preview.1",
-          "publishTimestamp": 1794097867,
-          "source": {
-            "type": "git",
-            "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "51693f1352ce153ccf2a3706a1b1e70fae5d1f6e",
-            "path": "packages/dsh-agent-plugin-hub"
+            "commit": "886d14823c3d00a8f21009d430f9bd4fdce5d37d",
+            "path": "packages/dsh-agent-extension"
           }
         }
       ]
@@ -218,11 +98,11 @@
       "versions": [
         {
           "version": "0.0.1-preview.1",
-          "publishTimestamp": 1794178830,
+          "publishTimestamp": 1794182731,
           "source": {
             "type": "git",
             "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "7554620352910fe5eb10fcf0e9270c790d9e8323",
+            "commit": "886d14823c3d00a8f21009d430f9bd4fdce5d37d",
             "path": "packages/dsh-remote-ctrl"
           }
         },
