@@ -18,7 +18,7 @@ import { RcServer, type UpstreamHandle } from './server.ts'
 import type { ConnectionService, HostContext, RemoteCtrlConfig, WebServerService } from './host.ts'
 
 /** Package version surfaced in logs. */
-export const REMOTE_CTRL_VERSION = '0.0.1-preview.4'
+export const REMOTE_CTRL_VERSION = '0.0.1-preview.5'
 
 /**
  * Default listener port. High and uncommon on purpose: it sits below the
