@@ -94,7 +94,6 @@ export function Panel({ useRemote, actions, t }: PanelProps): ReactNode {
                     {data.listening ? t('enabledTag') : t('disabledTag')}
                   </span>
                 </div>
-                <p className={css.detail}>{t('listenAt', { host: data.host, port: data.port })}</p>
                 {data.listening && <p className={css.detail}>{t('clients', { count: data.clientCount })}</p>}
                 {data.error !== '' && <p className={css.errorText} role="alert">{`${t('serverError')}：${data.error}`}</p>}
                 {!data.upstream.ready && <p className={css.detail}>{t('upstreamMissing')}</p>}
@@ -131,15 +130,6 @@ export function Panel({ useRemote, actions, t }: PanelProps): ReactNode {
             </div>
             <div className={css.tokenRow}>
               <code className={css.tokenValue}>{data.token}</code>
-              <button
-                type="button"
-                className={css.outlineButton}
-                onClick={() => { void actions.copy(data.token, 'token') }}
-              >
-                {state.copied === 'token' ? t('copied') : t('copy')}
-              </button>
-            </div>
-            <div className={css.tokenActions}>
               {confirmRefresh
                 ? (
                     <>

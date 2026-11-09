@@ -628,7 +628,7 @@ var RcServer = class {
 * @module dsh-remote-ctrl/remote-ctrl
 */
 /** Package version surfaced in logs. */
-const REMOTE_CTRL_VERSION = "0.0.1-preview.5";
+const REMOTE_CTRL_VERSION = "0.0.1-preview.6";
 /**
 * Default listener port. High and uncommon on purpose: it sits below the
 * OS ephemeral range (49152+), so the gateway rarely collides with another

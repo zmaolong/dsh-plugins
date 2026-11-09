@@ -558,6 +558,7 @@
 
 .tokenRow {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }
@@ -572,12 +573,6 @@
   font-size: 12px;
   line-height: 18px;
   overflow-wrap: anywhere;
-}
-
-.tokenActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
 }
 
 .stateBlock {

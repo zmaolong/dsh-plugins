@@ -244,11 +244,14 @@ describe('Panel', () => {
     expect((screen.getByRole('button', { name: t('refreshToken') }) as HTMLButtonElement).disabled).toBe(true)
   })
 
-  it('hands the address and token to copy actions', () => {
+  it('offers no copy button for the pairing token and shows only the device count', () => {
     const actions = panelActions()
     render(<Panel useRemote={stubRemote(runningState()).useRemote} actions={actions} t={t} />)
-    fireEvent.click(screen.getAllByRole('button', { name: t('copy') })[0] ?? document.body)
-    expect(actions.copy).toHaveBeenCalledWith('tkn-value', 'token')
+    // 配对码不提供复制：唯一的复制入口是「复制链接」。
+    expect(screen.queryByRole('button', { name: t('copy') })).toBeNull()
+    expect(screen.getByText(t('clients', { count: 2 }))).toBeDefined()
+    expect(document.body.textContent).not.toContain('0.0.0.0:47291')
+    expect(screen.getByRole('button', { name: t('refreshToken') })).toBeDefined()
   })
 
   it('renders the stopped state without a QR and shows server errors', () => {
