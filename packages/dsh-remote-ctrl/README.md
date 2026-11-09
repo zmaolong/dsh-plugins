@@ -30,7 +30,7 @@ UI**（0.0.1-preview.1 起删除了自研手机页，改为纯网关）。
   （重启不变，二维码长期有效）；持有配对码 = 获得完整 webUI 访问权。
 - **Host 校验**：Host 头必须是本机地址（防 DNS rebinding）。
 - **跨站防护**：写请求要求同源 Origin，拒绝浏览器声明的
-  `sec-fetch-site: cross-site`（与 dsh-agent-plugin-hub 的 fence 同构）。
+  `sec-fetch-site: cross-site`（与 dsh-agent-extension 的 fence 同构）。
 - 请只在**可信局域网**使用；桌面面板数据面只挂宿主回环。
 
 ## 配置（cordis.patch.yml）

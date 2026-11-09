@@ -33,13 +33,13 @@
   只安装，不启动调试宿主（装 desktop 时自动如此）。
 
 .EXAMPLE
-  powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\dsh-agent-plugin-hub
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\dsh-agent-extension
 
 .EXAMPLE
-  powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\dsh-agent-plugin-hub -Profile desktop -NoBoot
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\dsh-agent-extension -Profile desktop -NoBoot
 
 .EXAMPLE
-  powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\dsh-agent-plugin-hub -WhatIf
+  powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\dsh-agent-extension -WhatIf
 #>
 [CmdletBinding(SupportsShouldProcess)]
 param(

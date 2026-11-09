@@ -1,6 +1,6 @@
 {
   // Shared compiler shape for the remote-ctrl node and client programs,
-  // mirroring the dsh-agent-plugin-hub / official repository strictness bar.
+  // mirroring the dsh-agent-extension / official repository strictness bar.
   "compilerOptions": {
     "target": "es2024",
     "module": "esnext",

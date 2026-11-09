@@ -1,4 +1,4 @@
-# HANDOFF — dsh-agent-plugin-hub 0.3.6
+# HANDOFF — dsh-agent-extension 0.3.6
 
 > 状态：**0.3.6 已开发完成，安装进桌面端 desktop profile（link 指向运行时副本）并通过 Host API E2E**。
 > 本文件随 `release-0.0.1` 分支提交；提交作者与提交者统一为 `zmaolong <203504243+zmaolong@users.noreply.github.com>`。
@@ -28,13 +28,13 @@
 
 ## 30 秒速览
 
-- 安装形态：`dsh-agent-plugin-hub@0.3.6`，link 到 `E:\workspace\dsh-agent-plugin-hub-runtime\0.3.6`（运行时副本）。
-  仓库源码：`E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub`。
-- 左侧栏入口：**首页左侧栏「智能体插件」图标**（order 5，位于「插件」与「自动化任务」之间），
+- 安装形态：`dsh-agent-extension@0.3.6`，link 到 `E:\workspace\dsh-agent-extension-runtime\0.3.6`（运行时副本）。
+  仓库源码：`E:\workspace\dsh-plugins\packages\dsh-agent-extension`。
+- 左侧栏入口：**首页左侧栏「智能体扩展」图标**（order 5，位于「插件」与「自动化任务」之间），
   点击后中央面板打开 ZCode 风格商店。
 - 升级后需要 **刷新页面** 才载入新 Client；Host 端本次通过新运行时路径热加载（无需重启）。
 - 会话命令仍是 `/agent-plugin`，子命令与以前一致。
-- 自测：`cd packages\dsh-agent-plugin-hub; npm run check && npm test` → **147/147 通过，零网络**。
+- 自测：`cd packages\dsh-agent-extension; npm run check && npm test` → **147/147 通过，零网络**。
 
 ## 0.3.6 优化：内容列居中
 
@@ -192,7 +192,7 @@ title 提示；详情描述、警告、来源错误等多行文本缺少换行�
 ### 1. 单元 / 集成测试
 
 ```text
-$ cd packages/dsh-agent-plugin-hub
+$ cd packages/dsh-agent-extension
 $ npm run check     # 全部 lib + client.js 语法通过
 $ npm test
 ℹ tests 147
@@ -233,15 +233,15 @@ Client 模块注册 / 纯函数 / store / 组件冒烟（32 个 client 用例）
 - 无头 Edge 直接访问 `http://127.0.0.1:1367` 只能拿到 **401**（桌面端会话鉴权），无法在外部浏览器
   完成截图与 DOM 断言；因此**未对已鉴权 GUI 做自动截图验收**。
 - 组件/样式规格由 32 个 client 测试（React 替身）与 ZCode 规格数值对照覆盖；请在桌面端刷新页面后
-  人工看一眼：「智能体插件」入口 → 商店列表 → 点卡片进详情 → 插件管理 → 市场源/添加弹窗。
+  人工看一眼：「智能体扩展」入口 → 商店列表 → 点卡片进详情 → 插件管理 → 市场源/添加弹窗。
 
 ## 当前安装状态与手工步骤
 
 1. 运行中的 Host 已加载 0.3.6：`plugin_manager install_bundle` 的结果为 `application: applied`，
-   profile `package.json` 依赖为 `"dsh-agent-plugin-hub": "link:E:/workspace/dsh-agent-plugin-hub-runtime/0.3.6"`。
+   profile `package.json` 依赖为 `"dsh-agent-extension": "link:E:/workspace/dsh-agent-extension-runtime/0.3.6"`。
 2. **请刷新一次桌面端页面**：Client 代码由浏览器模块表加载，刷新后商店面板与 `shell.overlay` 生效。
-3. 打开「智能体插件」后应看到：
-   - 标题「智能体插件」+ 刷新/市场源/添加/插件管理；「个人」分段；搜索；
+3. 打开「智能体扩展」后应看到：
+   - 标题「智能体扩展」+ 刷新/市场源/添加/插件管理；「个人」分段；搜索；
    - 市场分组（当前真实环境有 1 个：`mattpocock`，1 个插件；如需更多可添加本地目录/Git/URL）；
    - 点卡片进详情；「插件管理」里安装项与开关；右上「添加」打开自动识别弹窗。
 4. 若面板没出现：先刷新页面；仍无则重启 DSH（Host 已热加载，但浏览器模块表可能需要刷新）。

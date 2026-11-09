@@ -2,7 +2,7 @@
 
 > **读者**：本仓库的开发者，以及任何在本仓库工作的 AI Agent / Harness（Claude Code、CodeBuddy、ZCode、Cursor、Codex 等）。
 > **目标**：读完本文即可写出「能安装、能运行、能发布、能进市场索引」的 DSH 插件。
-> **参考实现**：[`packages/dsh-agent-plugin-hub`](../packages/dsh-agent-plugin-hub)（真实可用、离线测试）。
+> **参考实现**：[`packages/dsh-agent-extension`](../packages/dsh-agent-extension)（真实可用、离线测试）。
 
 ---
 
@@ -40,7 +40,7 @@ DSH 是开源项目，官方资料优先级最高：
 具体证据清单：
 
 1. **用户提示词**（需求方约束，非技术规则）：多插件聚合仓库、自建索引、npm 占名与 `0.0.1-preview.N` 预览线、首个正式版 `0.0.1`、中性文案、要求把规范文档化。
-2. **本仓库既有资料**：`README.md`、`HANDOFF.md`、`packages/dsh-agent-plugin-hub/README.md`、`packages/dsh-agent-plugin-hub/docs/HOST-API.md`。
+2. **本仓库既有资料**：`README.md`、`HANDOFF.md`、`packages/dsh-agent-extension/README.md`、`packages/dsh-agent-extension/docs/HOST-API.md`。
 3. **DSH 运行时上下文（系统注入）**：实现 checkout 路径、GUI URL、workspace 路径、文件沙箱策略；`plugin_manager` 工具描述（安装/卸载/开关能力）。
 4. **本机 DSH 安装**：`D:\Program Files\dsh`（`app.asar`、`app.asar.unpacked`、`resources/runtime`）、`~/.dsh/profiles/<profile>/`（`package.json` 的 `dsh.profile.bundles`、`cordis.patch.yml`、`.plugin-manager` 日志、pnpm 日志）。
 5. **官方仓库与文档站**（§0.1 全部链接）。
@@ -294,7 +294,7 @@ ctx.slots.inject('shell.overlay', () => ctx.slots.register({
 }, () => h(OverlayHost, { /* ... */ })))
 ```
 
-常用槽位：`sidebar.panellist`、`main`、`shell.overlay`。`order` 用于排序（本仓库约定：插件 0 / 智能体插件 5 / 自动化任务 10 / 上下文洞察 20，🟡 实机顺序）。
+常用槽位：`sidebar.panellist`、`main`、`shell.overlay`。`order` 用于排序（本仓库约定：插件 0 / 智能体扩展 5 / 自动化任务 10 / 上下文洞察 20，🟡 实机顺序）。
 
 ### 4.4 数据面与安全
 
@@ -339,7 +339,7 @@ ctx.effect(() => ctx.locale.register('myPlugin', { zh, en, ja, es, fr, de, ru, p
 | effect | `ctx.effect(() => () => cleanup)` | 生命周期清理 |
 | inject | `ctx.inject(deps, cb)` | 等待服务就绪 |
 
-更细的接口形状、路由约定与降级矩阵见参考实现内的 [`docs/HOST-API.md`](../packages/dsh-agent-plugin-hub/docs/HOST-API.md)（🟡 本机侦察结论）。
+更细的接口形状、路由约定与降级矩阵见参考实现内的 [`docs/HOST-API.md`](../packages/dsh-agent-extension/docs/HOST-API.md)（🟡 本机侦察结论）。
 
 ---
 
@@ -358,7 +358,7 @@ dsh --profile web
 **本仓库一键调试（推荐）**：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\dsh-agent-plugin-hub
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\dsh-agent-extension
 ```
 
 默认跑 `check`/`test`/`build`，装进 `zdebug` 调试 profile（首次按 `web` 模板创建）并启动浏览器实例，打印入口 URL 与宿主日志路径；`-Profile desktop -NoBoot` 只装进桌面真实环境。link 安装要创建 junction，需在 ZCode 等普通终端运行（DSH 沙箱内的 shell 会拒绝）。
@@ -557,5 +557,5 @@ npm run build   # tsdown 产物（lib/ 入库）
 - 官方插件展示元数据：[`docs/cookbook/adding-a-package.md`](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/cookbook/adding-a-package.md)（§ Add optional plugin display metadata）
 - 官方架构：[`docs/architecture.md`](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/architecture.md)
 - 本仓库：[`README.md`](../README.md)、[`AGENTS.md`](../AGENTS.md)
-- 宿主 API 侦察结论：[`packages/dsh-agent-plugin-hub/docs/HOST-API.md`](../packages/dsh-agent-plugin-hub/docs/HOST-API.md)
-- 参考实现：[`packages/dsh-agent-plugin-hub`](../packages/dsh-agent-plugin-hub)
+- 宿主 API 侦察结论：[`packages/dsh-agent-extension/docs/HOST-API.md`](../packages/dsh-agent-extension/docs/HOST-API.md)
+- 参考实现：[`packages/dsh-agent-extension`](../packages/dsh-agent-extension)

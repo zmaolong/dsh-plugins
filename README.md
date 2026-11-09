@@ -45,7 +45,7 @@ dsh-plugins/
 │   ├── build-index.mjs
 │   └── serve-index.mjs
 └── packages/
-    ├── dsh-agent-plugin-hub/   # 智能体插件运行时与市场（0.0.1-preview.6，ZCode 风格商店面板）
+    ├── dsh-agent-extension/   # 智能体扩展：管理智能体插件、技能、MCP 等（ZCode 风格商店面板）
     │   ├── package.json        # devDependencies 工具链（TS/tsdown/vitest），dependencies 为空
     │   ├── cordis.patch.yml
     │   ├── README.md
@@ -93,7 +93,7 @@ node scripts\serve-index.mjs
 ### 3. 先把插件装上跑起来（绕过索引，开发期用）
 
 ```powershell
-dsh plugin --profile web add E:\workspace\dsh-plugins\packages\dsh-agent-plugin-hub
+dsh plugin --profile web add E:\workspace\dsh-plugins\packages\dsh-agent-extension
 dsh --profile web
 ```
 
@@ -111,13 +111,15 @@ dsh --profile web
 
 | 包 | 作用 | 代码要点 |
 |---|---|---|
-| `dsh-agent-plugin-hub` | 在 DSH 里托管 Claude Code、CodeBuddy、ZCode 等**智能体插件**（Agent Plugins）：个人市场、安装/更新/回滚、能力注入与逐项启停，以及 ZCode 风格商店面板 | 组合包 + `/agent-plugin` 命令 + 首页左侧栏商店面板（首页双 tab：我的市场 / 推荐（市场详情页 + 插件描述页 + 一键添加）、按市场分组 / 详情 / 管理 / 市场源 / 自动识别来源 / 等价来源查重）；schema v2 自动迁移；skills/commands/hooks 注入，MCP 清单标注；TypeScript + tsdown + vitest 官方化工具链，161 个离线用例 |
+| `dsh-agent-extension` | **智能体扩展**（Agent Extension）：在 DSH 里托管 Claude Code、CodeBuddy、ZCode 等**智能体插件**（Agent Plugins），并纳管技能、MCP 等更多扩展——个人市场、安装/更新/回滚、能力注入与逐项启停，以及 ZCode 风格商店面板 | 组合包 + `/agent-plugin` 命令 + 首页左侧栏商店面板（首页双 tab：我的市场 / 推荐（市场详情页 + 插件描述页 + 一键添加）、按市场分组 / 详情 / 管理 / 市场源 / 自动识别来源 / 等价来源查重）；schema v2 自动迁移；skills/commands/hooks 注入，MCP 清单标注；TypeScript + tsdown + vitest 官方化工具链，161 个离线用例 |
 | `dsh-remote-ctrl` | **局域网远程控制**：带配对码的访问网关——宿主 web UI 只绑回环，插件自起 `node:http`（默认 `0.0.0.0:31080`）把**完整、自适应的 DSH Web UI** 反代给局域网手机；会话/流式输出/发消息/工具审批/智能体提问全部宿主原生，插件不做业务 UI | 组合包 + 配对码门（query/Bearer/配对 cookie 三通道，Host 校验 + 同源写防护）+ 服务端 launch-token 代换（`ctx.connection.authenticatedUrl` → 签名 cookie 缓存并下发，宿主重启 401 自动重换重放）+ Host/Origin/Referer 统一改写满足 `/api` trust fence + SSE 直通与 WebSocket 中继；桌面面板挂宿主回环 `/remote-ctrl/api`（状态/地址列表/二维码/token/连接数）；TypeScript + tsdown 双产物 + vitest，22 个离线用例 |
 
 > 命名说明：Agent 直译“代理”不准确、“助手”易混淆；单叫“插件”会与 DSH 自身插件混淆。
-> 用**智能体插件**（英文 Agent Plugins）加限定词区分；代码里的包名与 `/agent-plugin` 命令不变。
+> 跨 Harness 的插件资产包用**智能体插件**（英文 Agent Plugins）加限定词区分；包名与界面
+> 已升级为**智能体扩展**（Agent Extension，`dsh-agent-extension`），为纳管 skill、MCP 等
+> 更多扩展留位；`/agent-plugin` 命令与 `/agent-plugin/api` 数据面沿用域层旧名。
 
-包内细节见 [`packages/dsh-agent-plugin-hub/README.md`](packages/dsh-agent-plugin-hub/README.md)。
+包内细节见 [`packages/dsh-agent-extension/README.md`](packages/dsh-agent-extension/README.md)。
 
 本包**刻意不 import 任何 `@deepseek-ai/*` 包**。原因：profile 的 `pnpm-workspace.yaml` 里是 `autoInstallPeers: false`，peer 依赖不会被安装，第三方插件 `import '@deepseek-ai/...'` 会在宿主里解析失败。需要 `defineTool` 这类助手时，把它写进 `dependencies` 并和宿主版本对齐；能用 `ctx` 提供的接口就优先用 `ctx`。
 
@@ -127,7 +129,7 @@ dsh --profile web
 
 > 完整规范（骨架、宿主端/客户端契约、安装调试、版本发布、市场索引）见 [`docs/PLUGIN-DEV.md`](docs/PLUGIN-DEV.md)；下面是速查。
 
-1. 参考 `packages/dsh-agent-plugin-hub` 的骨架，复制成你的包名目录。
+1. 参考 `packages/dsh-agent-extension` 的骨架，复制成你的包名目录。
 2. 改 `package.json`：`name`、`version`、`description`；改 `locale/en.json`、`locale/zh.json` 等 8 语言文件的 `meta.title` / `meta.description`（**DSH 运行时读取的官方展示元数据**）；本仓库再在 `package.json` 的 `dsh.market` 里维护一份供 `scripts/build-index.mjs` 生成索引用，两处保持一致。
 3. 改 `cordis.patch.yml`：`id` 换成本插件独有的行 id，`name` 换成**自己的包名**。
 4. 改 `src/index.ts`：`export const name` 和 `apply` 里的逻辑；客户端改 `src/client/`，然后 `npm run build`（`lib/` 产物与源码一起提交）。

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "智能体扩展",
+    "description": "添加插件市场、安装 Claude Code 等格式的插件，并逐项启停它们的技能、命令、hooks 与 MCP 清单。"
+  }
+}

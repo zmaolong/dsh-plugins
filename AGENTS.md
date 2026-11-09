@@ -56,13 +56,13 @@
 2. 装进调试 profile 并启动，默认 `zdebug`：首次按官方 `web` 模板创建（装依赖较慢，可能超 10 分钟），浏览器调试与宿主终端日志都可用：
 
    ```powershell
-   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\dsh-agent-plugin-hub
+   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\dsh-agent-extension
    ```
 
    装进桌面真实环境（只安装、不启动，随后刷新页面或关/开插件）：
 
    ```powershell
-   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\dsh-agent-plugin-hub -Profile desktop -NoBoot
+   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\dev-debug.ps1 packages\dsh-agent-extension -Profile desktop -NoBoot
    ```
 
 3. **浏览器实测（playwright-cli）**：打开脚本打印的入口 URL 后依次——
@@ -77,7 +77,7 @@
 ## 常用命令
 
 ```powershell
-cd packages\dsh-agent-plugin-hub
+cd packages\dsh-agent-extension
 npm run check        # tsc --noEmit（node + client 双 tsconfig）
 npm test             # vitest run（离线）
 npm run build        # tsdown：lib/index.js（ESM 宿主半）+ lib/client.js（CJS 浏览器半）
@@ -90,7 +90,7 @@ node scripts\serve-index.mjs            # 本地起索引服务（http://127.0.0
 ## 仓库现状（以文件为准）
 
 - 插件包：`packages/` 下多个组合包，版本以各自 `package.json` 为准：
-  - `dsh-agent-plugin-hub`（智能体插件运行时与市场，官方化工具链形态：TypeScript + JSX + CSS Modules + tsdown + vitest）；
+  - `dsh-agent-extension`（智能体扩展：管理智能体插件、技能、MCP 等扩展，官方化工具链形态：TypeScript + JSX + CSS Modules + tsdown + vitest）；
   - `dsh-remote-ctrl`（局域网访问网关：自起 HTTP 服务反代完整 webUI + 桌面面板，同一工具链双产物）；
 - 发布分支：`release-0.0.1`（市场索引从该分支的 `index.json` 读取）；
 - 索引源：Git（`DSH_PLUGINS_SOURCE` 可切 npm）；

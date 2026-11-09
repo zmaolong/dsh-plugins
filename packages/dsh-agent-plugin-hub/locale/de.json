@@ -1,6 +1,0 @@
-{
-  "meta": {
-    "title": "Agent-Plugins",
-    "description": "Fügt Agent-Plugin-Marktplätze hinzu, installiert Plugins im Claude-Code-Format und schaltet ihre Skills, Befehle, Hooks und MCP-Server einzeln ein oder aus."
-  }
-}

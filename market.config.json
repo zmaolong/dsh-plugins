@@ -4,8 +4,8 @@
     "zh-cn": "DSH 插件源"
   },
   "description": {
-    "en": "An open registry of DeepSeek Harness plugins. Currently includes Agent Plugin Hub, which hosts Claude Code, CodeBuddy and ZCode agent plugins as native DSH skills, commands, hooks and MCP servers.",
-    "zh-cn": "DeepSeek Harness 插件源，目前收录智能体插件中心（Agent Plugin Hub）：在 DSH 内托管 Claude Code、CodeBuddy、ZCode 等智能体插件，并将其能力映射为 DSH 技能、命令、hooks 与 MCP。"
+    "en": "An open registry of DeepSeek Harness plugins. Currently includes Agent Extension, which hosts Claude Code, CodeBuddy and ZCode agent plugins as native DSH skills, commands, hooks and MCP servers.",
+    "zh-cn": "DeepSeek Harness 插件源，目前收录智能体扩展（Agent Extension）：在 DSH 内托管 Claude Code、CodeBuddy、ZCode 等智能体插件，并将其能力映射为 DSH 技能、命令、hooks 与 MCP。"
   },
   "categories": {
     "tool": {

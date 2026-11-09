@@ -86,7 +86,7 @@ function localHostNames() {
 *   without re-sending the token);
 * - state-changing requests additionally need a same-origin Origin, and a
 *   browser-attested `sec-fetch-site: cross-site` is rejected outright
-*   (mirrors the dsh-agent-plugin-hub `isAdmitted` fence).
+*   (mirrors the dsh-agent-extension `isAdmitted` fence).
 *
 * @module dsh-remote-ctrl/auth
 */

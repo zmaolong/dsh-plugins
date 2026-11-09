@@ -1,0 +1,11 @@
+{
+  "name": "versionless-market",
+  "owner": { "name": "dsh-agent-extension fixtures" },
+  "plugins": [
+    {
+      "name": "demo-versionless",
+      "description": "夹具：无 version 的 Claude 插件（模拟 claude-plugins-official 形态）",
+      "source": "./plugins/demo-versionless"
+    }
+  ]
+}

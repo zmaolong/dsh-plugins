@@ -1,0 +1,9 @@
+# 把 Agent Extension 的行插进 profile 组合层。
+# home 留空时依次取 DSH_AGENT_EXTENSION_HOME、~/.dsh/agent-extension。
+# hooks 设为 false 时只保留 hooks 清单，不执行外部命令。
+- insert:
+    - id: agent-extension
+      name: 'dsh-agent-extension'
+      config:
+        home: ''
+        hooks: true

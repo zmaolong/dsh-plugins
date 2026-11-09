@@ -1,6 +1,6 @@
 /**
  * Build config for dsh-remote-ctrl: the host half plus the desktop panel
- * factory. Behavior mirrors the dsh-agent-plugin-hub preset (which itself
+ * factory. Behavior mirrors the dsh-agent-extension preset (which itself
  * mirrors the official UI-plugin preset `packages/client/tsdown.client.ts`)
  * artifact by artifact:
  *

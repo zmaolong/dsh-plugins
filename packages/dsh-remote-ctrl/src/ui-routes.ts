@@ -3,7 +3,7 @@
  * the phone never talks to this surface; it uses the plugin's own LAN
  * server). Read-only today: `GET /remote-ctrl/api/status` returns everything
  * the panel renders (listening state, per-address URLs, QR payload, token,
- * connected clients). Mirrors the dsh-agent-plugin-hub admission fence.
+ * connected clients). Mirrors the dsh-agent-extension admission fence.
  *
  * @module dsh-remote-ctrl/ui-routes
  */
