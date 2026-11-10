@@ -773,6 +773,101 @@
   color: var(--dsw-alias-label-primary);
 }
 
+/* Health audit dialog: grouped findings, selectable rows, and a batch bar. */
+.auditGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.auditGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auditGroupTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--dsw-alias-label-primary);
+}
+
+.auditCount {
+  flex: none;
+  padding: 0 6px;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11px;
+  line-height: 18px;
+}
+
+.auditHint {
+  min-width: 0;
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.auditRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px;
+  border: 0.5px solid var(--dsw-alias-border-l3);
+  border-radius: var(--dsw-radius-sm);
+  background: var(--dsw-alias-bg-layer-3);
+  cursor: pointer;
+}
+
+.auditCheck {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  accent-color: var(--dsw-alias-state-business-primary);
+}
+
+.auditSummary {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.auditPair {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auditPairKeep {
+  font-size: 12px;
+  color: var(--dsw-alias-state-business-primary);
+}
+
+.auditBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 0.5px solid var(--dsw-alias-border-l2);
+}
+
+.auditBarCount {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--dsw-alias-label-secondary);
+}
+
 /* Inline error banner with a retry action. */
 .errorBox {
   display: flex;

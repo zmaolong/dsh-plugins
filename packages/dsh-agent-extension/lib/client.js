@@ -256,7 +256,22 @@ window.__ModuleLoader__.load({
 			memoryClearTypeFilter: "清除类型筛选",
 			memoryClearTagFilter: "清除标签筛选",
 			memoryTagRemove: "移除标签 {tag}",
-			memoryTagFilterHint: "点击按此标签筛选"
+			memoryTagFilterHint: "点击按此标签筛选",
+			memoryAuditButton: "记忆体检",
+			memoryAuditRunning: "体检中…",
+			memoryAuditTitle: "记忆体检",
+			memoryAuditStaleTitle: "过时候选",
+			memoryAuditStaleHint: "有失效投票或已停用，建议归档",
+			memoryAuditDuplicateTitle: "疑似重复",
+			memoryAuditDuplicateHint: "内容与另一条高度相似",
+			memoryAuditLowValueTitle: "低价值条目",
+			memoryAuditLowValueHint: "超过 30 天未更新且从未被强化",
+			memoryAuditKeep: "建议保留「{name}」",
+			memoryAuditEmpty: "未发现问题，记忆库状态良好。",
+			memoryAuditSelected: "已选 {count} 条",
+			memoryAuditDeleteConfirm: "将删除所选 {count} 条记忆，且无法恢复。",
+			memoryAuditDone: "已处理 {count} 条记忆",
+			memoryAuditPartial: "{count} 条处理失败，可重新体检后重试"
 		};
 		/** English dictionary (sentence case; same key set as `zh`). */
 		const en = {
@@ -498,7 +513,22 @@ window.__ModuleLoader__.load({
 			memoryClearTypeFilter: "Clear type filter",
 			memoryClearTagFilter: "Clear tag filter",
 			memoryTagRemove: "Remove tag {tag}",
-			memoryTagFilterHint: "Click to filter by this tag"
+			memoryTagFilterHint: "Click to filter by this tag",
+			memoryAuditButton: "Memory audit",
+			memoryAuditRunning: "Auditing…",
+			memoryAuditTitle: "Memory audit",
+			memoryAuditStaleTitle: "Stale candidates",
+			memoryAuditStaleHint: "Carries an obsolete vote or is deactivated — consider archiving",
+			memoryAuditDuplicateTitle: "Suspected duplicates",
+			memoryAuditDuplicateHint: "Closely similar to another entry",
+			memoryAuditLowValueTitle: "Low-value entries",
+			memoryAuditLowValueHint: "Untouched for over 30 days and never reinforced",
+			memoryAuditKeep: "Suggested to keep: {name}",
+			memoryAuditEmpty: "No issues found — the memory store looks healthy.",
+			memoryAuditSelected: "{count} selected",
+			memoryAuditDeleteConfirm: "This deletes the {count} selected memories and cannot be undone.",
+			memoryAuditDone: "Processed {count} memories",
+			memoryAuditPartial: "{count} failed — rerun the audit and retry"
 		};
 		/** Japanese dictionary (same key set as `zh`). */
 		const ja = {
@@ -740,7 +770,22 @@ window.__ModuleLoader__.load({
 			memoryClearTypeFilter: "タイプ絞り込みを解除",
 			memoryClearTagFilter: "タグ絞り込みを解除",
 			memoryTagRemove: "タグ {tag} を削除",
-			memoryTagFilterHint: "クリックでこのタグで絞り込み"
+			memoryTagFilterHint: "クリックでこのタグで絞り込み",
+			memoryAuditButton: "メモリ診断",
+			memoryAuditRunning: "診断中…",
+			memoryAuditTitle: "メモリ診断",
+			memoryAuditStaleTitle: "陳腐化の候補",
+			memoryAuditStaleHint: "無効投票ありまたは停止中。アーカイブを推奨",
+			memoryAuditDuplicateTitle: "重複の疑い",
+			memoryAuditDuplicateHint: "別のエントリと内容が類似",
+			memoryAuditLowValueTitle: "低価値エントリ",
+			memoryAuditLowValueHint: "30 日以上未更新かつ強化なし",
+			memoryAuditKeep: "保持候補：{name}",
+			memoryAuditEmpty: "問題は見つかりませんでした。メモリは良好です。",
+			memoryAuditSelected: "{count} 件選択中",
+			memoryAuditDeleteConfirm: "選択した {count} 件のメモリを削除します。元に戻せません。",
+			memoryAuditDone: "{count} 件のメモリを処理しました",
+			memoryAuditPartial: "{count} 件が失敗しました。再診断して再試行してください"
 		};
 		/** Spanish dictionary (same key set as `zh`). */
 		const es = {
@@ -982,7 +1027,22 @@ window.__ModuleLoader__.load({
 			memoryClearTypeFilter: "Quitar el filtro de tipo",
 			memoryClearTagFilter: "Quitar el filtro de etiqueta",
 			memoryTagRemove: "Quitar la etiqueta {tag}",
-			memoryTagFilterHint: "Haga clic para filtrar por esta etiqueta"
+			memoryTagFilterHint: "Haga clic para filtrar por esta etiqueta",
+			memoryAuditButton: "Revisión de memoria",
+			memoryAuditRunning: "Revisando…",
+			memoryAuditTitle: "Revisión de memoria",
+			memoryAuditStaleTitle: "Candidatos obsoletos",
+			memoryAuditStaleHint: "Con voto de obsolescencia o desactivada; considere archivarla",
+			memoryAuditDuplicateTitle: "Duplicados sospechosos",
+			memoryAuditDuplicateHint: "Muy similar a otra entrada",
+			memoryAuditLowValueTitle: "Entradas de poco valor",
+			memoryAuditLowValueHint: "Sin cambios hace más de 30 días y sin refuerzo",
+			memoryAuditKeep: "Sugerencia de conservar: {name}",
+			memoryAuditEmpty: "No se encontraron problemas; la memoria está en buen estado.",
+			memoryAuditSelected: "{count} seleccionadas",
+			memoryAuditDeleteConfirm: "Se eliminarán las {count} entradas seleccionadas y no se puede deshacer.",
+			memoryAuditDone: "Se procesaron {count} entradas",
+			memoryAuditPartial: "{count} fallaron; ejecute la revisión de nuevo e inténtelo otra vez"
 		};
 		/** French dictionary (same key set as `zh`). */
 		const fr = {
@@ -1224,7 +1284,22 @@ window.__ModuleLoader__.load({
 			memoryClearTypeFilter: "Effacer le filtre de type",
 			memoryClearTagFilter: "Effacer le filtre d’étiquette",
 			memoryTagRemove: "Supprimer l’étiquette {tag}",
-			memoryTagFilterHint: "Cliquez pour filtrer par cette étiquette"
+			memoryTagFilterHint: "Cliquez pour filtrer par cette étiquette",
+			memoryAuditButton: "Audit de mémoire",
+			memoryAuditRunning: "Audit en cours…",
+			memoryAuditTitle: "Audit de mémoire",
+			memoryAuditStaleTitle: "Candidats obsolètes",
+			memoryAuditStaleHint: "Vote d’obsolescence présent ou désactivée — archivage conseillé",
+			memoryAuditDuplicateTitle: "Doublons suspectés",
+			memoryAuditDuplicateHint: "Très similaire à une autre entrée",
+			memoryAuditLowValueTitle: "Entrées de faible valeur",
+			memoryAuditLowValueHint: "Inchangée depuis plus de 30 jours et jamais renforcée",
+			memoryAuditKeep: "Conservation suggérée : {name}",
+			memoryAuditEmpty: "Aucun problème détecté — la mémoire semble saine.",
+			memoryAuditSelected: "{count} sélectionnée(s)",
+			memoryAuditDeleteConfirm: "Les {count} entrées sélectionnées seront supprimées ; action irréversible.",
+			memoryAuditDone: "{count} entrées traitées",
+			memoryAuditPartial: "{count} échec(s) — relancez l’audit puis réessayez"
 		};
 		/** German dictionary (same key set as `zh`). */
 		const de = {
@@ -1466,7 +1541,22 @@ window.__ModuleLoader__.load({
 			memoryClearTypeFilter: "Typfilter löschen",
 			memoryClearTagFilter: "Tag-Filter löschen",
 			memoryTagRemove: "Tag {tag} entfernen",
-			memoryTagFilterHint: "Klicken, um nach diesem Tag zu filtern"
+			memoryTagFilterHint: "Klicken, um nach diesem Tag zu filtern",
+			memoryAuditButton: "Gedächtnis-Audit",
+			memoryAuditRunning: "Audit läuft…",
+			memoryAuditTitle: "Gedächtnis-Audit",
+			memoryAuditStaleTitle: "Veraltungskandidaten",
+			memoryAuditStaleHint: "Mit Veraltungsvotum oder deaktiviert — Archivieren empfohlen",
+			memoryAuditDuplicateTitle: "Vermeintliche Duplikate",
+			memoryAuditDuplicateHint: "Sehr ähnlich zu einem anderen Eintrag",
+			memoryAuditLowValueTitle: "Einträge mit geringem Wert",
+			memoryAuditLowValueHint: "Über 30 Tage unverändert und nie verstärkt",
+			memoryAuditKeep: "Empfohlen zum Behalten: {name}",
+			memoryAuditEmpty: "Keine Probleme gefunden — das Gedächtnis wirkt gesund.",
+			memoryAuditSelected: "{count} ausgewählt",
+			memoryAuditDeleteConfirm: "Die {count} ausgewählten Einträge werden gelöscht; das kann nicht rückgängig gemacht werden.",
+			memoryAuditDone: "{count} Einträge verarbeitet",
+			memoryAuditPartial: "{count} fehlgeschlagen — Audit erneut ausführen und wiederholen"
 		};
 		/** Russian dictionary (same key set as `zh`). */
 		const ru = {
@@ -1708,7 +1798,22 @@ window.__ModuleLoader__.load({
 			memoryClearTypeFilter: "Сбросить фильтр по типу",
 			memoryClearTagFilter: "Сбросить фильтр по тегу",
 			memoryTagRemove: "Удалить тег {tag}",
-			memoryTagFilterHint: "Нажмите, чтобы отфильтровать по этому тегу"
+			memoryTagFilterHint: "Нажмите, чтобы отфильтровать по этому тегу",
+			memoryAuditButton: "Проверка памяти",
+			memoryAuditRunning: "Проверка…",
+			memoryAuditTitle: "Проверка памяти",
+			memoryAuditStaleTitle: "Кандидаты на устаревание",
+			memoryAuditStaleHint: "Есть голос за устаревание или запись отключена — рекомендуется архивировать",
+			memoryAuditDuplicateTitle: "Возможные дубликаты",
+			memoryAuditDuplicateHint: "Очень похожа на другую запись",
+			memoryAuditLowValueTitle: "Малоценные записи",
+			memoryAuditLowValueHint: "Без изменений более 30 дней и без подкрепления",
+			memoryAuditKeep: "Рекомендуется сохранить: {name}",
+			memoryAuditEmpty: "Проблем не найдено — память в хорошем состоянии.",
+			memoryAuditSelected: "Выбрано: {count}",
+			memoryAuditDeleteConfirm: "Выбранные {count} записей будут удалены; это нельзя отменить.",
+			memoryAuditDone: "Обработано записей: {count}",
+			memoryAuditPartial: "{count} не удалось — повторите проверку и попробуйте снова"
 		};
 		/** Portuguese dictionary (same key set as `zh`). */
 		const pt = {
@@ -1950,7 +2055,22 @@ window.__ModuleLoader__.load({
 			memoryClearTypeFilter: "Limpar o filtro de tipo",
 			memoryClearTagFilter: "Limpar o filtro de etiqueta",
 			memoryTagRemove: "Remover a etiqueta {tag}",
-			memoryTagFilterHint: "Clique para filtrar por esta etiqueta"
+			memoryTagFilterHint: "Clique para filtrar por esta etiqueta",
+			memoryAuditButton: "Auditoria de memória",
+			memoryAuditRunning: "Auditando…",
+			memoryAuditTitle: "Auditoria de memória",
+			memoryAuditStaleTitle: "Candidatas obsoletas",
+			memoryAuditStaleHint: "Com voto de obsolescência ou desativada — considere arquivar",
+			memoryAuditDuplicateTitle: "Possíveis duplicatas",
+			memoryAuditDuplicateHint: "Muito semelhante a outra entrada",
+			memoryAuditLowValueTitle: "Entradas de baixo valor",
+			memoryAuditLowValueHint: "Sem alterações há mais de 30 dias e nunca reforçada",
+			memoryAuditKeep: "Sugestão de manter: {name}",
+			memoryAuditEmpty: "Nenhum problema encontrado — a memória está saudável.",
+			memoryAuditSelected: "{count} selecionada(s)",
+			memoryAuditDeleteConfirm: "As {count} entradas selecionadas serão excluídas; não pode ser desfeito.",
+			memoryAuditDone: "{count} entradas processadas",
+			memoryAuditPartial: "{count} falharam — execute a auditoria novamente e tente outra vez"
 		};
 		// src/client/api.ts
 		/** Envelope error carrying the host's stable code. */
@@ -3060,6 +3180,17 @@ window.__ModuleLoader__.load({
 				"M5 12H2a10 10 0 0 0 20 0h-3"
 			],
 			check: ["M20 6 9 17l-5-5"],
+			clipboardCheck: [
+				{ rect: [
+					8,
+					2,
+					8,
+					4,
+					1
+				] },
+				"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2",
+				"m9 14 2 2 4-4"
+			],
 			info: [
 				{ circle: [
 					12,
@@ -5136,6 +5267,72 @@ window.__ModuleLoader__.load({
 				]
 			});
 		}
+		/** Normalize text before bigram extraction: lowercase, drop whitespace. */
+		function normalizeText(value) {
+			return value.toLowerCase().replace(/\s+/gu, "");
+		}
+		/** Character bigram set of one text; short texts yield a single fallback token. */
+		function bigramsOf(value) {
+			const flat = normalizeText(value);
+			const grams = /* @__PURE__ */ new Set();
+			if (flat.length <= 1) {
+				if (flat !== "") grams.add(flat);
+				return grams;
+			}
+			for (let index = 0; index < flat.length - 1; index += 1) grams.add(flat.slice(index, index + 2));
+			return grams;
+		}
+		/** Bigram-Jaccard similarity of two texts in `[0, 1]`. */
+		function similarity(left, right) {
+			const leftGrams = bigramsOf(left);
+			const rightGrams = bigramsOf(right);
+			if (leftGrams.size === 0 || rightGrams.size === 0) return 0;
+			let shared = 0;
+			for (const gram of leftGrams) if (rightGrams.has(gram)) shared += 1;
+			return shared / (leftGrams.size + rightGrams.size - shared);
+		}
+		/** Full similarity text of one entry. */
+		function auditTextOf(entry) {
+			return `${entry.name} ${entry.description} ${entry.content}`;
+		}
+		/** Which of two entries to keep: more important, then more reinforced, then newer. */
+		function preferKeep(left, right) {
+			if (left.importance !== right.importance) return left.importance > right.importance ? left : right;
+			if (left.reinforcement !== right.reinforcement) return left.reinforcement > right.reinforcement ? left : right;
+			return left.updatedAt >= right.updatedAt ? left : right;
+		}
+		/** Entries carrying an obsolete vote or already deactivated (archived excluded). */
+		function findStaleCandidates(entries) {
+			return entries.filter((entry) => entry.status !== "archived" && (entry.obsoleteVotes > 0 || entry.status === "stale"));
+		}
+		/** Suspected duplicate pairs inside one scope (archived entries never pair). */
+		function findDuplicatePairs(entries) {
+			const live = entries.filter((entry) => entry.status !== "archived");
+			const pairs = [];
+			for (let left = 0; left < live.length; left += 1) for (let right = left + 1; right < live.length; right += 1) {
+				const first = live[left];
+				const second = live[right];
+				if (similarity(auditTextOf(first), auditTextOf(second)) >= .6) pairs.push({
+					left: first,
+					right: second,
+					keep: preferKeep(first, second)
+				});
+			}
+			return pairs;
+		}
+		/** Active entries that were never reinforced and went untouched for 30+ days. */
+		function findLowValueEntries(entries, now) {
+			const floor = now - 2592e6;
+			return entries.filter((entry) => entry.status === "active" && entry.reinforcement <= 1 && Number.isFinite(Date.parse(entry.updatedAt)) && Date.parse(entry.updatedAt) < floor);
+		}
+		/** Run all rules over one full entry list (per scope / project). */
+		function runAudit(entries, now) {
+			return {
+				stale: findStaleCandidates(entries),
+				duplicates: findDuplicatePairs(entries),
+				lowValue: findLowValueEntries(entries, now)
+			};
+		}
 		// \0dsh-css:E:\workspace\dsh-plugins\packages\dsh-agent-extension\src\client\dialogs.module.css.mjs
 		const css$3 = ".pJiaRa_mask{background:var(--dsw-alias-bg-mask-3);backdrop-filter:var(--dsw-mask-blur);pointer-events:auto;justify-content:center;align-items:center;padding:24px;display:flex;position:absolute;inset:0}.pJiaRa_dialog{box-sizing:border-box;border-radius:var(--dsw-radius-panel);background:var(--dsw-alias-bg-layer-2);width:min(480px,100vw - 32px);max-height:calc(100vh - 80px);box-shadow:var(--dsw-elevation-prominent);pointer-events:auto;border:0;flex-direction:column;gap:16px;padding:16px 0;display:flex}.pJiaRa_dialog:focus{outline:none}.pJiaRa_dialogNarrow{width:min(420px,100vw - 32px)}.pJiaRa_dialogWide{width:min(640px,100vw - 32px)}.pJiaRa_head{align-items:center;gap:8px;padding:0 12px 0 16px;display:flex}.pJiaRa_title{text-overflow:ellipsis;white-space:nowrap;min-width:0;color:var(--dsw-alias-label-primary);flex:1;margin:0;font-size:16px;font-weight:500;overflow:hidden}.pJiaRa_body{overflow-wrap:anywhere;flex-direction:column;gap:12px;min-height:0;padding:0 16px;display:flex;overflow-y:auto}.pJiaRa_foot{flex-wrap:wrap;justify-content:flex-end;gap:8px;padding:0 16px;display:flex}.pJiaRa_footInline{justify-content:flex-end;width:100%;display:flex}.pJiaRa_field{flex-direction:column;gap:6px;display:flex}.pJiaRa_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px}.pJiaRa_fieldHint{color:var(--dsw-alias-label-tertiary);font-size:12px}.pJiaRa_input{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1);width:100%;height:36px;color:var(--dsw-alias-label-primary);font:inherit;padding:0 12px;font-size:14px}.pJiaRa_input::placeholder{color:var(--dsw-alias-label-tertiary)}@media (hover:hover){.pJiaRa_input:hover{border-color:var(--dsw-alias-border-l4)}}.pJiaRa_input:focus{border-color:var(--dsw-alias-border-l4);outline:none}.pJiaRa_risk{border-radius:var(--dsw-radius-md);background:var(--dsw-alias-state-warn-tertiary);color:var(--dsw-alias-state-warn-primary);word-break:break-word;align-items:flex-start;gap:8px;padding:12px;font-size:13px;display:flex}.pJiaRa_risk>span{overflow-wrap:anywhere;min-width:0}.pJiaRa_check{color:var(--dsw-alias-label-secondary);cursor:pointer;word-break:break-word;align-items:flex-start;gap:8px;font-size:13px;display:flex}.pJiaRa_check>span{overflow-wrap:anywhere;min-width:0}.pJiaRa_check input{accent-color:var(--dsw-alias-brand-primary);flex:none;margin:3px 0 0}.pJiaRa_confirmMessage{color:var(--dsw-alias-label-secondary);white-space:pre-wrap;font-size:14px}.pJiaRa_error{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);white-space:pre-wrap;word-break:break-word;padding:10px 12px;font-size:13px}.pJiaRa_sourceList{flex-direction:column;gap:2px;max-height:min(420px,60vh);display:flex;overflow-y:auto}.pJiaRa_emptyRow{border:.5px dashed var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);min-height:96px;color:var(--dsw-alias-label-secondary);text-align:center;justify-content:center;align-items:center;padding:24px 16px;font-size:14px;display:flex}.pJiaRa_sourceRow{border-radius:var(--dsw-radius-sm);align-items:center;gap:12px;padding:8px;display:flex}@media (hover:hover){.pJiaRa_sourceRow:hover{background:var(--dsw-alias-interactive-bg-hover)}}.pJiaRa_sourceMain{flex-direction:column;flex:1;min-width:0;display:flex}.pJiaRa_sourceName{color:var(--dsw-alias-label-primary);text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:500;overflow:hidden}.pJiaRa_sourceSub{color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;margin-top:2px;font-size:12px;overflow:hidden}.pJiaRa_sourceError{color:var(--dsw-alias-state-error-primary);white-space:pre-wrap;word-break:break-word;align-items:flex-start;gap:4px;margin-top:4px;font-size:12px;display:flex}";
 		const tagId$3 = "dsh-agent-extension/dialogs.module.css";
@@ -5478,7 +5675,7 @@ window.__ModuleLoader__.load({
 			});
 		}
 		// \0dsh-css:E:\workspace\dsh-plugins\packages\dsh-agent-extension\src\client\memory.module.css.mjs
-		const css$2 = ".Iw3mRa_view{gap:20px}.Iw3mRa_topbar{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px 16px;display:flex}.Iw3mRa_scopeRow{flex:none;align-items:center;gap:12px;min-width:0;display:flex}.Iw3mRa_segmented{flex-wrap:wrap;align-items:center;gap:6px;display:inline-flex}.Iw3mRa_projectSelect{flex:0 220px;width:auto;min-width:0}.Iw3mRa_actions{flex-wrap:wrap;align-items:center;gap:8px;margin-left:auto;display:flex}.Iw3mRa_searchWrap{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-3);min-width:200px;max-width:480px;height:36px;color:var(--dsw-alias-label-tertiary);flex:220px;align-items:center;gap:8px;padding:0 10px;display:flex}.Iw3mRa_searchWrap>svg{flex:none}.Iw3mRa_searchInput{min-width:0;height:100%;color:var(--dsw-alias-label-primary);font:inherit;background:0 0;border:0;outline:none;flex:1;padding:0;font-size:14px}.Iw3mRa_searchInput::placeholder{color:var(--dsw-alias-label-tertiary)}.Iw3mRa_searchInput::-webkit-search-decoration,.Iw3mRa_searchInput::-webkit-search-cancel-button{-webkit-appearance:none;display:none}.Iw3mRa_searchClear{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_searchClear:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.Iw3mRa_searchClear:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.Iw3mRa_filterWrap{flex:none;display:inline-flex;position:relative}.Iw3mRa_filterWrap:focus{outline:none}.Iw3mRa_filterTrigger{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;justify-content:center;align-items:center;padding:0;display:flex;position:relative}.Iw3mRa_filterTrigger:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_filterTrigger:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.Iw3mRa_filterDot{corner-shape:round;background:var(--dsw-alias-state-business-primary);border-radius:999px;width:6px;height:6px;position:absolute;top:2px;right:2px}.Iw3mRa_menuBackdrop{z-index:40;background:0 0;position:fixed;inset:0}.Iw3mRa_filterMenu{z-index:41;border-radius:var(--dsw-radius-lg);background:var(--dsw-menu-surface-fill);min-width:160px;backdrop-filter:var(--dsw-menu-backdrop-filter);box-shadow:var(--dsw-elevation-panel);border:0;padding:4px;position:absolute;top:calc(100% + 4px);right:0}.Iw3mRa_filterItem{border-radius:var(--dsw-radius-md);width:100%;color:var(--dsw-alias-label-primary);font:inherit;text-align:left;white-space:nowrap;cursor:pointer;background:0 0;border:0;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;font-size:14px;display:flex}.Iw3mRa_filterItem:focus-visible{background:var(--dsw-alias-interactive-bg-hover);outline:none}@media (hover:hover){.Iw3mRa_filterItem:hover{background:var(--dsw-alias-interactive-bg-hover)}}.Iw3mRa_filterItem[aria-checked=true]{color:var(--dsw-alias-state-business-primary)}.Iw3mRa_filterItemText{text-overflow:ellipsis;min-width:0;overflow:hidden}.Iw3mRa_filterChips{flex:none;align-items:center;gap:6px;display:flex}.Iw3mRa_filterChip{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:160px;color:var(--dsw-alias-label-secondary);border-radius:999px;align-items:center;gap:2px;padding:0 4px 0 8px;font-size:12px;line-height:22px;display:inline-flex}.Iw3mRa_filterChipText{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.Iw3mRa_filterChipClear{corner-shape:round;width:18px;height:18px;color:inherit;cursor:pointer;background:0 0;border:0;border-radius:999px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_filterChipClear:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_filterChipClear:hover{background:var(--dsw-alias-border-l3);color:var(--dsw-alias-label-primary)}}.Iw3mRa_listPane{flex-direction:column;gap:8px;min-width:0;display:flex}.Iw3mRa_listHead{justify-content:space-between;align-items:baseline;gap:8px;padding:0 8px 8px;display:flex}.Iw3mRa_sectionTitle{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:16px;font-weight:500}.Iw3mRa_sectionCount{white-space:nowrap;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.Iw3mRa_listHeadTools{align-items:center;gap:8px;display:flex}.Iw3mRa_sortSelect{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);height:28px;color:var(--dsw-alias-label-secondary);font:inherit;cursor:pointer;padding:0 8px;font-size:12px}.Iw3mRa_sortSelect:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}.Iw3mRa_entryGrid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;display:grid}.Iw3mRa_entryCard{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-3);min-width:0;color:inherit;font:inherit;text-align:left;cursor:pointer;flex-direction:column;gap:6px;padding:14px;transition:background .12s,border-color .12s;display:flex}.Iw3mRa_entryCard:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.Iw3mRa_entryCard:hover{border-color:var(--dsw-alias-border-l4);background:var(--dsw-alias-interactive-bg-hover)}}.Iw3mRa_entryTitleRow{align-items:center;gap:6px;min-width:0;display:flex}.Iw3mRa_entryName{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px;font-weight:500}.Iw3mRa_entryImportance{corner-shape:round;background:color-mix(in srgb, var(--dsw-alias-state-warn-primary) 14%, transparent);color:var(--dsw-alias-state-warn-primary);border-radius:999px;flex:none;padding:0 6px;font-size:11px;font-weight:600;line-height:18px}.Iw3mRa_entryDesc{-webkit-line-clamp:2;overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-secondary);-webkit-box-orient:vertical;font-size:13px;display:-webkit-box;overflow:hidden}.Iw3mRa_entryMeta{flex-wrap:wrap;align-items:center;gap:6px;display:flex}.Iw3mRa_entryTime{color:var(--dsw-alias-label-tertiary);margin-left:auto;font-size:12px}.Iw3mRa_entryTag{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:120px;color:var(--dsw-alias-label-secondary);font:inherit;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;border:0;border-radius:999px;flex:none;padding:0 6px;font-size:11px;line-height:18px;overflow:hidden}.Iw3mRa_entryTag:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_entryTag:hover{background:var(--dsw-alias-border-l3);color:var(--dsw-alias-label-primary)}}.Iw3mRa_entryTagMore{color:var(--dsw-alias-label-tertiary);flex:none;font-size:11px}.Iw3mRa_editor{flex-direction:column;gap:12px;min-width:0;display:flex}.Iw3mRa_editorStatus{align-items:center;display:flex}.Iw3mRa_formGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;display:grid}@container (width<=720px){.Iw3mRa_formGrid{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_field{flex-direction:column;gap:4px;min-width:0;display:flex}.Iw3mRa_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500}.Iw3mRa_fieldHint{color:var(--dsw-alias-label-tertiary);font-size:11px}.Iw3mRa_input{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:100%;min-width:0;height:36px;color:var(--dsw-alias-label-primary);font:inherit;padding:0 10px;font-size:14px}.Iw3mRa_input:focus-visible,.Iw3mRa_textarea:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}.Iw3mRa_rangeRow{align-items:center;gap:8px;display:flex}.Iw3mRa_rangeInput{min-width:0;height:36px;accent-color:var(--dsw-alias-state-business-primary);flex:1;margin:0}.Iw3mRa_rangeValue{text-align:right;font-variant-numeric:tabular-nums;min-width:28px;color:var(--dsw-alias-label-primary);flex:none;font-size:13px}.Iw3mRa_tagBox{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);cursor:text;flex-wrap:wrap;align-items:center;gap:6px;min-height:36px;padding:4px 8px;display:flex}.Iw3mRa_tagBox:focus-within{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}.Iw3mRa_tagChip{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:160px;color:var(--dsw-alias-label-primary);border-radius:999px;align-items:center;gap:2px;padding:0 4px 0 8px;font-size:12px;line-height:22px;display:inline-flex}.Iw3mRa_tagChipText{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.Iw3mRa_tagChipRemove{corner-shape:round;width:16px;height:16px;color:var(--dsw-alias-label-tertiary);cursor:pointer;background:0 0;border:0;border-radius:999px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_tagChipRemove:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_tagChipRemove:hover{color:var(--dsw-alias-label-primary)}}.Iw3mRa_tagInput{min-width:80px;height:26px;color:var(--dsw-alias-label-primary);font:inherit;background:0 0;border:0;outline:none;flex:80px;padding:0;font-size:13px}.Iw3mRa_textarea{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:100%;min-height:180px;color:var(--dsw-alias-label-primary);font:inherit;resize:vertical;padding:8px 10px;font-size:14px;line-height:1.5}.Iw3mRa_formActions{flex-wrap:wrap;align-items:center;gap:8px;padding-top:4px;display:flex}.Iw3mRa_formActionsRight{flex-wrap:wrap;flex:auto;justify-content:flex-end;align-items:center;gap:8px;min-width:0;display:flex}.Iw3mRa_confirmArea{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;display:flex}.Iw3mRa_confirmText{color:var(--dsw-alias-state-error-primary);overflow-wrap:anywhere;font-size:13px}.Iw3mRa_dialogPortal{z-index:40;position:fixed;inset:0}.Iw3mRa_settingList{flex-direction:column;display:flex}.Iw3mRa_settingRow{justify-content:space-between;align-items:center;gap:12px;padding:8px 0;display:flex}.Iw3mRa_settingRow+.Iw3mRa_settingRow{border-top:.5px solid var(--dsw-alias-border-l3)}.Iw3mRa_settingLabel{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px}.Iw3mRa_numberGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;display:grid}@container (width<=720px){.Iw3mRa_numberGrid{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_divider{background:var(--dsw-alias-border-l2);height:.5px}.Iw3mRa_statsTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:14px;font-weight:500}.Iw3mRa_statGrid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;display:grid}.Iw3mRa_stat{border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);flex-direction:column;gap:2px;padding:10px 12px;display:flex}.Iw3mRa_statLabel{color:var(--dsw-alias-label-secondary);font-size:12px}.Iw3mRa_statValue{color:var(--dsw-alias-label-primary);font-size:16px;font-weight:600}.Iw3mRa_errorBox{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);flex-wrap:wrap;align-items:flex-start;gap:8px;padding:10px 12px;font-size:13px;display:flex}.Iw3mRa_errorText{overflow-wrap:anywhere;white-space:pre-wrap;flex:160px;min-width:0}";
+		const css$2 = ".Iw3mRa_view{gap:20px}.Iw3mRa_topbar{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px 16px;display:flex}.Iw3mRa_scopeRow{flex:none;align-items:center;gap:12px;min-width:0;display:flex}.Iw3mRa_segmented{flex-wrap:wrap;align-items:center;gap:6px;display:inline-flex}.Iw3mRa_projectSelect{flex:0 220px;width:auto;min-width:0}.Iw3mRa_actions{flex-wrap:wrap;align-items:center;gap:8px;margin-left:auto;display:flex}.Iw3mRa_searchWrap{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-3);min-width:200px;max-width:480px;height:36px;color:var(--dsw-alias-label-tertiary);flex:220px;align-items:center;gap:8px;padding:0 10px;display:flex}.Iw3mRa_searchWrap>svg{flex:none}.Iw3mRa_searchInput{min-width:0;height:100%;color:var(--dsw-alias-label-primary);font:inherit;background:0 0;border:0;outline:none;flex:1;padding:0;font-size:14px}.Iw3mRa_searchInput::placeholder{color:var(--dsw-alias-label-tertiary)}.Iw3mRa_searchInput::-webkit-search-decoration,.Iw3mRa_searchInput::-webkit-search-cancel-button{-webkit-appearance:none;display:none}.Iw3mRa_searchClear{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_searchClear:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.Iw3mRa_searchClear:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.Iw3mRa_filterWrap{flex:none;display:inline-flex;position:relative}.Iw3mRa_filterWrap:focus{outline:none}.Iw3mRa_filterTrigger{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;justify-content:center;align-items:center;padding:0;display:flex;position:relative}.Iw3mRa_filterTrigger:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_filterTrigger:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.Iw3mRa_filterDot{corner-shape:round;background:var(--dsw-alias-state-business-primary);border-radius:999px;width:6px;height:6px;position:absolute;top:2px;right:2px}.Iw3mRa_menuBackdrop{z-index:40;background:0 0;position:fixed;inset:0}.Iw3mRa_filterMenu{z-index:41;border-radius:var(--dsw-radius-lg);background:var(--dsw-menu-surface-fill);min-width:160px;backdrop-filter:var(--dsw-menu-backdrop-filter);box-shadow:var(--dsw-elevation-panel);border:0;padding:4px;position:absolute;top:calc(100% + 4px);right:0}.Iw3mRa_filterItem{border-radius:var(--dsw-radius-md);width:100%;color:var(--dsw-alias-label-primary);font:inherit;text-align:left;white-space:nowrap;cursor:pointer;background:0 0;border:0;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;font-size:14px;display:flex}.Iw3mRa_filterItem:focus-visible{background:var(--dsw-alias-interactive-bg-hover);outline:none}@media (hover:hover){.Iw3mRa_filterItem:hover{background:var(--dsw-alias-interactive-bg-hover)}}.Iw3mRa_filterItem[aria-checked=true]{color:var(--dsw-alias-state-business-primary)}.Iw3mRa_filterItemText{text-overflow:ellipsis;min-width:0;overflow:hidden}.Iw3mRa_filterChips{flex:none;align-items:center;gap:6px;display:flex}.Iw3mRa_filterChip{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:160px;color:var(--dsw-alias-label-secondary);border-radius:999px;align-items:center;gap:2px;padding:0 4px 0 8px;font-size:12px;line-height:22px;display:inline-flex}.Iw3mRa_filterChipText{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.Iw3mRa_filterChipClear{corner-shape:round;width:18px;height:18px;color:inherit;cursor:pointer;background:0 0;border:0;border-radius:999px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_filterChipClear:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_filterChipClear:hover{background:var(--dsw-alias-border-l3);color:var(--dsw-alias-label-primary)}}.Iw3mRa_listPane{flex-direction:column;gap:8px;min-width:0;display:flex}.Iw3mRa_listHead{justify-content:space-between;align-items:baseline;gap:8px;padding:0 8px 8px;display:flex}.Iw3mRa_sectionTitle{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:16px;font-weight:500}.Iw3mRa_sectionCount{white-space:nowrap;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.Iw3mRa_listHeadTools{align-items:center;gap:8px;display:flex}.Iw3mRa_sortSelect{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);height:28px;color:var(--dsw-alias-label-secondary);font:inherit;cursor:pointer;padding:0 8px;font-size:12px}.Iw3mRa_sortSelect:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}.Iw3mRa_entryGrid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;display:grid}.Iw3mRa_entryCard{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-3);min-width:0;color:inherit;font:inherit;text-align:left;cursor:pointer;flex-direction:column;gap:6px;padding:14px;transition:background .12s,border-color .12s;display:flex}.Iw3mRa_entryCard:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.Iw3mRa_entryCard:hover{border-color:var(--dsw-alias-border-l4);background:var(--dsw-alias-interactive-bg-hover)}}.Iw3mRa_entryTitleRow{align-items:center;gap:6px;min-width:0;display:flex}.Iw3mRa_entryName{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px;font-weight:500}.Iw3mRa_entryImportance{corner-shape:round;background:color-mix(in srgb, var(--dsw-alias-state-warn-primary) 14%, transparent);color:var(--dsw-alias-state-warn-primary);border-radius:999px;flex:none;padding:0 6px;font-size:11px;font-weight:600;line-height:18px}.Iw3mRa_entryDesc{-webkit-line-clamp:2;overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-secondary);-webkit-box-orient:vertical;font-size:13px;display:-webkit-box;overflow:hidden}.Iw3mRa_entryMeta{flex-wrap:wrap;align-items:center;gap:6px;display:flex}.Iw3mRa_entryTime{color:var(--dsw-alias-label-tertiary);margin-left:auto;font-size:12px}.Iw3mRa_entryTag{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:120px;color:var(--dsw-alias-label-secondary);font:inherit;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;border:0;border-radius:999px;flex:none;padding:0 6px;font-size:11px;line-height:18px;overflow:hidden}.Iw3mRa_entryTag:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_entryTag:hover{background:var(--dsw-alias-border-l3);color:var(--dsw-alias-label-primary)}}.Iw3mRa_entryTagMore{color:var(--dsw-alias-label-tertiary);flex:none;font-size:11px}.Iw3mRa_editor{flex-direction:column;gap:12px;min-width:0;display:flex}.Iw3mRa_editorStatus{align-items:center;display:flex}.Iw3mRa_formGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;display:grid}@container (width<=720px){.Iw3mRa_formGrid{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_field{flex-direction:column;gap:4px;min-width:0;display:flex}.Iw3mRa_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500}.Iw3mRa_fieldHint{color:var(--dsw-alias-label-tertiary);font-size:11px}.Iw3mRa_input{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:100%;min-width:0;height:36px;color:var(--dsw-alias-label-primary);font:inherit;padding:0 10px;font-size:14px}.Iw3mRa_input:focus-visible,.Iw3mRa_textarea:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}.Iw3mRa_rangeRow{align-items:center;gap:8px;display:flex}.Iw3mRa_rangeInput{min-width:0;height:36px;accent-color:var(--dsw-alias-state-business-primary);flex:1;margin:0}.Iw3mRa_rangeValue{text-align:right;font-variant-numeric:tabular-nums;min-width:28px;color:var(--dsw-alias-label-primary);flex:none;font-size:13px}.Iw3mRa_tagBox{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);cursor:text;flex-wrap:wrap;align-items:center;gap:6px;min-height:36px;padding:4px 8px;display:flex}.Iw3mRa_tagBox:focus-within{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}.Iw3mRa_tagChip{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:160px;color:var(--dsw-alias-label-primary);border-radius:999px;align-items:center;gap:2px;padding:0 4px 0 8px;font-size:12px;line-height:22px;display:inline-flex}.Iw3mRa_tagChipText{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.Iw3mRa_tagChipRemove{corner-shape:round;width:16px;height:16px;color:var(--dsw-alias-label-tertiary);cursor:pointer;background:0 0;border:0;border-radius:999px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_tagChipRemove:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_tagChipRemove:hover{color:var(--dsw-alias-label-primary)}}.Iw3mRa_tagInput{min-width:80px;height:26px;color:var(--dsw-alias-label-primary);font:inherit;background:0 0;border:0;outline:none;flex:80px;padding:0;font-size:13px}.Iw3mRa_textarea{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:100%;min-height:180px;color:var(--dsw-alias-label-primary);font:inherit;resize:vertical;padding:8px 10px;font-size:14px;line-height:1.5}.Iw3mRa_formActions{flex-wrap:wrap;align-items:center;gap:8px;padding-top:4px;display:flex}.Iw3mRa_formActionsRight{flex-wrap:wrap;flex:auto;justify-content:flex-end;align-items:center;gap:8px;min-width:0;display:flex}.Iw3mRa_confirmArea{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;display:flex}.Iw3mRa_confirmText{color:var(--dsw-alias-state-error-primary);overflow-wrap:anywhere;font-size:13px}.Iw3mRa_dialogPortal{z-index:40;position:fixed;inset:0}.Iw3mRa_settingList{flex-direction:column;display:flex}.Iw3mRa_settingRow{justify-content:space-between;align-items:center;gap:12px;padding:8px 0;display:flex}.Iw3mRa_settingRow+.Iw3mRa_settingRow{border-top:.5px solid var(--dsw-alias-border-l3)}.Iw3mRa_settingLabel{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px}.Iw3mRa_numberGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;display:grid}@container (width<=720px){.Iw3mRa_numberGrid{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_divider{background:var(--dsw-alias-border-l2);height:.5px}.Iw3mRa_statsTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:14px;font-weight:500}.Iw3mRa_statGrid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;display:grid}.Iw3mRa_stat{border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);flex-direction:column;gap:2px;padding:10px 12px;display:flex}.Iw3mRa_statLabel{color:var(--dsw-alias-label-secondary);font-size:12px}.Iw3mRa_statValue{color:var(--dsw-alias-label-primary);font-size:16px;font-weight:600}.Iw3mRa_auditGroups{flex-direction:column;gap:16px;display:flex}.Iw3mRa_auditGroup{flex-direction:column;gap:6px;display:flex}.Iw3mRa_auditGroupTitle{color:var(--dsw-alias-label-primary);align-items:center;gap:6px;margin:0;font-size:14px;font-weight:500;display:flex}.Iw3mRa_auditCount{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);border-radius:999px;flex:none;padding:0 6px;font-size:11px;line-height:18px}.Iw3mRa_auditHint{min-width:0;color:var(--dsw-alias-label-tertiary);font-size:12px}.Iw3mRa_auditRow{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);cursor:pointer;align-items:flex-start;gap:8px;padding:10px;display:flex}.Iw3mRa_auditCheck{width:16px;height:16px;accent-color:var(--dsw-alias-state-business-primary);flex:none;margin:2px 0 0}.Iw3mRa_auditSummary{flex-direction:column;flex:1;gap:6px;min-width:0;display:flex}.Iw3mRa_auditPair{flex-direction:column;gap:6px;display:flex}.Iw3mRa_auditPairKeep{color:var(--dsw-alias-state-business-primary);font-size:12px}.Iw3mRa_auditBar{border-top:.5px solid var(--dsw-alias-border-l2);flex-wrap:wrap;align-items:center;gap:8px;margin-top:4px;padding-top:8px;display:flex}.Iw3mRa_auditBarCount{min-width:0;color:var(--dsw-alias-label-secondary);flex:auto;font-size:13px}.Iw3mRa_errorBox{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);flex-wrap:wrap;align-items:flex-start;gap:8px;padding:10px 12px;font-size:13px;display:flex}.Iw3mRa_errorText{overflow-wrap:anywhere;white-space:pre-wrap;flex:160px;min-width:0}";
 		const tagId$2 = "dsh-agent-extension/memory.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$2) + "]") === null) {
 			const tag = document.createElement("style");
@@ -5489,6 +5686,18 @@ window.__ModuleLoader__.load({
 		}
 		var memory_module_css_default = {
 			"actions": "Iw3mRa_actions",
+			"auditBar": "Iw3mRa_auditBar",
+			"auditBarCount": "Iw3mRa_auditBarCount",
+			"auditCheck": "Iw3mRa_auditCheck",
+			"auditCount": "Iw3mRa_auditCount",
+			"auditGroup": "Iw3mRa_auditGroup",
+			"auditGroupTitle": "Iw3mRa_auditGroupTitle",
+			"auditGroups": "Iw3mRa_auditGroups",
+			"auditHint": "Iw3mRa_auditHint",
+			"auditPair": "Iw3mRa_auditPair",
+			"auditPairKeep": "Iw3mRa_auditPairKeep",
+			"auditRow": "Iw3mRa_auditRow",
+			"auditSummary": "Iw3mRa_auditSummary",
 			"confirmArea": "Iw3mRa_confirmArea",
 			"confirmText": "Iw3mRa_confirmText",
 			"dialogPortal": "Iw3mRa_dialogPortal",
@@ -5565,8 +5774,10 @@ window.__ModuleLoader__.load({
 		* dropdown, and the action icons), the entry list as a full-width card grid
 		* with tag-chip filtering and a recency sort, a wide detail dialog for
 		* create / edit / save / deactivate / archive / restore / two-step delete,
-		* the Markdown export, and a settings dialog (capture-injection switches and
-		* limits persist immediately; per-session statistics live there too).
+		* the Markdown export, a settings dialog (capture-injection switches and
+		* limits persist immediately; per-session statistics live there too), and a
+		* health-audit dialog (stale / duplicate / low-value findings with batch
+		* archive / deactivate / delete reusing the existing endpoints).
 		*
 		* The view owns its local state (the hub snapshot only carries the section
 		* tab) and talks to the host's `/memory/*` routes through `api()`; all copy
@@ -5796,6 +6007,12 @@ window.__ModuleLoader__.load({
 			const [tagFilter, setTagFilter] = (0, react.useState)("");
 			const [sort, setSort] = (0, react.useState)("default");
 			const [tagDraft, setTagDraft] = (0, react.useState)("");
+			const [auditOpen, setAuditOpen] = (0, react.useState)(false);
+			const [auditBusy, setAuditBusy] = (0, react.useState)(false);
+			const [auditResult, setAuditResult] = (0, react.useState)(null);
+			const [auditSelected, setAuditSelected] = (0, react.useState)([]);
+			const [auditConfirmDelete, setAuditConfirmDelete] = (0, react.useState)(false);
+			const [auditBatchBusy, setAuditBatchBusy] = (0, react.useState)(false);
 			const userChoseRef = (0, react.useRef)(false);
 			const detailSeq = (0, react.useRef)(0);
 			const filterWrapRef = (0, react.useRef)(null);
@@ -6096,6 +6313,74 @@ window.__ModuleLoader__.load({
 					setExportBusy(false);
 				}
 			};
+			/** Full-list fetch + client-side audit rules for the current scope. */
+			const openAudit = async () => {
+				if (auditBusy || scope === "project" && project === "") return;
+				setAuditBusy(true);
+				try {
+					const params = new URLSearchParams();
+					params.set("scope", scope);
+					if (scope === "project") params.set("project", project);
+					params.set("includeArchived", "1");
+					params.set("content", "1");
+					const data = await api(`/memory/list?${params.toString()}`);
+					const list = Array.isArray(data.entries) ? data.entries : [];
+					setAuditResult(runAudit(list.map(normalizeEntry), Date.now()));
+					setAuditSelected([]);
+					setAuditConfirmDelete(false);
+					setAuditOpen(true);
+				} catch (error) {
+					actions.toast("error", errorMessageFor(error, t));
+				} finally {
+					setAuditBusy(false);
+				}
+			};
+			/** Select / unselect one audit finding row. */
+			const toggleAuditSelect = (id) => {
+				setAuditSelected((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
+			};
+			/** Run a batch action over the selected rows, reusing the existing endpoints. */
+			const runAuditBatch = async (action) => {
+				if (auditBatchBusy || auditSelected.length === 0) return;
+				if (action === "delete" && !auditConfirmDelete) {
+					setAuditConfirmDelete(true);
+					return;
+				}
+				setAuditBatchBusy(true);
+				const ids = [...auditSelected];
+				let failed = 0;
+				try {
+					for (const id of ids) {
+						const body = {
+							scope,
+							id
+						};
+						if (scope === "project") body.project = project;
+						try {
+							if (action === "delete") await api("/memory/delete", {
+								method: "POST",
+								body
+							});
+							else await api("/memory/status", {
+								method: "POST",
+								body: {
+									...body,
+									status: action === "archive" ? "archived" : "stale"
+								}
+							});
+						} catch {
+							failed += 1;
+						}
+					}
+					actions.toast(failed === 0 ? "success" : "warn", failed === 0 ? t("memoryAuditDone", { count: ids.length }) : t("memoryAuditPartial", { count: failed }));
+					setAuditOpen(false);
+					setListToken((token) => token + 1);
+				} finally {
+					setAuditBatchBusy(false);
+					setAuditConfirmDelete(false);
+					setAuditSelected([]);
+				}
+			};
 			const submitSearch = () => {
 				if (query === appliedQuery) setListToken((token) => token + 1);
 				else setAppliedQuery(query);
@@ -6133,6 +6418,54 @@ window.__ModuleLoader__.load({
 			}))];
 			const visibleEntries = tagFilter === "" ? entries : entries.filter((item) => item.tags.includes(tagFilter));
 			const sortedEntries = sort === "recent" ? [...visibleEntries].sort((left, right) => timeOf(right.updatedAt) - timeOf(left.updatedAt)) : visibleEntries;
+			const auditEmpty = auditResult !== null && auditResult.stale.length === 0 && auditResult.duplicates.length === 0 && auditResult.lowValue.length === 0;
+			/** One selectable audit finding row (checkbox + card summary + suggestion). */
+			const auditRow = (item, hint) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+				className: memory_module_css_default.auditRow,
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+					className: memory_module_css_default.auditCheck,
+					type: "checkbox",
+					"aria-label": item.name,
+					checked: auditSelected.includes(item.id),
+					onChange: () => toggleAuditSelect(item.id)
+				}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+					className: memory_module_css_default.auditSummary,
+					children: [
+						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+							className: memory_module_css_default.entryTitleRow,
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								className: memory_module_css_default.entryName,
+								children: item.name
+							}), item.importance >= 80 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								className: memory_module_css_default.entryImportance,
+								children: String(item.importance)
+							}) : null]
+						}),
+						item.description !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+							className: memory_module_css_default.entryDesc,
+							children: item.description
+						}) : null,
+						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+							className: memory_module_css_default.entryMeta,
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
+								tone: "plain",
+								children: typeLabel(item.type, t)
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								className: memory_module_css_default.auditHint,
+								children: hint
+							})]
+						})
+					]
+				})]
+			}, item.id);
+			/** Group heading with its finding count. */
+			const auditGroupTitle = (title, count) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("h3", {
+				className: memory_module_css_default.auditGroupTitle,
+				children: [title, /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+					className: memory_module_css_default.auditCount,
+					children: String(count)
+				})]
+			});
 			let workspace = null;
 			if (!stateReady) workspace = stateError !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: memory_module_css_default.errorBox,
@@ -6464,6 +6797,15 @@ window.__ModuleLoader__.load({
 										title: t("memorySettingsButton"),
 										onClick: () => {
 											setSettingsOpen(true);
+										}
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(IconButton, {
+										icon: "clipboardCheck",
+										title: auditBusy ? t("memoryAuditRunning") : t("memoryAuditButton"),
+										busy: auditBusy,
+										disabled: auditBusy || projectRequired,
+										onClick: () => {
+											openAudit();
 										}
 									}),
 									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(IconButton, {
@@ -6937,6 +7279,97 @@ window.__ModuleLoader__.load({
 									]
 								})
 							]
+						})
+					}) : null,
+					stateReady && auditOpen && auditResult !== null ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: memory_module_css_default.dialogPortal,
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(DialogShell, {
+							t,
+							title: t("memoryAuditTitle"),
+							wide: true,
+							onClose: () => {
+								setAuditOpen(false);
+							},
+							children: [auditEmpty ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(EmptyBlock, { description: t("memoryAuditEmpty") }) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: memory_module_css_default.auditGroups,
+								children: [
+									auditResult.stale.length > 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+										className: memory_module_css_default.auditGroup,
+										children: [auditGroupTitle(t("memoryAuditStaleTitle"), auditResult.stale.length), auditResult.stale.map((item) => auditRow(item, t("memoryAuditStaleHint")))]
+									}) : null,
+									auditResult.duplicates.length > 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+										className: memory_module_css_default.auditGroup,
+										children: [auditGroupTitle(t("memoryAuditDuplicateTitle"), auditResult.duplicates.length), auditResult.duplicates.map((pair) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+											className: memory_module_css_default.auditPair,
+											children: [
+												/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+													className: memory_module_css_default.auditPairKeep,
+													children: t("memoryAuditKeep", { name: pair.keep.name })
+												}),
+												auditRow(pair.left, t("memoryAuditDuplicateHint")),
+												auditRow(pair.right, t("memoryAuditDuplicateHint"))
+											]
+										}, `${pair.left.id}-${pair.right.id}`))]
+									}) : null,
+									auditResult.lowValue.length > 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+										className: memory_module_css_default.auditGroup,
+										children: [auditGroupTitle(t("memoryAuditLowValueTitle"), auditResult.lowValue.length), auditResult.lowValue.map((item) => auditRow(item, t("memoryAuditLowValueHint")))]
+									}) : null
+								]
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: memory_module_css_default.auditBar,
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+									className: memory_module_css_default.auditBarCount,
+									children: t("memoryAuditSelected", { count: auditSelected.length })
+								}), auditConfirmDelete ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+									className: memory_module_css_default.confirmArea,
+									role: "group",
+									"aria-label": t("memoryAuditDeleteConfirm", { count: auditSelected.length }),
+									children: [
+										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.confirmText,
+											children: t("memoryAuditDeleteConfirm", { count: auditSelected.length })
+										}),
+										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Button, {
+											variant: "danger",
+											disabled: auditBatchBusy,
+											onClick: () => {
+												runAuditBatch("delete");
+											},
+											children: [auditBatchBusy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Spinner, {}) : null, auditBatchBusy ? t("memoryDeleting") : t("memoryDeleteConfirm")]
+										}),
+										/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+											variant: "secondary",
+											onClick: () => setAuditConfirmDelete(false),
+											children: t("cancel")
+										})
+									]
+								}) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+										variant: "secondary",
+										disabled: auditSelected.length === 0 || auditBatchBusy,
+										onClick: () => {
+											runAuditBatch("archive");
+										},
+										children: t("memoryArchive")
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+										variant: "secondary",
+										disabled: auditSelected.length === 0 || auditBatchBusy,
+										onClick: () => {
+											runAuditBatch("stale");
+										},
+										children: t("memoryDeactivate")
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+										variant: "danger",
+										icon: "trash",
+										disabled: auditSelected.length === 0 || auditBatchBusy,
+										onClick: () => setAuditConfirmDelete(true),
+										children: t("memoryDelete")
+									})
+								] })]
+							})]
 						})
 					}) : null
 				]

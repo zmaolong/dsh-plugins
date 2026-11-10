@@ -49,6 +49,13 @@ describe('记忆 API：state/list/get/save/status/delete/settings/export', () =>
     expect(list.total).toBe(1)
     expect(list.entries[0]?.id).toBe(saved.entry.id)
 
+    // 默认 list 不携带正文；content=1 供体检拉全量。
+    expect((list.entries[0] as { content?: string }).content).toBeUndefined()
+    const full = await dispatchMemoryGet(store, '/memory/list', new URLSearchParams({ scope: 'global', content: '1' })) as {
+      entries: Array<{ id: string, content?: string }>
+    }
+    expect(full.entries[0]?.content).toContain('一句话说清')
+
     const got = await dispatchMemoryGet(store, '/memory/get', new URLSearchParams({ scope: 'global', id: saved.entry.id })) as {
       entry: { content: string }
     }

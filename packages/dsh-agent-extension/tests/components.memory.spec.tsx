@@ -84,6 +84,14 @@ const DETAIL = {
   obsoleteVotes: 0,
 }
 
+/** Audit-dialog fixture: one stale, one low-value, and one near-duplicate pair. */
+const AUDIT_ENTRIES = [
+  { ...ENTRIES[0], obsoleteVotes: 1 },
+  { ...ENTRIES[1], status: 'active', reinforcement: 0, updatedAt: '2026-09-01T00:00:00.000Z' },
+  { id: 'd1', name: '提交信息用中文（一）', description: '仓库约定', type: 'preference', tags: [], importance: 40, status: 'active', reinforcement: 0, createdAt: '2026-11-01T00:00:00.000Z', updatedAt: '2026-11-02T00:00:00.000Z', content: '提交信息必须使用中文。' },
+  { id: 'd2', name: '提交信息用中文（二）', description: '仓库约定', type: 'preference', tags: [], importance: 80, status: 'active', reinforcement: 3, createdAt: '2026-11-01T00:00:00.000Z', updatedAt: '2026-11-03T00:00:00.000Z', content: '提交信息必须使用中文。' },
+]
+
 const SAVED = {
   ...DETAIL,
   id: 'm3',
@@ -377,5 +385,60 @@ describe('MemoryView', () => {
     fireEvent.change(screen.getByRole('combobox', { name: t('memorySortLabel') }), { target: { value: 'recent' } })
     const recentCards = screen.getAllByRole('button', { name: /提交信息用中文|旧决策/u })
     expect(recentCards[0]?.textContent).toContain('旧决策')
+  })
+
+  it('体检对话框：content=1 拉全量算出三组问题，勾选后批量归档调用 /memory/status', async () => {
+    const { calls } = installFetch({
+      list: (url) => url.includes('content=1')
+        ? okResponse({ scope: 'project', project: '', total: 4, entries: AUDIT_ENTRIES })
+        : okResponse({ scope: 'project', project: '', total: ENTRIES.length, entries: ENTRIES }),
+    })
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const toast = vi.spyOn(controller.actions, 'toast')
+    render(<MemoryView actions={controller.actions} t={t} />)
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    fireEvent.click(screen.getByRole('button', { name: t('memoryAuditButton') }))
+    expect(await screen.findByRole('dialog', { name: t('memoryAuditTitle') })).toBeTruthy()
+    expect(calls.some(call => call.url.includes('/memory/list') && call.url.includes('content=1'))).toBe(true)
+    // 三组问题：过时 1 条、疑似重复对 1（两条）、低价值 1 条。
+    expect(screen.getAllByRole('checkbox').length).toBe(4)
+    expect(screen.getByText(t('memoryAuditKeep', { name: '提交信息用中文（二）' }))).toBeTruthy()
+    // 勾选「旧决策」并批量归档。
+    fireEvent.click(screen.getByRole('checkbox', { name: '旧决策' }))
+    expect(screen.getByText(t('memoryAuditSelected', { count: 1 }))).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: t('memoryArchive') }))
+    await waitFor(() => {
+      expect(calls.some(call => call.url.includes('/memory/status'))).toBe(true)
+    })
+    const statusCall = calls.find(call => call.url.includes('/memory/status'))
+    expect(bodyOf(statusCall)).toEqual({ scope: 'project', project: '/repo/new', id: 'm2', status: 'archived' })
+    await waitFor(() => {
+      expect(toast).toHaveBeenCalledWith('success', t('memoryAuditDone', { count: 1 }))
+    })
+    expect(screen.queryByRole('dialog', { name: t('memoryAuditTitle') })).toBeNull()
+  })
+
+  it('体检批量删除需要二次确认后才调用 /memory/delete', async () => {
+    const { calls } = installFetch({
+      list: (url) => url.includes('content=1')
+        ? okResponse({ scope: 'project', project: '', total: 1, entries: AUDIT_ENTRIES.slice(0, 1) })
+        : okResponse({ scope: 'project', project: '', total: ENTRIES.length, entries: ENTRIES }),
+    })
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    render(<MemoryView actions={controller.actions} t={t} />)
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    fireEvent.click(screen.getByRole('button', { name: t('memoryAuditButton') }))
+    expect(await screen.findByRole('dialog', { name: t('memoryAuditTitle') })).toBeTruthy()
+    fireEvent.click(screen.getAllByRole('checkbox')[0]!)
+    fireEvent.click(screen.getByRole('button', { name: t('memoryDelete') }))
+    // 第一步只展开确认区，不发送请求。
+    expect(screen.getByText(t('memoryAuditDeleteConfirm', { count: 1 }))).toBeTruthy()
+    expect(calls.some(call => call.url.includes('/memory/delete'))).toBe(false)
+    fireEvent.click(screen.getByRole('button', { name: t('memoryDeleteConfirm') }))
+    await waitFor(() => {
+      expect(calls.some(call => call.url.includes('/memory/delete'))).toBe(true)
+    })
+    const deleteCall = calls.find(call => call.url.includes('/memory/delete'))
+    expect(bodyOf(deleteCall)).toEqual({ scope: 'project', project: '/repo/new', id: 'm1' })
   })
 })

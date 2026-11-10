@@ -4,8 +4,10 @@
  * dropdown, and the action icons), the entry list as a full-width card grid
  * with tag-chip filtering and a recency sort, a wide detail dialog for
  * create / edit / save / deactivate / archive / restore / two-step delete,
- * the Markdown export, and a settings dialog (capture-injection switches and
- * limits persist immediately; per-session statistics live there too).
+ * the Markdown export, a settings dialog (capture-injection switches and
+ * limits persist immediately; per-session statistics live there too), and a
+ * health-audit dialog (stale / duplicate / low-value findings with batch
+ * archive / deactivate / delete reusing the existing endpoints).
  *
  * The view owns its local state (the hub snapshot only carries the section
  * tab) and talks to the host's `/memory/*` routes through `api()`; all copy
@@ -16,6 +18,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { api } from './api.ts'
+import { runAudit, type AuditEntry, type AuditResult } from './audit.ts'
 import { Badge, Button, EmptyBlock, IconButton, LoadingBlock, Spinner, columnGap } from './controls.tsx'
 import { DialogShell } from './dialogs.tsx'
 import { Icon } from './icons.tsx'
@@ -351,6 +354,12 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const [tagFilter, setTagFilter] = useState('')
   const [sort, setSort] = useState<'default' | 'recent'>('default')
   const [tagDraft, setTagDraft] = useState('')
+  const [auditOpen, setAuditOpen] = useState(false)
+  const [auditBusy, setAuditBusy] = useState(false)
+  const [auditResult, setAuditResult] = useState<AuditResult | null>(null)
+  const [auditSelected, setAuditSelected] = useState<string[]>([])
+  const [auditConfirmDelete, setAuditConfirmDelete] = useState(false)
+  const [auditBatchBusy, setAuditBatchBusy] = useState(false)
 
   // The user's explicit scope choice wins over the auto-selected defaults.
   const userChoseRef = useRef(false)
@@ -639,6 +648,69 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
     }
   }
 
+  /** Full-list fetch + client-side audit rules for the current scope. */
+  const openAudit = async (): Promise<void> => {
+    if (auditBusy || (scope === 'project' && project === '')) return
+    setAuditBusy(true)
+    try {
+      const params = new URLSearchParams()
+      params.set('scope', scope)
+      if (scope === 'project') params.set('project', project)
+      params.set('includeArchived', '1')
+      params.set('content', '1')
+      const data = await api<JsonRecord>(`/memory/list?${params.toString()}`)
+      const list = Array.isArray(data.entries) ? data.entries : []
+      setAuditResult(runAudit(list.map(normalizeEntry), Date.now()))
+      setAuditSelected([])
+      setAuditConfirmDelete(false)
+      setAuditOpen(true)
+    } catch (error) {
+      actions.toast('error', errorMessageFor(error, t))
+    } finally {
+      setAuditBusy(false)
+    }
+  }
+
+  /** Select / unselect one audit finding row. */
+  const toggleAuditSelect = (id: string): void => {
+    setAuditSelected(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id])
+  }
+
+  /** Run a batch action over the selected rows, reusing the existing endpoints. */
+  const runAuditBatch = async (action: 'archive' | 'stale' | 'delete'): Promise<void> => {
+    if (auditBatchBusy || auditSelected.length === 0) return
+    if (action === 'delete' && !auditConfirmDelete) {
+      setAuditConfirmDelete(true)
+      return
+    }
+    setAuditBatchBusy(true)
+    const ids = [...auditSelected]
+    let failed = 0
+    try {
+      for (const id of ids) {
+        const body: Record<string, unknown> = { scope, id }
+        if (scope === 'project') body.project = project
+        try {
+          if (action === 'delete') {
+            await api<JsonRecord>('/memory/delete', { method: 'POST', body })
+          } else {
+            await api<JsonRecord>('/memory/status', { method: 'POST', body: { ...body, status: action === 'archive' ? 'archived' : 'stale' } })
+          }
+        } catch {
+          failed += 1
+        }
+      }
+      actions.toast(failed === 0 ? 'success' : 'warn',
+        failed === 0 ? t('memoryAuditDone', { count: ids.length }) : t('memoryAuditPartial', { count: failed }))
+      setAuditOpen(false)
+      setListToken(token => token + 1)
+    } finally {
+      setAuditBatchBusy(false)
+      setAuditConfirmDelete(false)
+      setAuditSelected([])
+    }
+  }
+
   const submitSearch = (): void => {
     if (query === appliedQuery) setListToken(token => token + 1)
     else setAppliedQuery(query)
@@ -679,6 +751,45 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const sortedEntries = sort === 'recent'
     ? [...visibleEntries].sort((left, right) => timeOf(right.updatedAt) - timeOf(left.updatedAt))
     : visibleEntries
+
+  const auditEmpty = auditResult !== null
+    && auditResult.stale.length === 0
+    && auditResult.duplicates.length === 0
+    && auditResult.lowValue.length === 0
+
+  /** One selectable audit finding row (checkbox + card summary + suggestion). */
+  const auditRow = (item: AuditEntry, hint: string): ReactNode => (
+    <label key={item.id} className={css.auditRow}>
+      <input
+        className={css.auditCheck}
+        type="checkbox"
+        aria-label={item.name}
+        checked={auditSelected.includes(item.id)}
+        onChange={() => toggleAuditSelect(item.id)}
+      />
+      <span className={css.auditSummary}>
+        <span className={css.entryTitleRow}>
+          <span className={css.entryName}>{item.name}</span>
+          {item.importance >= 80
+            ? <span className={css.entryImportance}>{String(item.importance)}</span>
+            : null}
+        </span>
+        {item.description !== '' ? <span className={css.entryDesc}>{item.description}</span> : null}
+        <span className={css.entryMeta}>
+          <Badge tone="plain">{typeLabel(item.type, t)}</Badge>
+          <span className={css.auditHint}>{hint}</span>
+        </span>
+      </span>
+    </label>
+  )
+
+  /** Group heading with its finding count. */
+  const auditGroupTitle = (title: string, count: number): ReactNode => (
+    <h3 className={css.auditGroupTitle}>
+      {title}
+      <span className={css.auditCount}>{String(count)}</span>
+    </h3>
+  )
 
   let workspace: ReactNode = null
   if (!stateReady) {
@@ -958,6 +1069,13 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
             onClick={() => { void exportMarkdown() }}
           />
           <IconButton icon="settings" title={t('memorySettingsButton')} onClick={() => { setSettingsOpen(true) }} />
+          <IconButton
+            icon="clipboardCheck"
+            title={auditBusy ? t('memoryAuditRunning') : t('memoryAuditButton')}
+            busy={auditBusy}
+            disabled={auditBusy || projectRequired}
+            onClick={() => { void openAudit() }}
+          />
           <IconButton
             icon="refresh"
             title={stateBusy || listBusy ? t('refreshing') : t('refresh')}
@@ -1261,6 +1379,77 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                   <span className={css.statLabel}>{t('memoryStatOverflow')}</span>
                   <span className={css.statValue}>{String(overflowOf(stats))}</span>
                 </div>
+              </div>
+            </DialogShell>
+          </div>
+        )
+        : null}
+
+      {stateReady && auditOpen && auditResult !== null
+        ? (
+          <div className={css.dialogPortal}>
+            <DialogShell t={t} title={t('memoryAuditTitle')} wide onClose={() => { setAuditOpen(false) }}>
+              {auditEmpty
+                ? <EmptyBlock description={t('memoryAuditEmpty')} />
+                : (
+                  <div className={css.auditGroups}>
+                    {auditResult.stale.length > 0
+                      ? (
+                        <section className={css.auditGroup}>
+                          {auditGroupTitle(t('memoryAuditStaleTitle'), auditResult.stale.length)}
+                          {auditResult.stale.map(item => auditRow(item, t('memoryAuditStaleHint')))}
+                        </section>
+                      )
+                      : null}
+                    {auditResult.duplicates.length > 0
+                      ? (
+                        <section className={css.auditGroup}>
+                          {auditGroupTitle(t('memoryAuditDuplicateTitle'), auditResult.duplicates.length)}
+                          {auditResult.duplicates.map(pair => (
+                            <div key={`${pair.left.id}-${pair.right.id}`} className={css.auditPair}>
+                              <span className={css.auditPairKeep}>{t('memoryAuditKeep', { name: pair.keep.name })}</span>
+                              {auditRow(pair.left, t('memoryAuditDuplicateHint'))}
+                              {auditRow(pair.right, t('memoryAuditDuplicateHint'))}
+                            </div>
+                          ))}
+                        </section>
+                      )
+                      : null}
+                    {auditResult.lowValue.length > 0
+                      ? (
+                        <section className={css.auditGroup}>
+                          {auditGroupTitle(t('memoryAuditLowValueTitle'), auditResult.lowValue.length)}
+                          {auditResult.lowValue.map(item => auditRow(item, t('memoryAuditLowValueHint')))}
+                        </section>
+                      )
+                      : null}
+                  </div>
+                )}
+              <div className={css.auditBar}>
+                <span className={css.auditBarCount}>{t('memoryAuditSelected', { count: auditSelected.length })}</span>
+                {auditConfirmDelete
+                  ? (
+                    <span className={css.confirmArea} role="group" aria-label={t('memoryAuditDeleteConfirm', { count: auditSelected.length })}>
+                      <span className={css.confirmText}>{t('memoryAuditDeleteConfirm', { count: auditSelected.length })}</span>
+                      <Button variant="danger" disabled={auditBatchBusy} onClick={() => { void runAuditBatch('delete') }}>
+                        {auditBatchBusy ? <Spinner /> : null}{auditBatchBusy ? t('memoryDeleting') : t('memoryDeleteConfirm')}
+                      </Button>
+                      <Button variant="secondary" onClick={() => setAuditConfirmDelete(false)}>{t('cancel')}</Button>
+                    </span>
+                  )
+                  : (
+                    <>
+                      <Button variant="secondary" disabled={auditSelected.length === 0 || auditBatchBusy} onClick={() => { void runAuditBatch('archive') }}>
+                        {t('memoryArchive')}
+                      </Button>
+                      <Button variant="secondary" disabled={auditSelected.length === 0 || auditBatchBusy} onClick={() => { void runAuditBatch('stale') }}>
+                        {t('memoryDeactivate')}
+                      </Button>
+                      <Button variant="danger" icon="trash" disabled={auditSelected.length === 0 || auditBatchBusy} onClick={() => setAuditConfirmDelete(true)}>
+                        {t('memoryDelete')}
+                      </Button>
+                    </>
+                  )}
               </div>
             </DialogShell>
           </div>

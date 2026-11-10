@@ -78,6 +78,7 @@ export async function dispatchMemoryGet(store: MemoryStore, route: string, param
       ...(type === undefined ? {} : { type }),
       includeArchived: params.get('includeArchived') === '1',
       limit: LIMITS.entriesPerScope,
+      includeContent: params.get('content') === '1',
     })
     return { scope, project, total: entries.length, entries }
   }

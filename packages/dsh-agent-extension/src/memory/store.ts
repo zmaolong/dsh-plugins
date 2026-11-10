@@ -437,12 +437,13 @@ export class MemoryStore {
    *
    * @param scope - memory scope.
    * @param project - project key for the project scope.
-   * @param options - query, type filter, archived inclusion.
+   * @param options - query, type filter, archived inclusion; `includeContent`
+   *   keeps the Markdown body in the payload (health-audit consumers).
    */
   list(
     scope: MemoryScope,
     project = '',
-    options: { query?: string, type?: MemoryType, includeArchived?: boolean, limit?: number } = {},
+    options: { query?: string, type?: MemoryType, includeArchived?: boolean, limit?: number, includeContent?: boolean } = {},
   ): MemoryMeta[] {
     const query = text(options.query)
     const entries = this.load(scope, project).filter(entry =>
@@ -451,7 +452,8 @@ export class MemoryStore {
     const filtered = query === '' ? entries : this.score(entries, query)
     const sorted = query === '' ? filtered.sort(compareEntries) : filtered
     const limit = clampInt(options.limit, 1, LIMITS.entriesPerScope, LIMITS.entriesPerScope)
-    return sorted.slice(0, limit).map(toMeta)
+    const sliced = sorted.slice(0, limit)
+    return options.includeContent === true ? sliced : sliced.map(toMeta)
   }
 
   /**

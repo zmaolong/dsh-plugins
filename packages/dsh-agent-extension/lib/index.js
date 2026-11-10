@@ -7300,7 +7300,8 @@ var MemoryStore = class {
 	*
 	* @param scope - memory scope.
 	* @param project - project key for the project scope.
-	* @param options - query, type filter, archived inclusion.
+	* @param options - query, type filter, archived inclusion; `includeContent`
+	*   keeps the Markdown body in the payload (health-audit consumers).
 	*/
 	list(scope, project = "", options = {}) {
 		const query = text(options.query);
@@ -7308,7 +7309,8 @@ var MemoryStore = class {
 		const filtered = query === "" ? entries : this.score(entries, query);
 		const sorted = query === "" ? filtered.sort(compareEntries) : filtered;
 		const limit = clampInt(options.limit, 1, LIMITS.entriesPerScope, LIMITS.entriesPerScope);
-		return sorted.slice(0, limit).map(toMeta);
+		const sliced = sorted.slice(0, limit);
+		return options.includeContent === true ? sliced : sliced.map(toMeta);
 	}
 	/**
 	* Search one scope (and the global scope when `scope` is `'all'`).
@@ -7741,7 +7743,8 @@ async function dispatchMemoryGet(store, route, params) {
 			query: params.get("query") ?? "",
 			...type === void 0 ? {} : { type },
 			includeArchived: params.get("includeArchived") === "1",
-			limit: LIMITS.entriesPerScope
+			limit: LIMITS.entriesPerScope,
+			includeContent: params.get("content") === "1"
 		});
 		return {
 			scope,
