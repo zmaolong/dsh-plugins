@@ -18,6 +18,7 @@ import {
   clampInt,
   defaultSettings,
   isMemoryStatus,
+  isMemoryTier,
   isMemoryType,
   normalizeIds,
   normalizeTags,
@@ -29,6 +30,7 @@ import {
   type MemoryScope,
   type MemoryStateWire,
   type MemoryStatus,
+  type MemoryTier,
 } from './memory/types.ts'
 
 /** GET routes served by the memory panel. */
@@ -44,6 +46,7 @@ export const MEMORY_GET_ROUTES = [
 export const MEMORY_POST_ROUTES = [
   '/memory/save',
   '/memory/status',
+  '/memory/tier',
   '/memory/delete',
   '/memory/settings',
   '/memory/export',
@@ -217,6 +220,8 @@ export async function dispatchMemoryPost(
       importance: clampInt(body.importance, 0, 100, 50),
       supersedes: normalizeIds(body.supersedes),
       originSessionId: text(body.originSessionId),
+      // 面板保存 = 用户显式途径：定级长期（覆盖既有把面板保存当 capture 的缺陷）。
+      source: 'user',
     })
     return { entry }
   }
@@ -228,6 +233,15 @@ export async function dispatchMemoryPost(
     if (id === '') throw hubError('缺少记忆 id', 'bad_request')
     if (status === undefined) throw hubError('status 只能是 active / stale / archived', 'bad_request')
     return { entry: store.setStatus(scope, project, id, status) }
+  }
+  if (route === '/memory/tier') {
+    const scope = scopeOf(body.scope, 'global')
+    const project = projectOf(store, body.project, scope)
+    const id = text(body.id)
+    const tier: MemoryTier | undefined = isMemoryTier(body.tier) ? body.tier : undefined
+    if (id === '') throw hubError('缺少记忆 id', 'bad_request')
+    if (tier === undefined) throw hubError('tier 只能是 short / long', 'bad_request')
+    return { entry: store.setTier(scope, project, id, tier) }
   }
   if (route === '/memory/delete') {
     const scope = scopeOf(body.scope, 'global')

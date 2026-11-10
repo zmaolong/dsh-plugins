@@ -47,6 +47,7 @@ import {
   normalizeIds,
   normalizeSource,
   normalizeTags,
+  normalizeTier,
   text,
   type CreatedRef,
   type MemoryEntry,
@@ -56,6 +57,7 @@ import {
   type MemorySource,
   type MemoryStats,
   type MemoryStatus,
+  type MemoryTier,
   type MemoryType,
   type ProjectIdentity,
   type ProjectRecord,
@@ -81,6 +83,11 @@ export interface SaveMemoryInput {
   originSessionId?: string
   /** 来源；缺省 `capture`（迁移条目与未标注写入统一取 capture）。 */
   source?: MemorySource
+  /**
+   * 保留层级；缺省按 `source` 推断——`user`（面板/命令）为 `long`，
+   * `capture`/`tool`/`import` 为 `short`。
+   */
+  tier?: MemoryTier
   /** 0-100 置信度；缺省 50。 */
   confidence?: number
   /** 固定条目；缺省 false。 */
@@ -177,6 +184,7 @@ function renderEntry(entry: MemoryEntry, extras: readonly string[] = []): string
     `importance: ${entry.importance}`,
     `confidence: ${entry.confidence}`,
     `status: ${entry.status}`,
+    `tier: ${entry.tier}`,
     `reinforcement: ${entry.reinforcement}`,
     `obsoleteVotes: ${entry.obsoleteVotes}`,
     `pinned: ${entry.pinned ? 'true' : 'false'}`,
@@ -195,6 +203,11 @@ function renderEntry(entry: MemoryEntry, extras: readonly string[] = []): string
   }
   lines.push('---', '', entry.content.trim(), '')
   return lines.join('\n')
+}
+
+/** 写入定级：用户显式途径直接长驻；模型/提炼/导入的写入先进短期观察。 */
+function tierForSource(source: MemorySource): MemoryTier {
+  return source === 'user' ? 'long' : 'short'
 }
 
 /** 归一化字符串，用于指纹与重复检测。 */
@@ -239,6 +252,7 @@ function parseDocument(source: string, file: string, scope: MemoryScope, project
   const description = text(data.description)
   const type = isMemoryType(data.type) ? data.type : 'reference'
   const status = isMemoryStatus(data.status) ? data.status : 'active'
+  const tier = normalizeTier(data.tier)
   const importance = clampInt(data.importance, 0, 100, 50)
   const confidence = clampInt(data.confidence, 0, 100, 50)
   const reinforcement = clampInt(data.reinforcement, 0, 100000, 0)
@@ -266,6 +280,7 @@ function parseDocument(source: string, file: string, scope: MemoryScope, project
     importance,
     confidence,
     status,
+    tier,
     reinforcement,
     obsoleteVotes,
     pinned,
@@ -777,7 +792,7 @@ export class MemoryStore {
       identity: identity.identity,
       roots,
       lastSeen: new Date().toISOString(),
-      entryCount: 0,
+      entryCount: this.countEntries('project', identity.projectKey),
     }
     const next = existing
       ? projects.map(project => project.key === record.key ? record : project)
@@ -1020,6 +1035,8 @@ export class MemoryStore {
     const pinnedProvided = input.pinned !== undefined
     const source = normalizeSource(input.source)
     const sourceProvided = input.source !== undefined
+    const tier = normalizeTier(input.tier, tierForSource(source))
+    const tierProvided = input.tier !== undefined
     const mergedFrom = normalizeIds(input.mergedFrom)
     const mergedProvided = input.mergedFrom !== undefined
     const now = new Date().toISOString()
@@ -1042,6 +1059,8 @@ export class MemoryStore {
         ...(confidenceProvided ? { confidence } : {}),
         ...(pinnedProvided ? { pinned } : {}),
         ...(sourceProvided ? { source } : {}),
+        // 层级显式优先；未显式给层级时钉住视为长驻意图。
+        ...(tierProvided ? { tier } : pinnedProvided && pinned ? { tier: 'long' as const } : {}),
         ...(mergedProvided && mergedFrom.length > 0
           ? { mergedFrom: [...new Set([...existingById.mergedFrom, ...mergedFrom])] }
           : {}),
@@ -1063,6 +1082,8 @@ export class MemoryStore {
         importance: Math.max(duplicate.importance, importance),
         tags: [...new Set([...duplicate.tags, ...tags])].slice(0, LIMITS.tags),
         reinforcement: duplicate.reinforcement + 1,
+        // 事实被再次确认即视为使用证明：短期条目升级为长期。
+        tier: duplicate.tier === 'short' ? 'long' : duplicate.tier,
         supersedes: addedSupersedes.length === 0 ? duplicate.supersedes : [...duplicate.supersedes, ...addedSupersedes],
         ...(confidenceProvided ? { confidence } : {}),
         ...(pinnedProvided ? { pinned } : {}),
@@ -1088,6 +1109,7 @@ export class MemoryStore {
       importance,
       confidence: confidenceProvided ? confidence : 50,
       status: 'active',
+      tier,
       reinforcement: 0,
       obsoleteVotes: 0,
       pinned: pinnedProvided ? pinned : false,
@@ -1110,6 +1132,26 @@ export class MemoryStore {
     const entry = this.get(scope, project, id)
     if (entry === undefined) throw new Error(`记忆不存在：${id}`)
     const updated: MemoryEntry = { ...entry, status, updatedAt: new Date().toISOString() }
+    this.writeEntry(scope, project, updated)
+    return updated
+  }
+
+  /**
+   * 记录一次正文读取（`memory_get` 命中）：短期条目升级为长期并写回真源。
+   *
+   * 升级是一次性元数据变更，不刷新 `updatedAt`（不是内容修改）；已长期则不动。
+   */
+  promoteRead(scope: MemoryScope, project: string, id: string): void {
+    const entry = this.get(scope, project, id)
+    if (entry === undefined || entry.tier === 'long') return
+    this.writeEntry(scope, project, { ...entry, tier: 'long' })
+  }
+
+  /** 修改一条记忆的保留层级（面板手动升降级）。 */
+  setTier(scope: MemoryScope, project: string, id: string, tier: MemoryTier): MemoryEntry {
+    const entry = this.get(scope, project, id)
+    if (entry === undefined) throw new Error(`记忆不存在：${id}`)
+    const updated: MemoryEntry = { ...entry, tier, updatedAt: new Date().toISOString() }
     this.writeEntry(scope, project, updated)
     return updated
   }
@@ -1418,6 +1460,7 @@ function toMeta(entry: MemoryEntry): MemoryMeta {
     project: entry.project,
     tags: entry.tags,
     importance: entry.importance,
+    tier: entry.tier,
     confidence: entry.confidence,
     status: entry.status,
     reinforcement: entry.reinforcement,

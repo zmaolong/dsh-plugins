@@ -3,7 +3,7 @@
  *
  * 约定（ADR-0007）：
  * - Markdown 是唯一真源；迁移只补字段，不改正文、不改文件名；
- * - 迁移前先把旧文件复制到 `<home>/memory/.backup-v1-<timestamp>/`（保持相对路径），
+ * - 迁移前先把旧文件复制到 `<home>/memory/.backup-v<来源版本>-<timestamp>/`（保持相对路径），
  *   再就地原子写回；
  * - 幂等：v2 条目与已移走的 `MEMORY.md` 不会产生第二次备份；
  * - 失败不丢数据：复制失败的文件不写回；写回失败时原文件保持（tmp + rename）；
@@ -32,8 +32,8 @@ import { MEMORY_SCHEMA, type MemoryEntry, type MemoryScope } from './types.ts'
 /** 旧索引文件名：B0 起不再生成，首次加载时移入备份目录。 */
 export const MEMORY_INDEX_FILE = 'MEMORY.md'
 
-/** 迁移备份目录前缀。 */
-export const MEMORY_BACKUP_PREFIX = '.backup-v1-'
+/** 迁移备份目录前缀；目录名形如 `.backup-v<来源 schema>-<timestamp>`。 */
+export const MEMORY_BACKUP_PREFIX = '.backup-v'
 
 /**
  * 由 store 负责渲染/维护的 frontmatter 字段；其余字段原样写回。
@@ -50,6 +50,7 @@ export const KNOWN_ENTRY_FIELDS: ReadonlySet<string> = new Set([
   'project',
   'tags',
   'importance',
+  'tier',
   'confidence',
   'status',
   'reinforcement',
@@ -197,6 +198,8 @@ interface MigrationCandidate {
   project: string
   entry: MemoryEntry
   extras: string[]
+  /** 迁移前文件声明的 schema 版本（缺失/非法为 0）。 */
+  fromSchema: number
 }
 
 /** 扫描一个作用域目录，返回待迁移条目与旧索引文件。 */
@@ -240,18 +243,19 @@ function scanScopeDir(options: {
       log('warn', `记忆迁移跳过无法解析的文件 ${relative}（原文件保持）`)
       continue
     }
-    candidates.push({ file, relative, scope, project, entry: parsed.entry, extras: parsed.extras })
+    // 缺失/非法 schema 视为 v1（0 是内部值，备份目录名按 1 起算与历史一致）。
+    candidates.push({ file, relative, scope, project, entry: parsed.entry, extras: parsed.extras, fromSchema: Math.max(entrySchemaOf(source), 1) })
   }
   return { candidates, indexes }
 }
 
 /** 生成唯一的备份目录（同一时刻重复迁移也不会覆盖旧备份）。 */
-function uniqueBackupDir(root: string): string {
+function uniqueBackupDir(root: string, fromSchema: number): string {
   const stamp = new Date().toISOString().replace(/[:.]/gu, '-').replace(/Z$/u, '')
-  let candidate = path.join(root, `${MEMORY_BACKUP_PREFIX}${stamp}`)
+  let candidate = path.join(root, `${MEMORY_BACKUP_PREFIX}${fromSchema}-${stamp}`)
   let suffix = 2
   while (existsSync(candidate)) {
-    candidate = path.join(root, `${MEMORY_BACKUP_PREFIX}${stamp}-${suffix}`)
+    candidate = path.join(root, `${MEMORY_BACKUP_PREFIX}${fromSchema}-${stamp}-${suffix}`)
     suffix += 1
   }
   return candidate
@@ -309,7 +313,9 @@ export function migrateMemoryTree(options: MemoryMigrationOptions): MemoryMigrat
   }
   if (candidates.length === 0 && indexes.length === 0) return report
 
-  const backupDir = uniqueBackupDir(options.root)
+  // 备份目录按来源 schema 命名；混合版本时取最低版本，保证旧数据可追溯。
+  const fromSchema = Math.min(...candidates.map(candidate => candidate.fromSchema))
+  const backupDir = uniqueBackupDir(options.root, fromSchema)
   try {
     mkdirSync(backupDir, { recursive: true })
   } catch (error) {

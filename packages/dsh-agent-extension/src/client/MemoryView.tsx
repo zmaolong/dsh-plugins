@@ -42,6 +42,7 @@ import {
   type MemorySettings,
   type MemoryStats,
   type MemoryStatus,
+  type MemoryTier,
   type MemoryType,
   type RecentCapture,
   type RecentRetrieval,
@@ -94,6 +95,11 @@ const STATUS_LABEL_KEYS: Record<MemoryStatus, string> = {
   archived: 'memoryStatusArchived',
 }
 
+const TIER_LABEL_KEYS: Record<MemoryTier, string> = {
+  short: 'memoryTierShort',
+  long: 'memoryTierLong',
+}
+
 const DEFAULT_SETTINGS: MemorySettings = defaultSettings()
 
 /** 「最近捕获」最多展示的条数（stats.recentCaptures 顺序即最新在前）。 */
@@ -144,6 +150,7 @@ function normalizeSummary(raw: unknown): MemoryListRow {
     tags: Array.isArray(item.tags) ? item.tags.filter((tag): tag is string => typeof tag === 'string') : [],
     importance: integer(item.importance, 0, 100, 50),
     status: text(item.status),
+    tier: item.tier === 'short' ? 'short' : 'long',
     reinforcement: integer(item.reinforcement, 0, Number.MAX_SAFE_INTEGER, 0),
     createdAt: text(item.createdAt),
     updatedAt: text(item.updatedAt),
@@ -354,6 +361,12 @@ function typeLabel(value: string, t: Translate): string {
 function statusLabel(value: string, t: Translate): string {
   const status = value === 'active' || value === 'stale' || value === 'archived' ? value : null
   return status ? t(STATUS_LABEL_KEYS[status]) : value
+}
+
+/** Localized tier label; unknown values fall back to long-term wording. */
+function tierLabel(value: string, t: Translate): string {
+  const tier: MemoryTier = value === 'short' ? 'short' : 'long'
+  return t(TIER_LABEL_KEYS[tier])
 }
 
 /** Badge tone of one status. */
@@ -719,6 +732,25 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
       setForm(formOf(updated))
       setConfirmDelete(false)
       actions.toast('success', t('memoryStatusDone'))
+      setListToken(token => token + 1)
+    } catch (error) {
+      actions.toast('error', errorMessageFor(error, t))
+    } finally {
+      setStatusBusy(false)
+    }
+  }
+
+  const changeTier = async (tier: MemoryTier): Promise<void> => {
+    if (entry === null || statusBusy) return
+    setStatusBusy(true)
+    try {
+      const body: Record<string, unknown> = { scope, id: entry.id, tier }
+      if (scope === 'project') body.project = project
+      const data = await api<JsonRecord>('/memory/tier', { method: 'POST', body })
+      const updated = normalizeEntry(data.entry)
+      setEntry(updated)
+      setForm(formOf(updated))
+      actions.toast('success', t('memoryTierDone'))
       setListToken(token => token + 1)
     } catch (error) {
       actions.toast('error', errorMessageFor(error, t))
@@ -1429,6 +1461,9 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                 {item.status !== 'active'
                   ? <Badge tone={statusTone(item.status)}>{statusLabel(item.status, t)}</Badge>
                   : null}
+                {item.tier === 'short' && item.status === 'active'
+                  ? <Badge tone="warn">{t('memoryTierShort')}</Badge>
+                  : null}
                 {item.tags.slice(0, 2).map((tag, index) => (
                   <button
                     key={`${index}-${tag}`}
@@ -1630,6 +1665,14 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                 ? (
                   <div className={css.editorStatus}>
                     <Badge tone={statusTone(entry.status)}>{statusLabel(entry.status, t)}</Badge>
+                    <Badge tone={entry.tier === 'long' ? 'success' : 'warn'}>{tierLabel(entry.tier, t)}</Badge>
+                    <Button
+                      variant="secondary"
+                      disabled={statusBusy}
+                      onClick={() => { void changeTier(entry.tier === 'long' ? 'short' : 'long') }}
+                    >
+                      {entry.tier === 'long' ? t('memoryTierDemote') : t('memoryTierPromote')}
+                    </Button>
                   </div>
                 )
                 : null}

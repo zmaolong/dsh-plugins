@@ -39,25 +39,27 @@ describe('记忆存储：Markdown 事实、手改、去重与生命周期', () =
     })
   }
 
-  it('写入一条记忆：schema v2 字段、默认值，且不再生成 MEMORY.md', () => {
+  it('写入一条记忆：schema v3 字段、默认值（模型写入定级短期），且不再生成 MEMORY.md', () => {
     const store = makeStore()
     const entry = add(store)
     expect(entry.id).toMatch(/^m-/u)
     expect(entry.status).toBe('active')
-    // schema v2 默认值
+    // schema v3 默认值：capture/tool 写入先进短期观察
     expect(entry).toMatchObject({
       usedCount: 0,
       confidence: 50,
       pinned: false,
       mergedFrom: [],
       source: 'capture',
+      tier: 'short',
     })
     expect(entry.lastUsedAt).toBeUndefined()
 
     const file = path.join(store.root, 'global', `${entry.id}.md`)
     expect(existsSync(file)).toBe(true)
     const written = readFileSync(file, 'utf8')
-    expect(written).toContain('schema: 2')
+    expect(written).toContain('schema: 3')
+    expect(written).toContain('tier: short')
     expect(written).toContain('name: "使用 pnpm"')
     expect(written).toContain('usedCount: 0')
     expect(written).toContain('confidence: 50')
@@ -70,6 +72,14 @@ describe('记忆存储：Markdown 事实、手改、去重与生命周期', () =
     expect(existsSync(path.join(store.root, 'global', 'MEMORY.md'))).toBe(false)
     expect(store.get('global', '', entry.id)?.content).toContain('pnpm')
     expect(store.list('global').map(item => item.id)).toEqual([entry.id])
+  })
+
+  it('写入定级：用户显式途径（source=user）直接长期；显式 tier 优先', () => {
+    const store = makeStore()
+    const userEntry = add(store, { source: 'user' })
+    expect(userEntry.tier).toBe('long')
+    const forced = add(store, { name: '另一条', description: 'x', content: 'y', tier: 'long' })
+    expect(forced.tier).toBe('long')
   })
 
   it('相同指纹的写入只强化原条目，不重复新增', () => {
@@ -242,7 +252,7 @@ describe('记忆存储：Markdown 事实、手改、去重与生命周期', () =
     })
     expect(updated.name).toBe('使用 pnpm（更新）')
     const written = readFileSync(file, 'utf8')
-    expect(written).toContain('schema: 2')
+    expect(written).toContain('schema: 3')
     expect(written).toContain('customField: "保留我"')
     expect(written).toContain('customBlock:')
     expect(written).toContain('  nested: 1')
@@ -470,6 +480,7 @@ describe('记忆存储：Markdown 事实、手改、去重与生命周期', () =
         description: `第 ${index} 条描述的填充内容`,
         content: `正文 ${index}`,
         importance: index,
+        source: 'user',
       })
     }
     store.updateSettings({ indexLimitGlobal: 3, maxChars: 1000 })
@@ -489,6 +500,26 @@ describe('记忆存储：Markdown 事实、手改、去重与生命周期', () =
     // maxChars is clamped to the 1000-char floor, and the rendered block never exceeds it.
     expect(tiny.ids).toHaveLength(1)
     expect(tiny.text.length).toBeLessThanOrEqual(1000)
+  })
+
+  it('注入只放长期条目：短期条目检索可见，升级后进入索引', () => {
+    const store = makeStore()
+    add(store, { name: '长期偏好', description: '已证明', content: '长期正文', type: 'preference', source: 'user' })
+    const shortEntry = add(store, { name: '短期偏好', description: '待证明', content: '短期正文', type: 'preference' })
+
+    const snapshot = renderRecallContext({ store, identity: null, settings: store.settings() })
+    expect(snapshot.ids).not.toContain(shortEntry.id)
+    expect(snapshot.text).not.toContain('短期偏好')
+
+    // 短期条目仍可被检索到。
+    const found = store.search('global', '', { query: '短期偏好' })
+    expect(found.map(item => item.id)).toContain(shortEntry.id)
+
+    // 正文被读取后升级，下次渲染进入索引。
+    store.promoteRead('global', '', shortEntry.id)
+    expect(readFileSync(path.join(store.root, 'global', `${shortEntry.id}.md`), 'utf8')).toContain('tier: long')
+    const after = renderRecallContext({ store, identity: null, settings: store.settings() })
+    expect(after.ids).toContain(shortEntry.id)
   })
 
   it('设置、捕获计数与命中率持久化到磁盘', () => {
@@ -537,7 +568,23 @@ describe('记忆存储：Markdown 事实、手改、去重与生命周期', () =
     expect(exported.filename).toMatch(/^memory-global-\d{4}-\d{2}-\d{2}\.md$/u)
     expect(exported.content).toContain('# 全局记忆')
     expect(exported.content).toContain('使用 pnpm')
-    expect(exported.content).toContain('schema: 2')
+    expect(exported.content).toContain('schema: 3')
     expect(defaultSettings()).toMatchObject({ indexLimitGlobal: 20, indexLimitProject: 20, maxChars: 3000 })
+  })
+
+  it('touchProject 落盘的项目登记带实时 entryCount（不再恒 0）', () => {
+    const store = makeStore()
+    add(store, { scope: 'project', type: 'project', project: 'p_test' })
+    add(store, { scope: 'project', type: 'gotcha', project: 'p_test', name: '另一条', description: 'x', content: 'y' })
+    store.touchProject({
+      projectKey: 'p_test',
+      identity: 'example.com/demo',
+      source: 'git-remote',
+      displayName: 'demo',
+      root: 'E:/demo',
+    })
+    const raw = JSON.parse(readFileSync(path.join(store.root, 'projects.json'), 'utf8'))
+    expect(raw.projects).toHaveLength(1)
+    expect(raw.projects[0].entryCount).toBe(2)
   })
 })

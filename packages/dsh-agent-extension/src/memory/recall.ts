@@ -2,8 +2,9 @@
  * Recall: what a session sees before acting, and how tool results are rendered.
  *
  * 注入分两层：全局块只放 preference / decision，项目块只放 gotcha / project；
- * 每层默认最多 20 条、总预算 3,000 字符，全局在前、项目在后，按 importance
- * 与 updatedAt 排序。详情留在 `memory_get` 后面，按需读取。
+ * 只注入已证明价值的长期条目（短期条目靠检索命中升级），每层默认最多 20 条、
+ * 总预算 3,000 字符，全局在前、项目在后，按 importance 与 updatedAt 排序。
+ * 详情留在 `memory_get` 后面，按需读取。
  *
  * @module dsh-agent-extension/memory/recall
  */
@@ -97,7 +98,8 @@ function layerEntries(
 ): { entries: MemoryMeta[]; truncated: boolean } {
   if (limit <= 0) return { entries: [], truncated: false }
   const pool = new Map<string, MemoryMeta>()
-  // 多取一些再本地过滤 active：search 默认仍包含 stale，而注入只放 active。
+  // 多取一些再本地过滤：search 默认仍包含 stale，而注入只放 active 且
+  // 已证明价值的长期条目；短期条目靠检索命中升级后进入后续会话的索引。
   // 会话首步只渲染一次，取满 50 条（search 上限）的成本可忽略。
   const poolLimit = 50
   for (const type of types) {
@@ -109,6 +111,7 @@ function layerEntries(
     })
     for (const entry of found) {
       if (entry.status !== 'active') continue
+      if (entry.tier !== 'long') continue
       pool.set(entry.id, entry)
     }
   }

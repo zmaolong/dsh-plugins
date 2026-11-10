@@ -23,6 +23,12 @@ export type MemoryScope = 'global' | 'project'
  */
 export type MemoryStatus = 'active' | 'stale' | 'archived'
 
+/** 一条记忆的保留层级。 */
+export const MEMORY_TIERS = ['short', 'long'] as const
+
+/** 一种保留层级。 */
+export type MemoryTier = (typeof MEMORY_TIERS)[number]
+
 /** 项目身份的来源。 */
 export type ProjectIdentitySource = 'git-remote' | 'git-common' | 'path'
 
@@ -45,6 +51,12 @@ export interface MemoryMeta {
   /** 0-100，注入与检索的排序提示。 */
   importance: number
   status: MemoryStatus
+  /**
+   * 保留层级：`short` 为新写入的默认层级，不进首步注入索引，被
+   * `memory_get` 读取或指纹强化后升级为 `long`；`long` 长驻注入。
+   * 闲置淘汰只作用于 `short`。
+   */
+  tier: MemoryTier
   /** 同一事实被重复写入确认的次数。 */
   reinforcement: number
   /** 矛盾投票；旧口径下两票归档，现由维护 Run 研判处理。 */
@@ -285,6 +297,19 @@ export function isMemoryStatus(value: unknown): value is MemoryStatus {
   return value === 'active' || value === 'stale' || value === 'archived'
 }
 
+/** 值是否是一种保留层级。 */
+export function isMemoryTier(value: unknown): value is MemoryTier {
+  return value === 'short' || value === 'long'
+}
+
+/**
+ * 归一化层级值：缺失或未知时回退 `long`——旧文件/手改丢字段时保持长驻语义，
+ * 不让存量条目因解析失败掉出注入。
+ */
+export function normalizeTier(value: unknown, fallback: MemoryTier = 'long'): MemoryTier {
+  return isMemoryTier(value) ? value : fallback
+}
+
 /** 把整数夹到 `[min, max]`；非数字回退。 */
 export function clampInt(value: unknown, min: number, max: number, fallback: number): number {
   const numeric = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN
@@ -339,6 +364,8 @@ export interface MemoryListRow {
   tags: string[]
   importance: number
   status: string
+  /** 保留层级（short/long）；服务端 v3 起必有。 */
+  tier: string
   reinforcement: number
   createdAt: string
   updatedAt: string

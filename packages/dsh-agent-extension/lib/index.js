@@ -5511,6 +5511,17 @@ function isMemoryType(value) {
 function isMemoryStatus(value) {
 	return value === "active" || value === "stale" || value === "archived";
 }
+/** 值是否是一种保留层级。 */
+function isMemoryTier(value) {
+	return value === "short" || value === "long";
+}
+/**
+* 归一化层级值：缺失或未知时回退 `long`——旧文件/手改丢字段时保持长驻语义，
+* 不让存量条目因解析失败掉出注入。
+*/
+function normalizeTier(value, fallback = "long") {
+	return isMemoryTier(value) ? value : fallback;
+}
 /** 把整数夹到 `[min, max]`；非数字回退。 */
 function clampInt(value, min, max, fallback) {
 	const numeric = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
@@ -5544,8 +5555,8 @@ function normalizeIds(value) {
 	}
 	return out;
 }
-/** 迁移备份目录前缀。 */
-const MEMORY_BACKUP_PREFIX = ".backup-v1-";
+/** 迁移备份目录前缀；目录名形如 `.backup-v<来源 schema>-<timestamp>`。 */
+const MEMORY_BACKUP_PREFIX = ".backup-v";
 /**
 * 由 store 负责渲染/维护的 frontmatter 字段；其余字段原样写回。
 *
@@ -5561,6 +5572,7 @@ const KNOWN_ENTRY_FIELDS = /* @__PURE__ */ new Set([
 	"project",
 	"tags",
 	"importance",
+	"tier",
 	"confidence",
 	"status",
 	"reinforcement",
@@ -5657,7 +5669,7 @@ function entrySchemaOf(source) {
 }
 /** 该文件是否需要 v1 → v2 迁移（schema 缺失/低于当前版本）。 */
 function needsEntryMigration(source) {
-	return entrySchemaOf(source) < 2;
+	return entrySchemaOf(source) < 3;
 }
 /** 原子写文本：同目录临时文件 + rename（与 store 的写盘约定一致）。 */
 function writeAtomicText(file, content) {
@@ -5711,7 +5723,8 @@ function scanScopeDir(options) {
 			scope,
 			project,
 			entry: parsed.entry,
-			extras: parsed.extras
+			extras: parsed.extras,
+			fromSchema: Math.max(entrySchemaOf(source), 1)
 		});
 	}
 	return {
@@ -5720,12 +5733,12 @@ function scanScopeDir(options) {
 	};
 }
 /** 生成唯一的备份目录（同一时刻重复迁移也不会覆盖旧备份）。 */
-function uniqueBackupDir(root) {
+function uniqueBackupDir(root, fromSchema) {
 	const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/gu, "-").replace(/Z$/u, "");
-	let candidate = path.join(root, `${MEMORY_BACKUP_PREFIX}${stamp}`);
+	let candidate = path.join(root, `${MEMORY_BACKUP_PREFIX}${fromSchema}-${stamp}`);
 	let suffix = 2;
 	while (existsSync(candidate)) {
-		candidate = path.join(root, `${MEMORY_BACKUP_PREFIX}${stamp}-${suffix}`);
+		candidate = path.join(root, `${MEMORY_BACKUP_PREFIX}${fromSchema}-${stamp}-${suffix}`);
 		suffix += 1;
 	}
 	return candidate;
@@ -5785,7 +5798,8 @@ function migrateMemoryTree(options) {
 		indexes.push(...scanned.indexes);
 	}
 	if (candidates.length === 0 && indexes.length === 0) return report;
-	const backupDir = uniqueBackupDir(options.root);
+	const fromSchema = Math.min(...candidates.map((candidate) => candidate.fromSchema));
+	const backupDir = uniqueBackupDir(options.root, fromSchema);
 	try {
 		mkdirSync(backupDir, { recursive: true });
 	} catch (error) {
@@ -6841,6 +6855,7 @@ function layerEntries(store, scope, project, types, limit) {
 		});
 		for (const entry of found) {
 			if (entry.status !== "active") continue;
+			if (entry.tier !== "long") continue;
 			pool.set(entry.id, entry);
 		}
 	}
@@ -8300,12 +8315,13 @@ function createMemoryTools(options) {
 				}
 				options.noteToolUsage(exec.agent, [], entries.map((entry) => entry.id));
 				options.touchUsage(entries.map((entry) => entry.id));
+				for (const entry of entries) store.promoteRead(entry.scope, entry.project, entry.id);
 				return formatGetResult(entries, missing, { ignoredIds: ignored });
 			}
 		},
 		{
 			name: "memory_save",
-			description: "Persist one durable fact (stable preference, decision, gotcha, project fact or reference) so later sessions can recall it. First run memory_search to check for duplicates; save only when the user explicitly asks to remember something, or when such a stable fact emerges and no existing memory already covers it. `scope` is required: global = a cross-project user preference or working convention; project = anything tied to this repository. The Markdown body is capped at 8000 characters; longer input is truncated.",
+			description: "Persist one durable fact (stable preference, decision, gotcha, project fact or reference) so later sessions can recall it. First run memory_search to check for duplicates; save only when the user explicitly asks to remember something, or when such a stable fact emerges and no existing memory already covers it. `scope` is required: global = a cross-project user preference or working convention; project = anything tied to this repository. New memories start as short-term (not injected into the session index); they are promoted to long-term (and injected) once actually read via memory_get or re-confirmed by another save. The Markdown body is capped at 8000 characters; longer input is truncated.",
 			parameters: {
 				type: "object",
 				properties: {
@@ -9348,7 +9364,7 @@ function scalar(value) {
 function renderEntry(entry, extras = []) {
 	const lines = [
 		"---",
-		`schema: 2`,
+		`schema: 3`,
 		`id: ${scalar(entry.id)}`,
 		`name: ${scalar(entry.name)}`,
 		`description: ${scalar(entry.description)}`,
@@ -9359,6 +9375,7 @@ function renderEntry(entry, extras = []) {
 		`importance: ${entry.importance}`,
 		`confidence: ${entry.confidence}`,
 		`status: ${entry.status}`,
+		`tier: ${entry.tier}`,
 		`reinforcement: ${entry.reinforcement}`,
 		`obsoleteVotes: ${entry.obsoleteVotes}`,
 		`pinned: ${entry.pinned ? "true" : "false"}`,
@@ -9377,6 +9394,10 @@ function renderEntry(entry, extras = []) {
 	}
 	lines.push("---", "", entry.content.trim(), "");
 	return lines.join("\n");
+}
+/** 写入定级：用户显式途径直接长驻；模型/提炼/导入的写入先进短期观察。 */
+function tierForSource(source) {
+	return source === "user" ? "long" : "short";
 }
 /** 归一化字符串，用于指纹与重复检测。 */
 function normalizeForFingerprint(value) {
@@ -9412,6 +9433,7 @@ function parseDocument(source, file, scope, project) {
 	const description = text(data.description);
 	const type = isMemoryType(data.type) ? data.type : "reference";
 	const status = isMemoryStatus(data.status) ? data.status : "active";
+	const tier = normalizeTier(data.tier);
 	const importance = clampInt(data.importance, 0, 100, 50);
 	const confidence = clampInt(data.confidence, 0, 100, 50);
 	const reinforcement = clampInt(data.reinforcement, 0, 1e5, 0);
@@ -9440,6 +9462,7 @@ function parseDocument(source, file, scope, project) {
 			importance,
 			confidence,
 			status,
+			tier,
 			reinforcement,
 			obsoleteVotes,
 			pinned,
@@ -9900,7 +9923,7 @@ var MemoryStore = class {
 			identity: identity.identity,
 			roots,
 			lastSeen: (/* @__PURE__ */ new Date()).toISOString(),
-			entryCount: 0
+			entryCount: this.countEntries("project", identity.projectKey)
 		};
 		const next = existing ? projects.map((project) => project.key === record.key ? record : project) : [record, ...projects];
 		this.projectsValue = next.slice(0, LIMITS.projects);
@@ -10102,6 +10125,8 @@ var MemoryStore = class {
 		const pinnedProvided = input.pinned !== void 0;
 		const source = normalizeSource(input.source);
 		const sourceProvided = input.source !== void 0;
+		const tier = normalizeTier(input.tier, tierForSource(source));
+		const tierProvided = input.tier !== void 0;
 		const mergedFrom = normalizeIds(input.mergedFrom);
 		const mergedProvided = input.mergedFrom !== void 0;
 		const now = (/* @__PURE__ */ new Date()).toISOString();
@@ -10119,6 +10144,7 @@ var MemoryStore = class {
 				...confidenceProvided ? { confidence } : {},
 				...pinnedProvided ? { pinned } : {},
 				...sourceProvided ? { source } : {},
+				...tierProvided ? { tier } : pinnedProvided && pinned ? { tier: "long" } : {},
 				...mergedProvided && mergedFrom.length > 0 ? { mergedFrom: [.../* @__PURE__ */ new Set([...existingById.mergedFrom, ...mergedFrom])] } : {},
 				updatedAt: now
 			};
@@ -10136,6 +10162,7 @@ var MemoryStore = class {
 				importance: Math.max(duplicate.importance, importance),
 				tags: [.../* @__PURE__ */ new Set([...duplicate.tags, ...tags])].slice(0, LIMITS.tags),
 				reinforcement: duplicate.reinforcement + 1,
+				tier: duplicate.tier === "short" ? "long" : duplicate.tier,
 				supersedes: addedSupersedes.length === 0 ? duplicate.supersedes : [...duplicate.supersedes, ...addedSupersedes],
 				...confidenceProvided ? { confidence } : {},
 				...pinnedProvided ? { pinned } : {},
@@ -10158,6 +10185,7 @@ var MemoryStore = class {
 			importance,
 			confidence: confidenceProvided ? confidence : 50,
 			status: "active",
+			tier,
 			reinforcement: 0,
 			obsoleteVotes: 0,
 			pinned: pinnedProvided ? pinned : false,
@@ -10181,6 +10209,31 @@ var MemoryStore = class {
 		const updated = {
 			...entry,
 			status,
+			updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+		};
+		this.writeEntry(scope, project, updated);
+		return updated;
+	}
+	/**
+	* 记录一次正文读取（`memory_get` 命中）：短期条目升级为长期并写回真源。
+	*
+	* 升级是一次性元数据变更，不刷新 `updatedAt`（不是内容修改）；已长期则不动。
+	*/
+	promoteRead(scope, project, id) {
+		const entry = this.get(scope, project, id);
+		if (entry === void 0 || entry.tier === "long") return;
+		this.writeEntry(scope, project, {
+			...entry,
+			tier: "long"
+		});
+	}
+	/** 修改一条记忆的保留层级（面板手动升降级）。 */
+	setTier(scope, project, id, tier) {
+		const entry = this.get(scope, project, id);
+		if (entry === void 0) throw new Error(`记忆不存在：${id}`);
+		const updated = {
+			...entry,
+			tier,
 			updatedAt: (/* @__PURE__ */ new Date()).toISOString()
 		};
 		this.writeEntry(scope, project, updated);
@@ -10486,6 +10539,7 @@ function toMeta(entry) {
 		project: entry.project,
 		tags: entry.tags,
 		importance: entry.importance,
+		tier: entry.tier,
 		confidence: entry.confidence,
 		status: entry.status,
 		reinforcement: entry.reinforcement,
@@ -10540,6 +10594,7 @@ const MEMORY_GET_ROUTES = [
 const MEMORY_POST_ROUTES = [
 	"/memory/save",
 	"/memory/status",
+	"/memory/tier",
 	"/memory/delete",
 	"/memory/settings",
 	"/memory/export",
@@ -10694,7 +10749,8 @@ async function dispatchMemoryPost(store, route, body = {}, hooks = {}) {
 			tags: normalizeTags(body.tags),
 			importance: clampInt(body.importance, 0, 100, 50),
 			supersedes: normalizeIds(body.supersedes),
-			originSessionId: text(body.originSessionId)
+			originSessionId: text(body.originSessionId),
+			source: "user"
 		}) };
 	}
 	if (route === "/memory/status") {
@@ -10705,6 +10761,15 @@ async function dispatchMemoryPost(store, route, body = {}, hooks = {}) {
 		if (id === "") throw hubError("缺少记忆 id", "bad_request");
 		if (status === void 0) throw hubError("status 只能是 active / stale / archived", "bad_request");
 		return { entry: store.setStatus(scope, project, id, status) };
+	}
+	if (route === "/memory/tier") {
+		const scope = scopeOf(body.scope, "global");
+		const project = projectOf(store, body.project, scope);
+		const id = text(body.id);
+		const tier = isMemoryTier(body.tier) ? body.tier : void 0;
+		if (id === "") throw hubError("缺少记忆 id", "bad_request");
+		if (tier === void 0) throw hubError("tier 只能是 short / long", "bad_request");
+		return { entry: store.setTier(scope, project, id, tier) };
 	}
 	if (route === "/memory/delete") {
 		const scope = scopeOf(body.scope, "global");

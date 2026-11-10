@@ -59,6 +59,7 @@ class FakeStore {
   readonly entries: MemoryEntry[] = []
   readonly searchCalls: FakeSearchCall[] = []
   readonly getCalls: string[] = []
+  readonly promoted: string[] = []
   readonly captureCalls: Array<{ entries: number, skipped: boolean, created?: CreatedRef[] }> = []
   readonly recallCalls: Array<{
     sessionId: string
@@ -118,6 +119,12 @@ class FakeStore {
       && (scope === 'global' || entry.project === project))
   }
 
+  promoteRead(scope: 'global' | 'project', project: string, id: string): void {
+    this.promoted.push(`${scope}:${id}`)
+    const entry = this.get(scope, project, id)
+    if (entry !== undefined) entry.tier = 'long'
+  }
+
   save(input: SaveMemoryInput): MemoryEntry {
     const now = new Date().toISOString()
     const project = input.scope === 'global' ? '' : input.project ?? ''
@@ -139,6 +146,7 @@ class FakeStore {
       tags: input.tags ?? [],
       importance: input.importance ?? 50,
       status: 'active',
+      tier: input.tier ?? (input.source === 'user' ? 'long' : 'short'),
       reinforcement: 0,
       obsoleteVotes: 0,
       supersedes: input.supersedes ?? [],
@@ -404,6 +412,7 @@ function makeEntry(overrides: Partial<MemoryEntry> & Pick<MemoryEntry, 'id' | 'n
     tags: [],
     importance: 50,
     status: 'active',
+    tier: 'long',
     reinforcement: 0,
     obsoleteVotes: 0,
     supersedes: [],
@@ -712,6 +721,8 @@ describe('记忆运行时：工具契约', () => {
     expect(result).toContain('已忽略 1 个 id')
     expect(result).toContain('请再取下一批')
     expect(result).not.toContain('正文 4')
+    // 正文被真正读取即使用证明：命中条目触发短期 → 长期升级。
+    expect(store.promoted).toEqual(['global:m-1', 'global:m-2', 'global:m-3'])
   })
 
   it('memory_get 总输出不超过 4,000 字符，超出返回「已截断，请再取下一批」', async () => {

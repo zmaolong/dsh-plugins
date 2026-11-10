@@ -1,7 +1,7 @@
 /**
- * 记忆条目 schema v1 → v2：自动迁移、备份、幂等、坏数据容错与旧索引清理。
+ * 记忆条目 schema 自动迁移（v1/v2 → 当前版本）：备份、幂等、坏数据容错与旧索引清理。
  *
- * 全部使用临时 home，不访问网络；fixture 直接手写 v1 frontmatter。
+ * 全部使用临时 home，不访问网络；fixture 直接手写旧版 frontmatter。
  */
 
 import { afterEach, describe, expect, it } from 'vitest'
@@ -58,7 +58,7 @@ function backupDirs(root: string): string[] {
   return readdirSync(root).filter(name => name.startsWith(MEMORY_BACKUP_PREFIX)).sort()
 }
 
-describe('记忆 schema v1 → v2：迁移、备份、幂等与容错', () => {
+describe('记忆 schema 迁移：备份、幂等与容错', () => {
   let tempDirs: string[] = []
 
   afterEach(() => {
@@ -120,9 +120,10 @@ describe('记忆 schema v1 → v2：迁移、备份、幂等与容错', () => {
     expect(existsSync(path.join(globalDir, MEMORY_INDEX_FILE))).toBe(false)
     expect(existsSync(path.join(projectDir, MEMORY_INDEX_FILE))).toBe(false)
 
-    // 就地补字段：schema 2 + v2 默认值，正文与未知字段保留。
+    // 就地补字段：schema 3 + 当前默认值，存量条目定级长期，正文与未知字段保留。
     const migratedGlobal = readFileSync(path.join(globalDir, 'm-old-global.md'), 'utf8')
-    expect(migratedGlobal).toContain('schema: 2')
+    expect(migratedGlobal).toContain('schema: 3')
+    expect(migratedGlobal).toContain('tier: long')
     expect(migratedGlobal).toContain('usedCount: 0')
     expect(migratedGlobal).toContain('confidence: 50')
     expect(migratedGlobal).toContain('pinned: false')
@@ -152,7 +153,7 @@ describe('记忆 schema v1 → v2：迁移、备份、幂等与容错', () => {
     expect(store.settings().indexLimitGlobal).toBe(7)
   })
 
-  it('迁移幂等：再次加载不重复备份、不改写 v2 文件', () => {
+  it('迁移幂等：再次加载不重复备份、不改写已迁移文件', () => {
     const { home, root, globalDir } = makeHome()
     writeFileSync(path.join(globalDir, 'm-old-global.md'), v1Document({ id: 'm-old-global' }), 'utf8')
     writeFileSync(path.join(globalDir, MEMORY_INDEX_FILE), '# MEMORY INDEX\n\n- 旧索引\n', 'utf8')
@@ -174,13 +175,13 @@ describe('记忆 schema v1 → v2：迁移、备份、幂等与容错', () => {
     expect(backupDirs(root)).toHaveLength(1)
   })
 
-  it('已是 v2 的文件不改写、不产生备份', () => {
+  it('已是当前版本的文件不改写、不产生备份', () => {
     const { home, root, globalDir } = makeHome()
-    const v2 = [
+    const v3 = [
       '---',
-      'schema: 2',
-      'id: "m-v2"',
-      'name: "已是 v2"',
+      'schema: 3',
+      'id: "m-v3"',
+      'name: "已是当前版本"',
       'description: "无需迁移"',
       'type: reference',
       'scope: global',
@@ -189,6 +190,7 @@ describe('记忆 schema v1 → v2：迁移、备份、幂等与容错', () => {
       'importance: 50',
       'confidence: 60',
       'status: active',
+      'tier: short',
       'reinforcement: 0',
       'obsoleteVotes: 0',
       'pinned: true',
@@ -197,26 +199,27 @@ describe('记忆 schema v1 → v2：迁移、备份、幂等与容错', () => {
       'supersedes: []',
       'mergedFrom: []',
       'source: user',
-      'originSessionId: "s-v2"',
+      'originSessionId: "s-v3"',
       'createdAt: "2026-01-01T00:00:00.000Z"',
       'updatedAt: "2026-01-02T00:00:00.000Z"',
       '---',
       '',
-      'v2 正文。',
+      'v3 正文。',
       '',
     ].join('\n')
-    writeFileSync(path.join(globalDir, 'm-v2.md'), v2, 'utf8')
+    writeFileSync(path.join(globalDir, 'm-v3.md'), v3, 'utf8')
 
     const store = new MemoryStore({ home })
     store.start()
     expect(backupDirs(root)).toHaveLength(0)
-    expect(readFileSync(path.join(globalDir, 'm-v2.md'), 'utf8')).toBe(v2)
-    expect(store.get('global', '', 'm-v2')).toMatchObject({
+    expect(readFileSync(path.join(globalDir, 'm-v3.md'), 'utf8')).toBe(v3)
+    expect(store.get('global', '', 'm-v3')).toMatchObject({
       confidence: 60,
       pinned: true,
       usedCount: 4,
       source: 'user',
       lastUsedAt: '2026-02-01T00:00:00.000Z',
+      tier: 'short',
     })
   })
 
@@ -232,7 +235,7 @@ describe('记忆 schema v1 → v2：迁移、备份、幂等与容错', () => {
     store.start()
 
     expect(readFileSync(garbageFile, 'utf8')).toBe(garbage)
-    expect(readFileSync(validFile, 'utf8')).toContain('schema: 2')
+    expect(readFileSync(validFile, 'utf8')).toContain('schema: 3')
     expect(store.get('global', '', 'm-valid')?.name).toBe('可迁移条目')
     const backups = backupDirs(root)
     expect(backups).toHaveLength(1)

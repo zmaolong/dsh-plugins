@@ -13,7 +13,7 @@ export * from '../shared/memory-wire.ts'
 import { LIMITS, type ProjectIdentitySource } from '../shared/memory-wire.ts'
 
 /** 单条记忆磁盘文件的当前 schema 版本。 */
-export const MEMORY_SCHEMA = 2
+export const MEMORY_SCHEMA = 3
 
 /** 一个解析后的项目身份。 */
 export interface ProjectIdentity {

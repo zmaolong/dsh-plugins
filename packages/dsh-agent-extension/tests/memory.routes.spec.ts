@@ -108,6 +108,39 @@ describe('记忆 API：state/list/get/save/status/delete/settings/export', () =>
     await expect(dispatchMemoryGet(store, '/memory/get', new URLSearchParams({ scope: 'global', id: 'missing' }))).rejects.toMatchObject({ code: 'not_found' })
   })
 
+  it('tier 切换：面板保存定级长期，tier 路由双向切换与参数校验', async () => {
+    const store = makeStore()
+    expect(MEMORY_POST_ROUTES).toContain('/memory/tier')
+    // 面板保存 = 用户显式途径：直接长期。
+    const saved = await dispatchMemoryPost(store, '/memory/save', {
+      scope: 'global',
+      name: '面板新建',
+      description: 'x',
+      type: 'reference',
+      content: 'y',
+    }) as { entry: { id: string, tier: string, source: string } }
+    expect(saved.entry).toMatchObject({ tier: 'long', source: 'user' })
+
+    const demoted = await dispatchMemoryPost(store, '/memory/tier', {
+      scope: 'global',
+      id: saved.entry.id,
+      tier: 'short',
+    }) as { entry: { tier: string } }
+    expect(demoted.entry.tier).toBe('short')
+
+    const promoted = await dispatchMemoryPost(store, '/memory/tier', {
+      scope: 'global',
+      id: saved.entry.id,
+      tier: 'long',
+    }) as { entry: { tier: string } }
+    expect(promoted.entry.tier).toBe('long')
+
+    await expect(dispatchMemoryPost(store, '/memory/tier', { scope: 'global', id: saved.entry.id, tier: 'bogus' }))
+      .rejects.toMatchObject({ code: 'bad_request' })
+    await expect(dispatchMemoryPost(store, '/memory/tier', { scope: 'global', id: '', tier: 'long' }))
+      .rejects.toMatchObject({ code: 'bad_request' })
+  })
+
   it('undo-capture：缺 id / 未知样本返回 bad_request，成功撤销并幂等', async () => {
     const store = makeStore()
     expect(MEMORY_POST_ROUTES).toContain('/memory/undo-capture')

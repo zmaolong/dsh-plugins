@@ -98,6 +98,7 @@ const ENTRIES = [
     tags: ['git'],
     importance: 80,
     status: 'active',
+    tier: 'short',
     reinforcement: 2,
     createdAt: '2026-11-01T00:00:00.000Z',
     updatedAt: '2026-11-02T03:04:00.000Z',
@@ -215,6 +216,7 @@ function installFetch(options: {
     if (url.includes('/memory/get')) return options.get ? options.get(url) : okResponse({ entry: DETAIL })
     if (url.includes('/memory/save')) return okResponse({ entry: SAVED })
     if (url.includes('/memory/status')) return okResponse({ entry: { ...DETAIL, status: 'stale' } })
+    if (url.includes('/memory/tier')) return okResponse({ entry: { ...DETAIL, tier: 'long' } })
     if (url.includes('/memory/delete')) return okResponse({ deleted: true, id: 'm1' })
     if (url.includes('/memory/settings')) return okResponse({ settings: { ...STATE.settings, indexLimitGlobal: 120 } })
     if (url.includes('/memory/undo-capture')) return options.undo ? options.undo() : okResponse({ archived: ['m3'], undone: true })
@@ -354,6 +356,30 @@ describe('MemoryView', () => {
     expect(screen.queryByLabelText(t('memoryFieldContent'))).toBeNull()
     fireEvent.click(openButton)
     expect(openNative).toHaveBeenCalledWith({ scope: 'project', project: '/repo/new', id: 'm1' })
+  })
+
+  it('短期条目显示层级徽章，详情弹窗切换层级调用 /memory/tier', async () => {
+    const { calls } = installFetch()
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const toast = vi.spyOn(controller.actions, 'toast')
+    render(<MemoryView actions={controller.actions} t={t} />)
+    // 列表卡片上的短期徽章（长期条目不显示徽章）。
+    await screen.findByText(t('memoryTierShort'))
+    fireEvent.click(screen.getByRole('button', { name: /提交信息用中文/u }))
+    await screen.findByText(t('memoryOpenNative'))
+    // 详情弹窗显示层级徽章与升为长期按钮。
+    const promote = screen.getByRole('button', { name: t('memoryTierPromote') })
+    fireEvent.click(promote)
+    await waitFor(() => {
+      expect(calls.some(call => call.url.includes('/memory/tier'))).toBe(true)
+    })
+    const tierCall = calls.find(call => call.url.includes('/memory/tier'))
+    expect(bodyOf(tierCall)).toMatchObject({ scope: 'project', id: 'm1', tier: 'long' })
+    await waitFor(() => {
+      expect(toast).toHaveBeenCalledWith('success', t('memoryTierDone'))
+    })
+    // 升级成功后按钮翻转为「降为短期」。
+    expect(await screen.findByRole('button', { name: t('memoryTierDemote') })).toBeTruthy()
   })
 
   it('注入宿主 MarkdownText 时详情弹窗渲染正文预览并保留系统打开入口', async () => {

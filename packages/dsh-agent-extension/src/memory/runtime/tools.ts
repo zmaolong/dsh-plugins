@@ -151,13 +151,17 @@ export function createMemoryTools(options: MemoryToolOptions): ToolDefinitionLik
       }
       options.noteToolUsage(exec.agent, [], entries.map(entry => entry.id))
       options.touchUsage(entries.map(entry => entry.id))
+      // 正文被真正读取即使用证明：短期条目升级为长期（写回真源，一次性）。
+      for (const entry of entries) {
+        store.promoteRead(entry.scope, entry.project, entry.id)
+      }
       return formatGetResult(entries, missing, { ignoredIds: ignored })
     },
   }
 
   const save: ToolDefinitionLike = {
     name: 'memory_save',
-    description: 'Persist one durable fact (stable preference, decision, gotcha, project fact or reference) so later sessions can recall it. First run memory_search to check for duplicates; save only when the user explicitly asks to remember something, or when such a stable fact emerges and no existing memory already covers it. `scope` is required: global = a cross-project user preference or working convention; project = anything tied to this repository. The Markdown body is capped at 8000 characters; longer input is truncated.',
+    description: 'Persist one durable fact (stable preference, decision, gotcha, project fact or reference) so later sessions can recall it. First run memory_search to check for duplicates; save only when the user explicitly asks to remember something, or when such a stable fact emerges and no existing memory already covers it. `scope` is required: global = a cross-project user preference or working convention; project = anything tied to this repository. New memories start as short-term (not injected into the session index); they are promoted to long-term (and injected) once actually read via memory_get or re-confirmed by another save. The Markdown body is capped at 8000 characters; longer input is truncated.',
     parameters: {
       type: 'object',
       properties: {

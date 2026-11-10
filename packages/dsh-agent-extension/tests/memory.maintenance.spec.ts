@@ -60,6 +60,7 @@ function makeEntry(overrides: Partial<MemoryEntry> & { id: string, name: string 
     tags: [],
     importance: 50,
     status: 'active',
+    tier: 'long',
     reinforcement: 0,
     obsoleteVotes: 0,
     supersedes: [],

@@ -223,6 +223,11 @@ window.__ModuleLoader__.load({
 			memorySaved: "记忆已保存",
 			memoryNameRequired: "请填写名称和内容。",
 			memoryStatusDone: "记忆状态已更新",
+			memoryTierShort: "短期",
+			memoryTierLong: "长期",
+			memoryTierPromote: "升为长期",
+			memoryTierDemote: "降为短期",
+			memoryTierDone: "记忆层级已更新",
 			memoryDeactivate: "停用",
 			memoryArchive: "归档",
 			memoryRestore: "恢复",
@@ -538,6 +543,11 @@ window.__ModuleLoader__.load({
 			memorySaved: "Memory saved",
 			memoryNameRequired: "Enter a name and content.",
 			memoryStatusDone: "Memory status updated",
+			memoryTierShort: "Short-term",
+			memoryTierLong: "Long-term",
+			memoryTierPromote: "Promote to long-term",
+			memoryTierDemote: "Demote to short-term",
+			memoryTierDone: "Memory tier updated",
 			memoryDeactivate: "Deactivate",
 			memoryArchive: "Archive",
 			memoryRestore: "Restore",
@@ -853,6 +863,11 @@ window.__ModuleLoader__.load({
 			memorySaved: "メモリを保存しました",
 			memoryNameRequired: "名前と内容を入力してください。",
 			memoryStatusDone: "メモリの状態を更新しました",
+			memoryTierShort: "短期",
+			memoryTierLong: "長期",
+			memoryTierPromote: "長期に昇格",
+			memoryTierDemote: "短期に降格",
+			memoryTierDone: "記憶の階層を更新しました",
 			memoryDeactivate: "停止",
 			memoryArchive: "アーカイブ",
 			memoryRestore: "復元",
@@ -1168,6 +1183,11 @@ window.__ModuleLoader__.load({
 			memorySaved: "Memoria guardada",
 			memoryNameRequired: "Escriba un nombre y un contenido.",
 			memoryStatusDone: "Estado de la memoria actualizado",
+			memoryTierShort: "Corto plazo",
+			memoryTierLong: "Largo plazo",
+			memoryTierPromote: "Promover a largo plazo",
+			memoryTierDemote: "Devolver a corto plazo",
+			memoryTierDone: "Nivel de memoria actualizado",
 			memoryDeactivate: "Desactivar",
 			memoryArchive: "Archivar",
 			memoryRestore: "Restaurar",
@@ -1483,6 +1503,11 @@ window.__ModuleLoader__.load({
 			memorySaved: "Mémoire enregistrée",
 			memoryNameRequired: "Saisissez un nom et un contenu.",
 			memoryStatusDone: "Statut de la mémoire mis à jour",
+			memoryTierShort: "Court terme",
+			memoryTierLong: "Long terme",
+			memoryTierPromote: "Promouvoir en long terme",
+			memoryTierDemote: "Rétrograder en court terme",
+			memoryTierDone: "Niveau de mémoire mis à jour",
 			memoryDeactivate: "Désactiver",
 			memoryArchive: "Archiver",
 			memoryRestore: "Restaurer",
@@ -1798,6 +1823,11 @@ window.__ModuleLoader__.load({
 			memorySaved: "Gedächtnis gespeichert",
 			memoryNameRequired: "Geben Sie Name und Inhalt ein.",
 			memoryStatusDone: "Gedächtnisstatus aktualisiert",
+			memoryTierShort: "Kurzfristig",
+			memoryTierLong: "Langfristig",
+			memoryTierPromote: "Auf langfristig anheben",
+			memoryTierDemote: "Auf kurzfristig zurückstufen",
+			memoryTierDone: "Speicherstufe aktualisiert",
 			memoryDeactivate: "Deaktivieren",
 			memoryArchive: "Archivieren",
 			memoryRestore: "Wiederherstellen",
@@ -2113,6 +2143,11 @@ window.__ModuleLoader__.load({
 			memorySaved: "Память сохранена",
 			memoryNameRequired: "Укажите название и содержимое.",
 			memoryStatusDone: "Статус памяти обновлен",
+			memoryTierShort: "Краткосрочная",
+			memoryTierLong: "Долгосрочная",
+			memoryTierPromote: "Повысить до долгосрочной",
+			memoryTierDemote: "Понизить до краткосрочной",
+			memoryTierDone: "Уровень памяти обновлён",
 			memoryDeactivate: "Отключить",
 			memoryArchive: "В архив",
 			memoryRestore: "Восстановить",
@@ -2428,6 +2463,11 @@ window.__ModuleLoader__.load({
 			memorySaved: "Memória salva",
 			memoryNameRequired: "Informe um nome e um conteúdo.",
 			memoryStatusDone: "Status da memória atualizado",
+			memoryTierShort: "Curto prazo",
+			memoryTierLong: "Longo prazo",
+			memoryTierPromote: "Promover a longo prazo",
+			memoryTierDemote: "Retornar a curto prazo",
+			memoryTierDone: "Nível de memória atualizado",
 			memoryDeactivate: "Desativar",
 			memoryArchive: "Arquivar",
 			memoryRestore: "Restaurar",
@@ -6547,6 +6587,10 @@ window.__ModuleLoader__.load({
 			stale: "memoryStatusStale",
 			archived: "memoryStatusArchived"
 		};
+		const TIER_LABEL_KEYS = {
+			short: "memoryTierShort",
+			long: "memoryTierLong"
+		};
 		const DEFAULT_SETTINGS = defaultSettings();
 		/** 「最近捕获」最多展示的条数（stats.recentCaptures 顺序即最新在前）。 */
 		const RECENT_CAPTURE_ROWS = 5;
@@ -6587,6 +6631,7 @@ window.__ModuleLoader__.load({
 				tags: Array.isArray(item.tags) ? item.tags.filter((tag) => typeof tag === "string") : [],
 				importance: integer(item.importance, 0, 100, 50),
 				status: text(item.status),
+				tier: item.tier === "short" ? "short" : "long",
 				reinforcement: integer(item.reinforcement, 0, Number.MAX_SAFE_INTEGER, 0),
 				createdAt: text(item.createdAt),
 				updatedAt: text(item.updatedAt)
@@ -6776,6 +6821,10 @@ window.__ModuleLoader__.load({
 		function statusLabel(value, t) {
 			const status = value === "active" || value === "stale" || value === "archived" ? value : null;
 			return status ? t(STATUS_LABEL_KEYS[status]) : value;
+		}
+		/** Localized tier label; unknown values fall back to long-term wording. */
+		function tierLabel(value, t) {
+			return t(TIER_LABEL_KEYS[value === "short" ? "short" : "long"]);
 		}
 		/** Badge tone of one status. */
 		function statusTone(value) {
@@ -7124,6 +7173,30 @@ window.__ModuleLoader__.load({
 					setForm(formOf(updated));
 					setConfirmDelete(false);
 					actions.toast("success", t("memoryStatusDone"));
+					setListToken((token) => token + 1);
+				} catch (error) {
+					actions.toast("error", errorMessageFor(error, t));
+				} finally {
+					setStatusBusy(false);
+				}
+			};
+			const changeTier = async (tier) => {
+				if (entry === null || statusBusy) return;
+				setStatusBusy(true);
+				try {
+					const body = {
+						scope,
+						id: entry.id,
+						tier
+					};
+					if (scope === "project") body.project = project;
+					const updated = normalizeEntry((await api("/memory/tier", {
+						method: "POST",
+						body
+					})).entry);
+					setEntry(updated);
+					setForm(formOf(updated));
+					actions.toast("success", t("memoryTierDone"));
 					setListToken((token) => token + 1);
 				} catch (error) {
 					actions.toast("error", errorMessageFor(error, t));
@@ -7927,6 +8000,10 @@ window.__ModuleLoader__.load({
 											tone: statusTone(item.status),
 											children: statusLabel(item.status, t)
 										}) : null,
+										item.tier === "short" && item.status === "active" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
+											tone: "warn",
+											children: t("memoryTierShort")
+										}) : null,
 										item.tags.slice(0, 2).map((tag, index) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 											type: "button",
 											className: memory_module_css_default.entryTag,
@@ -8157,12 +8234,26 @@ window.__ModuleLoader__.load({
 						wide: true,
 						onClose: closeEditor,
 						children: [
-							entry !== null && !creating ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+							entry !== null && !creating ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 								className: memory_module_css_default.editorStatus,
-								children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
-									tone: statusTone(entry.status),
-									children: statusLabel(entry.status, t)
-								})
+								children: [
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
+										tone: statusTone(entry.status),
+										children: statusLabel(entry.status, t)
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
+										tone: entry.tier === "long" ? "success" : "warn",
+										children: tierLabel(entry.tier, t)
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+										variant: "secondary",
+										disabled: statusBusy,
+										onClick: () => {
+											changeTier(entry.tier === "long" ? "short" : "long");
+										},
+										children: entry.tier === "long" ? t("memoryTierDemote") : t("memoryTierPromote")
+									})
+								]
 							}) : null,
 							detailStatus === "loading" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(LoadingBlock, { text: t("memoryLoading") }) : null,
 							detailStatus === "error" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
