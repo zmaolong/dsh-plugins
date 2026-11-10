@@ -1,6 +1,6 @@
 {
   "name": "dsh-agent-extension",
-  "version": "0.0.1-preview.13",
+  "version": "0.0.1-preview.14",
   "description": "Agent Extension (智能体扩展) for DSH: manage agent plugins, skills, MCP and more — plus built-in cross-session memory with global and project scopes, automatic capture and on-demand recall.",
   "type": "module",
   "main": "lib/index.js",
@@ -78,7 +78,9 @@
       "inject": [
         "@deepseek-ai/dsh-client-locale",
         "@deepseek-ai/dsh-client-ui-settings",
-        "@deepseek-ai/dsh-client-ui-theme"
+        "@deepseek-ai/dsh-client-ui-theme",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-sidebar-right"
       ]
     },
     "market": {

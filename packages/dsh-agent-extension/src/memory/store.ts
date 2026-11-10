@@ -26,6 +26,7 @@ import path from 'node:path'
 
 import { parseFrontmatter } from '../frontmatter.ts'
 import type { LogFn } from '../log.ts'
+import { previewRoot, removePreviewEntry, writePreviewFile, type PreviewFile } from './preview.ts'
 import {
   LIMITS,
   clampInt,
@@ -68,6 +69,8 @@ export interface MemoryStoreOptions {
   /** Plugin home (`~/.dsh/agent-extension`); memories live under `memory/`. */
   home: string
   log?: LogFn
+  /** 预览文件根目录覆盖；默认 `os.tmpdir()/dsh-agent-extension-memory-preview`（测试传临时目录）。 */
+  previewRoot?: string
 }
 
 /** Result of `forget`. */
@@ -277,6 +280,8 @@ function safeProjectKey(key: string): string {
 export class MemoryStore {
   /** Root of the memory tree (`<home>/memory`). */
   readonly root: string
+  /** 预览文件根目录（宿主右侧栏读取的临时 Markdown）。 */
+  readonly previewDir: string
   /** Persistent project registry file. */
   private readonly projectsFile: string
   private readonly settingsFile: string
@@ -289,6 +294,7 @@ export class MemoryStore {
 
   constructor(options: MemoryStoreOptions) {
     this.root = path.join(options.home, 'memory')
+    this.previewDir = options.previewRoot ?? previewRoot()
     this.settingsFile = path.join(this.root, SETTINGS_FILE)
     this.statsFile = path.join(this.root, STATS_FILE)
     this.projectsFile = path.join(this.root, PROJECTS_FILE)
@@ -479,6 +485,21 @@ export class MemoryStore {
   }
 
   /**
+   * 把一条记忆的正文写成宿主可预览的临时 Markdown。
+   *
+   * 文件内容只含正文（剥离 frontmatter），同一 id 重复调用覆写同一路径。
+   *
+   * @param scope - 记忆作用域。
+   * @param project - 项目级记忆的项目 key。
+   * @param id - 记忆 id。
+   */
+  previewFile(scope: MemoryScope, project: string, id: string): PreviewFile {
+    const entry = this.get(scope, project, id)
+    if (entry === undefined) throw new Error(`记忆不存在：${id}`)
+    return writePreviewFile(entry, this.previewDir)
+  }
+
+  /**
    * Create or reinforce one memory.
    *
    * Writes whose name/description/content fingerprint matches a live memory of
@@ -597,6 +618,15 @@ export class MemoryStore {
     this.invalidate(scope, project)
     this.rewriteIndex(scope, project)
     return true
+  }
+
+  /**
+   * 删除一条记忆的预览目录（best effort，供 `/memory/delete` 调用）。
+   *
+   * @param id - 记忆 id。
+   */
+  removePreview(id: string): void {
+    removePreviewEntry(id, this.previewDir)
   }
 
   /**

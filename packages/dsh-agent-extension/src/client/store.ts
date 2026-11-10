@@ -14,6 +14,18 @@
 import { api, ApiError } from './api.ts'
 import { addedMarketFor, RECOMMENDED_SOURCES } from './recommended.ts'
 import { displayOf, errorMessageFor, updateAvailable, type JsonRecord, type Translate } from './presentation.ts'
+import { sessionFileAddress } from './resource-address.ts'
+import type { ClientLayout, ClientSidebarRight } from './client-context.ts'
+
+/** Tab kind and type id of the plugin's memory detail page in the right Sidebar. */
+export const MEMORY_DETAIL_TAB = 'agent-extension-memory'
+
+/** One memory the detail surface is asked to show. */
+export interface MemoryDetailTarget {
+  scope: 'global' | 'project'
+  project: string
+  id: string
+}
 
 /** Observable snapshot face (official engine contract). */
 export interface SnapshotStore<T> {
@@ -82,6 +94,8 @@ export interface HubState {
   updatingAll: boolean
   dialogs: DialogState[]
   toasts: ToastState[]
+  /** Most recent memory requested for the detail surface; the tab body's fallback when navigation params are absent. */
+  detailTarget: MemoryDetailTarget | null
   /** Active locale id (lowercase), tracked from the locale service. */
   localeId: string
 }
@@ -121,6 +135,11 @@ function notify(listeners: ReadonlySet<() => void>): void {
   }
 }
 
+/** Delay helper for the opening sequence's bounded waits. */
+function sleep(ms: number): Promise<void> {
+  return new Promise<void>((resolve) => { setTimeout(resolve, ms) })
+}
+
 /** Initial client state. */
 export function initialHubState(): HubState {
   return {
@@ -150,14 +169,25 @@ export function initialHubState(): HubState {
     updatingAll: false,
     dialogs: [],
     toasts: [],
+    detailTarget: null,
     localeId: '',
   }
+}
+
+/** Host services the detail surface needs beyond the panel's own state. */
+export interface HubHost {
+  /** The main panel id to restore when the details cannot open. */
+  panelId: string
+  layout: ClientLayout
+  sidebarRight: ClientSidebarRight
 }
 
 /** Options of createHubController. */
 export interface HubControllerOptions {
   translate: Translate
   getLocaleId: () => string
+  /** Right-Sidebar navigation face; omitted only by offline tests that never open the detail surface. */
+  host?: HubHost
 }
 
 /** Complete action set of the panel. */
@@ -171,6 +201,7 @@ export interface HubActions {
   backFromDetail(): void
   openMarketDetail(entry: JsonRecord, refresh?: boolean): void
   closeMarketDetail(): void
+  openMemoryDetail(target: MemoryDetailTarget): void
   openMarketPlugin(key: string): void
   closeMarketPlugin(): void
   loadDetail(force: boolean): Promise<void>
@@ -223,7 +254,7 @@ export function identity<T>(state: T): T {
 
 /** Create the panel controller (one per apply; disposed with the plugin). */
 export function createHubController(options: HubControllerOptions): HubController {
-  const { translate: t, getLocaleId } = options
+  const { translate: t, getLocaleId, host } = options
   const store = createSnapshotStore<HubState>({ ...initialHubState(), localeId: getLocaleId() })
   let started = false
   let queue: Promise<void> = Promise.resolve()
@@ -284,6 +315,87 @@ export function createHubController(options: HubControllerOptions): HubControlle
 
   const isCapBusy = (pluginKey: string, kind: string, capability: string): boolean => {
     return Boolean(store.getSnapshot().capBusy[capBusyId(pluginKey, kind, capability)])
+  }
+
+  /** Read the mounted Session without letting a host hiccup break the action. */
+  const mountedSession = (): string | undefined => {
+    try {
+      return host?.sidebarRight.mounted.getSnapshot()
+    } catch {
+      return undefined
+    }
+  }
+
+  /** Poll for the mounted Session: exiting the plugin panel mounts the column asynchronously. */
+  const waitMounted = async (): Promise<string | undefined> => {
+    const current = mountedSession()
+    if (current !== undefined) return current
+    const deadline = Date.now() + 1000
+    while (Date.now() < deadline) {
+      await sleep(20)
+      const next = mountedSession()
+      if (next !== undefined) return next
+    }
+    return undefined
+  }
+
+  /**
+   * Open the memory page, focusing an already-open detail tab first so the same
+   * page lands in its pane instead of the preview pane. Retries until the
+   * Session's store has been adopted by the column.
+   */
+  const openMemoryTab = async (right: ClientSidebarRight, sessionId: string, params: Record<string, unknown>): Promise<string> => {
+    const deadline = Date.now() + 1000
+    let lastError = ''
+    while (Date.now() < deadline) {
+      try {
+        const existing = right.tabsIn(sessionId).find(tab => tab.kind === MEMORY_DETAIL_TAB)
+        if (existing !== undefined) right.focus(existing.id)
+        right.openTab(MEMORY_DETAIL_TAB, { params })
+        return ''
+      } catch (error) {
+        lastError = errorMessageFor(error, t)
+        await sleep(25)
+      }
+    }
+    return lastError
+  }
+
+  const openMemoryDetail = (target: MemoryDetailTarget): void => {
+    set({ detailTarget: target })
+    if (host === undefined) {
+      toast('warn', t('memoryDetailNoSession'))
+      return
+    }
+    void (async () => {
+      host.layout.selectPanel(null)
+      const sessionId = await waitMounted()
+      if (sessionId === undefined) {
+        toast('warn', t('memoryDetailNoSession'))
+        host.layout.selectPanel(host.panelId)
+        return
+      }
+      const params: Record<string, unknown> = { scope: target.scope, project: target.project, id: target.id }
+      const openError = await openMemoryTab(host.sidebarRight, sessionId, params)
+      if (openError !== '') {
+        toast('error', openError)
+        host.layout.selectPanel(host.panelId)
+        return
+      }
+      try {
+        const query = new URLSearchParams({ scope: target.scope, id: target.id })
+        if (target.scope === 'project') query.set('project', target.project)
+        const preview = await api<JsonRecord>(`/memory/preview-file?${query.toString()}`)
+        if (preview.empty === true) return
+        const path = typeof preview.path === 'string' ? preview.path : ''
+        if (path === '') throw new ApiError(t('unknownError'), 'internal')
+        host.sidebarRight.openResource(sessionFileAddress(sessionId, path), { preferNewPane: true })
+      } catch (error) {
+        // A missing memory is already reported by the detail page itself.
+        if (error instanceof ApiError && error.code === 'not_found') return
+        toast('warn', t('memoryDetailPreviewFailed', { message: errorMessageFor(error, t) }))
+      }
+    })()
   }
 
   const setMarketBusy = (id: string, label: string): void => {
@@ -445,6 +557,7 @@ export function createHubController(options: HubControllerOptions): HubControlle
     closeMarketPlugin() {
       set({ marketPluginKey: null })
     },
+    openMemoryDetail,
     loadDetail,
     setQuery(query: string) {
       set({ query })

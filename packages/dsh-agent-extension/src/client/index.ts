@@ -13,13 +13,14 @@
 
 import type { ClientContext } from './client-context.ts'
 import { en, ja, es, fr, de, ru, pt, zh, NS, type HubDictionary, type HubLocaleKey } from './locales.ts'
-import { createHubController } from './store.ts'
+import { createHubController, MEMORY_DETAIL_TAB } from './store.ts'
 import { Panel } from './Panel.tsx'
 import { PanelIcon } from './PanelIcon.tsx'
 import { OverlayHost } from './OverlayHost.tsx'
+import { MemoryDetailTab } from './memory-detail.tsx'
 
-/** Required browser services for slots and localized copy. */
-export const inject = ['slots', 'locale']
+/** Required browser services: slots and copy, plus the right-Sidebar surface the memory detail opens in. */
+export const inject = ['slots', 'locale', 'layout', 'sidebarRight', 'sidebarRightTabs']
 
 /** The panel id shared by the sidebar entry and the main panel. */
 export const PANEL_ID = 'agent-extension'
@@ -53,7 +54,11 @@ export function apply(ctx: ClientContext): void {
     }
     return text
   }
-  const controller = createHubController({ translate: t, getLocaleId })
+  const controller = createHubController({
+    translate: t,
+    getLocaleId,
+    host: { panelId: PANEL_ID, layout: ctx.layout, sidebarRight: ctx.sidebarRight },
+  })
   ctx.effect(() => () => controller.actions.destroy(), 'dsh-agent-extension: controller')
   // Track the active locale id in the snapshot so views re-resolve i18n display picks.
   ctx.effect(() => ctx.locale.subscribe?.(() => controller.actions.setLocaleId(getLocaleId())), 'dsh-agent-extension: locale tracking')
@@ -77,6 +82,26 @@ export function apply(ctx: ClientContext): void {
       actions: controller.actions,
     }),
   }, Panel))
+
+  // Memory detail page: stage one registers the page type, stage two contributes
+  // its body under the same id (id/kind/slot key must agree, title is a thunk).
+  ctx.effect(() => ctx.sidebarRightTabs.register({
+    id: MEMORY_DETAIL_TAB,
+    kind: MEMORY_DETAIL_TAB,
+    multiple: false,
+    keepMounted: true,
+    title: () => t('memoryDetailTabTitle'),
+  }), 'dsh-agent-extension: memory detail tab type')
+
+  ctx.slots.inject('sidebar.right.pane.tab', () => ctx.slots.register({
+    name: 'sidebar.right.pane.tab',
+    key: MEMORY_DETAIL_TAB,
+    locale: NS,
+    inject: () => ({
+      hooks: { hub: controller.store },
+      actions: controller.actions,
+    }),
+  }, MemoryDetailTab))
 
   // Framework-level overlay: dialogs and toasts (panel-local fixed layers
   // would be clipped or lost across panel switches).

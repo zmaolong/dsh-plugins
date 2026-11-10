@@ -141,6 +141,16 @@
           }
         },
         {
+          "version": "0.0.1-preview.14",
+          "publishTimestamp": 1794281379,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/zmaolong/dsh-plugins",
+            "commit": "e5f574f6d147cc1dda9bcae4cf8c74944d1fe195",
+            "path": "packages/dsh-agent-extension"
+          }
+        },
+        {
           "version": "0.0.1-preview.13",
           "publishTimestamp": 1794276738,
           "source": {
@@ -229,11 +239,11 @@
       "versions": [
         {
           "version": "0.0.1-preview.6",
-          "publishTimestamp": 1794276738,
+          "publishTimestamp": 1794281379,
           "source": {
             "type": "git",
             "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "7351c2528f63e7a53f5552f4d9151d12d8dd309f",
+            "commit": "e5f574f6d147cc1dda9bcae4cf8c74944d1fe195",
             "path": "packages/dsh-remote-ctrl"
           }
         },

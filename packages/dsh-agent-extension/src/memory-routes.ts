@@ -2,8 +2,9 @@
  * HTTP API of the memory panel, mounted under the plugin's existing
  * `/agent-plugin/api` prefix (the caller dispatches the `/memory/*` routes).
  *
- * Read routes are pure reads; write routes validate every field at this
- * boundary because the client is untrusted UI input.
+ * Read routes are pure reads；例外是 `/memory/preview-file`：它把记忆正文派生
+ * 到系统临时目录（幂等、可随时删除）。写路由在本层校验每个字段，因为客户端
+ * 是不可信 UI 输入。
  *
  * @module dsh-agent-extension/memory-routes
  */
@@ -23,7 +24,7 @@ import {
 } from './memory/types.ts'
 
 /** GET routes served by the memory panel. */
-export const MEMORY_GET_ROUTES = ['/memory/state', '/memory/list', '/memory/get'] as const
+export const MEMORY_GET_ROUTES = ['/memory/state', '/memory/list', '/memory/get', '/memory/preview-file'] as const
 
 /** POST routes served by the memory panel. */
 export const MEMORY_POST_ROUTES = [
@@ -91,6 +92,22 @@ export async function dispatchMemoryGet(store: MemoryStore, route: string, param
     if (entry === undefined) throw hubError(`记忆不存在：${id}`, 'not_found')
     return { entry }
   }
+  if (route === '/memory/preview-file') {
+    const scope = scopeOf(params.get('scope'), 'global')
+    const project = projectOf(store, params.get('project'), scope)
+    const id = text(params.get('id'))
+    if (id === '') throw hubError('缺少记忆 id', 'bad_request')
+    // 条目不存在统一按 404 返回，避免 store 的 Error 落到 500。
+    const entry = store.get(scope, project, id)
+    if (entry === undefined) throw hubError(`记忆不存在：${id}`, 'not_found')
+    try {
+      // `empty` 让客户端在正文为空时不打开预览页签（spec §5.1），而无需再取一次正文。
+      return { ...store.previewFile(scope, project, id), empty: entry.content.trim() === '' }
+    } catch (error) {
+      // 临时目录不可写等异常：返回结构化错误，客户端提示后仍可继续编辑参数。
+      throw hubError(`生成记忆预览失败：${error instanceof Error ? error.message : String(error)}`, 'internal')
+    }
+  }
   throw hubError(`未知接口：${route}`, 'not_found')
 }
 
@@ -133,6 +150,8 @@ export async function dispatchMemoryPost(store: MemoryStore, route: string, body
     const id = text(body.id)
     if (id === '') throw hubError('缺少记忆 id', 'bad_request')
     if (!store.remove(scope, project, id)) throw hubError(`记忆不存在：${id}`, 'not_found')
+    // 预览文件是派生数据：删除记忆后顺手清掉它的预览目录（best effort）。
+    store.removePreview(id)
     return { deleted: true, id }
   }
   if (route === '/memory/settings') {

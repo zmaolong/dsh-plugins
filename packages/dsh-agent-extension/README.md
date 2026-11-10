@@ -324,7 +324,8 @@ hook 命令按 Claude Code 约定执行：工作目录为插件根，stdin 传 J
 | 显式写入 | 模型工具 `memory_save`；用户命令 `/remember [global] <内容>` |
 | 召回 | 开场注入有界索引 + `memory_search` / `memory_get` 按需取详情；`memory_forget` 与 `/forget` 标记过时 |
 | 过时 | 一票 `stale`（不注入、仍可搜）、两票 `archived`（默认不可见） |
-| 管理面板 | 记忆 tab：作用域切换、搜索、类型筛选、增删改、开关、索引预算、命中率、导出 |
+| 管理面板 | 记忆 tab：作用域切换、搜索、类型筛选、新建、开关、索引预算、命中率、导出、记忆体检 |
+| 阅读面 | 点击条目退出插件面板，在宿主右侧栏打开「记忆详情」页签（可调整元信息）+ 原生 Markdown 预览页签（只读正文）；窄窗降级为同窗格页签切换 |
 
 写入即去重：名称/描述/正文指纹相同只强化原条目，不重复新增。记忆中不含项目内容：
 项目目录只写 `.dsh/agent-extension/memory/config.json`（身份文件，已自动 exclude）。
@@ -378,6 +379,7 @@ hook 命令按 Claude Code 约定执行：工作目录为插件根，stdin 传 J
 | GET | `/agent-plugin/api/memory/state` | 设置 + 已知项目（含条目数）+ 捕获/命中率统计 |
 | GET | `/agent-plugin/api/memory/list` | `scope=global|project`、`project=<key>`、`query`、`type`、`includeArchived` |
 | GET | `/agent-plugin/api/memory/get` | 单条详情（`id`） |
+| GET | `/agent-plugin/api/memory/preview-file` | 生成仅正文的预览 Markdown，返回 `{path, name, empty}` |
 | POST | `/agent-plugin/api/memory/save` | 新建/更新（写） |
 | POST | `/agent-plugin/api/memory/status` | `active` / `stale` / `archived` |
 | POST | `/agent-plugin/api/memory/delete` | 永久删除单条 |

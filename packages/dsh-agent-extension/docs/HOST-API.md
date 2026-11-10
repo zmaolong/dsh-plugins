@@ -586,6 +586,7 @@ lastRefreshed/display/owner/featured/plugins[]/refreshError/warnings`；
 | GET | `/memory/state` | `{settings, projects[], stats}`；projects 含 `entryCount`，stats 含最近会话注入/命中率 |
 | GET | `/memory/list` | 查询参数 `scope=global|project`、`project`、`query`、`type`、`includeArchived=0|1` |
 | GET | `/memory/get` | 查询参数 `scope`、`project`、`id` |
+| GET | `/memory/preview-file` | 查询参数 `scope`、`project`、`id` → `{path, name, empty}`：按条目生成只含正文的临时 Markdown（剥掉 frontmatter），供宿主右侧栏预览页签只读渲染 |
 | POST | `/memory/save` | `{scope, project?, id?, name, description, type, content, tags?, importance?, supersedes?}`；同指纹只强化 |
 | POST | `/memory/status` | `{scope, project?, id, status: active|stale|archived}` |
 | POST | `/memory/delete` | `{scope, project?, id}` |
@@ -601,3 +602,7 @@ obsoleteVotes/supersedes/originSessionId/createdAt/updatedAt/content`。类型�
 
 项目身份文件：项目内 `.dsh/agent-extension/memory/config.json`（只含 `projectKey/identity/source`），
 自动加入 `<git common dir>/info/exclude`。
+
+预览文件：`<os.tmpdir()>/dsh-agent-extension-memory-preview/<id>/<清洗后的记忆名称>.md`。
+每条目一个目录、幂等覆写；写入时清理 mtime 超过 7 天的条目目录，`/memory/delete` 成功后删除该 id
+目录（best effort）。预览文件是派生数据，删除后可随时重建，不属于记忆库。

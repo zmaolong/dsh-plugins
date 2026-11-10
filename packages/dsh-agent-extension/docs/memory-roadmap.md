@@ -3,6 +3,25 @@
 > 本文档是自包含的实施规划：下一个上下文可直接按此实施，不依赖历史会话。
 > 现状基线：`0.0.1-preview.9`（commit `e76b086`）。
 
+## 本阶段：记忆详情面（preview.14，已完成）
+
+把记忆的阅读路径从「编辑弹窗内看 Markdown 源码」改为宿主右侧栏原生双窗格；正文只读、元信息有限调整。
+方案与取舍见 [ADR-0003](../../../docs/adr/0003-memory-reading-view.md)，实施级规格见
+[`memory-reading-view.spec.md`](memory-reading-view.spec.md)。
+
+- **交互**：点击列表卡片 → 退出插件主面板（`ctx.layout.selectPanel(null)`）→ 宿主侧栏展开
+  「记忆详情」自定义页签 + 原生文件预览页签（`openResource(..., { preferNewPane: true })`）；
+  宽度不足或已达 2 窗格上限时降级为同窗格页签切换。无前台 Session 时 toast 提示并回退插件面板。
+- **数据面**：`GET /memory/preview-file` → `MemoryStore.previewFile`；`src/memory/preview.ts`
+  生成只含正文的临时 `.md`（按 id 目录、幂等覆写、7 天清理、删除记忆时清理）。
+- **参数页签**：`src/client/memory-detail.tsx`（名称/描述/类型/标签/重要性 + 保存、停用/恢复、
+  归档、两步删除；切换记忆时丢弃未保存修改并提示）；页签 id/kind/槽 key 均为 `agent-extension-memory`。
+- **列表改造**：点击卡片调用 `actions.openMemoryDetail`，弹窗只保留「新建」（写正文）。
+- **依赖**：零新增运行时依赖；宿主侧栏 API 为 pre-stable，升级宿主后须回归
+  [`memory-reading-view.spec.md`](memory-reading-view.spec.md) §5 全链路。
+- **验收**：离线 `check/test/build` 全绿；zdebug 真机双主题、宽屏双窗格 + 窄屏降级、
+  console error = 0；`GET /memory/preview-file` 返回路径存在且内容无 frontmatter。
+
 ## 背景：已完成（preview.5 → 9）
 
 - 单行工具条：作用域切换 + 项目下拉（无计数后缀）+ 搜索框（右端类型筛选下拉，单选 radio）+ 新建 + 导出/设置/刷新图标组。

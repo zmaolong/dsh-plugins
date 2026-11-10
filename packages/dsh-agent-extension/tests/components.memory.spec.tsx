@@ -248,25 +248,18 @@ describe('MemoryView', () => {
     })
   })
 
-  it('删除需要二次确认：第一次点击只展开确认，确认后才调用 /memory/delete', async () => {
-    const { calls } = installFetch()
+  it('点击条目卡片调用 openMemoryDetail，不再打开编辑弹窗', async () => {
+    installFetch()
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const openDetail = vi.spyOn(controller.actions, 'openMemoryDetail')
     render(<MemoryView actions={controller.actions} t={t} />)
     const row = await screen.findByRole('button', { name: /提交信息用中文/u })
     fireEvent.click(row)
-    expect(await screen.findByText('提交信息必须用中文。')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: t('memoryDelete') }))
-    expect(screen.getByText(t('memoryDeleteDescription', { name: '提交信息用中文' }))).toBeTruthy()
-    expect(calls.some(call => call.url.includes('/memory/delete'))).toBe(false)
-    fireEvent.click(screen.getByRole('button', { name: t('memoryDeleteConfirm') }))
-    await waitFor(() => {
-      expect(calls.some(call => call.url.includes('/memory/delete'))).toBe(true)
-    })
-    const deleteCall = calls.find(call => call.url.includes('/memory/delete'))
-    expect(bodyOf(deleteCall)).toEqual({ scope: 'project', project: '/repo/new', id: 'm1' })
-    await waitFor(() => {
-      expect(screen.queryByRole('heading', { name: t('memoryEditTitle') })).toBeNull()
-    })
+    expect(openDetail).toHaveBeenCalledWith({ scope: 'project', project: '/repo/new', id: 'm1' })
+    expect(screen.queryByRole('heading', { name: t('memoryEditTitle') })).toBeNull()
+    // 键盘可达：Enter 同样打开详情面。
+    fireEvent.keyDown(row, { key: 'Enter' })
+    expect(openDetail).toHaveBeenCalledTimes(2)
   })
 
   it('设置对话框展示统计，开关即时保存、数字输入防抖保存', async () => {
