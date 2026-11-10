@@ -152,6 +152,7 @@ function normalizeSummary(raw: unknown): MemoryListRow {
     status: text(item.status),
     tier: item.tier === 'short' ? 'short' : 'long',
     reinforcement: integer(item.reinforcement, 0, Number.MAX_SAFE_INTEGER, 0),
+    usedCount: integer(item.usedCount, 0, Number.MAX_SAFE_INTEGER, 0),
     createdAt: text(item.createdAt),
     updatedAt: text(item.updatedAt),
   }
@@ -1105,6 +1106,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
     && auditResult.stale.length === 0
     && auditResult.duplicates.length === 0
     && auditResult.lowValue.length === 0
+    && auditResult.neverUsed.length === 0
 
   /** 诊断对话框的一块：前 10 条直接展示，其余折叠在 details 里。 */
   const diagnosisSection = (title: string, rows: ReactNode[], empty: string): ReactNode => (
@@ -2099,7 +2101,12 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
           <PanelDialogLayer>
             <DialogShell t={t} title={t('memoryAuditTitle')} wide onClose={() => { setAuditOpen(false) }}>
               {auditEmpty
-                ? <EmptyBlock description={t('memoryAuditEmpty')} />
+                ? (
+                  <div className={css.maintenanceStack}>
+                    <div className={css.maintenanceNotice}>{t('memoryAuditEmpty')}</div>
+                    <div className={css.maintenanceHint}>{t('memoryAuditEmptyGuide')}</div>
+                  </div>
+                )
                 : (
                   <div className={css.auditGroups}>
                     {auditResult.stale.length > 0
@@ -2132,8 +2139,19 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                         </section>
                       )
                       : null}
+                    {auditResult.neverUsed.length > 0
+                      ? (
+                        <section className={css.auditGroup}>
+                          {auditGroupTitle(t('memoryAuditNeverUsedTitle'), auditResult.neverUsed.length)}
+                          {auditResult.neverUsed.map(item => auditRow(item, t('memoryAuditNeverUsedHint')))}
+                        </section>
+                      )
+                      : null}
                   </div>
                 )}
+              {auditResult !== null && !auditEmpty
+                ? <div className={css.maintenanceHint}>{t('memoryAuditGuide')}</div>
+                : null}
               <div className={css.auditBar}>
                 <span className={css.auditBarCount}>{t('memoryAuditSelected', { count: auditSelected.length })}</span>
                 {auditConfirmDelete

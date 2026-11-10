@@ -127,10 +127,10 @@ const DETAIL = {
 
 /** Audit-dialog fixture: one stale, one low-value, and one near-duplicate pair. */
 const AUDIT_ENTRIES = [
-  { ...ENTRIES[0], obsoleteVotes: 1 },
-  { ...ENTRIES[1], status: 'active', reinforcement: 0, updatedAt: '2026-09-01T00:00:00.000Z' },
-  { id: 'd1', name: '提交信息用中文（一）', description: '仓库约定', type: 'preference', tags: [], importance: 40, status: 'active', reinforcement: 0, createdAt: '2026-11-01T00:00:00.000Z', updatedAt: '2026-11-02T00:00:00.000Z', content: '提交信息必须使用中文。' },
-  { id: 'd2', name: '提交信息用中文（二）', description: '仓库约定', type: 'preference', tags: [], importance: 80, status: 'active', reinforcement: 3, createdAt: '2026-11-01T00:00:00.000Z', updatedAt: '2026-11-03T00:00:00.000Z', content: '提交信息必须使用中文。' },
+  { ...ENTRIES[0], obsoleteVotes: 1, usedCount: 0 },
+  { ...ENTRIES[1], status: 'active', reinforcement: 0, updatedAt: '2026-09-01T00:00:00.000Z', usedCount: 1 },
+  { id: 'd1', name: '提交信息用中文（一）', description: '仓库约定', type: 'preference', tags: [], importance: 40, status: 'active', tier: 'long', reinforcement: 0, usedCount: 1, createdAt: '2026-11-01T00:00:00.000Z', updatedAt: '2026-11-02T00:00:00.000Z', content: '提交信息必须使用中文。' },
+  { id: 'd2', name: '提交信息用中文（二）', description: '仓库约定', type: 'preference', tags: [], importance: 80, status: 'active', tier: 'long', reinforcement: 3, usedCount: 1, createdAt: '2026-11-01T00:00:00.000Z', updatedAt: '2026-11-03T00:00:00.000Z', content: '提交信息必须使用中文。' },
 ]
 
 const SAVED = {
@@ -717,8 +717,9 @@ describe('MemoryView', () => {
     fireEvent.click(screen.getByRole('button', { name: t('memoryAuditButton') }))
     expect(await screen.findByRole('dialog', { name: t('memoryAuditTitle') })).toBeTruthy()
     expect(calls.some(call => call.url.includes('/memory/list') && call.url.includes('content=1'))).toBe(true)
-    // 三组问题：过时 1 条、疑似重复对 1（两条）、低价值 1 条。
-    expect(screen.getAllByRole('checkbox').length).toBe(4)
+    // 四组问题：过时 1 条、疑似重复对 1（两条）、低价值 1 条、从未消费 1 条（与过时同条）。
+    expect(screen.getAllByRole('checkbox').length).toBe(5)
+    expect(screen.getByText(t('memoryAuditNeverUsedTitle'))).toBeTruthy()
     expect(screen.getByText(t('memoryAuditKeep', { name: '提交信息用中文（二）' }))).toBeTruthy()
     // 勾选「旧决策」并批量归档。
     fireEvent.click(screen.getByRole('checkbox', { name: '旧决策' }))

@@ -118,3 +118,25 @@
 
 **第二阶段收尾状态**：B6–B8 全部交付。后续观察项（不排期，等数据）：新写入的短期占比与升级率
 （诊断视图人工观察）；维护自动触发在真实会话末的首跑效果；相似吸收的拦截量（store 日志）。
+
+### 2026-11-11：B9 体检与维护「实质性作用」改造（preview.25）
+
+用户反馈体检与维护「没有实质性作用」。对本机 89 条实测诊断根因：**确定性规则能判的（逐字重复
+≥0.6 仅 1 对、超期未用 0 条）不是这个库的病；库的真病是语义重复与一次性进度记录，只有 LLM 能判，
+但维护 Run 被「规则预筛 0 候选」短路在 LLM 门外（532 行直接返回 empty）**；体检则空转且不解释。
+
+- **维护 Run 全量研判**（`src/memory/maintenance.ts`）：预筛候选加入 `review` 类别——剩余全部
+  active 非钉住条目进研判视野（低重要性排前，200 上限/40k token 预算不变）；重复对降级为提示信号
+  不再作候选门槛；研判提示词从「确认预筛候选」改为「主动全库研判：语义重复→merge、价值耗尽的
+  一次性记录→stale、硬证据候选照旧、no-op 优先」；stale 校验放宽为「候选内 active 非钉住」
+  （delete 仍限二次研判、restore 仍限 stale），firstIds 死变量删除。
+- **体检「从未被消费」第四组**（`src/client/audit.ts` + 路由）：`/memory/list` 融合派生 usage
+  （新增 `MemoryRouteHooks.usageSnapshot`，memory-host 装配传 `usage.snapshot()`；Markdown 里的
+  usedCount 只在维护批次写回，不融合则恒 0）；规则 = active + 非 reference + usedCount 0
+  （reference 本就只靠检索，无消费是常态）——本机立刻产出 59 条确定性候选。
+- **体检解释型反馈**：空态不再只说「状态良好」，新增引导文案说明规则只筛确定性信号、语义问题用
+  「优化记忆」；有产出时底部同样提示语义问题走维护。
+- **验证**：359 用例全绿；zdebug 真机体检「从未被消费 59」渲染正确；维护 Run 全量候选生效
+  （candidates 17），模型正确继承宿主默认（deepseek-official/deepseek-flash），LLM 调用在
+  zdebug 因无 API key 失败（MISSING_CREDENTIAL，错误文案清晰指引配置）——真实研判需在已配
+  凭据的桌面 profile 验证，代码链路（候选/路由/失败处理）全部正确。

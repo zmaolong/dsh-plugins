@@ -239,6 +239,21 @@ describe('prescreenMaintenance（规则预筛）', () => {
     expect(result.firstStale[0]?.kind).toBe('probation')
   })
 
+  it('全量研判：非硬证据的 active 条目进入 review 候选，低重要性排前', () => {
+    const entries = [
+      makeEntry({ id: 'high', name: '高重要', importance: 90 }),
+      makeEntry({ id: 'low', name: '低重要', importance: 10 }),
+      makeEntry({ id: 'fresh', name: '不满足 90 天', importance: 10, updatedAt: daysAgo(10) }),
+      makeEntry({ id: 'archived', name: '归档', status: 'archived', importance: 1 }),
+    ]
+    const result = prescreenMaintenance({ entries, now: NOW })
+    // low 命中 first-stale 硬证据（≥90 天未用且 importance<60）；其余 active 进 review。
+    expect(result.firstStale.map(candidate => candidate.entry.id)).toContain('low')
+    const reviewIds = result.candidates.filter(candidate => candidate.kind === 'review').map(candidate => candidate.entry.id)
+    expect(reviewIds).toEqual(['fresh', 'high'])
+    expect(result.candidates.some(candidate => candidate.entry.id === 'archived')).toBe(false)
+  })
+
   it('候选总数 ≤200 且按四类均衡截断', () => {
     const entries: MemoryEntry[] = []
     for (let index = 0; index < 120; index += 1) {
@@ -401,7 +416,7 @@ describe('validateMaintenancePlan（硬规则不可绕过）', () => {
     expect(result.rejected.map(item => item.id)).toEqual(['active', 'ghost'])
   })
 
-  it('stale 只允许首次/二次候选；同一 id 不能跨动作重复', () => {
+  it('stale 只允许候选内的 active 非钉住条目；同一 id 不能跨动作重复', () => {
     const first = makeEntry({ id: 'first', name: '首次' })
     const second = makeEntry({ id: 'second', name: '二次', status: 'stale' })
     const restore = makeEntry({ id: 'restore', name: '恢复', status: 'stale' })
@@ -411,10 +426,22 @@ describe('validateMaintenancePlan（硬规则不可绕过）', () => {
       restore: ['second'],
       delete: ['first'],
     }), prescreen)
-    expect(result.stale.sort()).toEqual(['first', 'second'])
-    expect(result.restore).toEqual([])
+    // 全量研判后 stale 放宽为「候选内 active 条目」：first 接受；
+    // second/restore 已是 stale 状态（只能 restore/delete），missing 不在候选。
+    // second 不被 stale 消耗，restore 动作正常接受它。
+    expect(result.stale).toEqual(['first'])
+    expect(result.restore).toEqual(['second'])
     expect(result.delete).toEqual([])
     expect(result.rejected.length).toBeGreaterThan(0)
+  })
+
+  it('全量研判：stale 可作用于 review 候选（active 非钉住），钉住与 delete 仍受限', () => {
+    const reviewed = makeEntry({ id: 'r1', name: 'review 条目', importance: 40 })
+    const pinned = makeEntry({ id: 'p1', name: '钉住', pinned: true })
+    const prescreen = manualPrescreen({ first: [reviewed, pinned] })
+    const result = validateMaintenancePlan(makePlan({ stale: ['r1', 'p1'] }), prescreen)
+    expect(result.stale).toEqual(['r1'])
+    expect(result.rejected.some(item => item.id === 'p1' && item.reason === '条目已钉住')).toBe(true)
   })
 
   it('单 Run 动作数超过 50 时截断并标记', () => {

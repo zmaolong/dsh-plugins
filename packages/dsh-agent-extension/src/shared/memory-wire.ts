@@ -378,6 +378,8 @@ export interface MemoryListRow {
   /** 保留层级（short/long）；服务端 v3 起必有。 */
   tier: string
   reinforcement: number
+  /** 累计被消费次数（Markdown 元数据与派生 usage 融合后的值）。 */
+  usedCount: number
   createdAt: string
   updatedAt: string
 }

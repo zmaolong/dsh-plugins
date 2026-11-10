@@ -66,6 +66,11 @@ export interface MemoryRouteHooks {
   runMaintenance?: (request: { scope?: MemoryScope, project?: string }) => Promise<{ run: unknown }> | { run: unknown }
   /** 撤销一次维护 Run；缺省返回 internal 错误。 */
   undoMaintenance?: (runId: string) => Promise<{ restored: number }> | { restored: number }
+  /**
+   * 派生使用记录快照（usage.json 的内存态）；`/memory/list` 融合进条目的
+   * `usedCount`，体检的「从未消费」规则依赖它。缺省视为无使用数据。
+   */
+  usageSnapshot?: () => Readonly<Record<string, { usedCount: number; lastUsedAt: string }>>
 }
 
 /** Whether `route` is one of the read routes. */
@@ -124,7 +129,16 @@ export async function dispatchMemoryGet(
       limit: LIMITS.entriesPerScope,
       includeContent: params.get('content') === '1',
     })
-    return { scope, project, total: entries.length, entries }
+    // Markdown 里的 usedCount 只在维护批次写回（B2 设计），真实消费记录在
+    // 派生 usage.json——列表载荷融合两者，体检「从未消费」才拿得到真值。
+    const usage = hooks.usageSnapshot?.() ?? {}
+    const fused = entries.map((entry) => {
+      const record = usage[entry.id]
+      return record === undefined || record.usedCount <= entry.usedCount
+        ? entry
+        : { ...entry, usedCount: record.usedCount }
+    })
+    return { scope, project, total: fused.length, entries: fused }
   }
   if (route === '/memory/get') {
     const scope = scopeOf(params.get('scope'), 'global')

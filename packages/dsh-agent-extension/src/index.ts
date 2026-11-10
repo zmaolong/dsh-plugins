@@ -117,6 +117,7 @@ export function apply(ctx: HostContext, config: HubConfig = {}): AgentPluginHub 
           maintenanceStatus: () => runtime.maintenanceStatus(),
           runMaintenance: request => runtime.runMaintenance(request),
           undoMaintenance: runId => runtime.undoMaintenance(runId),
+          usageSnapshot: () => runtime.usageSnapshot(),
         }),
   }
   let uiRoutes: UiRoutesStatus = { active: false, reason: '未挂载', path: '/agent-plugin/api', dispose: () => {} }

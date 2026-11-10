@@ -27,6 +27,8 @@ export interface AuditEntry {
   status: string
   reinforcement: number
   obsoleteVotes: number
+  /** 累计被消费次数（列表载荷已融合派生 usage）。 */
+  usedCount: number
   updatedAt: string
 }
 
@@ -42,6 +44,7 @@ export interface AuditResult {
   stale: AuditEntry[]
   duplicates: DuplicatePair[]
   lowValue: AuditEntry[]
+  neverUsed: AuditEntry[]
 }
 
 /** An active entry untouched for this many days with no reinforcement is low-value. */
@@ -90,11 +93,25 @@ export function findLowValueEntries(entries: AuditEntry[], now: number): AuditEn
     && Date.parse(entry.updatedAt) < floor)
 }
 
+/**
+ * Active, never-consumed entries that are not reference pointers.
+ *
+ * `reference` 类型本来就只靠检索、不进注入，无消费是常态；其余类型的
+ * active 条目从未被读取，说明注入或检索都没碰到它——「没有被用到」的
+ * 确定性信号，与层级无关（长期条目同样可能从未被消费）。
+ */
+export function findNeverUsedEntries(entries: AuditEntry[]): AuditEntry[] {
+  return entries.filter(entry => entry.status === 'active'
+    && entry.type !== 'reference'
+    && entry.usedCount === 0)
+}
+
 /** Run all rules over one full entry list (per scope / project). */
 export function runAudit(entries: AuditEntry[], now: number): AuditResult {
   return {
     stale: findStaleCandidates(entries),
     duplicates: findDuplicatePairs(entries),
     lowValue: findLowValueEntries(entries, now),
+    neverUsed: findNeverUsedEntries(entries),
   }
 }

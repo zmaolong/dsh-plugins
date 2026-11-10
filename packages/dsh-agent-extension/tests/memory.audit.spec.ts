@@ -27,6 +27,7 @@ function entry(partial: Partial<AuditEntry> & { id: string }): AuditEntry {
     status: 'active',
     reinforcement: 0,
     obsoleteVotes: 0,
+    usedCount: 0,
     updatedAt: '2026-11-01T00:00:00.000Z',
     ...partial,
   }

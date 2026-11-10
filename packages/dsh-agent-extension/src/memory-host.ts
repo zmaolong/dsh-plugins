@@ -292,6 +292,11 @@ export class MemoryRuntime {
     return this.sessions.projectForPath(cwd)
   }
 
+  /** 派生使用记录快照（面板列表融合 usedCount 用）；不可用时返回空表。 */
+  usageSnapshot(): Readonly<Record<string, { usedCount: number; lastUsedAt: string }>> {
+    return this.usage?.snapshot() ?? {}
+  }
+
   /** 解析某个 agent 的项目身份（写路径）。 */
   projectForAgent(agent: AgentLike | undefined): ProjectIdentity | null {
     return this.sessions.projectForAgent(agent)

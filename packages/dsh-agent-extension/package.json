@@ -1,6 +1,6 @@
 {
   "name": "dsh-agent-extension",
-  "version": "0.0.1-preview.24",
+  "version": "0.0.1-preview.25",
   "description": "Agent Extension (智能体扩展) for DSH: manage agent plugins, skills, MCP and more — plus built-in cross-session memory v2 with global and project scopes, model-written facts with session-end capture, layered recall and maintenance runs.",
   "type": "module",
   "main": "lib/index.js",

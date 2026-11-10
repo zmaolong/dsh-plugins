@@ -287,6 +287,10 @@ window.__ModuleLoader__.load({
 			memoryAuditLowValueHint: "超过 30 天未更新且从未被强化",
 			memoryAuditKeep: "建议保留「{name}」",
 			memoryAuditEmpty: "未发现问题，记忆库状态良好。",
+			memoryAuditNeverUsedTitle: "从未被消费",
+			memoryAuditNeverUsedHint: "生效中且从未被读取（参考资料类型除外）",
+			memoryAuditEmptyGuide: "以上规则只筛确定性信号（逐字重复、过时票、超期未强化）。语义重复与已过时的一次性记录请用「优化记忆」，由模型全库研判。",
+			memoryAuditGuide: "勾选后批量处置；语义层面的问题（同义重复、过时的进度记录）请用「优化记忆」由模型研判。",
 			memoryAuditSelected: "已选 {count} 条",
 			memoryAuditDeleteConfirm: "将删除所选 {count} 条记忆，且无法恢复。",
 			memoryAuditDone: "已处理 {count} 条记忆",
@@ -610,6 +614,10 @@ window.__ModuleLoader__.load({
 			memoryAuditLowValueHint: "Untouched for over 30 days and never reinforced",
 			memoryAuditKeep: "Suggested to keep: {name}",
 			memoryAuditEmpty: "No issues found — the memory store looks healthy.",
+			memoryAuditNeverUsedTitle: "Never consumed",
+			memoryAuditNeverUsedHint: "Active and never read (reference entries excluded)",
+			memoryAuditEmptyGuide: "These rules only catch deterministic signals (verbatim duplicates, stale votes, aged-out entries). For semantic duplicates and spent one-off records, run \"Optimize\" — the model reviews the whole library.",
+			memoryAuditGuide: "Select rows to batch-process. For semantic issues (paraphrased duplicates, outdated progress records) use \"Optimize\" — the model judges the whole library.",
 			memoryAuditSelected: "{count} selected",
 			memoryAuditDeleteConfirm: "This deletes the {count} selected memories and cannot be undone.",
 			memoryAuditDone: "Processed {count} memories",
@@ -933,6 +941,10 @@ window.__ModuleLoader__.load({
 			memoryAuditLowValueHint: "30 日以上未更新かつ強化なし",
 			memoryAuditKeep: "保持候補：{name}",
 			memoryAuditEmpty: "問題は見つかりませんでした。メモリは良好です。",
+			memoryAuditNeverUsedTitle: "未消費のまま",
+			memoryAuditNeverUsedHint: "有効かつ一度も読まれていない（参照型を除く）",
+			memoryAuditEmptyGuide: "これらのルールは決定的なシグナル（完全重複、陳旧化票、長期未強化）のみを検出します。意味的重複や使い切られた記録は「メモリ最適化」でモデルに全庫判定させてください。",
+			memoryAuditGuide: "チェックして一括処理。意味的な問題（言い換え重複、過去の進捗記録）は「メモリ最適化」でモデルに判定させます。",
 			memoryAuditSelected: "{count} 件選択中",
 			memoryAuditDeleteConfirm: "選択した {count} 件のメモリを削除します。元に戻せません。",
 			memoryAuditDone: "{count} 件のメモリを処理しました",
@@ -1256,6 +1268,10 @@ window.__ModuleLoader__.load({
 			memoryAuditLowValueHint: "Sin cambios hace más de 30 días y sin refuerzo",
 			memoryAuditKeep: "Sugerencia de conservar: {name}",
 			memoryAuditEmpty: "No se encontraron problemas; la memoria está en buen estado.",
+			memoryAuditNeverUsedTitle: "Nunca consumidas",
+			memoryAuditNeverUsedHint: "Activas y nunca leídas (excepto referencias)",
+			memoryAuditEmptyGuide: "Estas reglas solo detectan señales deterministas (duplicados literales, votos obsoletos, entradas caducadas). Para duplicados semánticos y registros puntuales gastados, usa «Optimizar»: el modelo revisa toda la biblioteca.",
+			memoryAuditGuide: "Selecciona filas para procesar en lote. Para problemas semánticos (duplicados parafraseados, registros de progreso obsoletos) usa «Optimizar».",
 			memoryAuditSelected: "{count} seleccionadas",
 			memoryAuditDeleteConfirm: "Se eliminarán las {count} entradas seleccionadas y no se puede deshacer.",
 			memoryAuditDone: "Se procesaron {count} entradas",
@@ -1579,6 +1595,10 @@ window.__ModuleLoader__.load({
 			memoryAuditLowValueHint: "Inchangée depuis plus de 30 jours et jamais renforcée",
 			memoryAuditKeep: "Conservation suggérée : {name}",
 			memoryAuditEmpty: "Aucun problème détecté — la mémoire semble saine.",
+			memoryAuditNeverUsedTitle: "Jamais consultées",
+			memoryAuditNeverUsedHint: "Actives et jamais lues (hors références)",
+			memoryAuditEmptyGuide: "Ces règles ne détectent que des signaux déterministes (doublons littéraux, votes d’obsolescence, entrées périmées). Pour les doublons sémantiques et les enregistrements périmés, utilisez « Optimiser » : le modèle examine toute la bibliothèque.",
+			memoryAuditGuide: "Cochez pour traiter en lot. Pour les problèmes sémantiques (doublons reformulés, journaux de progression obsolètes), utilisez « Optimiser ».",
 			memoryAuditSelected: "{count} sélectionnée(s)",
 			memoryAuditDeleteConfirm: "Les {count} entrées sélectionnées seront supprimées ; action irréversible.",
 			memoryAuditDone: "{count} entrées traitées",
@@ -1902,6 +1922,10 @@ window.__ModuleLoader__.load({
 			memoryAuditLowValueHint: "Über 30 Tage unverändert und nie verstärkt",
 			memoryAuditKeep: "Empfohlen zum Behalten: {name}",
 			memoryAuditEmpty: "Keine Probleme gefunden — das Gedächtnis wirkt gesund.",
+			memoryAuditNeverUsedTitle: "Nie konsumiert",
+			memoryAuditNeverUsedHint: "Aktiv und nie gelesen (Referenzen ausgenommen)",
+			memoryAuditEmptyGuide: "Diese Regeln finden nur deterministische Signale (wörtliche Duplikate, Veralte-Stimmen, überalterte Einträge). Für semantische Duplikate und abgelaufene Einträge „Optimieren“ nutzen — das Modell prüft den ganzen Bestand.",
+			memoryAuditGuide: "Zeilen zur Stapelverarbeitung wählen. Semantische Probleme (umformulierte Duplikate, veraltete Verlaufsprotokolle) über „Optimieren“ vom Modell beurteilen lassen.",
 			memoryAuditSelected: "{count} ausgewählt",
 			memoryAuditDeleteConfirm: "Die {count} ausgewählten Einträge werden gelöscht; das kann nicht rückgängig gemacht werden.",
 			memoryAuditDone: "{count} Einträge verarbeitet",
@@ -2225,6 +2249,10 @@ window.__ModuleLoader__.load({
 			memoryAuditLowValueHint: "Без изменений более 30 дней и без подкрепления",
 			memoryAuditKeep: "Рекомендуется сохранить: {name}",
 			memoryAuditEmpty: "Проблем не найдено — память в хорошем состоянии.",
+			memoryAuditNeverUsedTitle: "Никогда не потреблялись",
+			memoryAuditNeverUsedHint: "Активные и ни разу не прочитанные (кроме справочных)",
+			memoryAuditEmptyGuide: "Эти правила ловят только детерминированные сигналы (дословные дубликаты, голоса устаревания, просроченные записи). Для смысловых дубликатов и отработавших записей запустите «Оптимизировать» — модель просмотрит всю библиотеку.",
+			memoryAuditGuide: "Отметьте строки для пакетной обработки. Семантические проблемы (перефразированные дубликаты, устаревшие отчёты) — через «Оптимизировать».",
 			memoryAuditSelected: "Выбрано: {count}",
 			memoryAuditDeleteConfirm: "Выбранные {count} записей будут удалены; это нельзя отменить.",
 			memoryAuditDone: "Обработано записей: {count}",
@@ -2548,6 +2576,10 @@ window.__ModuleLoader__.load({
 			memoryAuditLowValueHint: "Sem alterações há mais de 30 dias e nunca reforçada",
 			memoryAuditKeep: "Sugestão de manter: {name}",
 			memoryAuditEmpty: "Nenhum problema encontrado — a memória está saudável.",
+			memoryAuditNeverUsedTitle: "Nunca consumidas",
+			memoryAuditNeverUsedHint: "Ativas e nunca lidas (exceto referências)",
+			memoryAuditEmptyGuide: "Estas regras só detectam sinais determinísticos (duplicados literais, votos de obsolescência, entradas vencidas). Para duplicados semânticos e registros pontuais gastos, use \"Otimizar\" — o modelo analisa toda a biblioteca.",
+			memoryAuditGuide: "Selecione linhas para processar em lote. Para problemas semânticos (duplicados parafraseados, registros de progresso desatualizados) use \"Otimizar\".",
 			memoryAuditSelected: "{count} selecionada(s)",
 			memoryAuditDeleteConfirm: "As {count} entradas selecionadas serão excluídas; não pode ser desfeito.",
 			memoryAuditDone: "{count} entradas processadas",
@@ -5987,12 +6019,23 @@ window.__ModuleLoader__.load({
 			const floor = now - 2592e6;
 			return entries.filter((entry) => entry.status === "active" && entry.reinforcement <= 1 && Number.isFinite(Date.parse(entry.updatedAt)) && Date.parse(entry.updatedAt) < floor);
 		}
+		/**
+		* Active, never-consumed entries that are not reference pointers.
+		*
+		* `reference` 类型本来就只靠检索、不进注入，无消费是常态；其余类型的
+		* active 条目从未被读取，说明注入或检索都没碰到它——「没有被用到」的
+		* 确定性信号，与层级无关（长期条目同样可能从未被消费）。
+		*/
+		function findNeverUsedEntries(entries) {
+			return entries.filter((entry) => entry.status === "active" && entry.type !== "reference" && entry.usedCount === 0);
+		}
 		/** Run all rules over one full entry list (per scope / project). */
 		function runAudit(entries, now) {
 			return {
 				stale: findStaleCandidates(entries),
 				duplicates: findDuplicatePairs(entries),
-				lowValue: findLowValueEntries(entries, now)
+				lowValue: findLowValueEntries(entries, now),
+				neverUsed: findNeverUsedEntries(entries)
 			};
 		}
 		// \0dsh-css:E:\workspace\dsh-plugins\packages\dsh-agent-extension\src\client\dialogs.module.css.mjs
@@ -6660,6 +6703,7 @@ window.__ModuleLoader__.load({
 				status: text(item.status),
 				tier: item.tier === "short" ? "short" : "long",
 				reinforcement: integer(item.reinforcement, 0, Number.MAX_SAFE_INTEGER, 0),
+				usedCount: integer(item.usedCount, 0, Number.MAX_SAFE_INTEGER, 0),
 				createdAt: text(item.createdAt),
 				updatedAt: text(item.updatedAt)
 			};
@@ -7588,7 +7632,7 @@ window.__ModuleLoader__.load({
 			}))];
 			const visibleEntries = (showArchived ? entries : entries.filter((item) => item.status !== "archived")).filter((item) => tagFilter === "" || item.tags.includes(tagFilter));
 			const sortedEntries = sort === "recent" ? [...visibleEntries].sort((left, right) => timeOf(right.updatedAt) - timeOf(left.updatedAt)) : visibleEntries;
-			const auditEmpty = auditResult !== null && auditResult.stale.length === 0 && auditResult.duplicates.length === 0 && auditResult.lowValue.length === 0;
+			const auditEmpty = auditResult !== null && auditResult.stale.length === 0 && auditResult.duplicates.length === 0 && auditResult.lowValue.length === 0 && auditResult.neverUsed.length === 0;
 			/** 诊断对话框的一块：前 10 条直接展示，其余折叠在 details 里。 */
 			const diagnosisSection = (title, rows, empty) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
 				className: memory_module_css_default.diagnosisSection,
@@ -8884,86 +8928,106 @@ window.__ModuleLoader__.load({
 						onClose: () => {
 							setAuditOpen(false);
 						},
-						children: [auditEmpty ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(EmptyBlock, { description: t("memoryAuditEmpty") }) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-							className: memory_module_css_default.auditGroups,
-							children: [
-								auditResult.stale.length > 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
-									className: memory_module_css_default.auditGroup,
-									children: [auditGroupTitle(t("memoryAuditStaleTitle"), auditResult.stale.length), auditResult.stale.map((item) => auditRow(item, t("memoryAuditStaleHint")))]
-								}) : null,
-								auditResult.duplicates.length > 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
-									className: memory_module_css_default.auditGroup,
-									children: [auditGroupTitle(t("memoryAuditDuplicateTitle"), auditResult.duplicates.length), auditResult.duplicates.map((pair) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-										className: memory_module_css_default.auditPair,
-										children: [
-											/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-												className: memory_module_css_default.auditPairKeep,
-												children: t("memoryAuditKeep", { name: pair.keep.name })
-											}),
-											auditRow(pair.left, t("memoryAuditDuplicateHint")),
-											auditRow(pair.right, t("memoryAuditDuplicateHint"))
-										]
-									}, `${pair.left.id}-${pair.right.id}`))]
-								}) : null,
-								auditResult.lowValue.length > 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
-									className: memory_module_css_default.auditGroup,
-									children: [auditGroupTitle(t("memoryAuditLowValueTitle"), auditResult.lowValue.length), auditResult.lowValue.map((item) => auditRow(item, t("memoryAuditLowValueHint")))]
-								}) : null
-							]
-						}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-							className: memory_module_css_default.auditBar,
-							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-								className: memory_module_css_default.auditBarCount,
-								children: t("memoryAuditSelected", { count: auditSelected.length })
-							}), auditConfirmDelete ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-								className: memory_module_css_default.confirmArea,
-								role: "group",
-								"aria-label": t("memoryAuditDeleteConfirm", { count: auditSelected.length }),
+						children: [
+							auditEmpty ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: memory_module_css_default.maintenanceStack,
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+									className: memory_module_css_default.maintenanceNotice,
+									children: t("memoryAuditEmpty")
+								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+									className: memory_module_css_default.maintenanceHint,
+									children: t("memoryAuditEmptyGuide")
+								})]
+							}) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: memory_module_css_default.auditGroups,
 								children: [
-									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-										className: memory_module_css_default.confirmText,
-										children: t("memoryAuditDeleteConfirm", { count: auditSelected.length })
-									}),
-									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Button, {
-										variant: "danger",
-										disabled: auditBatchBusy,
+									auditResult.stale.length > 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+										className: memory_module_css_default.auditGroup,
+										children: [auditGroupTitle(t("memoryAuditStaleTitle"), auditResult.stale.length), auditResult.stale.map((item) => auditRow(item, t("memoryAuditStaleHint")))]
+									}) : null,
+									auditResult.duplicates.length > 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+										className: memory_module_css_default.auditGroup,
+										children: [auditGroupTitle(t("memoryAuditDuplicateTitle"), auditResult.duplicates.length), auditResult.duplicates.map((pair) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+											className: memory_module_css_default.auditPair,
+											children: [
+												/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+													className: memory_module_css_default.auditPairKeep,
+													children: t("memoryAuditKeep", { name: pair.keep.name })
+												}),
+												auditRow(pair.left, t("memoryAuditDuplicateHint")),
+												auditRow(pair.right, t("memoryAuditDuplicateHint"))
+											]
+										}, `${pair.left.id}-${pair.right.id}`))]
+									}) : null,
+									auditResult.lowValue.length > 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+										className: memory_module_css_default.auditGroup,
+										children: [auditGroupTitle(t("memoryAuditLowValueTitle"), auditResult.lowValue.length), auditResult.lowValue.map((item) => auditRow(item, t("memoryAuditLowValueHint")))]
+									}) : null,
+									auditResult.neverUsed.length > 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+										className: memory_module_css_default.auditGroup,
+										children: [auditGroupTitle(t("memoryAuditNeverUsedTitle"), auditResult.neverUsed.length), auditResult.neverUsed.map((item) => auditRow(item, t("memoryAuditNeverUsedHint")))]
+									}) : null
+								]
+							}),
+							auditResult !== null && !auditEmpty ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+								className: memory_module_css_default.maintenanceHint,
+								children: t("memoryAuditGuide")
+							}) : null,
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: memory_module_css_default.auditBar,
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+									className: memory_module_css_default.auditBarCount,
+									children: t("memoryAuditSelected", { count: auditSelected.length })
+								}), auditConfirmDelete ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+									className: memory_module_css_default.confirmArea,
+									role: "group",
+									"aria-label": t("memoryAuditDeleteConfirm", { count: auditSelected.length }),
+									children: [
+										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.confirmText,
+											children: t("memoryAuditDeleteConfirm", { count: auditSelected.length })
+										}),
+										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Button, {
+											variant: "danger",
+											disabled: auditBatchBusy,
+											onClick: () => {
+												runAuditBatch("delete");
+											},
+											children: [auditBatchBusy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Spinner, {}) : null, auditBatchBusy ? t("memoryDeleting") : t("memoryDeleteConfirm")]
+										}),
+										/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+											variant: "secondary",
+											onClick: () => setAuditConfirmDelete(false),
+											children: t("cancel")
+										})
+									]
+								}) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+										variant: "secondary",
+										disabled: auditSelected.length === 0 || auditBatchBusy,
 										onClick: () => {
-											runAuditBatch("delete");
+											runAuditBatch("archive");
 										},
-										children: [auditBatchBusy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Spinner, {}) : null, auditBatchBusy ? t("memoryDeleting") : t("memoryDeleteConfirm")]
+										children: t("memoryArchive")
 									}),
 									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
 										variant: "secondary",
-										onClick: () => setAuditConfirmDelete(false),
-										children: t("cancel")
+										disabled: auditSelected.length === 0 || auditBatchBusy,
+										onClick: () => {
+											runAuditBatch("stale");
+										},
+										children: t("memoryDeactivate")
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+										variant: "danger",
+										icon: "trash",
+										disabled: auditSelected.length === 0 || auditBatchBusy,
+										onClick: () => setAuditConfirmDelete(true),
+										children: t("memoryDelete")
 									})
-								]
-							}) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
-								/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
-									variant: "secondary",
-									disabled: auditSelected.length === 0 || auditBatchBusy,
-									onClick: () => {
-										runAuditBatch("archive");
-									},
-									children: t("memoryArchive")
-								}),
-								/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
-									variant: "secondary",
-									disabled: auditSelected.length === 0 || auditBatchBusy,
-									onClick: () => {
-										runAuditBatch("stale");
-									},
-									children: t("memoryDeactivate")
-								}),
-								/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
-									variant: "danger",
-									icon: "trash",
-									disabled: auditSelected.length === 0 || auditBatchBusy,
-									onClick: () => setAuditConfirmDelete(true),
-									children: t("memoryDelete")
-								})
-							] })]
-						})]
+								] })]
+							})
+						]
 					}) }) : null,
 					stateReady && diagnosisOpen ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PanelDialogLayer, { children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(DialogShell, {
 						t,
