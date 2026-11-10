@@ -9,6 +9,7 @@
 
 import type { LogFn } from '../../log.ts'
 import type { MemoryStore } from '../store.ts'
+import type { CreatedRef } from '../types.ts'
 
 /** 一个会话的召回计数（与 SessionBuffer 共享同一批 Set）。 */
 export interface RecallCounters {
@@ -103,14 +104,15 @@ export function flushRecall(options: {
  * @param log - 失败日志。
  * @param entries - 写入或强化的条数。
  * @param skipped - 本轮没有产出（失败/空轮/被闸门拒绝）。
- * @param detail - 会话 id 与跳过原因，供面板「最近捕获」展示。
+ * @param detail - 会话 id、跳过原因与该次**新增**的条目引用，供面板
+ *   「最近捕获」展示与撤销。
  */
 export function recordCaptureAttempt(
   store: MemoryStore,
   log: LogFn,
   entries: number,
   skipped: boolean,
-  detail: { sessionId?: string; skippedReason?: string; error?: string } = {},
+  detail: { sessionId?: string; skippedReason?: string; error?: string; created?: readonly CreatedRef[] } = {},
 ): void {
   try {
     store.recordCapture(entries, skipped, detail)

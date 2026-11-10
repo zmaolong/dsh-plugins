@@ -41,6 +41,7 @@ export const MEMORY_POST_ROUTES = [
   '/memory/settings',
   '/memory/export',
   '/memory/refresh-index',
+  '/memory/undo-capture',
 ] as const
 
 /** 面板可调用的宿主钩子；测试与只读挂载可以省略。 */
@@ -139,6 +140,16 @@ export async function dispatchMemoryPost(
   if (route === '/memory/refresh-index') {
     hooks.refreshRecall?.()
     return { refreshed: true }
+  }
+  if (route === '/memory/undo-capture') {
+    const id = text(body.id)
+    if (id === '') throw hubError('缺少捕获样本 id', 'bad_request')
+    try {
+      return { archived: store.undoCapture(id).archived, undone: true }
+    } catch (error) {
+      // 样本不存在与归档失败都按客户端可纠正的请求处理。
+      throw hubError(error instanceof Error ? error.message : String(error), 'bad_request')
+    }
   }
   if (route === '/memory/save') {
     const name = text(body.name)

@@ -592,6 +592,7 @@ lastRefreshed/display/owner/featured/plugins[]/refreshError/warnings`；
 | POST | `/memory/delete` | `{scope, project?, id}` |
 | POST | `/memory/settings` | 部分字段：`captureEnabled`/`captureSessionEnd`/`injectEnabled`/`indexLimitGlobal`/`indexLimitProject`/`maxChars` |
 | POST | `/memory/refresh-index` | 无参数 → `{refreshed:true}`：让进程内已缓存的会话索引失效，下一次装配重新渲染（不写盘、不重载列表） |
+| POST | `/memory/undo-capture` | `{id}` → `{archived:string[], undone:true}`：撤销一次自动捕获新增的条目（归档而非删除；样本不存在/缺 id 返回 bad_request） |
 | POST | `/memory/export` | `{scope, project?}` → `{filename, content}` |
 
 条目字段（schema v2）：`schema/id/name/description/type/scope/project/tags/importance/confidence/
@@ -612,3 +613,7 @@ originSessionId/createdAt/updatedAt`，正文另存。类型为
 预览文件：`<os.tmpdir()>/dsh-agent-extension-memory-preview/<id>/<清洗后的记忆名称>.md`。
 每条目一个目录、幂等覆写；写入时清理 mtime 超过 7 天的条目目录，`/memory/delete` 成功后删除该 id
 目录（best effort）。预览文件是派生数据，删除后可随时重建，不属于记忆库。
+
+利用率记录：`<home>/memory/usage.json`（`schema: 1`，`entries[id] = {usedCount, lastUsedAt}`）。
+`memory_search` / `memory_get` 命中只更新内存并在轮末/会话结束/30 秒兜底时批量落盘；它是派生数据，
+可删除重建，不写回记忆 Markdown。

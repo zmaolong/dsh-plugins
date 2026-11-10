@@ -252,6 +252,14 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "已捕获条目",
 			memoryInjectionRate: "注入利用率",
 			memoryRetrievalRate: "检索命中率",
+			memoryRecentCaptures: "最近捕获",
+			memoryCaptureWritten: "写入 {count} 条",
+			memoryCaptureSkipped: "跳过：{reason}",
+			memoryUndoCapture: "撤销",
+			memoryUndoCaptureDone: "已撤销该次捕获",
+			memoryUndoCaptureFailed: "撤销失败：{message}",
+			memoryCaptureUndone: "已撤销",
+			memoryRecentCapturesEmpty: "暂无最近捕获",
 			memorySortLabel: "排序",
 			memorySortDefault: "重要度优先",
 			memorySortRecent: "最近更新",
@@ -515,6 +523,14 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "Entries captured",
 			memoryInjectionRate: "Injection utilization",
 			memoryRetrievalRate: "Retrieval hit rate",
+			memoryRecentCaptures: "Recent captures",
+			memoryCaptureWritten: "Wrote {count}",
+			memoryCaptureSkipped: "Skipped: {reason}",
+			memoryUndoCapture: "Undo",
+			memoryUndoCaptureDone: "Capture undone",
+			memoryUndoCaptureFailed: "Undo failed: {message}",
+			memoryCaptureUndone: "Undone",
+			memoryRecentCapturesEmpty: "No recent captures",
 			memorySortLabel: "Sort",
 			memorySortDefault: "By importance",
 			memorySortRecent: "Recently updated",
@@ -778,6 +794,14 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "キャプチャ済み件数",
 			memoryInjectionRate: "注入利用率",
 			memoryRetrievalRate: "検索ヒット率",
+			memoryRecentCaptures: "最近のキャプチャ",
+			memoryCaptureWritten: "{count} 件書き込み",
+			memoryCaptureSkipped: "スキップ：{reason}",
+			memoryUndoCapture: "取り消す",
+			memoryUndoCaptureDone: "キャプチャを取り消しました",
+			memoryUndoCaptureFailed: "取り消しに失敗しました：{message}",
+			memoryCaptureUndone: "取り消し済み",
+			memoryRecentCapturesEmpty: "最近のキャプチャはありません",
 			memorySortLabel: "並び替え",
 			memorySortDefault: "重要度順",
 			memorySortRecent: "更新が新しい順",
@@ -1041,6 +1065,14 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "Entradas capturadas",
 			memoryInjectionRate: "Utilización de inyección",
 			memoryRetrievalRate: "Tasa de acierto de búsqueda",
+			memoryRecentCaptures: "Capturas recientes",
+			memoryCaptureWritten: "Escritas: {count}",
+			memoryCaptureSkipped: "Omitida: {reason}",
+			memoryUndoCapture: "Deshacer",
+			memoryUndoCaptureDone: "Captura deshecha",
+			memoryUndoCaptureFailed: "No se pudo deshacer: {message}",
+			memoryCaptureUndone: "Deshecha",
+			memoryRecentCapturesEmpty: "Sin capturas recientes",
 			memorySortLabel: "Ordenar",
 			memorySortDefault: "Por importancia",
 			memorySortRecent: "Actualizadas recientemente",
@@ -1304,6 +1336,14 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "Entrées capturées",
 			memoryInjectionRate: "Utilisation de l’injection",
 			memoryRetrievalRate: "Taux de réussite de la recherche",
+			memoryRecentCaptures: "Captures récentes",
+			memoryCaptureWritten: "Écrites : {count}",
+			memoryCaptureSkipped: "Ignorée : {reason}",
+			memoryUndoCapture: "Annuler",
+			memoryUndoCaptureDone: "Capture annulée",
+			memoryUndoCaptureFailed: "Échec de l’annulation : {message}",
+			memoryCaptureUndone: "Annulée",
+			memoryRecentCapturesEmpty: "Aucune capture récente",
 			memorySortLabel: "Tri",
 			memorySortDefault: "Par importance",
 			memorySortRecent: "Récemment mises à jour",
@@ -1567,6 +1607,14 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "Erfasste Einträge",
 			memoryInjectionRate: "Injektionsnutzung",
 			memoryRetrievalRate: "Suchtrefferquote",
+			memoryRecentCaptures: "Letzte Erfassungen",
+			memoryCaptureWritten: "{count} geschrieben",
+			memoryCaptureSkipped: "Übersprungen: {reason}",
+			memoryUndoCapture: "Rückgängig",
+			memoryUndoCaptureDone: "Erfassung rückgängig gemacht",
+			memoryUndoCaptureFailed: "Rückgängig machen fehlgeschlagen: {message}",
+			memoryCaptureUndone: "Rückgängig gemacht",
+			memoryRecentCapturesEmpty: "Keine letzten Erfassungen",
 			memorySortLabel: "Sortierung",
 			memorySortDefault: "Nach Wichtigkeit",
 			memorySortRecent: "Zuletzt aktualisiert",
@@ -1830,6 +1878,14 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "Захвачено записей",
 			memoryInjectionRate: "Использование инъекции",
 			memoryRetrievalRate: "Доля успешных поисков",
+			memoryRecentCaptures: "Недавние захваты",
+			memoryCaptureWritten: "Записано: {count}",
+			memoryCaptureSkipped: "Пропущено: {reason}",
+			memoryUndoCapture: "Отменить",
+			memoryUndoCaptureDone: "Захват отменен",
+			memoryUndoCaptureFailed: "Не удалось отменить: {message}",
+			memoryCaptureUndone: "Отменен",
+			memoryRecentCapturesEmpty: "Недавних захватов нет",
 			memorySortLabel: "Сортировка",
 			memorySortDefault: "По важности",
 			memorySortRecent: "Сначала недавние",
@@ -2093,6 +2149,14 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "Entradas capturadas",
 			memoryInjectionRate: "Utilização da injeção",
 			memoryRetrievalRate: "Taxa de acerto da busca",
+			memoryRecentCaptures: "Capturas recentes",
+			memoryCaptureWritten: "Gravadas: {count}",
+			memoryCaptureSkipped: "Ignorada: {reason}",
+			memoryUndoCapture: "Desfazer",
+			memoryUndoCaptureDone: "Captura desfeita",
+			memoryUndoCaptureFailed: "Falha ao desfazer: {message}",
+			memoryCaptureUndone: "Desfeita",
+			memoryRecentCapturesEmpty: "Nenhuma captura recente",
 			memorySortLabel: "Ordenação",
 			memorySortDefault: "Por importância",
 			memorySortRecent: "Atualizadas recentemente",
@@ -5954,7 +6018,8 @@ window.__ModuleLoader__.load({
 		* create / edit / save / deactivate / archive / restore / two-step delete,
 		* the Markdown export plus an index-refresh action, a settings dialog
 		* (capture-injection switches and limits persist immediately; per-session
-		* statistics live there too), and a
+		* statistics and the recent-capture list with its one-shot undo live there
+		* too), and a
 		* health-audit dialog (stale / duplicate / low-value findings with batch
 		* archive / deactivate / delete reusing the existing endpoints).
 		*
@@ -5984,6 +6049,8 @@ window.__ModuleLoader__.load({
 			archived: "memoryStatusArchived"
 		};
 		const DEFAULT_SETTINGS = defaultSettings();
+		/** 「最近捕获」最多展示的条数（stats.recentCaptures 顺序即最新在前）。 */
+		const RECENT_CAPTURE_ROWS = 5;
 		const EMPTY_FORM = {
 			name: "",
 			description: "",
@@ -6069,7 +6136,7 @@ window.__ModuleLoader__.load({
 				updatedAt: text(item.updatedAt)
 			};
 		}
-		/** 归一化统计块（v2：会话命中、跳过原因与最近样本）。 */
+		/** 归一化统计块（v2：会话命中、跳过原因与最近样本；捕获样本带撤销字段）。 */
 		function normalizeStats(raw) {
 			const item = record(raw);
 			const sessions = (Array.isArray(item.sessions) ? item.sessions : []).map((entry) => {
@@ -6096,10 +6163,18 @@ window.__ModuleLoader__.load({
 			const recentCaptures = (Array.isArray(item.recentCaptures) ? item.recentCaptures : []).map(record).map((sample) => {
 				const skippedReason = text(sample.skippedReason);
 				const error = text(sample.error);
+				const created = (Array.isArray(sample.created) ? sample.created : []).map(record).map((entry) => ({
+					id: text(entry.id),
+					scope: entry.scope === "project" ? "project" : "global",
+					project: text(entry.project)
+				}));
 				return {
+					id: text(sample.id),
 					at: text(sample.at),
 					sessionId: text(sample.sessionId),
 					written: integer(sample.written, 0, Number.MAX_SAFE_INTEGER, 0),
+					created,
+					undone: sample.undone === true,
 					...skippedReason === "" ? {} : { skippedReason },
 					...error === "" ? {} : { error }
 				};
@@ -6179,6 +6254,12 @@ window.__ModuleLoader__.load({
 			}
 			return totals;
 		}
+		/** 捕获行的说明文本：错误优先，其次跳过原因；都没有时为空串。 */
+		function captureNoteOf(row, t) {
+			if (row.error !== void 0 && row.error !== "") return row.error;
+			if (row.skippedReason !== void 0 && row.skippedReason !== "") return t("memoryCaptureSkipped", { reason: row.skippedReason });
+			return "";
+		}
 		/** Render the memory tab. */
 		function MemoryView({ actions, t }) {
 			const [stateReady, setStateReady] = (0, react.useState)(false);
@@ -6211,6 +6292,8 @@ window.__ModuleLoader__.load({
 			const [refreshIndexBusy, setRefreshIndexBusy] = (0, react.useState)(false);
 			const [settings, setSettings] = (0, react.useState)(DEFAULT_SETTINGS);
 			const [settingsOpen, setSettingsOpen] = (0, react.useState)(false);
+			const [undoBusyId, setUndoBusyId] = (0, react.useState)(null);
+			const [undoneCaptureIds, setUndoneCaptureIds] = (0, react.useState)([]);
 			const [tagFilter, setTagFilter] = (0, react.useState)("");
 			const [sort, setSort] = (0, react.useState)("default");
 			const [tagDraft, setTagDraft] = (0, react.useState)("");
@@ -6528,6 +6611,24 @@ window.__ModuleLoader__.load({
 					setRefreshIndexBusy(false);
 				}
 			};
+			/** 撤销一次捕获：归档该次写入，随后重拉 /memory/state 刷新统计。 */
+			const undoCapture = async (id) => {
+				if (undoBusyId !== null || id === "") return;
+				setUndoBusyId(id);
+				try {
+					await api("/memory/undo-capture", {
+						method: "POST",
+						body: { id }
+					});
+					setUndoneCaptureIds((current) => current.includes(id) ? current : [...current, id]);
+					actions.toast("success", t("memoryUndoCaptureDone"));
+					setStateToken((token) => token + 1);
+				} catch (error) {
+					actions.toast("error", t("memoryUndoCaptureFailed", { message: errorMessageFor(error, t) }));
+				} finally {
+					setUndoBusyId(null);
+				}
+			};
 			/** Full-list fetch + client-side audit rules for the current scope. */
 			const openAudit = async () => {
 				if (auditBusy || scope === "project" && project === "") return;
@@ -6625,6 +6726,7 @@ window.__ModuleLoader__.load({
 			const recallTotals = recallTotalsOf(stats);
 			const injectionRate = percentText(recallTotals.injectedUsed, recallTotals.injected);
 			const retrievalRate = percentText(recallTotals.searchUsed, recallTotals.searched);
+			const recentCaptureRows = (stats?.recentCaptures ?? []).slice(0, RECENT_CAPTURE_ROWS);
 			const showEditor = creating || selectedId !== null;
 			const typeOptions = [{
 				value: "",
@@ -7491,6 +7593,52 @@ window.__ModuleLoader__.load({
 											})]
 										})
 									]
+								}),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", { className: memory_module_css_default.divider }),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+									style: columnGap(8),
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", {
+										className: memory_module_css_default.statsTitle,
+										children: t("memoryRecentCaptures")
+									}), recentCaptureRows.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										className: memory_module_css_default.statLabel,
+										children: t("memoryRecentCapturesEmpty")
+									}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+										className: panel_module_css_default.listBlock,
+										children: recentCaptureRows.map((row, index) => {
+											const at = formatTime(row.at);
+											const note = captureNoteOf(row, t);
+											const undoId = row.id ?? "";
+											const undone = row.undone === true || undoneCaptureIds.includes(undoId);
+											return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+												className: panel_module_css_default.listRow,
+												children: [
+													at !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+														className: memory_module_css_default.statLabel,
+														children: at
+													}) : null,
+													/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("memoryCaptureWritten", { count: row.written }) }),
+													note !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+														className: panel_module_css_default.listRowMain,
+														title: note,
+														children: note
+													}) : null,
+													undone ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+														className: memory_module_css_default.statLabel,
+														children: t("memoryCaptureUndone")
+													}) : (row.created ?? []).length > 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Button, {
+														variant: "ghost",
+														icon: "rotateCcw",
+														disabled: undoBusyId !== null || undoId === "",
+														onClick: () => {
+															undoCapture(undoId);
+														},
+														children: [undoBusyId === undoId ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Spinner, {}) : null, t("memoryUndoCapture")]
+													}) : null
+												]
+											}, `${index}-${undoId}`);
+										})
+									})]
 								})
 							]
 						})

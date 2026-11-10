@@ -156,16 +156,38 @@ export interface RecentInjection {
   truncated: boolean
 }
 
+/** 一次捕获新增条目的引用；撤销捕获按此逐条归档。 */
+export interface CreatedRef {
+  id: string
+  scope: MemoryScope
+  /** 项目 key；全局条目为空字符串。 */
+  project: string
+}
+
 /** 一次捕获尝试样本，供「最近捕获」列表展示与撤销。 */
 export interface RecentCapture {
+  /**
+   * 捕获样本唯一 id（记录时生成）。
+   *
+   * 旧 `stats.json` 没有该字段时，store 读取归一化为空串（该样本不可撤销）。
+   */
+  id: string
   at: string
   sessionId: string
   /** 该次尝试写入或强化的条数。 */
   written: number
+  /**
+   * 该次捕获**新增**的条目引用（强化条目不在其中）。
+   *
+   * 旧 `stats.json` 没有该字段时，store 读取归一化为空数组。
+   */
+  created: CreatedRef[]
   /** 被跳过时的闸门原因。 */
   skippedReason?: string
   /** 失败时的错误文本。 */
   error?: string
+  /** 该次捕获已被用户撤销；缺省 false。 */
+  undone?: boolean
 }
 
 /** 持久化的捕获与召回计数（schema v2）。 */

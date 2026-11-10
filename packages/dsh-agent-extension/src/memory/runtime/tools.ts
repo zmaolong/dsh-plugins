@@ -41,6 +41,8 @@ export interface MemoryToolOptions {
   /** 解析（并登记）某 agent 的项目身份；工具执行属于写路径，允许解析。 */
   projectForAgent: (agent: AgentLike | undefined) => ProjectIdentity | null
   noteToolUsage: (agent: AgentLike | undefined, resultIds: readonly string[], usedIds: readonly string[]) => void
+  /** 命中记账：只刷新派生的使用记录（内存累加，运行时批量落盘）。 */
+  touchUsage: (ids: readonly string[]) => void
   touchProject: (identity: ProjectIdentity) => void
 }
 
@@ -88,6 +90,7 @@ export function createMemoryTools(options: MemoryToolOptions): ToolDefinitionLik
         limit,
       })
       options.noteToolUsage(exec.agent, results.map(entry => entry.id), [])
+      options.touchUsage(results.map(entry => entry.id))
       return formatSearchResult(results, query)
     },
   }
@@ -122,6 +125,7 @@ export function createMemoryTools(options: MemoryToolOptions): ToolDefinitionLik
         else entries.push(entry)
       }
       options.noteToolUsage(exec.agent, [], entries.map(entry => entry.id))
+      options.touchUsage(entries.map(entry => entry.id))
       return formatGetResult(entries, missing, { ignoredIds: ignored })
     },
   }

@@ -3,7 +3,7 @@
 > 自包含实施规划：新上下文可直接按本文实施，不需要历史会话。
 > 决策依据：[ADR-0005](../../../docs/adr/0005-memory-recall-v2.md)（召回与注入）、[ADR-0006](../../../docs/adr/0006-memory-capture-and-maintenance.md)（捕获与维护）、[ADR-0007](../../../docs/adr/0007-memory-schema-v2.md)（数据模型与迁移）、[ADR-0008](../../../docs/adr/0008-host-ui-primitives-channel.md)（官方 UI 通道）；术语见 [`GLOSSARY.md`](../../../GLOSSARY.md)。
 > 基线：`0.0.1-preview.16`。
-> 进度：B0 已完成（preview.17，commit 482df23）；B1 已完成（preview.18）。
+> 进度：B0 已完成（preview.17，commit 482df23）；B1 已完成（preview.18，commit 51aff6c）；B2 已完成（preview.19）。
 
 ## 目标与边界
 
@@ -58,9 +58,9 @@
 
 ### B2 捕获 v2（preview.19）
 
-- 面板「最近捕获」列表 + 单条撤销（对应 `recentCaptures`）。
-- 利用率采集：`memory_get`/`memory_search` 命中只写内存，30 秒或会话结束批量落盘到派生 usage store；维护 Run 用聚合值。
-- 命令文案跟八语言（`/remember`、`/forget`、`/memory`）。
+- 面板「最近捕获」列表 + 单条撤销（对应 `recentCaptures`，撤销只归档该次新增的条目）。
+- 利用率采集：`memory_get`/`memory_search` 命中只更新内存，30 秒或会话结束批量落盘到派生 usage store（`memory/usage.json`，可重建）；维护 Run 用聚合值。
+- 命令文案：宿主 `ctx.commands` 只有 `register(descriptor)`、没有 locale 能力，服务端命令文案保持中文；面板 UI 文案由八语言 locale 覆盖（已知限制，不在本批强行实现服务端多语言）。
 - 验收：捕获成本为每会话 ≤1 次提炼；最近捕获可撤销；利用率数据在重启后仍在。
 
 ### B3 维护 Run v1（preview.20）

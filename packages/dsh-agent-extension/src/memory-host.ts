@@ -34,6 +34,7 @@ import {
 } from './memory/runtime/index.ts'
 import type { MemoryStore } from './memory/store.ts'
 import type { ProjectIdentity } from './memory/types.ts'
+import { USAGE_FLUSH_INTERVAL_MS, UsageStore } from './memory/usage.ts'
 
 /** 运行时构造选项。 */
 export interface MemoryRuntimeOptions {
@@ -49,6 +50,10 @@ export class MemoryRuntime {
   private readonly log: LogFn
   private readonly sessions: CaptureSessions
   private readonly recallCache = new RecallCache()
+  /** 派生的使用记录；记忆根目录不可用时为 null（测试里的 fake store）。 */
+  private readonly usage: UsageStore | null
+  /** 30 秒兜底落盘定时器；dispose 时清理。 */
+  private usageTimer: ReturnType<typeof setInterval> | null = null
   private readonly disposers: Array<() => void> = []
   private llmService: LlmService | null = null
   private started = false
@@ -58,10 +63,14 @@ export class MemoryRuntime {
     this.ctx = options.ctx
     this.store = options.store
     this.log = options.log
+    const root = typeof options.store.root === 'string' ? options.store.root.trim() : ''
+    this.usage = root === '' ? null : new UsageStore({ root, log: options.log })
     this.sessions = new CaptureSessions({
       store: options.store,
       log: options.log,
       llm: () => this.llm(),
+      // 与召回统计同一批时机落盘 usage（turn-stopping / disposed / dispose）。
+      flushUsage: () => this.usage?.flush(),
     })
   }
 
@@ -71,6 +80,7 @@ export class MemoryRuntime {
     this.started = true
     const steps: Array<[string, () => void]> = [
       ['存储目录', () => this.store.start()],
+      ['使用记录', () => this.usage?.load()],
       ['事件监听', () => this.registerEventListeners()],
       ['提示词注入', () => this.registerPromptContributions()],
       ['模型工具', () => this.registerTools()],
@@ -83,12 +93,32 @@ export class MemoryRuntime {
         this.log('warn', `记忆初始化「${label}」失败：${error instanceof Error ? error.message : String(error)}`)
       }
     }
+    this.startUsageTimer()
+  }
+
+  /** 30 秒兜底落盘：定时器不阻碍进程退出，dispose 时清理。 */
+  private startUsageTimer(): void {
+    if (this.usage === null || this.usageTimer !== null) return
+    try {
+      const timer = setInterval(() => {
+        this.usage?.flush()
+      }, USAGE_FLUSH_INTERVAL_MS)
+      timer.unref?.()
+      this.usageTimer = timer
+    } catch (error) {
+      this.log('warn', `启动使用记录定时落盘失败：${error instanceof Error ? error.message : String(error)}`)
+    }
   }
 
   /** 停止后台工作、落盘统计并释放注册。 */
   async dispose(): Promise<void> {
     if (this.disposed) return
     this.disposed = true
+    if (this.usageTimer !== null) {
+      clearInterval(this.usageTimer)
+      this.usageTimer = null
+    }
+    this.usage?.flush()
     const stopping = this.sessions.dispose()
     for (const dispose of this.disposers.splice(0)) {
       try {
@@ -237,6 +267,7 @@ export class MemoryRuntime {
       store: this.store,
       projectForAgent: agent => this.sessions.projectForAgent(agent),
       noteToolUsage: (agent, resultIds, usedIds) => this.sessions.noteToolUsage(agent, resultIds, usedIds),
+      touchUsage: ids => this.usage?.touch(ids),
       touchProject: identity => this.sessions.touchProject(identity),
     }, this.log))
   }

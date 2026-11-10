@@ -20,7 +20,7 @@
  * @module dsh-agent-extension/memory/store
  */
 
-import { createHash, randomBytes } from 'node:crypto'
+import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync } from 'node:fs'
 import path from 'node:path'
 
@@ -48,6 +48,7 @@ import {
   normalizeSource,
   normalizeTags,
   text,
+  type CreatedRef,
   type MemoryEntry,
   type MemoryMeta,
   type MemoryScope,
@@ -365,19 +366,40 @@ function normalizeInjectionRow(raw: unknown): RecentInjection | null {
   }
 }
 
+/** 归一化捕获样本里「新增条目引用」列表；非法项丢弃、同 id+作用域去重。 */
+function normalizeCreatedRefs(raw: unknown): CreatedRef[] {
+  if (!Array.isArray(raw)) return []
+  const out: CreatedRef[] = []
+  for (const item of raw) {
+    if (item === null || typeof item !== 'object' || Array.isArray(item)) continue
+    const value = item as Record<string, unknown>
+    const id = text(value.id).slice(0, 200)
+    if (id === '') continue
+    const scope: MemoryScope = value.scope === 'project' ? 'project' : 'global'
+    const project = scope === 'global' ? '' : text(value.project)
+    if (out.some(ref => ref.id === id && ref.scope === scope)) continue
+    out.push({ id, scope, project })
+  }
+  return out
+}
+
 /** 归一化一条捕获样本。 */
 function normalizeCaptureRow(raw: unknown): RecentCapture | null {
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null
   const value = raw as Record<string, unknown>
   const row: RecentCapture = {
+    // 旧 stats.json 没有 id / created：按空串 / 空数组读，不阻断面板渲染。
+    id: text(value.id).slice(0, 200),
     at: text(value.at) || new Date().toISOString(),
     sessionId: text(value.sessionId),
     written: clampInt(value.written, 0, 100000, 0),
+    created: normalizeCreatedRefs(value.created),
   }
   const reason = text(value.skippedReason)
   if (reason !== '') row.skippedReason = reason
   const error = text(value.error)
   if (error !== '') row.error = error
+  if (value.undone === true) row.undone = true
   return row
 }
 
@@ -531,21 +553,24 @@ export class MemoryStore {
    *
    * @param entries - 写入或强化的条数。
    * @param skipped - 闸门拒绝了本轮。
-   * @param detail - 可选的会话 id / 跳过原因 / 失败信息；带跳过原因时同时
-   *   累加 `skipReasons`。
+   * @param detail - 可选的会话 id / 跳过原因 / 失败信息 / 该次**新增**的条目
+   *   引用；带跳过原因时同时累加 `skipReasons`。样本 id 缺失时自动生成。
    */
   recordCapture(
     entries: number,
     skipped: boolean,
-    detail: { sessionId?: string; skippedReason?: string; error?: string } = {},
+    detail: { sessionId?: string; skippedReason?: string; error?: string; created?: readonly CreatedRef[] } = {},
   ): void {
     const current = this.stats()
     const written = Math.max(0, entries)
     const reason = text(detail.skippedReason).slice(0, 80)
     const record: RecentCapture = {
+      id: randomUUID(),
       at: new Date().toISOString(),
       sessionId: text(detail.sessionId),
       written,
+      // 只收新增条目；强化条目不进入撤销集合（ADR-0006）。
+      created: normalizeCreatedRefs(detail.created ?? []),
     }
     if (reason !== '') record.skippedReason = reason
     const errorText = text(detail.error)
@@ -561,6 +586,40 @@ export class MemoryStore {
       recentCaptures: [record, ...current.recentCaptures].slice(0, RECENT_SAMPLE_KEEP),
     }
     this.writeStats()
+  }
+
+  /**
+   * 撤销一次捕获：只归档该次捕获**新增**的条目（强化条目不回退），并把
+   * 样本标记 `undone`。
+   *
+   * 逐条 `setStatus(..., 'archived')`；条目不存在或已是 archived 时跳过。
+   * 重复撤销同一份样本是幂等的：第二次返回空数组并保持 `undone: true`。
+   *
+   * @param sampleId - 捕获样本 id（`stats.recentCaptures[].id`）。
+   */
+  undoCapture(sampleId: string): { archived: string[] } {
+    const id = text(sampleId)
+    if (id === '') throw new Error('缺少捕获样本 id')
+    const current = this.stats()
+    const sample = current.recentCaptures.find(row => row.id === id)
+    if (sample === undefined) throw new Error(`捕获样本不存在：${id}`)
+    const archived: string[] = []
+    for (const ref of sample.created) {
+      try {
+        const entry = this.get(ref.scope, ref.project, ref.id)
+        if (entry === undefined || entry.status === 'archived') continue
+        this.setStatus(ref.scope, ref.project, ref.id, 'archived')
+        archived.push(ref.id)
+      } catch (error) {
+        this.log('warn', `撤销捕获条目 ${ref.id} 失败：${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+    this.statsValue = {
+      ...current,
+      recentCaptures: current.recentCaptures.map(row => row.id === id ? { ...row, undone: true } : row),
+    }
+    this.writeStats()
+    return { archived }
   }
 
   /**

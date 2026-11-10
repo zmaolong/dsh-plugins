@@ -6,7 +6,8 @@
  * create / edit / save / deactivate / archive / restore / two-step delete,
  * the Markdown export plus an index-refresh action, a settings dialog
  * (capture-injection switches and limits persist immediately; per-session
- * statistics live there too), and a
+ * statistics and the recent-capture list with its one-shot undo live there
+ * too), and a
  * health-audit dialog (stale / duplicate / low-value findings with batch
  * archive / deactivate / delete reusing the existing endpoints).
  *
@@ -28,6 +29,7 @@ import { errorMessageFor, formatTime, type JsonRecord, type Translate } from './
 import type { HubActions } from './store.ts'
 import {
   defaultSettings,
+  type CreatedRef,
   type MemoryDetailRow,
   type MemoryListRow,
   type MemoryProjectWire,
@@ -36,6 +38,7 @@ import {
   type MemoryStats,
   type MemoryStatus,
   type MemoryType,
+  type RecentCapture,
 } from '../shared/memory-wire.ts'
 import { RECALL_MAX_CHARS, RECALL_MAX_PER_LAYER } from '../shared/memory-wire.ts'
 import panelCss from './panel.module.css'
@@ -74,6 +77,9 @@ const STATUS_LABEL_KEYS: Record<MemoryStatus, string> = {
 }
 
 const DEFAULT_SETTINGS: MemorySettings = defaultSettings()
+
+/** 「最近捕获」最多展示的条数（stats.recentCaptures 顺序即最新在前）。 */
+const RECENT_CAPTURE_ROWS = 5
 
 const EMPTY_FORM: MemoryForm = {
   name: '',
@@ -171,7 +177,7 @@ function normalizeSettings(raw: unknown): MemorySettings {
   }
 }
 
-/** 归一化统计块（v2：会话命中、跳过原因与最近样本）。 */
+/** 归一化统计块（v2：会话命中、跳过原因与最近样本；捕获样本带撤销字段）。 */
 function normalizeStats(raw: unknown): MemoryStats {
   const item = record(raw)
   const sessionsRaw = Array.isArray(item.sessions) ? item.sessions : []
@@ -205,10 +211,20 @@ function normalizeStats(raw: unknown): MemoryStats {
     .map((sample) => {
       const skippedReason = text(sample.skippedReason)
       const error = text(sample.error)
+      const created: CreatedRef[] = (Array.isArray(sample.created) ? sample.created : [])
+        .map(record)
+        .map((entry): CreatedRef => ({
+          id: text(entry.id),
+          scope: entry.scope === 'project' ? 'project' : 'global',
+          project: text(entry.project),
+        }))
       return {
+        id: text(sample.id),
         at: text(sample.at),
         sessionId: text(sample.sessionId),
         written: integer(sample.written, 0, Number.MAX_SAFE_INTEGER, 0),
+        created,
+        undone: sample.undone === true,
         ...(skippedReason === '' ? {} : { skippedReason }),
         ...(error === '' ? {} : { error }),
       }
@@ -298,6 +314,15 @@ function recallTotalsOf(stats: MemoryStats | null): {
   return totals
 }
 
+/** 捕获行的说明文本：错误优先，其次跳过原因；都没有时为空串。 */
+function captureNoteOf(row: RecentCapture, t: Translate): string {
+  if (row.error !== undefined && row.error !== '') return row.error
+  if (row.skippedReason !== undefined && row.skippedReason !== '') {
+    return t('memoryCaptureSkipped', { reason: row.skippedReason })
+  }
+  return ''
+}
+
 /** Render the memory tab. */
 export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const [stateReady, setStateReady] = useState(false)
@@ -330,6 +355,9 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const [refreshIndexBusy, setRefreshIndexBusy] = useState(false)
   const [settings, setSettings] = useState<MemorySettings>(DEFAULT_SETTINGS)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  // 撤销进行中的捕获 id；本地已撤销 id 用于撤销后立即显示状态，直到重拉统计。
+  const [undoBusyId, setUndoBusyId] = useState<string | null>(null)
+  const [undoneCaptureIds, setUndoneCaptureIds] = useState<string[]>([])
   const [tagFilter, setTagFilter] = useState('')
   const [sort, setSort] = useState<'default' | 'recent'>('default')
   const [tagDraft, setTagDraft] = useState('')
@@ -638,6 +666,22 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
     }
   }
 
+  /** 撤销一次捕获：归档该次写入，随后重拉 /memory/state 刷新统计。 */
+  const undoCapture = async (id: string): Promise<void> => {
+    if (undoBusyId !== null || id === '') return
+    setUndoBusyId(id)
+    try {
+      await api<JsonRecord>('/memory/undo-capture', { method: 'POST', body: { id } })
+      setUndoneCaptureIds(current => (current.includes(id) ? current : [...current, id]))
+      actions.toast('success', t('memoryUndoCaptureDone'))
+      setStateToken(token => token + 1)
+    } catch (error) {
+      actions.toast('error', t('memoryUndoCaptureFailed', { message: errorMessageFor(error, t) }))
+    } finally {
+      setUndoBusyId(null)
+    }
+  }
+
   /** Full-list fetch + client-side audit rules for the current scope. */
   const openAudit = async (): Promise<void> => {
     if (auditBusy || (scope === 'project' && project === '')) return
@@ -732,6 +776,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const recallTotals = recallTotalsOf(stats)
   const injectionRate = percentText(recallTotals.injectedUsed, recallTotals.injected)
   const retrievalRate = percentText(recallTotals.searchUsed, recallTotals.searched)
+  const recentCaptureRows = (stats?.recentCaptures ?? []).slice(0, RECENT_CAPTURE_ROWS)
   const showEditor = creating || selectedId !== null
   const typeOptions: ReadonlyArray<{ value: MemoryType | '', label: string }> = [
     { value: '', label: t('memoryTypeAll') },
@@ -1372,6 +1417,43 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                   <span className={css.statLabel}>{t('memoryRetrievalRate')}</span>
                   <span className={css.statValue}>{retrievalRate}</span>
                 </div>
+              </div>
+              <div className={css.divider} />
+              <div style={columnGap(8)}>
+                <h3 className={css.statsTitle}>{t('memoryRecentCaptures')}</h3>
+                {recentCaptureRows.length === 0
+                  ? <span className={css.statLabel}>{t('memoryRecentCapturesEmpty')}</span>
+                  : (
+                    <div className={panelCss.listBlock}>
+                      {recentCaptureRows.map((row, index) => {
+                        const at = formatTime(row.at)
+                        const note = captureNoteOf(row, t)
+                        const undoId = row.id ?? ''
+                        const undone = row.undone === true || undoneCaptureIds.includes(undoId)
+                        return (
+                          <div key={`${index}-${undoId}`} className={panelCss.listRow}>
+                            {at !== '' ? <span className={css.statLabel}>{at}</span> : null}
+                            <span>{t('memoryCaptureWritten', { count: row.written })}</span>
+                            {note !== '' ? <span className={panelCss.listRowMain} title={note}>{note}</span> : null}
+                            {undone
+                              ? <span className={css.statLabel}>{t('memoryCaptureUndone')}</span>
+                              : (row.created ?? []).length > 0
+                                ? (
+                                  <Button
+                                    variant="ghost"
+                                    icon="rotateCcw"
+                                    disabled={undoBusyId !== null || undoId === ''}
+                                    onClick={() => { void undoCapture(undoId) }}
+                                  >
+                                    {undoBusyId === undoId ? <Spinner /> : null}{t('memoryUndoCapture')}
+                                  </Button>
+                                )
+                                : null}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
               </div>
             </DialogShell>
           </div>

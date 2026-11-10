@@ -91,6 +91,46 @@ describe('记忆 API：state/list/get/save/status/delete/settings/export', () =>
     await expect(dispatchMemoryGet(store, '/memory/get', new URLSearchParams({ scope: 'global', id: 'missing' }))).rejects.toMatchObject({ code: 'not_found' })
   })
 
+  it('undo-capture：缺 id / 未知样本返回 bad_request，成功撤销并幂等', async () => {
+    const store = makeStore()
+    expect(MEMORY_POST_ROUTES).toContain('/memory/undo-capture')
+
+    const target = await dispatchMemoryPost(store, '/memory/save', {
+      scope: 'global',
+      name: '该次新增',
+      description: '撤销时要归档',
+      type: 'decision',
+      content: '新增正文。',
+    }) as { entry: { id: string } }
+    const outside = await dispatchMemoryPost(store, '/memory/save', {
+      scope: 'global',
+      name: '不由该次新增',
+      description: '保持 active',
+      type: 'reference',
+      content: '其它正文。',
+    }) as { entry: { id: string } }
+
+    store.recordCapture(1, false, {
+      sessionId: 's-undo',
+      created: [{ id: target.entry.id, scope: 'global', project: '' }],
+    })
+    const sampleId = store.stats().recentCaptures[0]?.id ?? ''
+    expect(sampleId).not.toBe('')
+
+    await expect(dispatchMemoryPost(store, '/memory/undo-capture', {})).rejects.toMatchObject({ code: 'bad_request' })
+    await expect(dispatchMemoryPost(store, '/memory/undo-capture', { id: 'missing-sample' })).rejects.toMatchObject({ code: 'bad_request' })
+
+    const result = await dispatchMemoryPost(store, '/memory/undo-capture', { id: sampleId })
+    expect(result).toEqual({ archived: [target.entry.id], undone: true })
+    expect(store.get('global', '', target.entry.id)?.status).toBe('archived')
+    expect(store.get('global', '', outside.entry.id)?.status).toBe('active')
+    expect(store.stats().recentCaptures[0]?.undone).toBe(true)
+
+    // 重复撤销幂等：条目已归档，返回空数组。
+    await expect(dispatchMemoryPost(store, '/memory/undo-capture', { id: sampleId }))
+      .resolves.toEqual({ archived: [], undone: true })
+  })
+
   it('项目作用域无项目时给出明确错误；settings/export 正常工作', async () => {
     const store = makeStore()
     await expect(dispatchMemoryGet(store, '/memory/list', new URLSearchParams({ scope: 'project' }))).rejects.toMatchObject({ code: 'not_found' })

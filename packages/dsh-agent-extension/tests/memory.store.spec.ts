@@ -329,6 +329,87 @@ describe('记忆存储：Markdown 事实、手改、去重与生命周期', () =
     })
   })
 
+  it('recordCapture 生成样本 id 与新增引用；undoCapture 归档新增条目、标记 undone 且幂等', () => {
+    const store = makeStore()
+    const createdA = add(store, { name: '新增事实 A', description: 'A', content: 'A 正文。' })
+    const createdB = add(store, {
+      name: '新增事实 B',
+      description: 'B',
+      type: 'project',
+      scope: 'project',
+      project: 'p_demo',
+      content: 'B 正文。',
+    })
+    const outside = add(store, { name: '不在样本里', description: 'C', content: 'C 正文。' })
+
+    store.recordCapture(2, false, {
+      sessionId: 's-undo',
+      created: [
+        { id: createdA.id, scope: 'global', project: '' },
+        { id: createdB.id, scope: 'project', project: 'p_demo' },
+        { id: 'm-missing', scope: 'global', project: '' },
+      ],
+    })
+    const sample = store.stats().recentCaptures[0]
+    expect(sample?.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/u)
+    expect(sample?.created).toHaveLength(3)
+    expect(sample?.undone).toBeUndefined()
+
+    const result = store.undoCapture(sample?.id ?? '')
+    expect(new Set(result.archived)).toEqual(new Set([createdA.id, createdB.id]))
+    expect(store.get('global', '', createdA.id)?.status).toBe('archived')
+    expect(store.get('project', 'p_demo', createdB.id)?.status).toBe('archived')
+    expect(store.get('global', '', outside.id)?.status).toBe('active')
+    expect(store.stats().recentCaptures[0]?.undone).toBe(true)
+
+    const persisted = JSON.parse(readFileSync(path.join(store.root, 'stats.json'), 'utf8')) as {
+      recentCaptures: Array<Record<string, unknown>>
+    }
+    expect(persisted.recentCaptures[0]).toMatchObject({ undone: true })
+    expect(persisted.recentCaptures[0]?.created).toHaveLength(3)
+
+    // 重复撤销：条目已归档，返回空数组且保持 undone。
+    const again = store.undoCapture(sample?.id ?? '')
+    expect(again.archived).toEqual([])
+    expect(store.stats().recentCaptures[0]?.undone).toBe(true)
+    expect(() => store.undoCapture('m-no-such-sample')).toThrow(/捕获样本不存在/u)
+  })
+
+  it('旧 stats.json 的捕获样本缺 id/created/undone 时容错，非法引用丢弃', () => {
+    const store = makeStore()
+    writeFileSync(path.join(store.root, 'stats.json'), JSON.stringify({
+      schema: 2,
+      recentCaptures: [
+        { at: '2026-01-01T00:00:00.000Z', sessionId: 's-old', written: 1 },
+        {
+          id: 'old-2',
+          at: '2026-01-02T00:00:00.000Z',
+          sessionId: 's-old-2',
+          written: 0,
+          undone: true,
+          created: [
+            { id: 'm-x', scope: 'project', project: 'p_1' },
+            { id: '', scope: 'global', project: '' },
+            { id: 'm-y', scope: 'bogus', project: 'ignored' },
+            'junk',
+          ],
+        },
+      ],
+    }), 'utf8')
+
+    const reloaded = new MemoryStore({ home: path.dirname(store.root) })
+    const rows = reloaded.stats().recentCaptures
+    expect(rows).toHaveLength(2)
+    expect(rows[0]).toMatchObject({ id: '', sessionId: 's-old', written: 1, created: [] })
+    expect(rows[0]?.undone).toBeUndefined()
+    expect(rows[1]?.id).toBe('old-2')
+    expect(rows[1]?.created).toEqual([
+      { id: 'm-x', scope: 'project', project: 'p_1' },
+      { id: 'm-y', scope: 'global', project: '' },
+    ])
+    expect(rows[1]?.undone).toBe(true)
+  })
+
   it('注入索引受条数与字符预算约束，并返回注入的 id', () => {
     const store = makeStore()
     for (let index = 0; index < 6; index += 1) {

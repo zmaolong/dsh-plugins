@@ -1,9 +1,9 @@
 # dsh-agent-extension
 
-> **试验性预览版（`0.0.1-preview.18`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
+> **试验性预览版（`0.0.1-preview.19`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
 > npm 上只发布 `preview` dist-tag（`latest` 暂不指向本版本）。
 > 需要安装时请锁定精确版本：
-> `dsh plugin --profile web add dsh-agent-extension@0.0.1-preview.18`。
+> `dsh plugin --profile web add dsh-agent-extension@0.0.1-preview.19`。
 > 版本说明：npm 公开线为 `0.0.1-preview.N`，首个正式版定为 `0.0.1`（预览线的稳定版）；
 > 官方化工具链形态（TypeScript + JSX + CSS Modules + tsdown + vitest，对齐官方插件形态，
 > 破坏性重构、不做旧版兼容）自 `dsh-agent-plugin-hub` 时代的 `0.0.1-preview.6` 延续；
@@ -24,6 +24,19 @@ DSH 的**智能体扩展**（Agent Extension）：管理智能体插件、技能
 `mcpServers` 等能力。已知格式包括 Claude Code、CodeBuddy、ZCode；它们不是 DSH 插件
 （cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
+
+## 0.0.1-preview.19 变更（记忆 v2 · B2 捕获）
+
+- **最近捕获与撤销**：设置对话框新增「最近捕获」列表（最近 5 条，显示时间、写入条数、跳过原因/错误），
+  对该次捕获新增的条目可一键撤销（`POST /agent-plugin/api/memory/undo-capture {id}`，归档而非删除，
+  强化条目不回退）；
+- **利用率采集**：`memory_search` / `memory_get` 命中只更新内存，`agent/turn-stopping`、会话结束、
+  30 秒兜底定时器与插件销毁时批量落盘到派生 `memory/usage.json`（不写回记忆 Markdown，可重建）；
+- **捕获样本**：`stats.recentCaptures` 条目新增 `id` 与 `created[]`（该次新增条目的 id/作用域/项目引用），
+  旧 stats.json 读取容错；
+- **已知限制**：宿主 `ctx.commands` 没有 locale 能力，`/remember`、`/forget`、`/memory` 的命令文案保持中文；
+  面板 UI 文案仍由八语言 locale 覆盖；
+- **测试**：全量 298 个离线用例（新增 usage store、撤销路由、组件撤销交互）。
 
 ## 0.0.1-preview.18 变更（记忆 v2 · B1 注入与索引）
 
@@ -435,6 +448,7 @@ home 解析：配置 `home` → `DSH_AGENT_EXTENSION_HOME` → `~/.dsh/agent-ext
    ├─ settings.json      # 捕获/注入开关、索引条数、字符预算
    ├─ stats.json         # schema 2：捕获计数、跳过原因、最近注入/捕获样本、会话注入统计
    ├─ projects.json      # 已知项目身份登记（含已见目录）
+   ├─ usage.json         # 派生利用率记录（usedCount/lastUsedAt，可删除重建）
    ├─ .backup-v1-<时间>/ # 首次迁移时的 v1 条目与旧 MEMORY.md 备份
    ├─ global/            # 一条事实一个 Markdown（frontmatter 含 schema: 2）
    └─ projects/<key>/    # 同上，按项目身份分目录

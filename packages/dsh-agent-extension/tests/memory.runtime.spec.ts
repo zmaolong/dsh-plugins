@@ -7,7 +7,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type {
   CommandDescriptor,
@@ -26,6 +26,7 @@ import { MEMORY_GUIDE } from '../src/memory/runtime/prompt.ts'
 import { MemoryStore, type SaveMemoryInput } from '../src/memory/store.ts'
 import {
   defaultSettings,
+  type CreatedRef,
   type MemoryEntry,
   type MemoryMeta,
   type MemorySettings,
@@ -58,7 +59,7 @@ class FakeStore {
   readonly entries: MemoryEntry[] = []
   readonly searchCalls: FakeSearchCall[] = []
   readonly getCalls: string[] = []
-  readonly captureCalls: Array<{ entries: number, skipped: boolean }> = []
+  readonly captureCalls: Array<{ entries: number, skipped: boolean, created?: CreatedRef[] }> = []
   readonly recallCalls: Array<{
     sessionId: string
     injected: string[]
@@ -163,8 +164,16 @@ class FakeStore {
     return { entry, archived: entry.status === 'archived' }
   }
 
-  recordCapture(entries: number, skipped: boolean): void {
-    this.captureCalls.push({ entries, skipped })
+  recordCapture(
+    entries: number,
+    skipped: boolean,
+    detail: { sessionId?: string, skippedReason?: string, error?: string, created?: readonly CreatedRef[] } = {},
+  ): void {
+    this.captureCalls.push({
+      entries,
+      skipped,
+      ...(detail.created === undefined ? {} : { created: [...detail.created] }),
+    })
   }
 
   recordRecall(
@@ -595,6 +604,51 @@ describe('记忆运行时：捕获行为', () => {
     expect(llm.calls).toHaveLength(1)
   })
 
+  it('会话末捕获只把新增条目写进样本 created；强化条目不在撤销集合', async () => {
+    const { ctx, store, llm } = createHarness()
+    const cwd = makeCwd()
+    const existing = store.seed(makeEntry({
+      id: 'm-existing',
+      name: '已有偏好',
+      description: '已经存在',
+      content: '旧正文。',
+    }))
+    llm.responses.push(JSON.stringify([
+      {
+        name: '已有偏好',
+        description: '已经存在',
+        type: 'preference',
+        scope: 'global',
+        importance: 80,
+        tags: [],
+        content: '旧正文。',
+      },
+      {
+        name: '新增事实',
+        description: '这次新提炼出来的',
+        type: 'decision',
+        scope: 'global',
+        importance: 70,
+        tags: [],
+        content: '新正文。',
+      },
+    ]))
+
+    const agent = makeAgent('s-created-refs', cwd)
+    emitTurn(ctx, agent, 1, ['记住：用 pnpm，并采用新约定'], '好的')
+    ctx.emit('agent/disposed', { agent })
+    await settle()
+
+    const call = store.captureCalls.at(-1)
+    expect(call).toMatchObject({ entries: 2, skipped: false })
+    expect(call?.created).toHaveLength(1)
+    const ref = call?.created?.[0]
+    expect(ref?.scope).toBe('global')
+    expect(ref?.project).toBe('')
+    expect(ref?.id).not.toBe(existing.id)
+    expect(store.entryById(existing.id)?.reinforcement).toBe(1)
+  })
+
   it('captureEnabled=false 时轮末与会话末都不发请求', async () => {
     const { ctx, store, llm } = createHarness({ captureEnabled: false })
     const cwd = makeCwd()
@@ -700,6 +754,96 @@ describe('记忆运行时：工具契约', () => {
     expect(MEMORY_GUIDE).toContain('查重')
     expect(MEMORY_GUIDE).toContain('AGENTS.md')
     expect(MEMORY_GUIDE.length).toBeLessThan(800)
+  })
+})
+
+describe('记忆运行时：使用记录采集', () => {
+  interface UsageFileShape {
+    schema: number
+    entries: Record<string, { usedCount: number, lastUsedAt: string }>
+  }
+
+  it('search/get 命中只改内存；turn-stopping 与 disposed 批量落盘 usage', async () => {
+    const home = tempHome('memory-runtime-usage-')
+    tempDirs.push(home)
+    const store = new MemoryStore({ home })
+    store.start()
+    const alpha = store.save({
+      name: '偏好 Alpha',
+      description: '利用率采集样本',
+      type: 'preference',
+      scope: 'global',
+      content: 'Alpha 正文。',
+    })
+
+    const tools = createFakeTools()
+    const ctx = new FakeCtx({ systemPrompt: createFakeSystemPrompt(), tools, llm: createFakeLlm() })
+    const runtime = new MemoryRuntime({ ctx: ctx.host(), store, log: () => {} })
+    runtime.start()
+    runtimes.push(runtime)
+
+    const agent = makeAgent('s-usage', makeCwd())
+    const usageFile = path.join(store.root, 'usage.json')
+    expect(existsSync(usageFile)).toBe(false)
+
+    const search = tools.registered.get('memory_search')
+    const get = tools.registered.get('memory_get')
+    expect(search).toBeTruthy()
+    expect(get).toBeTruthy()
+    // 一次 search（命中 1 条）+ 两次 get 同一条：同一次工具调用只计一次，
+    // 跨调用累加为 3。
+    await search?.execute({ query: '' }, { agent })
+    await get?.execute({ ids: [alpha.id] }, { agent })
+    await get?.execute({ ids: [alpha.id] }, { agent })
+    expect(existsSync(usageFile), '读路径只改内存，不写盘').toBe(false)
+
+    ctx.emit('agent/turn-stopping', { agent })
+    expect(existsSync(usageFile), '轮末应批量落盘').toBe(true)
+    const first = JSON.parse(readFileSync(usageFile, 'utf8')) as UsageFileShape
+    expect(first.schema).toBe(1)
+    expect(first.entries[alpha.id]?.usedCount).toBe(3)
+    expect(first.entries[alpha.id]?.lastUsedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/u)
+
+    await get?.execute({ ids: [alpha.id] }, { agent })
+    ctx.emit('agent/disposed', { agent })
+    const second = JSON.parse(readFileSync(usageFile, 'utf8')) as UsageFileShape
+    expect(second.entries[alpha.id]?.usedCount).toBe(4)
+  })
+
+  it('30 秒定时器兜底 flush usage；dispose 时清理定时器', async () => {
+    vi.useFakeTimers()
+    const home = tempHome('memory-runtime-usage-timer-')
+    tempDirs.push(home)
+    const store = new MemoryStore({ home })
+    store.start()
+    try {
+      const tools = createFakeTools()
+      const ctx = new FakeCtx({ systemPrompt: createFakeSystemPrompt(), tools, llm: createFakeLlm() })
+      const runtime = new MemoryRuntime({ ctx: ctx.host(), store, log: () => {} })
+      runtime.start()
+      const alpha = store.save({
+        name: '定时落盘样本',
+        description: '30 秒兜底',
+        type: 'reference',
+        scope: 'global',
+        content: '正文。',
+      })
+      const agent = makeAgent('s-usage-timer', makeCwd())
+      await tools.registered.get('memory_search')?.execute({ query: '' }, { agent })
+
+      const usageFile = path.join(store.root, 'usage.json')
+      expect(existsSync(usageFile), '未到 30 秒不落盘').toBe(false)
+      vi.advanceTimersByTime(30_000)
+      expect(existsSync(usageFile), '定时器触发后落盘').toBe(true)
+      const raw = JSON.parse(readFileSync(usageFile, 'utf8')) as UsageFileShape
+      expect(raw.entries[alpha.id]?.usedCount).toBe(1)
+
+      // 在 fake timers 生效时 dispose：清除定时器并 flush。
+      await runtime.dispose()
+      vi.advanceTimersByTime(30_000)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 

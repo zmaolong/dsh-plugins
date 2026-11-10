@@ -25,7 +25,7 @@ import {
 } from '../capture.ts'
 import { resolveProject } from '../identity.ts'
 import type { MemoryStore } from '../store.ts'
-import { text, type MemoryScope, type ProjectIdentity } from '../types.ts'
+import { text, type CreatedRef, type MemoryScope, type ProjectIdentity } from '../types.ts'
 import { flushRecall, noteToolUsage as countToolUsage, recordCaptureAttempt, type InjectionSample, type RecallCounters } from './stats.ts'
 
 /** 每个会话缓冲的事件数上限；只影响记忆提炼输入。 */
@@ -75,6 +75,8 @@ export interface CaptureSessionsOptions {
   log: LogFn
   /** 宿主 llm 服务（可能晚到，每次提炼时再取）。 */
   llm: () => LlmService | null
+  /** 批量落盘派生的使用记录（与召回统计同一批时机；可省略）。 */
+  flushUsage?: () => void
 }
 
 /** 会话缓冲、项目身份与提炼队列。 */
@@ -82,6 +84,7 @@ export class CaptureSessions {
   private readonly store: MemoryStore
   private readonly log: LogFn
   private readonly getLlm: () => LlmService | null
+  private readonly flushUsage: () => void
   private readonly abort = new AbortController()
   private readonly buffers = new Map<string, SessionBuffer>()
   private readonly projectCache = new Map<string, { identity: ProjectIdentity, at: number }>()
@@ -93,6 +96,7 @@ export class CaptureSessions {
     this.store = options.store
     this.log = options.log
     this.getLlm = options.llm
+    this.flushUsage = options.flushUsage ?? (() => {})
   }
 
   // ---------------------------------------------------------------------------
@@ -134,6 +138,7 @@ export class CaptureSessions {
     buffer.modelRoute = this.modelRouteOf(agent) ?? buffer.modelRoute
     this.ensureProject(buffer)
     this.flushRecall(buffer)
+    this.flushUsage()
   }
 
   /** 会话销毁：批量补漏提炼一次，然后释放缓冲。 */
@@ -146,6 +151,7 @@ export class CaptureSessions {
     const buffer = this.buffers.get(sessionId)
     if (buffer === undefined) return
     this.flushRecall(buffer)
+    this.flushUsage()
     try {
       this.captureSessionEnd(buffer, agent)
     } catch (error) {
@@ -281,6 +287,7 @@ export class CaptureSessions {
     this.disposed = true
     this.abort.abort()
     for (const buffer of this.buffers.values()) this.flushRecall(buffer)
+    this.flushUsage()
     this.buffers.clear()
     await Promise.allSettled([...this.operations])
   }
@@ -446,10 +453,13 @@ export class CaptureSessions {
       return
     }
     let written = 0
+    // 只收集该次捕获**新增**的条目引用；强化条目的 createdAt 早于 updatedAt，
+    // 不进入撤销集合（ADR-0006：撤销不回退强化）。
+    const created: CreatedRef[] = []
     for (const item of items) {
       const scope: MemoryScope = item.scope === 'global' || project === null ? 'global' : 'project'
       try {
-        this.store.save({
+        const saved = this.store.save({
           name: item.name,
           description: item.description,
           type: item.type,
@@ -462,6 +472,9 @@ export class CaptureSessions {
           originSessionId: buffer.sessionId,
         })
         written += 1
+        if (saved.createdAt === saved.updatedAt) {
+          created.push({ id: saved.id, scope: saved.scope, project: saved.project })
+        }
       } catch (error) {
         this.log('warn', `写入记忆失败：${error instanceof Error ? error.message : String(error)}`)
       }
@@ -469,6 +482,7 @@ export class CaptureSessions {
     recordCaptureAttempt(this.store, this.log, written, written === 0, {
       sessionId: buffer.sessionId,
       ...(written === 0 ? { skippedReason: 'no-durable-fact' } : {}),
+      ...(created.length === 0 ? {} : { created }),
     })
     if (written > 0 && project !== null) this.touchProject(project)
   }

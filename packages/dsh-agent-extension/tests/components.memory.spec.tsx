@@ -26,6 +26,26 @@ const t = (key: string, vars?: Record<string, unknown>): string => {
   return copy
 }
 
+/** 「最近捕获」样本：一条写入成功可撤销，一条被闸门跳过且无写入。 */
+const RECENT_CAPTURES = [
+  {
+    id: 'cap-2',
+    at: '2026-11-09T08:30:00.000Z',
+    sessionId: 's2',
+    written: 2,
+    created: [{ id: 'm3', scope: 'project', project: '/repo/new' }],
+    undone: false,
+  },
+  {
+    id: 'cap-1',
+    at: '2026-11-08T07:00:00.000Z',
+    sessionId: 's1',
+    written: 0,
+    created: [],
+    skippedReason: '冷却中',
+  },
+]
+
 const STATE = {
   settings: {
     captureEnabled: true,
@@ -46,6 +66,7 @@ const STATE = {
       { sessionId: 's1', injected: 10, injectedUsed: 4, searched: 8, searchUsed: 2, overflow: 1, updatedAt: '2026-11-08T10:00:00.000Z' },
       { sessionId: 's2', injected: 10, injectedUsed: 6, searched: 12, searchUsed: 3, overflow: 2, updatedAt: '2026-11-08T11:00:00.000Z' },
     ],
+    recentCaptures: RECENT_CAPTURES,
   },
 }
 
@@ -110,12 +131,12 @@ function okResponse(data: unknown): Response {
   return new Response(JSON.stringify({ ok: true, data }), { status: 200, headers: { 'content-type': 'application/json' } })
 }
 
-function failResponse(message: string, code = 'internal'): Response {
-  return new Response(JSON.stringify({ ok: false, error: message, code }), { status: 500, headers: { 'content-type': 'application/json' } })
+function failResponse(message: string, code = 'internal', status = 500): Response {
+  return new Response(JSON.stringify({ ok: false, error: message, code }), { status, headers: { 'content-type': 'application/json' } })
 }
 
 /** Install a fetch mock answering every memory endpoint; every call is recorded. */
-function installFetch(options: { state?: () => Response, list?: (url: string) => Response, get?: (url: string) => Response } = {}): {
+function installFetch(options: { state?: () => Response, list?: (url: string) => Response, get?: (url: string) => Response, undo?: () => Response } = {}): {
   calls: Call[]
   fetchMock: ReturnType<typeof vi.fn>
 } {
@@ -130,6 +151,7 @@ function installFetch(options: { state?: () => Response, list?: (url: string) =>
     if (url.includes('/memory/status')) return okResponse({ entry: { ...DETAIL, status: 'stale' } })
     if (url.includes('/memory/delete')) return okResponse({ deleted: true, id: 'm1' })
     if (url.includes('/memory/settings')) return okResponse({ settings: { ...STATE.settings, indexLimitGlobal: 120 } })
+    if (url.includes('/memory/undo-capture')) return options.undo ? options.undo() : okResponse({ archived: ['m3'], undone: true })
     if (url.includes('/memory/export')) return okResponse({ filename: 'memory.md', content: '# 记忆' })
     if (url.includes('/memory/refresh-index')) return okResponse({ refreshed: true })
     return okResponse({})
@@ -497,5 +519,62 @@ describe('MemoryView', () => {
     })
     const deleteCall = calls.find(call => call.url.includes('/memory/delete'))
     expect(bodyOf(deleteCall)).toEqual({ scope: 'project', project: '/repo/new', id: 'm1' })
+  })
+
+  it('设置对话框展示最近捕获，点击撤销调用 /memory/undo-capture 并刷新统计', async () => {
+    let stateCalls = 0
+    const { calls } = installFetch({
+      state: () => {
+        stateCalls += 1
+        return okResponse(STATE)
+      },
+    })
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const toast = vi.spyOn(controller.actions, 'toast')
+    render(<MemoryView actions={controller.actions} t={t} />)
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    fireEvent.click(screen.getByRole('button', { name: t('memorySettingsButton') }))
+    const dialog = await screen.findByRole('dialog', { name: t('memorySettingsTitle') })
+    // 标题、两种样本（写入条数 + 跳过原因）与撤销按钮都存在。
+    expect(within(dialog).getByText(t('memoryRecentCaptures'))).toBeTruthy()
+    expect(within(dialog).getByText(t('memoryCaptureWritten', { count: 2 }))).toBeTruthy()
+    expect(within(dialog).getByText(t('memoryCaptureWritten', { count: 0 }))).toBeTruthy()
+    expect(within(dialog).getByText(t('memoryCaptureSkipped', { reason: '冷却中' }))).toBeTruthy()
+    expect(within(dialog).getByRole('button', { name: t('memoryUndoCapture') })).toBeTruthy()
+    const stateCallsBefore = stateCalls
+    fireEvent.click(within(dialog).getByRole('button', { name: t('memoryUndoCapture') }))
+    await waitFor(() => {
+      expect(calls.some(call => call.url.includes('/memory/undo-capture'))).toBe(true)
+    })
+    const undoCall = calls.find(call => call.url.includes('/memory/undo-capture'))
+    expect(undoCall?.url).toBe('/agent-plugin/api/memory/undo-capture')
+    expect(undoCall?.init?.method).toBe('POST')
+    expect(bodyOf(undoCall)).toEqual({ id: 'cap-2' })
+    await waitFor(() => {
+      expect(toast).toHaveBeenCalledWith('success', t('memoryUndoCaptureDone'))
+    })
+    // 成功后重拉 /memory/state 刷新统计，该行改为「已撤销」且不再有撤销按钮。
+    await waitFor(() => {
+      expect(stateCalls).toBeGreaterThan(stateCallsBefore)
+    })
+    expect(await within(dialog).findByText(t('memoryCaptureUndone'))).toBeTruthy()
+    expect(within(dialog).queryByRole('button', { name: t('memoryUndoCapture') })).toBeNull()
+  })
+
+  it('撤销失败时提示失败文案并保留撤销按钮', async () => {
+    installFetch({ undo: () => failResponse('捕获已过期', 'bad_request', 400) })
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const toast = vi.spyOn(controller.actions, 'toast')
+    render(<MemoryView actions={controller.actions} t={t} />)
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    fireEvent.click(screen.getByRole('button', { name: t('memorySettingsButton') }))
+    const undoButton = await screen.findByRole('button', { name: t('memoryUndoCapture') })
+    fireEvent.click(undoButton)
+    // 400 的 bad_request 保留服务端文本，经 errorMessageFor 进入失败文案。
+    await waitFor(() => {
+      expect(toast).toHaveBeenCalledWith('error', t('memoryUndoCaptureFailed', { message: '捕获已过期' }))
+    })
+    expect(screen.getByRole('button', { name: t('memoryUndoCapture') })).toBeTruthy()
+    expect(screen.queryByText(t('memoryCaptureUndone'))).toBeNull()
   })
 })
