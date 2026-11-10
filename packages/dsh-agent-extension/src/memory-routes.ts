@@ -109,6 +109,7 @@ export async function dispatchMemoryGet(
       settings: store.settings(),
       projects: store.listProjects(),
       stats: store.stats(),
+      tiers: store.tierCounts(),
     }
   }
   if (route === '/memory/list') {

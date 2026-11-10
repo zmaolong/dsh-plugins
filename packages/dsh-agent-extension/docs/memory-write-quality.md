@@ -98,3 +98,23 @@
 - **设置面**：`observationDays`/`autoMaintenance`/`autoMaintenanceThreshold` 三设置项（wire + store 归一化 + 路由校验 + 设置弹窗 UI + 八语言 4 新 key）。
 - **测试**：357 用例全绿（新增：相似吸收正反/短模板/用户写入、闸门 model-saved-directly、延迟评审 probation、due 不自动弹窗改写）。
 - 待办：真机验证设置面后 bump `0.0.1-preview.23` 提交。
+
+### 2026-11-11：B7 真机回归通过并交付（preview.23，commit 2774c7a）
+
+- zdebug 真机：设置弹窗三个新控件正确渲染（自动维护开关默认开、观察期 7 天、阈值 30）；
+  `POST /memory/settings` 三新字段 PATCH + settings.json 落盘验证通过；due 时面板不再自动弹窗；
+  宿主 err.log 干净。自动触发链路（afterCapture → autoMaintainIfNeeded）由单测覆盖流水线、
+  触发条件三重门代码简单，真机未现场触发（需 due 状态 + 会话结束，交由日常使用验证）。
+
+### 2026-11-11：B8 实施完成并交付（preview.24）
+
+- **注入抬头措辞**（`src/memory/recall.ts`）：RECALL_HEADER 说明「已证明有用的条目 + 短期条目检索可达」。
+- **诊断视图**：`GET /memory/state` 新增 `tiers` 计数（`store.tierCounts()`，全库 active 按 tier）；
+  诊断弹窗顶部显示「记忆库构成：长期 X 条 · 短期 Y 条」；八语言 1 新 key。
+- **指标口径复查**：`injectedUsed` 记账逻辑确认无误（runtime/stats.ts：检索结果命中注入集合 →
+  消费），低利用率是真实行为而非统计缺陷——由 B6/B7 的写入侧机制改善，不改代码。
+- **文档同步**：README 三个版本变更段 + 头部第二阶段指引；roadmap 进度行引用第二阶段与 ADR-0009。
+- **验证**：357 用例全绿；zdebug 真机诊断弹窗构成行渲染正确（长期 88 · 短期 0，与数据一致）。
+
+**第二阶段收尾状态**：B6–B8 全部交付。后续观察项（不排期，等数据）：新写入的短期占比与升级率
+（诊断视图人工观察）；维护自动触发在真实会话末的首跑效果；相似吸收的拦截量（store 日志）。

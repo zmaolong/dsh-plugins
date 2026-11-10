@@ -4,6 +4,8 @@
 > 决策依据：[ADR-0005](../../../docs/adr/0005-memory-recall-v2.md)（召回与注入）、[ADR-0006](../../../docs/adr/0006-memory-capture-and-maintenance.md)（捕获与维护）、[ADR-0007](../../../docs/adr/0007-memory-schema-v2.md)（数据模型与迁移）、[ADR-0008](../../../docs/adr/0008-host-ui-primitives-channel.md)（官方 UI 通道）；术语见 [`GLOSSARY.md`](../../../GLOSSARY.md)。
 > 基线：`0.0.1-preview.16`。
 > 进度：B0–B4 已完成（preview.17–preview.21）；B5 已完成：正式版 `0.0.1` 发布（2026-11-10）。
+> v2 之后第二阶段「写入质量与生命周期」（B6–B8，preview.22 起）见
+> [`memory-write-quality.md`](./memory-write-quality.md)，术语与机制见 [ADR-0009](../../../docs/adr/0009-memory-tier-lifecycle.md)。
 
 ## 目标与边界
 

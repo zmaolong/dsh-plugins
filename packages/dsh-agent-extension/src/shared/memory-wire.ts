@@ -331,6 +331,8 @@ export interface MemoryStateWire {
   settings: MemorySettings
   projects: ProjectRecord[]
   stats: MemoryStats
+  /** 全库存活条目的层级计数（诊断视图「记忆库构成」）。 */
+  tiers: { short: number; long: number }
 }
 
 /** `/memory/list` 的返回形状。 */

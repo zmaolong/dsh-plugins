@@ -321,6 +321,7 @@ window.__ModuleLoader__.load({
 			memoryDiagnosisButton: "诊断",
 			memoryDiagnosisTitle: "记忆诊断",
 			memoryDiagnosisEmpty: "暂无记录",
+			memoryDiagnosisTierCounts: "记忆库构成：长期 {long} 条 · 短期 {short} 条",
 			memoryDiagnosisInjections: "最近注入",
 			memoryDiagnosisCaptures: "最近捕获",
 			memoryDiagnosisRetrievals: "最近检索",
@@ -643,6 +644,7 @@ window.__ModuleLoader__.load({
 			memoryDiagnosisButton: "Diagnostics",
 			memoryDiagnosisTitle: "Memory diagnostics",
 			memoryDiagnosisEmpty: "No records yet",
+			memoryDiagnosisTierCounts: "Library composition: {long} long-term · {short} short-term",
 			memoryDiagnosisInjections: "Recent injections",
 			memoryDiagnosisCaptures: "Recent captures",
 			memoryDiagnosisRetrievals: "Recent retrievals",
@@ -965,6 +967,7 @@ window.__ModuleLoader__.load({
 			memoryDiagnosisButton: "診断",
 			memoryDiagnosisTitle: "メモリ診断",
 			memoryDiagnosisEmpty: "記録はありません",
+			memoryDiagnosisTierCounts: "ライブラリ構成：長期 {long} 件 · 短期 {short} 件",
 			memoryDiagnosisInjections: "最近の注入",
 			memoryDiagnosisCaptures: "最近のキャプチャ",
 			memoryDiagnosisRetrievals: "最近の検索",
@@ -1287,6 +1290,7 @@ window.__ModuleLoader__.load({
 			memoryDiagnosisButton: "Diagnóstico",
 			memoryDiagnosisTitle: "Diagnóstico de memoria",
 			memoryDiagnosisEmpty: "Aún no hay registros",
+			memoryDiagnosisTierCounts: "Composición: {long} a largo plazo · {short} a corto plazo",
 			memoryDiagnosisInjections: "Inyecciones recientes",
 			memoryDiagnosisCaptures: "Capturas recientes",
 			memoryDiagnosisRetrievals: "Búsquedas recientes",
@@ -1609,6 +1613,7 @@ window.__ModuleLoader__.load({
 			memoryDiagnosisButton: "Diagnostic",
 			memoryDiagnosisTitle: "Diagnostic de la mémoire",
 			memoryDiagnosisEmpty: "Aucun enregistrement",
+			memoryDiagnosisTierCounts: "Composition : {long} long terme · {short} court terme",
 			memoryDiagnosisInjections: "Injections récentes",
 			memoryDiagnosisCaptures: "Captures récentes",
 			memoryDiagnosisRetrievals: "Recherches récentes",
@@ -1931,6 +1936,7 @@ window.__ModuleLoader__.load({
 			memoryDiagnosisButton: "Diagnose",
 			memoryDiagnosisTitle: "Gedächtnisdiagnose",
 			memoryDiagnosisEmpty: "Noch keine Einträge",
+			memoryDiagnosisTierCounts: "Bestand: {long} langfristig · {short} kurzfristig",
 			memoryDiagnosisInjections: "Letzte Injektionen",
 			memoryDiagnosisCaptures: "Letzte Erfassungen",
 			memoryDiagnosisRetrievals: "Letzte Suchvorgänge",
@@ -2253,6 +2259,7 @@ window.__ModuleLoader__.load({
 			memoryDiagnosisButton: "Диагностика",
 			memoryDiagnosisTitle: "Диагностика памяти",
 			memoryDiagnosisEmpty: "Записей пока нет",
+			memoryDiagnosisTierCounts: "Состав: {long} долгосрочных · {short} краткосрочных",
 			memoryDiagnosisInjections: "Последние инъекции",
 			memoryDiagnosisCaptures: "Последние захваты",
 			memoryDiagnosisRetrievals: "Последние поиски",
@@ -2575,6 +2582,7 @@ window.__ModuleLoader__.load({
 			memoryDiagnosisButton: "Diagnóstico",
 			memoryDiagnosisTitle: "Diagnóstico de memória",
 			memoryDiagnosisEmpty: "Nenhum registro ainda",
+			memoryDiagnosisTierCounts: "Composição: {long} longo prazo · {short} curto prazo",
 			memoryDiagnosisInjections: "Injeções recentes",
 			memoryDiagnosisCaptures: "Capturas recentes",
 			memoryDiagnosisRetrievals: "Buscas recentes",
@@ -6951,6 +6959,7 @@ window.__ModuleLoader__.load({
 			const [diagnosisBusy, setDiagnosisBusy] = (0, react.useState)(false);
 			const [diagnosisError, setDiagnosisError] = (0, react.useState)("");
 			const [diagnosisStats, setDiagnosisStats] = (0, react.useState)(null);
+			const [diagnosisTiers, setDiagnosisTiers] = (0, react.useState)(null);
 			const [diagnosisRuns, setDiagnosisRuns] = (0, react.useState)([]);
 			const [diagnosisUndoBusyId, setDiagnosisUndoBusyId] = (0, react.useState)(null);
 			const userChoseRef = (0, react.useRef)(false);
@@ -7395,6 +7404,11 @@ window.__ModuleLoader__.load({
 				try {
 					const [stateData, maintenanceData] = await Promise.all([api("/memory/state"), api("/memory/maintenance")]);
 					setDiagnosisStats(normalizeStats(stateData.stats));
+					const tiers = record(stateData.tiers);
+					setDiagnosisTiers({
+						short: integer(tiers.short, 0, Number.MAX_SAFE_INTEGER, 0),
+						long: integer(tiers.long, 0, Number.MAX_SAFE_INTEGER, 0)
+					});
 					setDiagnosisRuns(normalizeMaintenance(maintenanceData).recentRuns);
 				} catch (error) {
 					setDiagnosisError(errorMessageFor(error, t));
@@ -8982,6 +8996,14 @@ window.__ModuleLoader__.load({
 						}) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 							className: memory_module_css_default.diagnosisStack,
 							children: [
+								diagnosisTiers !== null ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+									className: memory_module_css_default.maintenanceNotice,
+									role: "status",
+									children: t("memoryDiagnosisTierCounts", {
+										long: diagnosisTiers.long,
+										short: diagnosisTiers.short
+									})
+								}) : null,
 								diagnosisSection(t("memoryDiagnosisInjections"), injectionRows, diagnosisEmptyText),
 								diagnosisSection(t("memoryDiagnosisCaptures"), captureRows, diagnosisEmptyText),
 								diagnosisSection(t("memoryDiagnosisRetrievals"), retrievalRows, diagnosisEmptyText),

@@ -485,6 +485,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const [diagnosisBusy, setDiagnosisBusy] = useState(false)
   const [diagnosisError, setDiagnosisError] = useState('')
   const [diagnosisStats, setDiagnosisStats] = useState<MemoryStats | null>(null)
+  const [diagnosisTiers, setDiagnosisTiers] = useState<{ short: number; long: number } | null>(null)
   const [diagnosisRuns, setDiagnosisRuns] = useState<MaintenanceRunSummary[]>([])
   const [diagnosisUndoBusyId, setDiagnosisUndoBusyId] = useState<string | null>(null)
 
@@ -916,6 +917,11 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
         api<JsonRecord>('/memory/maintenance'),
       ])
       setDiagnosisStats(normalizeStats(stateData.stats))
+      const tiers = record(stateData.tiers)
+      setDiagnosisTiers({
+        short: integer(tiers.short, 0, Number.MAX_SAFE_INTEGER, 0),
+        long: integer(tiers.long, 0, Number.MAX_SAFE_INTEGER, 0),
+      })
       setDiagnosisRuns(normalizeMaintenance(maintenanceData).recentRuns)
     } catch (error) {
       setDiagnosisError(errorMessageFor(error, t))
@@ -2191,6 +2197,13 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                   )
                   : (
                     <div className={css.diagnosisStack}>
+                      {diagnosisTiers !== null
+                        ? (
+                          <div className={css.maintenanceNotice} role="status">
+                            {t('memoryDiagnosisTierCounts', { long: diagnosisTiers.long, short: diagnosisTiers.short })}
+                          </div>
+                        )
+                        : null}
                       {diagnosisSection(t('memoryDiagnosisInjections'), injectionRows, diagnosisEmptyText)}
                       {diagnosisSection(t('memoryDiagnosisCaptures'), captureRows, diagnosisEmptyText)}
                       {diagnosisSection(t('memoryDiagnosisRetrievals'), retrievalRows, diagnosisEmptyText)}

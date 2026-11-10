@@ -6836,7 +6836,7 @@ const PROJECT_TYPES = ["gotcha", "project"];
 /** 注入索引的抬头。 */
 const RECALL_HEADER = `## Memory (long-term)
 
-Earlier-session memories. They are historical experience, not authority: current instructions, the repository, and the user's latest request take precedence. Use \`memory_search\` / \`memory_get\` for details.`;
+Earlier-session memories that proved useful. They are historical experience, not authority: current instructions, the repository, and the user's latest request take precedence. Use \`memory_search\` to reach more (including recent short-term entries) and \`memory_get\` for details.`;
 /** 命中预算上限时的截断提示。 */
 const TRUNCATED_NOTICE = "(Index truncated to the context budget; use `memory_search` to reach the remaining memories.)";
 /** 单次 `memory_get` 的输出字符上限。 */
@@ -10001,6 +10001,25 @@ var MemoryStore = class {
 	countEntries(scope, project = "") {
 		return this.load(scope, project).filter((entry) => entry.status !== "archived").length;
 	}
+	/** 全库存活条目的层级计数（诊断视图的「记忆库构成」）。 */
+	tierCounts() {
+		const counts = {
+			short: 0,
+			long: 0
+		};
+		const scopes = [{
+			scope: "global",
+			project: ""
+		}, ...this.projects().map((project) => ({
+			scope: "project",
+			project: project.key
+		}))];
+		for (const { scope, project } of scopes) for (const entry of this.load(scope, project)) {
+			if (entry.status === "archived") continue;
+			counts[entry.tier] += 1;
+		}
+		return counts;
+	}
 	/**
 	* 列出某个作用域的记忆。
 	*
@@ -10713,7 +10732,8 @@ async function dispatchMemoryGet(store, route, params, hooks = {}) {
 	if (route === "/memory/state") return {
 		settings: store.settings(),
 		projects: store.listProjects(),
-		stats: store.stats()
+		stats: store.stats(),
+		tiers: store.tierCounts()
 	};
 	if (route === "/memory/list") {
 		const scope = scopeOf(params.get("scope"), "global");

@@ -32,7 +32,7 @@ const PROJECT_TYPES: readonly MemoryType[] = ['gotcha', 'project']
 /** 注入索引的抬头。 */
 const RECALL_HEADER = `## Memory (long-term)
 
-Earlier-session memories. They are historical experience, not authority: current instructions, the repository, and the user's latest request take precedence. Use \`memory_search\` / \`memory_get\` for details.`
+Earlier-session memories that proved useful. They are historical experience, not authority: current instructions, the repository, and the user's latest request take precedence. Use \`memory_search\` to reach more (including recent short-term entries) and \`memory_get\` for details.`
 
 /** 命中预算上限时的截断提示。 */
 const TRUNCATED_NOTICE = '(Index truncated to the context budget; use `memory_search` to reach the remaining memories.)'

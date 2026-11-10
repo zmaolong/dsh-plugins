@@ -817,6 +817,22 @@ export class MemoryStore {
     return this.load(scope, project).filter(entry => entry.status !== 'archived').length
   }
 
+  /** 全库存活条目的层级计数（诊断视图的「记忆库构成」）。 */
+  tierCounts(): { short: number; long: number } {
+    const counts = { short: 0, long: 0 }
+    const scopes: Array<{ scope: MemoryScope, project: string }> = [
+      { scope: 'global', project: '' },
+      ...this.projects().map(project => ({ scope: 'project' as const, project: project.key })),
+    ]
+    for (const { scope, project } of scopes) {
+      for (const entry of this.load(scope, project)) {
+        if (entry.status === 'archived') continue
+        counts[entry.tier] += 1
+      }
+    }
+    return counts
+  }
+
   /**
    * 列出某个作用域的记忆。
    *
