@@ -3,8 +3,9 @@
  *
  * 注入分两层：全局块只放 preference / decision，项目块只放 gotcha / project；
  * 只注入已证明价值的长期条目（短期条目靠检索命中升级），每层默认最多 20 条、
- * 总预算 3,000 字符，全局在前、项目在后，按 importance、消费次数与最近消费
- * 时间排序（消费数据来自 usage 派生账，缺记录时退回条目自身的 usedCount）。
+ * 总预算 3,000 字符，全局在前、项目在后；预算按每层配置条数比例公平分配
+ * （保底 + 用不完回流），层内按 importance、消费次数与最近消费时间排序
+ * （消费数据来自 usage 派生账，缺记录时退回条目自身的 usedCount）。
  * 详情留在 `memory_get` 后面，按需读取。
  *
  * @module dsh-agent-extension/memory/recall
@@ -165,47 +166,84 @@ export function renderRecallContext(options: {
     return { text: '', ids: [], truncated: global.truncated || project.truncated }
   }
 
-  const blocks: Array<{ title: string, lines: Array<{ text: string, id: string }> }> = []
+  const blocks: Array<{ title: string, limit: number, lines: Array<{ text: string, id: string }> }> = []
   if (global.entries.length > 0) {
     blocks.push({
       title: 'Global:',
+      limit: layerLimit(settings.indexLimitGlobal),
       lines: global.entries.map(entry => ({ text: indexLine(entry), id: entry.id })),
     })
   }
   if (project.entries.length > 0) {
     blocks.push({
       title: `Project (${identity?.displayName ?? ''}):`,
+      limit: layerLimit(settings.indexLimitProject),
       lines: project.entries.map(entry => ({ text: indexLine(entry), id: entry.id })),
     })
   }
 
   const maxChars = Math.min(settings.maxChars, RECALL_MAX_CHARS)
   // 预留抬头与最坏情况下的截断提示，保证最终字符串不超过预算。
-  let budget = maxChars - RECALL_HEADER.length - 2 - TRUNCATED_NOTICE.length - 2
+  const budget = maxChars - RECALL_HEADER.length - 2 - TRUNCATED_NOTICE.length - 2
   if (budget <= 0) return { text: '', ids: [], truncated: true }
-  let truncated = global.truncated || project.truncated
-  const kept: Array<{ title: string, lines: Array<{ text: string, id: string }> }> = []
-  for (const block of blocks) {
-    const titleCost = block.title.length + 1
-    if (budget - titleCost <= 0) {
-      truncated = true
-      continue
-    }
-    const lines: Array<{ text: string, id: string }> = []
-    let remaining = budget - titleCost
-    for (const line of block.lines) {
-      const cost = line.text.length + 1
-      if (cost > remaining) {
-        truncated = true
-        break
-      }
-      lines.push(line)
-      remaining -= cost
-    }
-    if (lines.length > 0) kept.push({ title: block.title, lines })
-    budget = remaining
-  }
 
+  // 层间预算公平分配：每层先按配置条数比例拿保底配额（默认 20/20 → 各半），
+  // 避免「一层长行占满预算、另一层一条进不来」的层间饥饿（真实库实测：全局
+  // 20 行吃光 2,316 字符预算，23 条项目 gotcha 一条都注入不了）。单层用不完
+  // 的保底回流给被挤掉的行交错补位；只有一层时等价于整体顺序填充。
+  let truncated = global.truncated || project.truncated
+  // 每层的填充状态：kept 为配额内已放入的行，pending 为被挤掉等待回流的行。
+  const states = blocks.map(block => ({
+    title: block.title,
+    limit: block.limit,
+    lines: block.lines,
+    kept: new Array<{ text: string, id: string }>(),
+    pending: new Array<{ text: string, id: string }>(),
+  }))
+  const totalLimit = states.reduce((sum, state) => sum + state.limit, 0)
+  // 第一遍：每层在保底配额（预算 × 本层条数占比）内自上而下填行。
+  for (const state of states) {
+    let room = totalLimit > 0 ? Math.floor((budget * state.limit) / totalLimit) : 0
+    for (const line of state.lines) {
+      const cost = line.text.length + 1
+      if (cost > room) {
+        state.pending.push(line)
+        continue
+      }
+      state.kept.push(line)
+      room -= cost
+    }
+  }
+  // 第二遍：单层用不完的保底回流，被挤掉的行按层轮流补位（放不下就跳过）。
+  let unspent = budget - states.reduce((sum, state) => {
+    const used = state.kept.reduce((acc, line) => acc + line.text.length + 1, 0)
+    return sum + used + (state.kept.length > 0 ? state.title.length + 1 : 0)
+  }, 0)
+  let progressed = true
+  while (progressed && unspent > 0) {
+    progressed = false
+    for (const state of states) {
+      const line = state.pending[0]
+      if (line === undefined) continue
+      const titleCost = state.kept.length === 0 ? state.title.length + 1 : 0
+      const cost = line.text.length + 1 + titleCost
+      if (cost > unspent) continue
+      state.pending.shift()
+      state.kept.push(line)
+      unspent -= cost
+      progressed = true
+    }
+  }
+  // 回流补位的行可能比配额内的短行排名更高，恢复层内原始排序。
+  for (const state of states) {
+    const order = new Map(state.lines.map((line, index) => [line.id, index]))
+    state.kept.sort((left, right) => (order.get(left.id) ?? 0) - (order.get(right.id) ?? 0))
+  }
+  truncated = truncated || states.reduce((sum, state) => sum + state.pending.length, 0) > 0
+
+  const kept = states
+    .map(state => ({ title: state.title, lines: state.kept }))
+    .filter(block => block.lines.length > 0)
   const body = kept
     .map(block => `${block.title}\n${block.lines.map(line => line.text).join('\n')}`)
     .join('\n\n')

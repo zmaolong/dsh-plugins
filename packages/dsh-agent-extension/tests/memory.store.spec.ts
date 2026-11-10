@@ -659,6 +659,48 @@ describe('记忆存储：Markdown 事实、手改、去重与生命周期', () =
     expect(after.text).toContain('only when you actually rely on it')
   })
 
+  it('层间预算公平分配：全局层占不满配额时回流，项目层被挤掉的行得以注入', () => {
+    const store = makeStore()
+    // 项目层 1 条短行；全局层多条长行把默认 3,000 字符预算吃满（若顺序填充，
+    // 项目行排在最后必被挤掉）。
+    const projectEntry = add(store, {
+      name: '项目陷阱',
+      description: '本仓库特有坑位',
+      content: '内容。',
+      type: 'gotcha',
+      scope: 'project',
+      project: 'p_demo',
+      source: 'user',
+    })
+    for (let index = 0; index < 20; index += 1) {
+      add(store, {
+        name: `全局偏好 ${index}`,
+        description: '本条描述较长用于占满字符预算，模拟真实库中的长索引行内容，约一百一十个字符上下。',
+        content: '正文。',
+        source: 'user',
+      })
+    }
+    const identity = {
+      projectKey: 'p_demo',
+      identity: 'example.com/demo',
+      source: 'git-remote' as const,
+      displayName: 'demo',
+      root: 'E:/demo',
+    }
+    const snapshot = renderRecallContext({ store, identity, settings: store.settings() })
+    expect(snapshot.ids).toContain(projectEntry.id)
+    expect(snapshot.text).toContain('Project (demo):')
+    expect(snapshot.text.length).toBeLessThanOrEqual(3000)
+  })
+
+  it('单层场景与配额耗尽：只有全局层时拿全部预算，行为与顺序填充一致', () => {
+    const store = makeStore()
+    for (let index = 0; index < 3; index += 1) add(store, { name: `条目 ${index}`, source: 'user' })
+    const snapshot = renderRecallContext({ store, identity: null, settings: store.settings() })
+    expect(snapshot.ids).toHaveLength(3)
+    expect(snapshot.truncated).toBe(false)
+  })
+
   it('设置、捕获计数与命中率持久化到磁盘', () => {
     const store = makeStore()
     store.updateSettings({ captureEnabled: false, indexLimitProject: 12 })

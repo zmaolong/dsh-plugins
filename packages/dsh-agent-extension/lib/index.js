@@ -6945,6 +6945,7 @@ function renderRecallContext(options) {
 	const blocks = [];
 	if (global.entries.length > 0) blocks.push({
 		title: "Global:",
+		limit: layerLimit(settings.indexLimitGlobal),
 		lines: global.entries.map((entry) => ({
 			text: indexLine(entry),
 			id: entry.id
@@ -6952,42 +6953,66 @@ function renderRecallContext(options) {
 	});
 	if (project.entries.length > 0) blocks.push({
 		title: `Project (${identity?.displayName ?? ""}):`,
+		limit: layerLimit(settings.indexLimitProject),
 		lines: project.entries.map((entry) => ({
 			text: indexLine(entry),
 			id: entry.id
 		}))
 	});
-	let budget = Math.min(settings.maxChars, RECALL_MAX_CHARS) - RECALL_HEADER.length - 2 - 93 - 2;
+	const budget = Math.min(settings.maxChars, RECALL_MAX_CHARS) - RECALL_HEADER.length - 2 - 93 - 2;
 	if (budget <= 0) return {
 		text: "",
 		ids: [],
 		truncated: true
 	};
 	let truncated = global.truncated || project.truncated;
-	const kept = [];
-	for (const block of blocks) {
-		const titleCost = block.title.length + 1;
-		if (budget - titleCost <= 0) {
-			truncated = true;
-			continue;
-		}
-		const lines = [];
-		let remaining = budget - titleCost;
-		for (const line of block.lines) {
+	const states = blocks.map((block) => ({
+		title: block.title,
+		limit: block.limit,
+		lines: block.lines,
+		kept: new Array(),
+		pending: new Array()
+	}));
+	const totalLimit = states.reduce((sum, state) => sum + state.limit, 0);
+	for (const state of states) {
+		let room = totalLimit > 0 ? Math.floor(budget * state.limit / totalLimit) : 0;
+		for (const line of state.lines) {
 			const cost = line.text.length + 1;
-			if (cost > remaining) {
-				truncated = true;
-				break;
+			if (cost > room) {
+				state.pending.push(line);
+				continue;
 			}
-			lines.push(line);
-			remaining -= cost;
+			state.kept.push(line);
+			room -= cost;
 		}
-		if (lines.length > 0) kept.push({
-			title: block.title,
-			lines
-		});
-		budget = remaining;
 	}
+	let unspent = budget - states.reduce((sum, state) => {
+		return sum + state.kept.reduce((acc, line) => acc + line.text.length + 1, 0) + (state.kept.length > 0 ? state.title.length + 1 : 0);
+	}, 0);
+	let progressed = true;
+	while (progressed && unspent > 0) {
+		progressed = false;
+		for (const state of states) {
+			const line = state.pending[0];
+			if (line === void 0) continue;
+			const titleCost = state.kept.length === 0 ? state.title.length + 1 : 0;
+			const cost = line.text.length + 1 + titleCost;
+			if (cost > unspent) continue;
+			state.pending.shift();
+			state.kept.push(line);
+			unspent -= cost;
+			progressed = true;
+		}
+	}
+	for (const state of states) {
+		const order = new Map(state.lines.map((line, index) => [line.id, index]));
+		state.kept.sort((left, right) => (order.get(left.id) ?? 0) - (order.get(right.id) ?? 0));
+	}
+	truncated = truncated || states.reduce((sum, state) => sum + state.pending.length, 0) > 0;
+	const kept = states.map((state) => ({
+		title: state.title,
+		lines: state.kept
+	})).filter((block) => block.lines.length > 0);
 	const body = kept.map((block) => `${block.title}\n${block.lines.map((line) => line.text).join("\n")}`).join("\n\n");
 	if (body === "") return {
 		text: "",
