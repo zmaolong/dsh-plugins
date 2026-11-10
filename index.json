@@ -40,8 +40,8 @@
         "zh-cn": "智能体扩展"
       },
       "description": {
-        "en": "Manage agent extensions in DSH — plugin marketplaces, install/update/rollback, per-item capability toggles, and built-in cross-session memory (global + project scopes, automatic capture, on-demand recall).",
-        "zh-cn": "在 DSH 里管理智能体扩展：插件市场与逐项启停，并内置跨会话记忆（全局 + 项目双作用域、自动捕获、按需召回）。"
+        "en": "Manage agent extensions in DSH — plugin marketplaces, install/update/rollback, per-item capability toggles, and built-in cross-session memory v2 (global + project scopes, model-written facts with session-end fallback capture, layered recall index, maintenance runs).",
+        "zh-cn": "在 DSH 里管理智能体扩展：插件市场与逐项启停，并内置跨会话记忆 v2（全局 + 项目双作用域、模型主动写入与会话末补漏、分层索引召回、维护整理）。"
       },
       "homepage": "https://github.com/zmaolong/dsh-plugins/tree/release-0.0.1/packages/dsh-agent-extension",
       "repository": {
@@ -60,6 +60,16 @@
         ]
       },
       "versions": [
+        {
+          "version": "0.0.1",
+          "publishTimestamp": 1794307945,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/zmaolong/dsh-plugins",
+            "commit": "83fab658fb06b547c7409a4ad9efab4e8c7663b4",
+            "path": "packages/dsh-agent-extension"
+          }
+        },
         {
           "version": "0.0.1-preview.9",
           "publishTimestamp": 1794243787,
@@ -309,11 +319,11 @@
       "versions": [
         {
           "version": "0.0.1-preview.6",
-          "publishTimestamp": 1794305872,
+          "publishTimestamp": 1794307945,
           "source": {
             "type": "git",
             "url": "https://github.com/zmaolong/dsh-plugins",
-            "commit": "7501752ad60b5d21fdacc2ab7b29c54a095307be",
+            "commit": "83fab658fb06b547c7409a4ad9efab4e8c7663b4",
             "path": "packages/dsh-remote-ctrl"
           }
         },
