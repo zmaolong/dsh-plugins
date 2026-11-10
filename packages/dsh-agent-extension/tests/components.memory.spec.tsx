@@ -576,7 +576,7 @@ describe('MemoryView', () => {
     expect(layer.style.height).toBe('700px')
   })
 
-  it('类型筛选激活时在搜索框左侧显示可清除的筛选 chip', async () => {
+  it('类型筛选激活时在搜索框内显示可清除的筛选 chip', async () => {
     installFetch()
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
     render(<MemoryView actions={controller.actions} t={t} />)
@@ -587,6 +587,24 @@ describe('MemoryView', () => {
     expect(await screen.findByRole('button', { name: t('memoryClearTypeFilter') })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: t('memoryClearTypeFilter') }))
     expect(screen.queryByRole('button', { name: t('memoryClearTypeFilter') })).toBeNull()
+  })
+
+  it('多个筛选同时生效时只显示一个 chip，其余用省略号提示', async () => {
+    installFetch()
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    render(<MemoryView actions={controller.actions} t={t} />)
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    // 先选类型筛选，再点卡片标签叠加标签筛选。
+    fireEvent.click(screen.getByRole('button', { name: t('memoryTypeFilterLabel') }))
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: t('memoryTypePreference') }))
+    fireEvent.click(await screen.findByRole('button', { name: 'git' }))
+    expect(screen.getByRole('button', { name: t('memoryClearTypeFilter') })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: t('memoryClearTagFilter') })).toBeNull()
+    expect(screen.getByText('…')).toBeTruthy()
+    // 清掉类型筛选后，标签筛连接棒成为可见 chip。
+    fireEvent.click(screen.getByRole('button', { name: t('memoryClearTypeFilter') }))
+    expect(await screen.findByRole('button', { name: t('memoryClearTagFilter') })).toBeTruthy()
+    expect(screen.queryByText('…')).toBeNull()
   })
 
   it('空库空态提供新建按钮，点击直接打开新建弹窗', async () => {

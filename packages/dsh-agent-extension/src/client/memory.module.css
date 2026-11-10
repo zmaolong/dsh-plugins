@@ -1,7 +1,8 @@
-/* Memory tab: a two-row toolbar (scope switch + project select and the action
- * cluster top-right, search below), entry list, detail editor, and the
- * settings dialog (capture-injection switches, limits, statistics). Shares
- * the page frame with panel.module.css and only consumes host theme tokens
+/* Memory tab: one compact toolbar row (scope switch, narrowed project select,
+ * search field with the active-filter chips inside, then the action cluster
+ * with 「新建记忆」rightmost), entry list, detail editor, and the settings
+ * dialog (capture-injection switches, limits, statistics). Shares the page
+ * frame with panel.module.css and only consumes host theme tokens
  * (--dsw-alias-*); hover styles stay behind (hover: hover) and no local
  * palette is defined here. */
 
@@ -9,36 +10,34 @@
   gap: 20px;
 }
 
-/* Toolbar: two rows — scope switch + project select on the left of the first
- * row with the action cluster on its right (「新建记忆」rightmost), and the
- * search field with the active-filter chips on the second row. */
+/* Toolbar: one row on wide panels — scope switch, project select, search,
+ * then the action cluster (「新建记忆」rightmost); it wraps only when the
+ * panel gets narrow. */
 .topbar {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.topbarRow {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px 16px;
+  gap: 12px;
 }
 
 .segmented {
   display: inline-flex;
+  flex: none;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
 }
 
+/* Narrowed so the scope switch, project select, search, and the whole action
+ * cluster still fit on the first row; long project names ellipsize. */
 .projectSelect {
-  flex: 0 1 220px;
+  flex: 0 1 150px;
   min-width: 0;
 }
 
 .actions {
   display: flex;
+  flex: none;
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
@@ -46,22 +45,14 @@
   margin-left: auto;
 }
 
-/* Second toolbar row: active-filter chips followed by the search field. */
-.searchRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-}
-
-/* Search field with the inline type-filter trigger at its right edge. */
+/* Search field: search glyph, active-filter chips, input, clear, and the
+ * inline type-filter trigger; the chips live inside the field surface. */
 .searchWrap {
   display: flex;
-  flex: 1 1 220px;
+  flex: 1 1 210px;
   align-items: center;
-  gap: 8px;
-  min-width: 200px;
-  max-width: 480px;
+  gap: 6px;
+  min-width: 190px;
   height: 36px;
   padding: 0 10px;
   border: 0.5px solid var(--dsw-alias-border-l3);
@@ -162,27 +153,23 @@
   background: var(--dsw-alias-state-business-primary);
 }
 
-/* Active-filter chips shown left of the search field: one per active type or
- * tag filter, each with an inline clear button. */
-.filterChips {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 6px;
-}
-
+/* Active-filter summary chip at the search field's right edge: one chip at a
+ * time (an ellipsis marks further filters) with an inline clear button, so the
+ * input never loses more than a chip's width. */
 .filterChip {
   display: inline-flex;
+  flex: none;
   align-items: center;
   gap: 2px;
-  max-width: 160px;
-  padding: 0 4px 0 8px;
+  min-width: 0;
+  max-width: 120px;
+  padding: 0 2px 0 6px;
   border-radius: 999px;
   corner-shape: round;
   background: var(--dsw-alias-interactive-bg-hover);
   color: var(--dsw-alias-label-secondary);
-  font-size: 12px;
-  line-height: 22px;
+  font-size: 11px;
+  line-height: 18px;
 }
 
 .filterChipText {
@@ -192,13 +179,22 @@
   white-space: nowrap;
 }
 
+/* More-than-one marker: a quiet ellipsis beside the visible filter label. */
+.filterChipMore {
+  flex: none;
+  padding: 0 1px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
 .filterChipClear {
   display: flex;
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   padding: 0;
   border: 0;
   border-radius: 999px;
@@ -246,14 +242,17 @@
   color: var(--dsw-alias-label-primary);
 }
 
+/* Entry count: a raised small label at the heading's top-right. */
 .sectionCount {
-  flex: none;
+  margin-left: 4px;
+  vertical-align: super;
   white-space: nowrap;
   font-size: 12px;
+  font-weight: 400;
   color: var(--dsw-alias-label-tertiary);
 }
 
-/* Right side of the list header: the sort select and the entry count. */
+/* Right side of the list header: the archived toggle and the sort select. */
 .listHeadTools {
   display: flex;
   align-items: center;

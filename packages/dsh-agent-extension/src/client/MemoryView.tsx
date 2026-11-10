@@ -1,8 +1,8 @@
 /**
- * Memory tab of the Agent Extension panel: a two-row toolbar (scope switch,
- * project select and the action cluster with 「新建记忆」rightmost on the first
- * row; active-filter chips and the search field with its type-filter dropdown
- * on the second), the entry list as a full-width card grid
+ * Memory tab of the Agent Extension panel: one compact toolbar row (scope
+ * switch, narrowed project select, the search field with inline active-filter
+ * chips and type-filter dropdown, then the action cluster with 「新建记忆」
+ * rightmost), the entry list as a full-width card grid
  * with tag-chip filtering and a recency sort, a wide detail dialog for
  * create / edit / save / deactivate / archive / restore / two-step delete,
  * the Markdown export plus an index-refresh action, a settings dialog
@@ -1040,6 +1040,17 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
 
   const projectRequired = scope === 'project' && project === ''
   const projectMissing = scope === 'project' && projects.length === 0
+  // Toolbar filter summary: one compact chip at the search field's right edge,
+  // an ellipsis marks further active filters, so the input keeps its width.
+  const activeFilters: Array<{ kind: 'type' | 'tag', label: string, clearLabel: string }> = []
+  if (typeFilter !== '') {
+    activeFilters.push({ kind: 'type', label: typeLabel(typeFilter, t), clearLabel: t('memoryClearTypeFilter') })
+  }
+  if (tagFilter !== '') {
+    activeFilters.push({ kind: 'tag', label: tagFilter, clearLabel: t('memoryClearTagFilter') })
+  }
+  const visibleFilter = activeFilters[0] ?? null
+  const hiddenFilterCount = activeFilters.length - (visibleFilter === null ? 0 : 1)
   const recallTotals = recallTotalsOf(stats)
   const injectionRate = percentText(recallTotals.injectedUsed, recallTotals.injected)
   const retrievalRate = percentText(recallTotals.searchUsed, recallTotals.searched)
@@ -1327,7 +1338,10 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
     workspace = (
       <section className={css.listPane} aria-label={t('memoryListTitle')}>
         <div className={css.listHead}>
-          <h2 className={css.sectionTitle}>{t('memoryListTitle')}</h2>
+          <h2 className={css.sectionTitle}>
+            {t('memoryListTitle')}
+            <span className={css.sectionCount}>{String(sortedEntries.length)}</span>
+          </h2>
           <span className={css.listHeadTools}>
             <button
               type="button"
@@ -1350,7 +1364,6 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
               ]}
               onChange={(next) => { setSort(next === 'recent' ? 'recent' : 'default') }}
             />
-            <span className={css.sectionCount}>{String(sortedEntries.length)}</span>
           </span>
         </div>
         {stateError !== ''
@@ -1452,160 +1465,141 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   return (
     <div className={`${panelCss.page} ${css.view}`} role="region" aria-label={t('memoryTitle')}>
       <header className={css.topbar}>
-        <div className={css.topbarRow}>
-          <div className={css.segmented} role="group" aria-label={t('memoryScopeLabel')}>
-            <button
-              type="button"
-              className={panelCss.segment}
-              aria-pressed={scope === 'global'}
-              onClick={() => chooseScope('global')}
-            >
-              {t('memoryScopeGlobal')}
-            </button>
-            <button
-              type="button"
-              className={panelCss.segment}
-              aria-pressed={scope === 'project'}
-              onClick={() => chooseScope('project')}
-            >
-              {t('memoryScopeProject')}
-            </button>
-          </div>
-          {scope === 'project' && projects.length > 0
-            ? (
-              <Select
-                label={t('memoryProjectLabel')}
-                className={css.projectSelect}
-                value={project}
-                options={projects.map(item => ({ value: item.key, label: item.displayName }))}
-                onChange={chooseProject}
-              />
-            )
-            : null}
-          <div className={css.actions}>
-            <IconButton
-              icon="download"
-              title={exportBusy ? t('memoryExporting') : t('memoryExportMarkdown')}
-              busy={exportBusy}
-              disabled={exportBusy || projectRequired}
-              onClick={() => { void exportMarkdown() }}
-            />
-            <IconButton icon="settings" title={t('memorySettingsButton')} onClick={() => { setSettingsOpen(true) }} />
-            <IconButton
-              icon="info"
-              title={t('memoryDiagnosisButton')}
-              onClick={openDiagnosis}
-            />
-            <IconButton
-              icon="clipboardCheck"
-              title={auditBusy ? t('memoryAuditRunning') : t('memoryAuditButton')}
-              busy={auditBusy}
-              disabled={auditBusy || projectRequired}
-              onClick={() => { void openAudit() }}
-            />
-            <IconButton
-              icon="wand"
-              title={t('memoryMaintenanceButton')}
-              busy={maintenanceBusy}
-              disabled={maintenanceBusy || maintenanceRunning}
-              onClick={() => { void openMaintenance() }}
-            />
-            <IconButton
-              icon="refresh"
-              title={stateBusy || listBusy ? t('refreshing') : t('refresh')}
-              busy={stateBusy || listBusy}
-              disabled={stateBusy || listBusy}
-              onClick={() => {
-                setStateToken(token => token + 1)
-                setListToken(token => token + 1)
-              }}
-            />
-            <Button variant="primary" icon="plus" disabled={projectMissing} onClick={startCreate}>
-              {t('memoryNew')}
-            </Button>
-          </div>
+        <div className={css.segmented} role="group" aria-label={t('memoryScopeLabel')}>
+          <button
+            type="button"
+            className={panelCss.segment}
+            aria-pressed={scope === 'global'}
+            onClick={() => chooseScope('global')}
+          >
+            {t('memoryScopeGlobal')}
+          </button>
+          <button
+            type="button"
+            className={panelCss.segment}
+            aria-pressed={scope === 'project'}
+            onClick={() => chooseScope('project')}
+          >
+            {t('memoryScopeProject')}
+          </button>
         </div>
-        <div className={css.searchRow}>
-          {(typeFilter !== '' || tagFilter !== '')
+        {scope === 'project' && projects.length > 0
+          ? (
+            <Select
+              label={t('memoryProjectLabel')}
+              className={css.projectSelect}
+              value={project}
+              options={projects.map(item => ({ value: item.key, label: item.displayName }))}
+              onChange={chooseProject}
+            />
+          )
+          : null}
+        <div className={css.searchWrap}>
+          <Icon name="search" size={16} />
+          <input
+            className={css.searchInput}
+            type="search"
+            value={query}
+            placeholder={t('memorySearchPlaceholder')}
+            aria-label={t('memorySearchPlaceholder')}
+            onChange={(event) => { setQuery(event.target.value) }}
+            onKeyDown={(event) => {
+              if (event.key !== 'Enter') return
+              event.preventDefault()
+              submitSearch()
+            }}
+          />
+          {query !== ''
             ? (
-              <div className={css.filterChips}>
-                {typeFilter !== ''
-                  ? (
-                    <span className={css.filterChip}>
-                      <span className={css.filterChipText}>{typeLabel(typeFilter, t)}</span>
-                      <button
-                        type="button"
-                        className={css.filterChipClear}
-                        aria-label={t('memoryClearTypeFilter')}
-                        onClick={() => { setTypeFilter('') }}
-                      >
-                        <Icon name="x" size={12} />
-                      </button>
-                    </span>
-                  )
-                  : null}
-                {tagFilter !== ''
-                  ? (
-                    <span className={css.filterChip}>
-                      <span className={css.filterChipText}>{tagFilter}</span>
-                      <button
-                        type="button"
-                        className={css.filterChipClear}
-                        aria-label={t('memoryClearTagFilter')}
-                        onClick={() => { setTagFilter('') }}
-                      >
-                        <Icon name="x" size={12} />
-                      </button>
-                    </span>
-                  )
-                  : null}
-              </div>
+              <button
+                type="button"
+                className={css.searchClear}
+                title={t('clearSearch')}
+                aria-label={t('clearSearch')}
+                onClick={() => { setQuery(''); setAppliedQuery('') }}
+              >
+                <Icon name="x" size={14} />
+              </button>
             )
             : null}
-          <div className={css.searchWrap}>
-            <Icon name="search" size={16} />
-            <input
-              className={css.searchInput}
-              type="search"
-              value={query}
-              placeholder={t('memorySearchPlaceholder')}
-              aria-label={t('memorySearchPlaceholder')}
-              onChange={(event) => { setQuery(event.target.value) }}
-              onKeyDown={(event) => {
-                if (event.key !== 'Enter') return
-                event.preventDefault()
-                submitSearch()
-              }}
-            />
-            {query !== ''
-              ? (
+          {visibleFilter !== null
+            ? (
+              <span className={css.filterChip} title={activeFilters.map(item => item.label).join(' · ')}>
+                <span className={css.filterChipText}>{visibleFilter.label}</span>
+                {hiddenFilterCount > 0
+                  ? <span className={css.filterChipMore} aria-hidden="true">…</span>
+                  : null}
                 <button
                   type="button"
-                  className={css.searchClear}
-                  title={t('clearSearch')}
-                  aria-label={t('clearSearch')}
-                  onClick={() => { setQuery(''); setAppliedQuery('') }}
+                  className={css.filterChipClear}
+                  aria-label={visibleFilter.clearLabel}
+                  onClick={() => {
+                    if (visibleFilter.kind === 'type') setTypeFilter('')
+                    else setTagFilter('')
+                  }}
                 >
-                  <Icon name="x" size={14} />
+                  <Icon name="x" size={10} />
                 </button>
-              )
-              : null}
-            <Select
-              label={t('memoryTypeFilterLabel')}
-              title={t('memoryTypeFilterLabel')}
-              align="right"
-              value={typeFilter}
-              options={typeOptions}
-              onChange={(next) => { setTypeFilter(next === '' ? '' : (TYPE_VALUES.find(value => value === next) ?? '')) }}
-              triggerClassName={css.filterTrigger}
-              trigger={(
-                <>
-                  <Icon name="filter" size={14} />
-                  {typeFilter !== '' ? <span className={css.filterDot} /> : null}
-                </>
-              )}
-            />
-          </div>
+              </span>
+            )
+            : null}
+          <Select
+            label={t('memoryTypeFilterLabel')}
+            title={t('memoryTypeFilterLabel')}
+            align="right"
+            value={typeFilter}
+            options={typeOptions}
+            onChange={(next) => { setTypeFilter(next === '' ? '' : (TYPE_VALUES.find(value => value === next) ?? '')) }}
+            triggerClassName={css.filterTrigger}
+            trigger={(
+              <>
+                <Icon name="filter" size={14} />
+                {typeFilter !== '' ? <span className={css.filterDot} /> : null}
+              </>
+            )}
+          />
+        </div>
+        <div className={css.actions}>
+          <IconButton
+            icon="download"
+            title={exportBusy ? t('memoryExporting') : t('memoryExportMarkdown')}
+            busy={exportBusy}
+            disabled={exportBusy || projectRequired}
+            onClick={() => { void exportMarkdown() }}
+          />
+          <IconButton icon="settings" title={t('memorySettingsButton')} onClick={() => { setSettingsOpen(true) }} />
+          <IconButton
+            icon="info"
+            title={t('memoryDiagnosisButton')}
+            onClick={openDiagnosis}
+          />
+          <IconButton
+            icon="clipboardCheck"
+            title={auditBusy ? t('memoryAuditRunning') : t('memoryAuditButton')}
+            busy={auditBusy}
+            disabled={auditBusy || projectRequired}
+            onClick={() => { void openAudit() }}
+          />
+          <IconButton
+            icon="wand"
+            title={t('memoryMaintenanceButton')}
+            busy={maintenanceBusy}
+            disabled={maintenanceBusy || maintenanceRunning}
+            onClick={() => { void openMaintenance() }}
+          />
+          <IconButton
+            icon="refresh"
+            title={stateBusy || listBusy ? t('refreshing') : t('refresh')}
+            busy={stateBusy || listBusy}
+            disabled={stateBusy || listBusy}
+            onClick={() => {
+              setStateToken(token => token + 1)
+              setListToken(token => token + 1)
+            }}
+          />
+          <Button variant="primary" icon="plus" disabled={projectMissing} onClick={startCreate}>
+            {t('memoryNew')}
+          </Button>
         </div>
       </header>
 
