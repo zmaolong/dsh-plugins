@@ -202,6 +202,8 @@ export interface HubActions {
   openMarketDetail(entry: JsonRecord, refresh?: boolean): void
   closeMarketDetail(): void
   openMemoryDetail(target: MemoryDetailTarget): void
+  /** Return from the sidebar detail surface to the panel's memory list. */
+  showMemoryList(): void
   openMarketPlugin(key: string): void
   closeMarketPlugin(): void
   loadDetail(force: boolean): Promise<void>
@@ -398,6 +400,16 @@ export function createHubController(options: HubControllerOptions): HubControlle
     })()
   }
 
+  /**
+   * Return to the panel's memory list. The host keeps the main panel and the
+   * right Sidebar mutually exclusive, so the way back is a panel switch; the
+   * memory section is kept in the store, so the list tab is what comes back.
+   */
+  const showMemoryList = (): void => {
+    set({ sectionTab: 'memory' })
+    if (host !== undefined) host.layout.selectPanel(host.panelId)
+  }
+
   const setMarketBusy = (id: string, label: string): void => {
     set((state) => {
       const marketBusy = { ...state.marketBusy }
@@ -558,6 +570,7 @@ export function createHubController(options: HubControllerOptions): HubControlle
       set({ marketPluginKey: null })
     },
     openMemoryDetail,
+    showMemoryList,
     loadDetail,
     setQuery(query: string) {
       set({ query })

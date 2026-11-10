@@ -138,6 +138,14 @@ export function MemoryDetailTab({ useTabInfo, useHub, actions, t }: MemoryDetail
 
   const close = (): void => { info.tab.actions.close() }
 
+  // The host hides the whole column while a main panel is active, so the panel
+  // cannot stay open beside this page; this in-page switch is the way back.
+  const back = (): ReactNode => (
+    <div className={css.headerTop}>
+      <Button variant="ghost" onClick={() => { actions.showMemoryList() }}>{t('back')}</Button>
+    </div>
+  )
+
   const appendTags = (raw: string): void => {
     const parts = raw.split(/[,，]/u).map(part => part.trim()).filter(part => part !== '')
     if (parts.length === 0) return
@@ -230,12 +238,13 @@ export function MemoryDetailTab({ useTabInfo, useHub, actions, t }: MemoryDetail
   }
 
   if (phase === 'loading') {
-    return <div className={css.root}><LoadingBlock text={t('memoryLoading')} /></div>
+    return <div className={css.root}>{back()}<LoadingBlock text={t('memoryLoading')} /></div>
   }
 
   if (phase === 'missing') {
     return (
       <div className={css.root}>
+        {back()}
         <EmptyBlock
           description={t('memoryDetailMissing')}
           action={<Button variant="secondary" onClick={close}>{t('close')}</Button>}
@@ -247,6 +256,7 @@ export function MemoryDetailTab({ useTabInfo, useHub, actions, t }: MemoryDetail
   if (phase === 'error' || entry === null || form === null) {
     return (
       <div className={css.root}>
+        {back()}
         <div className={memoryCss.errorBox}>
           <span className={memoryCss.errorText}>{t('memoryDetailReadError', { message: error })}</span>
           <Button variant="secondary" icon="refresh" onClick={() => { setReloadToken(token => token + 1) }}>
@@ -259,6 +269,7 @@ export function MemoryDetailTab({ useTabInfo, useHub, actions, t }: MemoryDetail
 
   return (
     <div className={css.root} aria-label={t('memoryDetailTabTitle')}>
+      {back()}
       <header className={css.header}>
         <h2 className={css.title}>{form.name !== '' ? form.name : entry.name}</h2>
         <div className={css.badges}>

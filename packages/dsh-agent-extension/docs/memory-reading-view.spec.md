@@ -66,6 +66,7 @@ controller.openMemoryDetail({ scope, project, id })
 状态：`loading → ready | error`（复用 `LoadingBlock` / `errorBox` + 重试）。
 
 - 头部：记忆名称（16px/500，可换行）+ 类型徽章 + 状态徽章（active 不挂）。
+- 页内出口：头部上方提供「返回」按钮（复用 `back` locale），`selectPanel(PANEL_ID)` 切回插件面板并落在记忆分区；宿主主面板与右侧栏互斥，这是离开详情面的页内路径。
 - 可编辑字段：名称、描述（input）；类型（共享 `Select`）；重要性（range 0–100，沿用 `memory.module.css` 的 `.rangeInput` 约定：`--dsw-alias-brand-primary` 填充、`--dsw-alias-border-l3` 未填充轨道、16px 实心圆柄）；标签（chip 编辑，回车/逗号成 chip，× 删除）。
 - 只读区：正文不在此页签展示，仅一行提示"正文在右侧预览中查看"。
 - 动作区：`保存`（仅脏态可用，保存中显示 `Spinner`）；状态动作 `停用/恢复`、`归档`（ghost）；`删除`（danger，两步内联确认，复用现有 `.confirmArea` 样式）。

@@ -2741,6 +2741,15 @@ window.__ModuleLoader__.load({
 					}
 				})();
 			};
+			/**
+			* Return to the panel's memory list. The host keeps the main panel and the
+			* right Sidebar mutually exclusive, so the way back is a panel switch; the
+			* memory section is kept in the store, so the list tab is what comes back.
+			*/
+			const showMemoryList = () => {
+				set({ sectionTab: "memory" });
+				if (host !== void 0) host.layout.selectPanel(host.panelId);
+			};
 			const setMarketBusy = (id, label) => {
 				set((state) => {
 					const marketBusy = { ...state.marketBusy };
@@ -2936,6 +2945,7 @@ window.__ModuleLoader__.load({
 					set({ marketPluginKey: null });
 				},
 				openMemoryDetail,
+				showMemoryList,
 				loadDetail,
 				setQuery(query) {
 					set({ query });
@@ -7687,7 +7697,7 @@ window.__ModuleLoader__.load({
 			});
 		}
 		// \0dsh-css:E:\workspace\dsh-plugins\packages\dsh-agent-extension\src\client\memory-detail.module.css.mjs
-		const css = "._4ohCUq_root{box-sizing:border-box;overscroll-behavior:contain;height:100%;color:var(--dsw-alias-label-primary);flex-direction:column;gap:12px;padding:16px;font-size:14px;display:flex;overflow-y:auto;container-type:inline-size}._4ohCUq_header{flex-direction:column;gap:6px;min-width:0;display:flex}._4ohCUq_title{color:var(--dsw-alias-label-primary);overflow-wrap:anywhere;margin:0;font-size:16px;font-weight:500}._4ohCUq_badges{flex-wrap:wrap;align-items:center;gap:6px;display:flex}._4ohCUq_formGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;display:grid}@container (width<=360px){._4ohCUq_formGrid{grid-template-columns:minmax(0,1fr)}}._4ohCUq_field{flex-direction:column;gap:4px;min-width:0;display:flex}._4ohCUq_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500}._4ohCUq_fieldHint{color:var(--dsw-alias-label-tertiary);font-size:11px}._4ohCUq_input{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-2);width:100%;min-width:0;height:36px;color:var(--dsw-alias-label-primary);font:inherit;padding:0 10px;font-size:14px}._4ohCUq_input:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}._4ohCUq_hintLine{border-top:.5px solid var(--dsw-alias-border-l2);flex-direction:column;gap:2px;padding-top:8px;display:flex}._4ohCUq_previewHint{color:var(--dsw-alias-label-secondary);font-size:12px}._4ohCUq_emptyContent{color:var(--dsw-alias-label-tertiary);font-size:11px}._4ohCUq_actions{flex-wrap:wrap;align-items:center;gap:8px;padding-top:4px;display:flex}._4ohCUq_actionsRight{flex-wrap:wrap;flex:auto;justify-content:flex-end;align-items:center;gap:8px;min-width:0;display:flex}._4ohCUq_footer{border-top:.5px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-tertiary);padding-top:8px;font-size:11px}";
+		const css = "._4ohCUq_root{box-sizing:border-box;overscroll-behavior:contain;height:100%;color:var(--dsw-alias-label-primary);flex-direction:column;gap:12px;padding:16px;font-size:14px;display:flex;overflow-y:auto;container-type:inline-size}._4ohCUq_header{flex-direction:column;gap:6px;min-width:0;display:flex}._4ohCUq_headerTop{align-items:center;min-height:24px;display:flex}._4ohCUq_title{color:var(--dsw-alias-label-primary);overflow-wrap:anywhere;margin:0;font-size:16px;font-weight:500}._4ohCUq_badges{flex-wrap:wrap;align-items:center;gap:6px;display:flex}._4ohCUq_formGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;display:grid}@container (width<=360px){._4ohCUq_formGrid{grid-template-columns:minmax(0,1fr)}}._4ohCUq_field{flex-direction:column;gap:4px;min-width:0;display:flex}._4ohCUq_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500}._4ohCUq_fieldHint{color:var(--dsw-alias-label-tertiary);font-size:11px}._4ohCUq_input{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-2);width:100%;min-width:0;height:36px;color:var(--dsw-alias-label-primary);font:inherit;padding:0 10px;font-size:14px}._4ohCUq_input:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}._4ohCUq_hintLine{border-top:.5px solid var(--dsw-alias-border-l2);flex-direction:column;gap:2px;padding-top:8px;display:flex}._4ohCUq_previewHint{color:var(--dsw-alias-label-secondary);font-size:12px}._4ohCUq_emptyContent{color:var(--dsw-alias-label-tertiary);font-size:11px}._4ohCUq_actions{flex-wrap:wrap;align-items:center;gap:8px;padding-top:4px;display:flex}._4ohCUq_actionsRight{flex-wrap:wrap;flex:auto;justify-content:flex-end;align-items:center;gap:8px;min-width:0;display:flex}._4ohCUq_footer{border-top:.5px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-tertiary);padding-top:8px;font-size:11px}";
 		const tagId = "dsh-agent-extension/memory-detail.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId) + "]") === null) {
 			const tag = document.createElement("style");
@@ -7707,6 +7717,7 @@ window.__ModuleLoader__.load({
 			"footer": "_4ohCUq_footer",
 			"formGrid": "_4ohCUq_formGrid",
 			"header": "_4ohCUq_header",
+			"headerTop": "_4ohCUq_headerTop",
 			"hintLine": "_4ohCUq_hintLine",
 			"input": "_4ohCUq_input",
 			"previewHint": "_4ohCUq_previewHint",
@@ -7817,6 +7828,16 @@ window.__ModuleLoader__.load({
 			const close = () => {
 				info.tab.actions.close();
 			};
+			const back = () => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+				className: memory_detail_module_css_default.headerTop,
+				children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+					variant: "ghost",
+					onClick: () => {
+						actions.showMemoryList();
+					},
+					children: t("back")
+				})
+			});
 			const appendTags = (raw) => {
 				const parts = raw.split(/[,，]/u).map((part) => part.trim()).filter((part) => part !== "");
 				if (parts.length === 0) return;
@@ -7918,24 +7939,24 @@ window.__ModuleLoader__.load({
 					setDeleteBusy(false);
 				}
 			};
-			if (phase === "loading") return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+			if (phase === "loading") return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: memory_detail_module_css_default.root,
-				children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(LoadingBlock, { text: t("memoryLoading") })
+				children: [back(), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(LoadingBlock, { text: t("memoryLoading") })]
 			});
-			if (phase === "missing") return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+			if (phase === "missing") return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: memory_detail_module_css_default.root,
-				children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(EmptyBlock, {
+				children: [back(), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(EmptyBlock, {
 					description: t("memoryDetailMissing"),
 					action: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
 						variant: "secondary",
 						onClick: close,
 						children: t("close")
 					})
-				})
+				})]
 			});
-			if (phase === "error" || entry === null || form === null) return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+			if (phase === "error" || entry === null || form === null) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: memory_detail_module_css_default.root,
-				children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+				children: [back(), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: memory_module_css_default.errorBox,
 					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 						className: memory_module_css_default.errorText,
@@ -7948,12 +7969,13 @@ window.__ModuleLoader__.load({
 						},
 						children: t("memoryRetry")
 					})]
-				})
+				})]
 			});
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: memory_detail_module_css_default.root,
 				"aria-label": t("memoryDetailTabTitle"),
 				children: [
+					back(),
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("header", {
 						className: memory_detail_module_css_default.header,
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {

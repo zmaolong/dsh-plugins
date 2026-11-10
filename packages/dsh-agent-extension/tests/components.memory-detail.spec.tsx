@@ -247,6 +247,16 @@ describe('MemoryDetailTab', () => {
     expect(await screen.findByRole('heading', { name: '提交信息用中文' })).toBeTruthy()
   })
 
+  it('详情页签提供返回记忆列表的入口', async () => {
+    installFetch()
+    const props = detailProps({ params: TARGET })
+    const showMemoryList = vi.spyOn(props.actions, 'showMemoryList')
+    render(<MemoryDetailTab {...props} />)
+    await screen.findByRole('heading', { name: '提交信息用中文' })
+    fireEvent.click(screen.getByRole('button', { name: t('back') }))
+    expect(showMemoryList).toHaveBeenCalledTimes(1)
+  })
+
   it('切换记忆时丢弃未保存修改并提示', async () => {
     installFetch({
       get: (url) => okResponse({

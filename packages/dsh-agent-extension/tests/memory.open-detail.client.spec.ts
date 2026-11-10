@@ -159,6 +159,14 @@ describe('openMemoryDetail', () => {
     expect(fake.openResource).not.toHaveBeenCalled()
   })
 
+  it('showMemoryList 切回插件主面板并保持记忆分区', () => {
+    const fake = createFakeHost()
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh', host: fake.host })
+    controller.actions.showMemoryList()
+    expect(fake.layout.selectPanel).toHaveBeenLastCalledWith('agent-extension')
+    expect(controller.store.getSnapshot().sectionTab).toBe('memory')
+  })
+
   it('没有宿主服务时只提示，不影响面板', async () => {
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
     controller.actions.openMemoryDetail({ scope: 'global', project: '', id: 'm1' })

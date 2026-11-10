@@ -12,6 +12,7 @@
 - **交互**：点击列表卡片 → 退出插件主面板（`ctx.layout.selectPanel(null)`）→ 宿主侧栏展开
   「记忆详情」自定义页签 + 原生文件预览页签（`openResource(..., { preferNewPane: true })`）；
   宽度不足或已达 2 窗格上限时降级为同窗格页签切换。无前台 Session 时 toast 提示并回退插件面板。
+  详情页签顶部有「返回」按钮，切回插件面板的记忆列表（宿主主面板与右侧栏互斥，这是页内出口）。
 - **数据面**：`GET /memory/preview-file` → `MemoryStore.previewFile`；`src/memory/preview.ts`
   生成只含正文的临时 `.md`（按 id 目录、幂等覆写、7 天清理、删除记忆时清理）。
 - **参数页签**：`src/client/memory-detail.tsx`（名称/描述/类型/标签/重要性 + 保存、停用/恢复、

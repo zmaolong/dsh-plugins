@@ -25,6 +25,14 @@
   min-width: 0;
 }
 
+/* Way back to the panel's memory list: the host keeps the main panel and the
+ * right Sidebar mutually exclusive, so the page itself carries the switch. */
+.headerTop {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+}
+
 .title {
   margin: 0;
   font-size: 16px;
