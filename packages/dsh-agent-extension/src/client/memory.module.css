@@ -456,8 +456,10 @@
   appearance: textfield;
 }
 
-/* Importance slider: themed 4px track filled up to the live value plus a
- * centered ring thumb; the native control keeps keyboard and a11y behavior. */
+/* Importance slider: a quiet 4px track filled in the host's primary tone (the
+ * same tone as an on Switch / primary button: white in the dark theme, near
+ * black in the light theme) with a solid round handle; the native control keeps
+ * keyboard and a11y behavior. */
 .rangeRow {
   display: flex;
   align-items: center;
@@ -488,7 +490,7 @@
   corner-shape: round;
   background: linear-gradient(
     to right,
-    var(--dsw-alias-state-business-primary) 0 var(--range-fill, 50%),
+    var(--dsw-alias-brand-primary) 0 var(--range-fill, 50%),
     var(--dsw-alias-border-l3) var(--range-fill, 50%) 100%
   );
 }
@@ -498,10 +500,10 @@
   width: 16px;
   height: 16px;
   margin-top: -6px;
-  border: 2px solid var(--dsw-alias-state-business-primary);
+  border: 0;
   border-radius: 50%;
   corner-shape: round;
-  background: var(--dsw-alias-bg-layer-1);
+  background: var(--dsw-alias-brand-primary);
 }
 
 .rangeInput::-moz-range-track {
@@ -515,16 +517,16 @@
   height: 4px;
   border-radius: 999px;
   corner-shape: round;
-  background: var(--dsw-alias-state-business-primary);
+  background: var(--dsw-alias-brand-primary);
 }
 
 .rangeInput::-moz-range-thumb {
   width: 16px;
   height: 16px;
-  border: 2px solid var(--dsw-alias-state-business-primary);
+  border: 0;
   border-radius: 50%;
   corner-shape: round;
-  background: var(--dsw-alias-bg-layer-1);
+  background: var(--dsw-alias-brand-primary);
 }
 
 .rangeValue {
