@@ -138,6 +138,29 @@ describe('DialogShell', () => {
     expect(onClose).toHaveBeenCalled()
     outside.remove()
   })
+
+  it('traps Tab and Shift+Tab inside the dialog', () => {
+    render(
+      <DialogShell t={t} title="焦点陷阱">
+        <button type="button">第一个</button>
+        <button type="button">最后一个</button>
+      </DialogShell>,
+    )
+    const dialog = screen.getByRole('dialog', { name: '焦点陷阱' })
+    const first = screen.getByRole('button', { name: '第一个' })
+    const last = screen.getByRole('button', { name: '最后一个' })
+    // 初始焦点在面板容器上：Tab 进入第一个可聚焦元素。
+    expect(document.activeElement).toBe(dialog)
+    fireEvent.keyDown(dialog, { key: 'Tab' })
+    expect(document.activeElement).toBe(first)
+    // 最后一个继续 Tab 回绕到第一个；第一个 Shift+Tab 回到最后一个。
+    last.focus()
+    fireEvent.keyDown(last, { key: 'Tab' })
+    expect(document.activeElement).toBe(first)
+    first.focus()
+    fireEvent.keyDown(first, { key: 'Tab', shiftKey: true })
+    expect(document.activeElement).toBe(last)
+  })
 })
 
 describe('StoreCard', () => {

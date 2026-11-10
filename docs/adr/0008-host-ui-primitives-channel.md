@@ -31,3 +31,10 @@
 - 仓库 purity 门禁放宽为一个受控例外，需要在文档与测试中固定边界。
 - 客户端测试需 mock module seed 的 `require` 与降级分支。
 - 宿主 primitives 是内部模块，升级可能破坏；每次宿主升级必须回归 B4 批次涉及的四项能力。
+- 实施记录（preview.21）：实际采用范围**收窄为 `MarkdownText` 一个组件**（正文只读预览，props
+  `text/variant`，从宿主 bundle 实测确认）；`Toast`/`Modal` 保留自绘（宿主组件 props 未公开类型
+  声明，替换风险大于收益）；`@tanstack/react-virtual` 可经 module table 取用但本批未采用。
+  `tsdown.config.ts` 的白名单只放行 `@deepseek-ai/dsh-client-ui-primitives` 一个 specifier，
+  `tests/artifact.spec.ts` 同步断言「只允许该 specifier，其它 `@deepseek-ai/*` 仍拒绝」。
+  真机 zdebug 浏览器实测：详情弹窗正文由宿主 `MarkdownText` 渲染、console error = 0；
+  取不到时的降级路径由组件测试覆盖。

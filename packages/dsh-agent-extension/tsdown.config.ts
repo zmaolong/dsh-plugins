@@ -52,6 +52,14 @@ const manifest = JSON.parse(await readFile(new URL('./package.json', import.meta
 /** Module-table specifiers this bundle may stay external on. */
 const externals = new Set([...PLATFORM_MODULES, ...(manifest.dsh?.client?.external ?? [])])
 
+/**
+ * 受控例外（ADR-0008）：浏览器半只允许从宿主 primitives 取 MarkdownText。
+ *
+ * 值为 `undefined` 表示该包整体放行；这里收窄到 primitives 一个包，其它
+ * `@deepseek-ai/*` 仍然在浏览器构建里被拒绝。
+ */
+const HOST_PRIMITIVES = '@deepseek-ai/dsh-client-ui-primitives'
+
 /** Node builtins and prefixes, rejected in the browser face. */
 const nodeBuiltins = new Set([
   ...builtinModules,
@@ -110,7 +118,7 @@ function clientPlugins(): Plugin[] {
       if (nodeBuiltins.has(source)) {
         throw new Error(`client bundle purity: "${source}" is a node builtin; the browser half runs without node`)
       }
-      if (source.startsWith('@deepseek-ai/')) {
+      if (source.startsWith('@deepseek-ai/') && source !== HOST_PRIMITIVES) {
         throw new Error(
           `client bundle purity: "${source}" is not in the default client externals or ${PACKAGE_ID}'s dsh.client.external — `
           + 'cross-plugin value imports are forbidden; host capabilities cross through ctx '

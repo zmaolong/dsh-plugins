@@ -5490,7 +5490,7 @@ const LIMITS = {
 	entriesPerScope: 2e3,
 	projects: 200,
 	statsSessions: 100,
-	/** 最近捕获/注入样本上限（stats.json 的有界数组）。 */
+	/** 最近捕获/注入/检索样本上限（stats.json 的有界数组）。 */
 	statsRecent: 50,
 	/** 维护模型 provider / model 设置的最大字符数。 */
 	maintenanceModel: 120
@@ -8186,6 +8186,20 @@ const MEMORY_TOOL_NAMES = [
 function asMemoryType(value) {
 	return isMemoryType(value) ? value : void 0;
 }
+/**
+* 缺省检索样本记录器：从 agent 取会话 id（取不到用空串），直接写存储。
+*
+* @param store - 记忆存储。
+*/
+function defaultNoteSearch(store) {
+	return (agent, query, resultIds) => {
+		store.recordRetrieval({
+			sessionId: typeof agent?.session?.id === "string" ? agent.session.id : "",
+			query,
+			ids: resultIds
+		});
+	};
+}
 /** 统一的结果渲染器：工具返回值是纯文本。 */
 function textOutput() {
 	return {
@@ -8199,6 +8213,7 @@ function textOutput() {
 /** 构造四个记忆工具的定义（不注册）。 */
 function createMemoryTools(options) {
 	const { store } = options;
+	const noteSearch = options.noteSearch ?? defaultNoteSearch(store);
 	return [
 		{
 			name: "memory_search",
@@ -8251,8 +8266,10 @@ function createMemoryTools(options) {
 					includeArchived: false,
 					limit
 				});
-				options.noteToolUsage(exec.agent, results.map((entry) => entry.id), []);
-				options.touchUsage(results.map((entry) => entry.id));
+				const resultIds = results.map((entry) => entry.id);
+				options.noteToolUsage(exec.agent, resultIds, []);
+				noteSearch(exec.agent, query, resultIds);
+				options.touchUsage(resultIds);
 				return formatSearchResult(results, query);
 			}
 		},
@@ -9314,6 +9331,8 @@ const INDEX_LINE_CHARS = 120;
 const SESSION_STATS_KEEP = LIMITS.statsSessions;
 /** stats.json 中有界的最近样本数组上限。 */
 const RECENT_SAMPLE_KEEP = LIMITS.statsRecent;
+/** 一条检索样本保留的 id 数：诊断只看本次命中的前若干条。 */
+const RETRIEVAL_IDS_KEEP = 10;
 /** stats.json 中保留的不同跳过原因上限。 */
 const SKIP_REASON_KEEP = 50;
 /** 转义一个单行 frontmatter 标量。 */
@@ -9556,12 +9575,26 @@ function normalizeCaptureRow(raw) {
 	if (value.undone === true) row.undone = true;
 	return row;
 }
+/** 归一化一条检索样本。 */
+function normalizeRetrievalRow(raw) {
+	if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return null;
+	const value = raw;
+	const ids = normalizeIds(value.ids).slice(0, RETRIEVAL_IDS_KEEP);
+	return {
+		at: text(value.at) || (/* @__PURE__ */ new Date()).toISOString(),
+		sessionId: text(value.sessionId),
+		query: text(value.query),
+		results: clampInt(value.results, 0, 1e8, ids.length),
+		ids
+	};
+}
 /** 归一化持久化的 stats 文档（schema v1 的旧行补齐 v2 默认值）。 */
 function normalizeStats(raw) {
 	const value = objectOf(raw);
 	const sessions = Array.isArray(value.sessions) ? value.sessions.map(normalizeRecallRow).filter((row) => row !== null) : [];
 	const recentInjections = Array.isArray(value.recentInjections) ? value.recentInjections.map(normalizeInjectionRow).filter((row) => row !== null) : [];
 	const recentCaptures = Array.isArray(value.recentCaptures) ? value.recentCaptures.map(normalizeCaptureRow).filter((row) => row !== null) : [];
+	const recentRetrievals = Array.isArray(value.recentRetrievals) ? value.recentRetrievals.map(normalizeRetrievalRow).filter((row) => row !== null) : [];
 	return {
 		captureRuns: clampInt(value.captureRuns, 0, 1e8, 0),
 		capturedEntries: clampInt(value.capturedEntries, 0, 1e8, 0),
@@ -9569,7 +9602,8 @@ function normalizeStats(raw) {
 		sessions: sessions.slice(0, SESSION_STATS_KEEP),
 		skipReasons: normalizeSkipReasons(value.skipReasons),
 		recentInjections: recentInjections.slice(0, RECENT_SAMPLE_KEEP),
-		recentCaptures: recentCaptures.slice(0, RECENT_SAMPLE_KEEP)
+		recentCaptures: recentCaptures.slice(0, RECENT_SAMPLE_KEEP),
+		recentRetrievals: recentRetrievals.slice(0, RECENT_SAMPLE_KEEP)
 	};
 }
 /** 归一化一条项目登记。 */
@@ -9778,6 +9812,30 @@ var MemoryStore = class {
 		this.statsValue = {
 			...current,
 			recentInjections: [record, ...current.recentInjections].slice(0, RECENT_SAMPLE_KEEP)
+		};
+		this.writeStats();
+	}
+	/**
+	* 记录一次 `memory_search` 样本（有界，只保留最新 50 条）。
+	*
+	* `results` 是本次返回的条数（调用方传入的完整列表）；`ids` 只留前 10 个
+	* 供诊断展示，避免 stats.json 被一次大检索撑大。
+	*
+	* @param detail - 会话 id、原始查询与本次返回的记忆 id。
+	*/
+	recordRetrieval(detail) {
+		const current = this.stats();
+		const ids = normalizeIds(detail.ids);
+		const record = {
+			at: (/* @__PURE__ */ new Date()).toISOString(),
+			sessionId: text(detail.sessionId),
+			query: text(detail.query),
+			results: ids.length,
+			ids: ids.slice(0, RETRIEVAL_IDS_KEEP)
+		};
+		this.statsValue = {
+			...current,
+			recentRetrievals: [record, ...current.recentRetrievals].slice(0, RECENT_SAMPLE_KEEP)
 		};
 		this.writeStats();
 	}

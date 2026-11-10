@@ -7,7 +7,7 @@
  * @module dsh-agent-extension/client/dialogs
  */
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
 import clsx from 'clsx'
 import { Button, IconButton, Spinner } from './controls.tsx'
 import { Icon } from './icons.tsx'
@@ -16,10 +16,23 @@ import { identity, type DialogState, type HubActions, type HubState, type UseHub
 import { formatTime, errorMessageFor, orderMarkets, type JsonRecord, type Translate } from './presentation.ts'
 import css from './dialogs.module.css'
 
+/** Focusable descendants of the dialog, in document order. */
+function focusablesIn(dialog: HTMLElement): HTMLElement[] {
+  return Array.from(dialog.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, [tabindex]'))
+    .filter((element) => {
+      if (element.hasAttribute('disabled')) return false
+      if (element.getAttribute('tabindex') === '-1') return false
+      if (element.getAttribute('aria-hidden') === 'true') return false
+      return true
+    })
+}
+
 /** Shell of every dialog: mask, card, header, body, footer. */
-export function DialogShell({ t, title, children, footer, narrow = false, wide = false, onClose }: {
+export function DialogShell({ t, title, titleMeta, children, footer, narrow = false, wide = false, onClose }: {
   t: Translate
   title: string
+  /** Optional metadata next to the title (e.g. a row id with its copy action). */
+  titleMeta?: ReactNode
   children: ReactNode
   footer?: ReactNode
   narrow?: boolean
@@ -27,6 +40,28 @@ export function DialogShell({ t, title, children, footer, narrow = false, wide =
   onClose?: () => void
 }): ReactNode {
   const dialogRef = useRef<HTMLDivElement | null>(null)
+  // Keep Tab / Shift+Tab inside the dialog: the page behind the mask must not
+  // receive focus while a modal is open. Initial focus and Escape stay as is.
+  const trapFocus = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
+    if (event.key !== 'Tab') return
+    const dialog = dialogRef.current
+    if (dialog === null) return
+    const focusables = focusablesIn(dialog)
+    if (focusables.length === 0) {
+      event.preventDefault()
+      dialog.focus()
+      return
+    }
+    const first = focusables[0]!
+    const last = focusables[focusables.length - 1]!
+    const active = document.activeElement
+    const outside = active === null || active === dialog || !dialog.contains(active)
+    if (event.shiftKey ? (active === first || outside) : (active === last || outside)) {
+      event.preventDefault()
+      if (event.shiftKey) last.focus()
+      else first.focus()
+    }
+  }
   // Move focus into the dialog on mount; restore it to the previously focused element on unmount.
   useEffect(() => {
     if (typeof document === 'undefined') return undefined
@@ -48,9 +83,11 @@ export function DialogShell({ t, title, children, footer, narrow = false, wide =
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
+        onKeyDown={trapFocus}
       >
         <div className={css.head}>
           <h2 className={css.title} title={title}>{title}</h2>
+          {titleMeta ?? null}
           {onClose
             ? <IconButton icon="x" title={t('close')} onClick={onClose} />
             : null}

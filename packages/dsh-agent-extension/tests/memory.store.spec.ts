@@ -326,7 +326,59 @@ describe('记忆存储：Markdown 事实、手改、去重与生命周期', () =
       skipReasons: {},
       recentInjections: [],
       recentCaptures: [],
+      recentRetrievals: [],
     })
+  })
+
+  it('recordRetrieval 写入最近检索：最新在前、ids 截前 10、有界 50 并落盘', () => {
+    const store = makeStore()
+    const manyIds = Array.from({ length: 12 }, (_, index) => `m-${index}`)
+    store.recordRetrieval({ sessionId: 's-r1', query: '  pnpm  ', ids: manyIds })
+    store.recordRetrieval({ sessionId: 's-r2', query: 'tsdown', ids: ['m-a', 'm-b'] })
+
+    const rows = store.stats().recentRetrievals
+    expect(rows).toHaveLength(2)
+    expect(rows[0]).toMatchObject({ sessionId: 's-r2', query: 'tsdown', results: 2, ids: ['m-a', 'm-b'] })
+    expect(rows[0]?.at).toMatch(/^\d{4}-\d{2}-\d{2}T/u)
+    // results 是完整命中的条数；ids 只留前 10 个。
+    expect(rows[1]).toMatchObject({ sessionId: 's-r1', query: 'pnpm', results: 12 })
+    expect(rows[1]?.ids).toHaveLength(10)
+    expect(rows[1]?.ids[0]).toBe('m-0')
+
+    // 有界 50，最新在前。
+    for (let index = 0; index < 60; index += 1) {
+      store.recordRetrieval({ sessionId: 's-bulk', query: `q-${index}`, ids: ['m-x'] })
+    }
+    const bounded = store.stats().recentRetrievals
+    expect(bounded).toHaveLength(50)
+    expect(bounded[0]?.query).toBe('q-59')
+
+    const persisted = JSON.parse(readFileSync(path.join(store.root, 'stats.json'), 'utf8')) as {
+      recentRetrievals: Array<Record<string, unknown>>
+    }
+    expect(persisted.recentRetrievals).toHaveLength(50)
+    expect(persisted.recentRetrievals[0]).toMatchObject({ sessionId: 's-bulk', query: 'q-59', results: 1, ids: ['m-x'] })
+  })
+
+  it('旧 stats.json 的检索样本容错：非法行丢弃、缺字段按默认补齐', () => {
+    const store = makeStore()
+    writeFileSync(path.join(store.root, 'stats.json'), JSON.stringify({
+      schema: 2,
+      captureRuns: 3,
+      recentRetrievals: [
+        { at: '2026-01-01T00:00:00.000Z', sessionId: 's-old', query: 'pnpm', results: 3, ids: ['m-1', 'm-2', 'm-3'] },
+        'junk',
+        null,
+        { sessionId: 's-bad-ids', query: 5, ids: 'not-an-array' },
+      ],
+    }), 'utf8')
+
+    const reloaded = new MemoryStore({ home: path.dirname(store.root) })
+    const rows = reloaded.stats().recentRetrievals
+    expect(rows).toHaveLength(2)
+    expect(rows[0]).toMatchObject({ sessionId: 's-old', query: 'pnpm', results: 3, ids: ['m-1', 'm-2', 'm-3'] })
+    expect(rows[1]).toMatchObject({ sessionId: 's-bad-ids', query: '', results: 0, ids: [] })
+    expect(rows[1]?.at).toMatch(/^\d{4}-\d{2}-\d{2}T/u)
   })
 
   it('recordCapture 生成样本 id 与新增引用；undoCapture 归档新增条目、标记 undone 且幂等', () => {

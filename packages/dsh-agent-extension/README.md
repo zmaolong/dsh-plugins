@@ -1,9 +1,9 @@
 # dsh-agent-extension
 
-> **试验性预览版（`0.0.1-preview.20`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
+> **试验性预览版（`0.0.1-preview.21`）**：仅供内部试验，接口与能力可能变化，不保证兼容，暂不对外推广。
 > npm 上只发布 `preview` dist-tag（`latest` 暂不指向本版本）。
 > 需要安装时请锁定精确版本：
-> `dsh plugin --profile web add dsh-agent-extension@0.0.1-preview.20`。
+> `dsh plugin --profile web add dsh-agent-extension@0.0.1-preview.21`。
 > 版本说明：npm 公开线为 `0.0.1-preview.N`，首个正式版定为 `0.0.1`（预览线的稳定版）；
 > 官方化工具链形态（TypeScript + JSX + CSS Modules + tsdown + vitest，对齐官方插件形态，
 > 破坏性重构、不做旧版兼容）自 `dsh-agent-plugin-hub` 时代的 `0.0.1-preview.6` 延续；
@@ -24,6 +24,19 @@ DSH 的**智能体扩展**（Agent Extension）：管理智能体插件、技能
 `mcpServers` 等能力。已知格式包括 Claude Code、CodeBuddy、ZCode；它们不是 DSH 插件
 （cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
+
+## 0.0.1-preview.21 变更（记忆 v2 · B4 诊断与阅读面）
+
+- **记忆诊断**：工具条「诊断」对话框（不新增 tab）展示最近注入快照（条数/字符/截断）、
+  最近捕获、最近检索（query/结果数/id）、维护流水与撤销；每块最多 10 条，其余折叠。
+  数据面新增 `stats.recentRetrievals`（有界 50）。
+- **面板内正文只读预览**：详情弹窗用宿主官方 `MarkdownText` 渲染记忆正文（ADR-0008 受控例外），
+  「用系统应用打开」保留；宿主拿不到组件时自动降级为只读提示 + 系统打开，不会崩面板。
+- **面板修复**：详情标题显示并可复制记忆 id；归档条目默认隐藏（「显示已归档」切换，体检仍含归档）；
+  卡片标签按钮的 Enter/Space 不再冒泡打开详情；对话框内 Tab/Shift+Tab 焦点循环（焦点陷阱）。
+- **构建门禁**：purity 白名单只放行 `@deepseek-ai/dsh-client-ui-primitives` 一个 specifier，
+  `artifact.spec.ts` 同步断言；`AGENTS.md`/`PLUGIN-DEV.md` 记录受控例外范围。
+- **测试**：全量 348 个离线用例；zdebug 真机浏览器实测 console error = 0。
 
 ## 0.0.1-preview.20 变更（记忆 v2 · B3 维护 Run）
 
@@ -388,7 +401,7 @@ hook 命令按 Claude Code 约定执行：工作目录为插件根，stdin 传 J
 | 过时 | 一票 `stale`（不注入、仍可搜），归档由维护 Run 或用户在面板确认 |
 | 数据模型 | 条目 schema v2：`lastUsedAt/usedCount/confidence/pinned/mergedFrom/source`；首次加载自动迁移并备份 |
 | 维护 | 手动「优化记忆」（达阈值时提示）：LLM 研判合并/停用/恢复/删除，两阶段清理，trash 备份 30 天与整次撤销 |
-| 管理面板 | 记忆 tab：作用域切换、搜索、类型筛选、新建、开关、索引预算、统计、导出、记忆体检；详情弹窗可调元信息，「用系统应用打开」把仅正文的临时 Markdown 交给关联应用 |
+| 管理面板 | 记忆 tab：作用域切换、搜索、类型筛选、新建、开关、索引预算、统计、导出、记忆体检、诊断；详情弹窗可调元信息，正文由宿主 `MarkdownText` 只读渲染，也可「用系统应用打开」 |
 
 写入即去重：名称/描述/正文指纹相同只强化原条目，不重复新增。记忆中不含项目内容：
 项目目录只写 `.dsh/agent-extension/memory/config.json`（身份文件，已自动 exclude）。

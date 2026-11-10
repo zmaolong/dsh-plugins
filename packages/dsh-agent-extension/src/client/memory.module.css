@@ -640,6 +640,26 @@
   overflow-wrap: anywhere;
 }
 
+/* 正文只读预览（ADR-0008）：复用 readonlyBox 的边框/底色，改成纵向可滚动区。 */
+.previewBox {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  max-height: 320px;
+  overflow: auto;
+}
+
+.previewBody {
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.previewBody img,
+.previewBody pre {
+  max-width: 100%;
+}
+
 .textarea {
   box-sizing: border-box;
   width: 100%;
@@ -987,4 +1007,134 @@
   font-size: 12px;
   color: var(--dsw-alias-label-secondary);
   overflow-wrap: anywhere;
+}
+
+/* 「显示已归档」切换：列表头部的可选 chip；aria-pressed 表示当前状态。 */
+.archiveToggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 8px;
+  border: 0.5px solid var(--dsw-alias-border-l3);
+  border-radius: var(--dsw-radius-sm);
+  background: var(--dsw-alias-bg-layer-3);
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.archiveToggle[aria-pressed='true'] {
+  border-color: var(--dsw-alias-state-business-primary);
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.archiveToggle:focus-visible {
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 1px;
+}
+
+@media (hover: hover) {
+  .archiveToggle:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+
+/* 详情对话框标题区的 id + 复制：id 保持单行省略，复制失败时整段可被全选。 */
+.detailIdRow {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.detailId {
+  min-width: 0;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+  user-select: all;
+}
+
+/* 诊断对话框：四块样本列表，每块最多 10 条，其余收进 details。 */
+.diagnosisStack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.diagnosisSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.diagnosisList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.diagnosisRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 0.5px solid var(--dsw-alias-border-l3);
+  border-radius: var(--dsw-radius-sm);
+  background: var(--dsw-alias-bg-layer-3);
+}
+
+.diagnosisRowTime {
+  flex: none;
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.diagnosisRowMain {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--dsw-alias-label-secondary);
+  overflow-wrap: anywhere;
+}
+
+.diagnosisRowIds {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.diagnosisMore > summary {
+  padding: 2px 0;
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary);
+  cursor: pointer;
+}
+
+.diagnosisMore > summary:focus-visible {
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 1px;
+}
+
+.diagnosisMore[open] > summary {
+  margin-bottom: 6px;
 }

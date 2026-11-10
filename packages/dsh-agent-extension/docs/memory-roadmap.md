@@ -3,7 +3,7 @@
 > 自包含实施规划：新上下文可直接按本文实施，不需要历史会话。
 > 决策依据：[ADR-0005](../../../docs/adr/0005-memory-recall-v2.md)（召回与注入）、[ADR-0006](../../../docs/adr/0006-memory-capture-and-maintenance.md)（捕获与维护）、[ADR-0007](../../../docs/adr/0007-memory-schema-v2.md)（数据模型与迁移）、[ADR-0008](../../../docs/adr/0008-host-ui-primitives-channel.md)（官方 UI 通道）；术语见 [`GLOSSARY.md`](../../../GLOSSARY.md)。
 > 基线：`0.0.1-preview.16`。
-> 进度：B0 已完成（preview.17，commit 482df23）；B1 已完成（preview.18，commit 51aff6c）；B2 已完成（preview.19，commit d9cc6d8）；B3 已完成（preview.20）。
+> 进度：B0 已完成（preview.17，commit 482df23）；B1 已完成（preview.18，commit 51aff6c）；B2 已完成（preview.19，commit d9cc6d8）；B3 已完成（preview.20，commit 7501752）；B4 已完成（preview.21）。
 
 ## 目标与边界
 
@@ -73,7 +73,8 @@
 ### B4 诊断与 UI（preview.21）
 
 - 诊断对话框（记忆 tab）：本会话注入快照、最近 50 次捕获、最近 50 次检索、维护流水与撤销。
-- 官方 UI 通道：`tsdown.config.ts` purity 白名单四件套；`AGENTS.md` / `docs/PLUGIN-DEV.md` 记录受控例外。
+- 官方 UI 通道：`tsdown.config.ts` purity 白名单放行 `@deepseek-ai/dsh-client-ui-primitives` 一个 specifier；`AGENTS.md` / `docs/PLUGIN-DEV.md` 记录受控例外。
+- 实施取舍：本批只采用 `MarkdownText`（正文只读预览）；`Toast`/`Modal` 保留自绘、`react-virtual` 未采用（宿主组件 props 未公开，风险大于收益），见 ADR-0008 实施记录。
 - 详情弹窗正文只读渲染（`MarkdownText`，require 失败降级为系统打开）；列表 `react-virtual`；Toast/Modal 替换自绘（保留降级）。
 - 面板缺陷：卡片/详情显示并复制 id；归档默认隐藏；标签按钮 Enter 不冒泡；对话框焦点陷阱；命令文案八语言。
 - 验收：console error = 0；暗/亮主题截图核对；宿主 require 失败分支有测试。

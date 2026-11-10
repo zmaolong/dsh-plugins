@@ -66,6 +66,22 @@ describe('记忆 API：state/list/get/save/status/delete/settings/export', () =>
     expect(got.entry.content).toContain('一句话说清')
   })
 
+  it('state 返回最近检索样本 recentRetrievals', async () => {
+    const store = makeStore()
+    store.recordRetrieval({ sessionId: 's-route', query: 'pnpm workspace', ids: ['m-1', 'm-2'] })
+    const state = await dispatchMemoryGet(store, '/memory/state', new URLSearchParams()) as unknown as {
+      stats: { recentRetrievals: Array<Record<string, unknown>> }
+    }
+    expect(state.stats.recentRetrievals).toHaveLength(1)
+    expect(state.stats.recentRetrievals[0]).toMatchObject({
+      sessionId: 's-route',
+      query: 'pnpm workspace',
+      results: 2,
+      ids: ['m-1', 'm-2'],
+    })
+    expect(state.stats.recentRetrievals[0]?.at).toMatch(/^\d{4}-\d{2}-\d{2}T/u)
+  })
+
   it('save/status/delete 生命周期与参数校验', async () => {
     const store = makeStore()
     const saved = await dispatchMemoryPost(store, '/memory/save', {
@@ -302,8 +318,9 @@ describe('记忆 API：state/list/get/save/status/delete/settings/export', () =>
     const reloaded = new MemoryStore({ home })
     reloaded.start()
     const state = await dispatchMemoryGet(reloaded, '/memory/state', new URLSearchParams()) as unknown as {
-      stats: { sessions: Array<Record<string, unknown>> }
+      stats: { sessions: Array<Record<string, unknown>>, recentRetrievals: Array<Record<string, unknown>> }
     }
     expect(state.stats.sessions[0]).toMatchObject({ sessionId: 's-old', searched: 0, searchUsed: 0 })
+    expect(state.stats.recentRetrievals).toEqual([])
   })
 })

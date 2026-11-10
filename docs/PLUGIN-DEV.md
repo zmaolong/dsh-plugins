@@ -218,7 +218,7 @@ defer(ctx, ['skills'], (scope) => {
 
 ### 3.5 禁止事项
 
-- **不要 `import` 任何 `@deepseek-ai/*`**（🟡 本机验证：profile 的 `pnpm-workspace.yaml` 是 `autoInstallPeers: false`，peer 依赖不会安装，import 会在宿主里解析失败）。需要 `defineTool` 之类助手时，把它写进 `dependencies` 并和宿主版本对齐；能通过 `ctx` 拿到的能力优先用 `ctx`；
+- **不要 `import` 任何 `@deepseek-ai/*`**（🟡 本机验证：profile 的 `pnpm-workspace.yaml` 是 `autoInstallPeers: false`，peer 依赖不会安装，import 会在宿主里解析失败）。需要 `defineTool` 之类助手时，把它写进 `dependencies` 并和宿主版本对齐；能通过 `ctx` 拿到的能力优先用 `ctx`。**唯一受控例外**：浏览器半可通过客户端 module table 的 `require('@deepseek-ai/dsh-client-ui-primitives')` 取 `MarkdownText`（[ADR-0008](adr/0008-host-ui-primitives-channel.md)），只允许这一个包与这一个组件，取不到必须降级；`tsdown.config.ts` 的 purity 门禁只放行该 specifier。
 - 不要在模块顶层做耗时/带副作用的初始化；
 - 不要写死宿主内部路径，用 `ctx` 提供的接口或环境变量。
 
@@ -558,7 +558,7 @@ npm run build   # tsdown 产物（lib/ 入库）
 
 - [ ] `package.json` 有 `dsh.bundle.patch`；`cordis.patch.yml` 行 `name` = 包名
 - [ ] `files` 覆盖全部运行时文件（含 `lib/` 产物）；`npm pack --dry-run` 内容正确
-- [ ] 没有 `import '@deepseek-ai/*'`；没有多余的 `engines.dsh`；`dependencies` 为空
+- [ ] 没有 `import '@deepseek-ai/*'`（浏览器半 `MarkdownText` 受控例外除外，见 ADR-0008）；没有多余的 `engines.dsh`；`dependencies` 为空
 - [ ] 宿主端服务用 `ctx.inject` 延迟获取；清理用 `ctx.effect`
 - [ ] 客户端样式不污染全局（CSS Modules）；locale id 小写；`npm run build` 已跑且 `lib/` 与源码同提交
 - [ ] 展示元数据在 `locale/*.json` 的 `meta.title/description`（官方）与本仓库 `dsh.market`（生成器）之间保持一致

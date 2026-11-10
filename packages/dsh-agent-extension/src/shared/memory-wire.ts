@@ -196,6 +196,17 @@ export interface RecentCapture {
   undone?: boolean
 }
 
+/** 一次 `memory_search` 样本：诊断视图的「最近检索」列表。 */
+export interface RecentRetrieval {
+  at: string
+  sessionId: string
+  query: string
+  /** 本次检索返回的条数；可能大于 `ids` 长度（id 只留前 10 个）。 */
+  results: number
+  /** 本次检索返回的记忆 id，最多 10 个。 */
+  ids: string[]
+}
+
 /** 持久化的捕获与召回计数（schema v2）。 */
 export interface MemoryStats {
   captureRuns: number
@@ -208,6 +219,12 @@ export interface MemoryStats {
   recentInjections: RecentInjection[]
   /** 捕获样本，最新在前，最多 50 条。 */
   recentCaptures: RecentCapture[]
+  /**
+   * 检索样本，最新在前，最多 50 条；`ids` 每行最多 10 个。
+   *
+   * 旧 `stats.json` 没有这个字段时，store 读取归一化为空数组。
+   */
+  recentRetrievals: RecentRetrieval[]
 }
 
 /** 空的 v2 计数形状。 */
@@ -220,6 +237,7 @@ export function emptyStats(): MemoryStats {
     skipReasons: {},
     recentInjections: [],
     recentCaptures: [],
+    recentRetrievals: [],
   }
 }
 
@@ -241,7 +259,7 @@ export const LIMITS = {
   entriesPerScope: 2000,
   projects: 200,
   statsSessions: 100,
-  /** 最近捕获/注入样本上限（stats.json 的有界数组）。 */
+  /** 最近捕获/注入/检索样本上限（stats.json 的有界数组）。 */
   statsRecent: 50,
   /** 维护模型 provider / model 设置的最大字符数。 */
   maintenanceModel: 120,

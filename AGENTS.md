@@ -19,7 +19,7 @@
 1. **组合包**：插件的 `package.json` 必须有 `dsh.bundle.patch` 指向本包 `cordis.patch.yml`，否则安装报 `not-a-bundle`。
 2. **行名对齐**：`cordis.patch.yml` 里 `insert[].name` 必须是能被解析的模块名，通常等于 `package.json` 的 `name`。
 3. **索引名对齐**：`index.json` 条目的 `name` 必须等于对应 `package.json` 的 `name`。
-4. **禁止 `import '@deepseek-ai/*'`**：profile 的 `autoInstallPeers: false`，peer 不会安装；宿主能力一律走 `ctx.*`，确需助手函数就写进 `dependencies` 并与宿主版本对齐。
+4. **禁止 `import '@deepseek-ai/*'`（唯一受控例外见 ADR-0008）**：profile 的 `autoInstallPeers: false`，peer 不会安装；宿主能力一律走 `ctx.*`，确需助手函数就写进 `dependencies` 并与宿主版本对齐。例外范围：浏览器半可通过客户端 module table 的 `require('@deepseek-ai/dsh-client-ui-primitives')` 取 **`MarkdownText`**（[ADR-0008](docs/adr/0008-host-ui-primitives-channel.md)）；只此一个包、只此一个组件，其它 `@deepseek-ai/*` 值导入仍禁止，`tsdown.config.ts` 的 purity 门禁按该范围放行。取不到时必须降级，不得让面板崩溃。
 5. **不写多余的 `engines.dsh`**：写了会严格校验，版本不匹配直接拒装。
 6. **服务就绪**：`skills` / `webServer` / `subprocess` 可能晚到，用 `ctx.inject([...], cb)` 延迟注册；清理用 `ctx.effect(() => () => …)`。
 7. **客户端插件**：`dsh.client` 声明 `platform/inject`，`exports` 暴露 `"./client"` 指向**构建产物** `lib/client.js`（tsdown 产出 CJS 工厂闭包，banner 注入 `window.__ModuleLoader__.load({ id, factory(require){…} })`）；样式一律 CSS Modules（`*.module.css`，构建链编译成 `<style data-plugin-css>` 注入），不得污染全局，主题只消费 `--dsw-alias-*` token。

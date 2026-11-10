@@ -5,14 +5,21 @@
  * buttons, list rows) against a mocked `/agent-plugin/api/memory/*` data
  * plane; never asserts hashed class names and never touches the network.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 
 import { MemoryView } from '../src/client/MemoryView.tsx'
+import { setHostMarkdownTextForTest } from '../src/client/host-ui.ts'
 import { createHubController } from '../src/client/store.ts'
 import { zh } from '../src/client/locales.ts'
 
+beforeEach(() => {
+  setHostMarkdownTextForTest(null)
+})
+
 afterEach(() => {
+  setHostMarkdownTextForTest(null)
+  Reflect.deleteProperty(window.navigator, 'clipboard')
   cleanup()
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
@@ -24,6 +31,11 @@ const t = (key: string, vars?: Record<string, unknown>): string => {
     for (const name of Object.keys(vars)) copy = copy.split(`{${name}}`).join(String(vars[name]))
   }
   return copy
+}
+
+/** 伪宿主 MarkdownText：渲染正文文本，供「拿到宿主组件」路径断言。 */
+function FakeMarkdownText({ text }: { text: string }) {
+  return <div data-testid="fake-markdown">{text}</div>
 }
 
 /** 「最近捕获」样本：一条写入成功可撤销，一条被闸门跳过且无写入。 */
@@ -67,6 +79,13 @@ const STATE = {
       { sessionId: 's2', injected: 10, injectedUsed: 6, searched: 12, searchUsed: 3, overflow: 2, updatedAt: '2026-11-08T11:00:00.000Z' },
     ],
     recentCaptures: RECENT_CAPTURES,
+    recentInjections: [
+      { sessionId: 's1', at: '2026-11-09T09:00:00.000Z', entries: 12, chars: 1234, truncated: true },
+      { sessionId: 's2', at: '2026-11-08T09:00:00.000Z', entries: 4, chars: 300, truncated: false },
+    ],
+    recentRetrievals: [
+      { at: '2026-11-09T10:00:00.000Z', sessionId: 's2', query: '提交', results: 3, ids: ['m1', 'm2', 'm4'] },
+    ],
   },
 }
 
@@ -187,7 +206,12 @@ function installFetch(options: {
     const url = String(input)
     calls.push({ url, init })
     if (url.includes('/memory/state')) return options.state ? options.state() : okResponse(STATE)
-    if (url.includes('/memory/list')) return options.list ? options.list(url) : okResponse({ scope: 'project', project: '', total: ENTRIES.length, entries: ENTRIES })
+    if (url.includes('/memory/list')) {
+      if (options.list) return options.list(url)
+      // 模拟服务端过滤：只有请求带 includeArchived=1 才返回归档条目。
+      const list = url.includes('includeArchived=1') ? ENTRIES : ENTRIES.filter(entry => entry.status !== 'archived')
+      return okResponse({ scope: 'project', project: '', total: list.length, entries: list })
+    }
     if (url.includes('/memory/get')) return options.get ? options.get(url) : okResponse({ entry: DETAIL })
     if (url.includes('/memory/save')) return okResponse({ entry: SAVED })
     if (url.includes('/memory/status')) return okResponse({ entry: { ...DETAIL, status: 'stale' } })
@@ -222,12 +246,13 @@ describe('MemoryView', () => {
     // 生效中的条目不挂状态徽章；标签以 chip 形式展示。
     expect(within(row).queryByText(t('memoryStatusActive'))).toBeNull()
     expect(within(row).getByText('git')).toBeTruthy()
-    const archivedRow = screen.getByRole('button', { name: /旧决策/u })
-    expect(within(archivedRow).getByText(t('memoryStatusArchived'))).toBeTruthy()
+    // 归档条目默认隐藏，列表请求也不带 includeArchived。
+    expect(screen.queryByRole('button', { name: /旧决策/u })).toBeNull()
     // 默认选中的项目作用域是 lastSeen 最新的项目。
     const listCall = calls.find(call => call.url.includes('/memory/list'))
     expect(listCall?.url).toContain('scope=project')
     expect(listCall?.url).toContain(encodeURIComponent('/repo/new'))
+    expect(listCall?.url).not.toContain('includeArchived')
   })
 
   it('切换作用域时按新 scope 重新请求列表，项目下拉默认最新项目', async () => {
@@ -329,6 +354,52 @@ describe('MemoryView', () => {
     expect(screen.queryByLabelText(t('memoryFieldContent'))).toBeNull()
     fireEvent.click(openButton)
     expect(openNative).toHaveBeenCalledWith({ scope: 'project', project: '/repo/new', id: 'm1' })
+  })
+
+  it('注入宿主 MarkdownText 时详情弹窗渲染正文预览并保留系统打开入口', async () => {
+    setHostMarkdownTextForTest(FakeMarkdownText)
+    installFetch()
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    render(<MemoryView actions={controller.actions} t={t} />)
+    const row = await screen.findByRole('button', { name: /提交信息用中文/u })
+    fireEvent.click(row)
+    const preview = await screen.findByTestId('fake-markdown')
+    expect(preview.textContent).toContain('提交信息必须用中文。')
+    expect(screen.getByText(t('memoryOpenNative'))).toBeTruthy()
+    expect(screen.queryByText(t('memoryBodyReadOnlyHint'))).toBeNull()
+  })
+
+  it('宿主不提供 MarkdownText 时退回只读提示并保留系统打开入口', async () => {
+    setHostMarkdownTextForTest(null)
+    installFetch()
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    render(<MemoryView actions={controller.actions} t={t} />)
+    const row = await screen.findByRole('button', { name: /提交信息用中文/u })
+    fireEvent.click(row)
+    expect(await screen.findByText(t('memoryBodyReadOnlyHint'))).toBeTruthy()
+    expect(screen.queryByTestId('fake-markdown')).toBeNull()
+    expect(screen.getByText(t('memoryOpenNative'))).toBeTruthy()
+  })
+
+  it('详情弹窗标题区展示记忆 id，复制成功提示 memoryIdCopied', async () => {
+    const writeText = vi.fn(async () => {})
+    Object.defineProperty(window.navigator, 'clipboard', { configurable: true, value: { writeText } })
+    installFetch()
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const toast = vi.spyOn(controller.actions, 'toast')
+    render(<MemoryView actions={controller.actions} t={t} />)
+    const row = await screen.findByRole('button', { name: /提交信息用中文/u })
+    fireEvent.click(row)
+    const dialog = await screen.findByRole('dialog', { name: t('memoryEditTitle') })
+    expect(within(dialog).getByText('m1')).toBeTruthy()
+    fireEvent.click(within(dialog).getByRole('button', { name: t('memoryCopyId') }))
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith('m1')
+    })
+    await waitFor(() => {
+      expect(toast).toHaveBeenCalledWith('success', t('memoryIdCopied'))
+    })
+    Reflect.deleteProperty(window.navigator, 'clipboard')
   })
 
   it('删除需要二次确认：第一次点击只展开确认，确认后才调用 /memory/delete', async () => {
@@ -489,12 +560,42 @@ describe('MemoryView', () => {
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
     render(<MemoryView actions={controller.actions} t={t} />)
     await screen.findByRole('button', { name: /提交信息用中文/u })
-    expect(screen.getByRole('button', { name: /旧决策/u })).toBeTruthy()
+    // 归档条目默认不显示（不计入未筛选的全量）。
+    expect(screen.queryByRole('button', { name: /旧决策/u })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'git' }))
     expect(screen.getByRole('button', { name: t('memoryClearTagFilter') })).toBeTruthy()
     expect(screen.queryByRole('button', { name: /旧决策/u })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: t('memoryClearTagFilter') }))
+    expect(await screen.findByRole('button', { name: /提交信息用中文/u })).toBeTruthy()
+  })
+
+  it('归档条目默认隐藏，开启「显示已归档」后按 includeArchived=1 重载并可见', async () => {
+    const { calls } = installFetch()
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    render(<MemoryView actions={controller.actions} t={t} />)
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    expect(screen.queryByRole('button', { name: /旧决策/u })).toBeNull()
+    const firstList = calls.find(call => call.url.includes('/memory/list'))
+    expect(firstList?.url).not.toContain('includeArchived')
+    const toggle = screen.getByRole('button', { name: t('memoryShowArchived') })
+    expect(toggle.getAttribute('aria-pressed')).toBe('false')
+    fireEvent.click(toggle)
     expect(await screen.findByRole('button', { name: /旧决策/u })).toBeTruthy()
+    expect(toggle.getAttribute('aria-pressed')).toBe('true')
+    const latestList = calls.filter(call => call.url.includes('/memory/list')).at(-1)
+    expect(latestList?.url).toContain('includeArchived=1')
+  })
+
+  it('标签 chip 的 Enter/Space 不冒泡打开详情', async () => {
+    installFetch()
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    render(<MemoryView actions={controller.actions} t={t} />)
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    const tagButton = screen.getByRole('button', { name: 'git' })
+    fireEvent.keyDown(tagButton, { key: 'Enter' })
+    expect(screen.queryByRole('heading', { name: t('memoryEditTitle') })).toBeNull()
+    fireEvent.keyDown(tagButton, { key: ' ' })
+    expect(screen.queryByRole('heading', { name: t('memoryEditTitle') })).toBeNull()
   })
 
   it('排序切换为最近更新时客户端重排卡片顺序', async () => {
@@ -502,6 +603,9 @@ describe('MemoryView', () => {
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
     render(<MemoryView actions={controller.actions} t={t} />)
     await screen.findByRole('button', { name: /提交信息用中文/u })
+    // 先开启「显示已归档」，让旧决策进入列表。
+    fireEvent.click(screen.getByRole('button', { name: t('memoryShowArchived') }))
+    await screen.findByRole('button', { name: /旧决策/u })
     // 默认顺序保持服务端返回序（重要度优先）：m1 在前。
     const defaultCards = screen.getAllByRole('button', { name: /提交信息用中文|旧决策/u })
     expect(defaultCards[0]?.textContent).toContain('提交信息用中文')
@@ -859,6 +963,73 @@ describe('MemoryView', () => {
     expect(await within(dialog).findByText(t('memoryMaintenanceStatusUndone'))).toBeTruthy()
     await waitFor(() => {
       expect(within(dialog).queryByRole('button', { name: t('memoryMaintenanceUndo') })).toBeNull()
+    })
+  })
+
+  it('诊断对话框展示注入/捕获/检索/维护四块，撤销维护后重拉数据并可关闭', async () => {
+    let undone = false
+    let maintenanceCalls = 0
+    const { calls } = installFetch({
+      maintenance: () => {
+        maintenanceCalls += 1
+        return okResponse({
+          ...MAINTENANCE_CLEAR,
+          recentRuns: undone ? [{ ...RUN_COMPLETED, undone: true }] : [RUN_COMPLETED],
+        })
+      },
+      undoRun: () => {
+        undone = true
+        return okResponse({ undone: true, restored: 1 })
+      },
+    })
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const toast = vi.spyOn(controller.actions, 'toast')
+    render(<MemoryView actions={controller.actions} t={t} />)
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    fireEvent.click(screen.getByRole('button', { name: t('memoryDiagnosisButton') }))
+    const dialog = await screen.findByRole('dialog', { name: t('memoryDiagnosisTitle') })
+    expect(calls.some(call => call.url.includes('/memory/state'))).toBe(true)
+    expect(calls.some(call => call.url.includes('/memory/maintenance'))).toBe(true)
+    // 四块标题与注入样本（条数/字符/截断）。
+    expect(within(dialog).getByText(t('memoryDiagnosisInjections'))).toBeTruthy()
+    expect(within(dialog).getByText(t('memoryDiagnosisCaptures'))).toBeTruthy()
+    expect(within(dialog).getByText(t('memoryDiagnosisRetrievals'))).toBeTruthy()
+    expect(within(dialog).getByText(t('memoryDiagnosisMaintenance'))).toBeTruthy()
+    expect(within(dialog).getByText(t('memoryDiagnosisEntries', { count: 12 }))).toBeTruthy()
+    expect(within(dialog).getByText(t('memoryDiagnosisChars', { count: 1234 }))).toBeTruthy()
+    expect(within(dialog).getByText(t('memoryDiagnosisTruncated'))).toBeTruthy()
+    // 捕获样本、检索样本（query / 结果数 / 前几个 id）与维护流水。
+    expect(within(dialog).getByText(t('memoryCaptureWritten', { count: 2 }))).toBeTruthy()
+    expect(within(dialog).getByText(t('memoryDiagnosisQuery', { query: '提交' }))).toBeTruthy()
+    expect(within(dialog).getByText(t('memoryDiagnosisResults', { count: 3 }))).toBeTruthy()
+    expect(within(dialog).getByText('m1, m2, m4')).toBeTruthy()
+    expect(within(dialog).getByText(t('memoryMaintenanceResult', RUN_COMPLETED.counts))).toBeTruthy()
+
+    const stateCallsBefore = calls.filter(call => call.url.includes('/memory/state')).length
+    const maintenanceCallsBefore = maintenanceCalls
+    fireEvent.click(within(dialog).getByRole('button', { name: t('memoryDiagnosisUndo') }))
+    await waitFor(() => {
+      expect(calls.some(call => call.url.includes('/memory/maintenance/undo'))).toBe(true)
+    })
+    const undoCall = calls.find(call => call.url.includes('/memory/maintenance/undo'))
+    expect(undoCall?.init?.method).toBe('POST')
+    expect(bodyOf(undoCall)).toEqual({ runId: 'run-1' })
+    await waitFor(() => {
+      expect(toast).toHaveBeenCalledWith('success', t('memoryDiagnosisUndoDone'))
+    })
+    // 成功后重拉两块数据，该运行标记已撤销且不再提供撤销按钮。
+    await waitFor(() => {
+      expect(calls.filter(call => call.url.includes('/memory/state')).length).toBeGreaterThan(stateCallsBefore)
+      expect(maintenanceCalls).toBeGreaterThan(maintenanceCallsBefore)
+    })
+    expect(await within(dialog).findByText(t('memoryMaintenanceStatusUndone'))).toBeTruthy()
+    await waitFor(() => {
+      expect(within(dialog).queryByRole('button', { name: t('memoryDiagnosisUndo') })).toBeNull()
+    })
+    // 关闭按钮收起对话框。
+    fireEvent.click(within(dialog).getAllByRole('button', { name: t('close') }).at(-1)!)
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: t('memoryDiagnosisTitle') })).toBeNull()
     })
   })
 })

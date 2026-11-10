@@ -125,6 +125,8 @@ dsh --profile web
 
 本包**刻意不 import 任何 `@deepseek-ai/*` 包**。原因：profile 的 `pnpm-workspace.yaml` 里是 `autoInstallPeers: false`，peer 依赖不会被安装，第三方插件 `import '@deepseek-ai/...'` 会在宿主里解析失败。需要 `defineTool` 这类助手时，把它写进 `dependencies` 并和宿主版本对齐；能用 `ctx` 提供的接口就优先用 `ctx`。
 
+唯一受控例外（[ADR-0008](docs/adr/0008-host-ui-primitives-channel.md)）：浏览器半通过客户端 module table 的 `require('@deepseek-ai/dsh-client-ui-primitives')` 取宿主 `MarkdownText` 做正文只读预览，取不到时降级；`tsdown.config.ts` 的 purity 门禁只放行该 specifier，其它 `@deepseek-ai/*` 值导入仍会被拒绝。
+
 ---
 
 ## 新建一个插件

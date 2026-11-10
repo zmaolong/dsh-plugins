@@ -61,6 +61,7 @@ import {
   type ProjectRecord,
   type RecentCapture,
   type RecentInjection,
+  type RecentRetrieval,
   type SessionRecallStats,
 } from './types.ts'
 
@@ -133,6 +134,8 @@ const INDEX_LINE_CHARS = 120
 const SESSION_STATS_KEEP = LIMITS.statsSessions
 /** stats.json 中有界的最近样本数组上限。 */
 const RECENT_SAMPLE_KEEP = LIMITS.statsRecent
+/** 一条检索样本保留的 id 数：诊断只看本次命中的前若干条。 */
+const RETRIEVAL_IDS_KEEP = 10
 /** stats.json 中保留的不同跳过原因上限。 */
 const SKIP_REASON_KEEP = 50
 
@@ -406,6 +409,21 @@ function normalizeCaptureRow(raw: unknown): RecentCapture | null {
   return row
 }
 
+/** 归一化一条检索样本。 */
+function normalizeRetrievalRow(raw: unknown): RecentRetrieval | null {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null
+  const value = raw as Record<string, unknown>
+  const ids = normalizeIds(value.ids).slice(0, RETRIEVAL_IDS_KEEP)
+  return {
+    at: text(value.at) || new Date().toISOString(),
+    sessionId: text(value.sessionId),
+    query: text(value.query),
+    // 旧行缺 results 时用收窄后的 id 数兜底，保证面板至少能显示条数。
+    results: clampInt(value.results, 0, 100000000, ids.length),
+    ids,
+  }
+}
+
 /** 归一化持久化的 stats 文档（schema v1 的旧行补齐 v2 默认值）。 */
 function normalizeStats(raw: unknown): MemoryStats {
   const value = objectOf(raw)
@@ -418,6 +436,9 @@ function normalizeStats(raw: unknown): MemoryStats {
   const recentCaptures = Array.isArray(value.recentCaptures)
     ? value.recentCaptures.map(normalizeCaptureRow).filter((row): row is RecentCapture => row !== null)
     : []
+  const recentRetrievals = Array.isArray(value.recentRetrievals)
+    ? value.recentRetrievals.map(normalizeRetrievalRow).filter((row): row is RecentRetrieval => row !== null)
+    : []
   return {
     captureRuns: clampInt(value.captureRuns, 0, 100000000, 0),
     capturedEntries: clampInt(value.capturedEntries, 0, 100000000, 0),
@@ -426,6 +447,7 @@ function normalizeStats(raw: unknown): MemoryStats {
     skipReasons: normalizeSkipReasons(value.skipReasons),
     recentInjections: recentInjections.slice(0, RECENT_SAMPLE_KEEP),
     recentCaptures: recentCaptures.slice(0, RECENT_SAMPLE_KEEP),
+    recentRetrievals: recentRetrievals.slice(0, RECENT_SAMPLE_KEEP),
   }
 }
 
@@ -660,6 +682,31 @@ export class MemoryStore {
     this.statsValue = {
       ...current,
       recentInjections: [record, ...current.recentInjections].slice(0, RECENT_SAMPLE_KEEP),
+    }
+    this.writeStats()
+  }
+
+  /**
+   * 记录一次 `memory_search` 样本（有界，只保留最新 50 条）。
+   *
+   * `results` 是本次返回的条数（调用方传入的完整列表）；`ids` 只留前 10 个
+   * 供诊断展示，避免 stats.json 被一次大检索撑大。
+   *
+   * @param detail - 会话 id、原始查询与本次返回的记忆 id。
+   */
+  recordRetrieval(detail: { sessionId: string, query: string, ids: readonly string[] }): void {
+    const current = this.stats()
+    const ids = normalizeIds(detail.ids)
+    const record: RecentRetrieval = {
+      at: new Date().toISOString(),
+      sessionId: text(detail.sessionId),
+      query: text(detail.query),
+      results: ids.length,
+      ids: ids.slice(0, RETRIEVAL_IDS_KEEP),
+    }
+    this.statsValue = {
+      ...current,
+      recentRetrievals: [record, ...current.recentRetrievals].slice(0, RECENT_SAMPLE_KEEP),
     }
     this.writeStats()
   }

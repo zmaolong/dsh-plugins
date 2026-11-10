@@ -69,6 +69,7 @@ class FakeStore {
     searchUsed: number
   }> = []
   readonly injectionCalls: Array<{ sessionId?: string, entries: number, chars: number, truncated?: boolean }> = []
+  readonly retrievalCalls: Array<{ sessionId: string, query: string, ids: string[] }> = []
   readonly projectTouches: ProjectIdentity[] = []
   private sequence = 0
 
@@ -195,6 +196,10 @@ class FakeStore {
 
   recordInjection(detail: { sessionId?: string, entries: number, chars: number, truncated?: boolean }): void {
     this.injectionCalls.push(detail)
+  }
+
+  recordRetrieval(detail: { sessionId: string, query: string, ids: readonly string[] }): void {
+    this.retrievalCalls.push({ sessionId: detail.sessionId, query: detail.query, ids: [...detail.ids] })
   }
 
   touchProject(identity: ProjectIdentity): void {
@@ -685,6 +690,8 @@ describe('记忆运行时：工具契约', () => {
 
     const call = store.searchCalls.at(-1)
     expect(call?.options).toMatchObject({ query: 'pnpm', type: 'gotcha', limit: 5 })
+    // 检索成功后写入一条样本：会话 id 与查询原样带到 noteSearch。
+    expect(store.retrievalCalls.at(-1)).toMatchObject({ sessionId: 's-search', query: 'pnpm', ids: ['m-gotcha'] })
     expect(result).toContain('坑：pnpm workspace')
     expect(result).not.toContain('偏好：pnpm')
     expect(result).toMatch(/m-gotcha · gotcha · 坑：pnpm workspace · .+ · \d{4}-\d{2}-\d{2}/u)
@@ -905,5 +912,47 @@ describe('记忆运行时：检索命中率口径', () => {
       sessions: Array<Record<string, unknown>>
     }
     expect(persisted.sessions[0]).toMatchObject({ sessionId: 's-stats', searched: 4, searchUsed: 2 })
+  })
+})
+
+describe('记忆运行时：最近检索样本', () => {
+  it('memory_search 成功后 stats.recentRetrievals 出现一条，ids ≤10 且 query 保留', async () => {
+    const home = tempHome('memory-runtime-retrieval-')
+    tempDirs.push(home)
+    const store = new MemoryStore({ home })
+    store.start()
+    for (let index = 0; index < 12; index += 1) {
+      store.save({
+        name: `检索样本 ${index}`,
+        description: `第 ${index} 条`,
+        type: 'reference',
+        scope: 'global',
+        content: `正文 ${index}。`,
+      })
+    }
+
+    const tools = createFakeTools()
+    const ctx = new FakeCtx({ systemPrompt: createFakeSystemPrompt(), tools, llm: createFakeLlm() })
+    const runtime = new MemoryRuntime({ ctx: ctx.host(), store, log: () => {} })
+    runtime.start()
+    runtimes.push(runtime)
+
+    const agent = makeAgent('s-retrieval', makeCwd())
+    const search = tools.registered.get('memory_search')
+    expect(search).toBeTruthy()
+    await search?.execute({ query: '检索样本', limit: 12 }, { agent })
+
+    const rows = store.stats().recentRetrievals
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({ sessionId: 's-retrieval', query: '检索样本', results: 12 })
+    expect(rows[0]?.ids).toHaveLength(10)
+    expect(rows[0]?.at).toMatch(/^\d{4}-\d{2}-\d{2}T/u)
+
+    // 样本随 stats.json 落盘，诊断视图重启后仍可读。
+    const persisted = JSON.parse(readFileSync(path.join(store.root, 'stats.json'), 'utf8')) as {
+      recentRetrievals: Array<Record<string, unknown>>
+    }
+    expect(persisted.recentRetrievals[0]).toMatchObject({ sessionId: 's-retrieval', query: '检索样本', results: 12 })
+    expect(persisted.recentRetrievals[0]?.ids).toHaveLength(10)
   })
 })

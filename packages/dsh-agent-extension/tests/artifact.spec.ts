@@ -34,7 +34,9 @@ describe('built artifacts', () => {
 
   it('answers react through the loader require and inlines everything else', () => {
     expect(client).toContain('require("react")')
-    expect(client).not.toContain('require("@deepseek-ai/')
+    // ADR-0008 受控例外：只允许宿主 primitives（MarkdownText 可选加载），其它 @deepseek-ai 值导入仍禁止。
+    expect(client).toContain('require("@deepseek-ai/dsh-client-ui-primitives")')
+    expect(client).not.toMatch(/require\("@deepseek-ai\/(?!dsh-client-ui-primitives")/u)
     expect(client).not.toMatch(/require\("node:[a-z]+"?\)/u)
     expect(client).not.toContain('require("fs")')
   })

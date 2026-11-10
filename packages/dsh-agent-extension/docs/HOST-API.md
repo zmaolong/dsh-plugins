@@ -583,7 +583,7 @@ lastRefreshed/display/owner/featured/plugins[]/refreshError/warnings`；
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/memory/state` | `{settings, projects[], stats}`；projects 含 `entryCount`，stats 含捕获计数、`skipReasons`、`recentInjections`、`recentCaptures` 与会话注入统计 |
+| GET | `/memory/state` | `{settings, projects[], stats}`；projects 含 `entryCount`，stats 含捕获计数、`skipReasons`、`recentInjections`、`recentCaptures`、`recentRetrievals` 与会话注入统计 |
 | GET | `/memory/list` | 查询参数 `scope=global|project`、`project`、`query`、`type`、`includeArchived=0|1`、`content=1`（附带正文） |
 | GET | `/memory/get` | 查询参数 `scope`、`project`、`id` |
 | GET | `/memory/preview-file` | 查询参数 `scope`、`project`、`id` → `{path, name, empty}`：按条目生成只含正文的临时 Markdown（剥掉 frontmatter），供「用系统应用打开」交给本机关联应用 |

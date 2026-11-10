@@ -41,9 +41,31 @@ export interface MemoryToolOptions {
   /** 解析（并登记）某 agent 的项目身份；工具执行属于写路径，允许解析。 */
   projectForAgent: (agent: AgentLike | undefined) => ProjectIdentity | null
   noteToolUsage: (agent: AgentLike | undefined, resultIds: readonly string[], usedIds: readonly string[]) => void
+  /**
+   * 记录一次成功的 `memory_search` 样本（诊断「最近检索」）。
+   *
+   * 由会话运行时或宿主装配注入；缺省时工具直接调 `store.recordRetrieval`，
+   * 保证诊断数据面不会因为装配层遗漏而断档。
+   */
+  noteSearch?: (agent: AgentLike | undefined, query: string, resultIds: readonly string[]) => void
   /** 命中记账：只刷新派生的使用记录（内存累加，运行时批量落盘）。 */
   touchUsage: (ids: readonly string[]) => void
   touchProject: (identity: ProjectIdentity) => void
+}
+
+/**
+ * 缺省检索样本记录器：从 agent 取会话 id（取不到用空串），直接写存储。
+ *
+ * @param store - 记忆存储。
+ */
+function defaultNoteSearch(store: MemoryStore): NonNullable<MemoryToolOptions['noteSearch']> {
+  return (agent, query, resultIds) => {
+    store.recordRetrieval({
+      sessionId: typeof agent?.session?.id === 'string' ? agent.session.id : '',
+      query,
+      ids: resultIds,
+    })
+  }
 }
 
 /** 统一的结果渲染器：工具返回值是纯文本。 */
@@ -57,6 +79,7 @@ function textOutput(): ToolDefinitionLike['output'] {
 /** 构造四个记忆工具的定义（不注册）。 */
 export function createMemoryTools(options: MemoryToolOptions): ToolDefinitionLike[] {
   const { store } = options
+  const noteSearch = options.noteSearch ?? defaultNoteSearch(store)
 
   const search: ToolDefinitionLike = {
     name: 'memory_search',
@@ -89,8 +112,10 @@ export function createMemoryTools(options: MemoryToolOptions): ToolDefinitionLik
         includeArchived: false,
         limit,
       })
-      options.noteToolUsage(exec.agent, results.map(entry => entry.id), [])
-      options.touchUsage(results.map(entry => entry.id))
+      const resultIds = results.map(entry => entry.id)
+      options.noteToolUsage(exec.agent, resultIds, [])
+      noteSearch(exec.agent, query, resultIds)
+      options.touchUsage(resultIds)
       return formatSearchResult(results, query)
     },
   }

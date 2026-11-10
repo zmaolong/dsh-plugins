@@ -29,6 +29,7 @@ import { Icon } from './icons.tsx'
 import { Switch } from './Switch.tsx'
 import { errorMessageFor, formatTime, type JsonRecord, type Translate } from './presentation.ts'
 import type { HubActions } from './store.ts'
+import { loadHostMarkdownText } from './host-ui.ts'
 import {
   defaultSettings,
   type CreatedRef,
@@ -42,6 +43,7 @@ import {
   type MemoryStatus,
   type MemoryType,
   type RecentCapture,
+  type RecentRetrieval,
 } from '../shared/memory-wire.ts'
 import { RECALL_MAX_CHARS, RECALL_MAX_PER_LAYER } from '../shared/memory-wire.ts'
 import panelCss from './panel.module.css'
@@ -98,6 +100,9 @@ const RECENT_CAPTURE_ROWS = 5
 
 /** 维护对话框里展示的最近运行条数。 */
 const RECENT_MAINTENANCE_ROWS = 3
+
+/** 诊断对话框每块默认展示的条数，其余折叠。 */
+const DIAGNOSIS_ROWS = 10
 
 const EMPTY_FORM: MemoryForm = {
   name: '',
@@ -197,7 +202,7 @@ function normalizeSettings(raw: unknown): MemorySettings {
   }
 }
 
-/** 归一化统计块（v2：会话命中、跳过原因与最近样本；捕获样本带撤销字段）。 */
+/** 归一化统计块（v2：会话命中、跳过原因与最近样本；检索样本缺省 []）。 */
 function normalizeStats(raw: unknown): MemoryStats {
   const item = record(raw)
   const sessionsRaw = Array.isArray(item.sessions) ? item.sessions : []
@@ -249,6 +254,15 @@ function normalizeStats(raw: unknown): MemoryStats {
         ...(error === '' ? {} : { error }),
       }
     })
+  const recentRetrievals: RecentRetrieval[] = (Array.isArray(item.recentRetrievals) ? item.recentRetrievals : [])
+    .map(record)
+    .map(sample => ({
+      at: text(sample.at),
+      sessionId: text(sample.sessionId),
+      query: text(sample.query),
+      results: integer(sample.results, 0, Number.MAX_SAFE_INTEGER, 0),
+      ids: Array.isArray(sample.ids) ? sample.ids.filter((id): id is string => typeof id === 'string') : [],
+    }))
   return {
     captureRuns: integer(item.captureRuns, 0, Number.MAX_SAFE_INTEGER, 0),
     capturedEntries: integer(item.capturedEntries, 0, Number.MAX_SAFE_INTEGER, 0),
@@ -257,6 +271,7 @@ function normalizeStats(raw: unknown): MemoryStats {
     skipReasons,
     recentInjections,
     recentCaptures,
+    recentRetrievals,
   }
 }
 
@@ -449,10 +464,19 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const [auditSelected, setAuditSelected] = useState<string[]>([])
   const [auditConfirmDelete, setAuditConfirmDelete] = useState(false)
   const [auditBatchBusy, setAuditBatchBusy] = useState(false)
+  const [showArchived, setShowArchived] = useState(false)
+  const [diagnosisOpen, setDiagnosisOpen] = useState(false)
+  const [diagnosisBusy, setDiagnosisBusy] = useState(false)
+  const [diagnosisError, setDiagnosisError] = useState('')
+  const [diagnosisStats, setDiagnosisStats] = useState<MemoryStats | null>(null)
+  const [diagnosisRuns, setDiagnosisRuns] = useState<MaintenanceRunSummary[]>([])
+  const [diagnosisUndoBusyId, setDiagnosisUndoBusyId] = useState<string | null>(null)
 
   // The user's explicit scope choice wins over the auto-selected defaults.
   const userChoseRef = useRef(false)
   const detailSeq = useRef(0)
+  // 详情标题区的 id 文本节点：复制失败时全选它作为降级。
+  const idTextRef = useRef<HTMLElement | null>(null)
   // Latest local settings (kept in sync synchronously) and the last value the
   // server confirmed; a failed persist rolls the UI back to the latter.
   const settingsRef = useRef<MemorySettings>(DEFAULT_SETTINGS)
@@ -552,7 +576,8 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
     if (scope === 'project') params.set('project', project)
     params.set('query', appliedQuery)
     if (typeFilter !== '') params.set('type', typeFilter)
-    params.set('includeArchived', '1')
+    // 归档条目默认隐藏；开启「显示已归档」后才让服务端一并返回。
+    if (showArchived) params.set('includeArchived', '1')
     void (async () => {
       try {
         const data = await api<JsonRecord>(`/memory/list?${params.toString()}`)
@@ -570,7 +595,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
       }
     })()
     return () => { cancelled = true }
-  }, [stateReady, scope, project, appliedQuery, typeFilter, listToken, t])
+  }, [stateReady, scope, project, appliedQuery, typeFilter, showArchived, listToken, t])
 
   const latestProjectKey = (list: MemoryProjectWire[]): string => list[0]?.key ?? ''
 
@@ -856,6 +881,73 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
     }
   }
 
+  /** 重拉诊断所需的两个数据面：统计（注入/捕获/检索样本）与维护流水。 */
+  const loadDiagnosis = async (): Promise<void> => {
+    setDiagnosisBusy(true)
+    setDiagnosisError('')
+    try {
+      const [stateData, maintenanceData] = await Promise.all([
+        api<JsonRecord>('/memory/state'),
+        api<JsonRecord>('/memory/maintenance'),
+      ])
+      setDiagnosisStats(normalizeStats(stateData.stats))
+      setDiagnosisRuns(normalizeMaintenance(maintenanceData).recentRuns)
+    } catch (error) {
+      setDiagnosisError(errorMessageFor(error, t))
+    } finally {
+      setDiagnosisBusy(false)
+    }
+  }
+
+  /** 打开诊断对话框：每次打开都拉新快照，避免展示过期样本。 */
+  const openDiagnosis = (): void => {
+    setDiagnosisOpen(true)
+    setDiagnosisStats(null)
+    setDiagnosisRuns([])
+    setDiagnosisError('')
+    void loadDiagnosis()
+  }
+
+  /** 撤销一次维护；成功后全体重拉两块诊断数据。 */
+  const undoDiagnosisRun = async (runId: string): Promise<void> => {
+    if (diagnosisUndoBusyId !== null || runId === '') return
+    setDiagnosisUndoBusyId(runId)
+    try {
+      await api<JsonRecord>('/memory/maintenance/undo', { method: 'POST', body: { runId } })
+      setDiagnosisRuns(current => current.map(run => (run.id === runId ? { ...run, undone: true } : run)))
+      actions.toast('success', t('memoryDiagnosisUndoDone'))
+      await loadDiagnosis()
+    } catch (error) {
+      actions.toast('error', t('memoryDiagnosisUndoFailed', { message: errorMessageFor(error, t) }))
+    } finally {
+      setDiagnosisUndoBusyId(null)
+    }
+  }
+
+  /**
+   * 复制记忆 id：优先剪贴板；环境不提供或写入失败时静默降级为全选 id 文本
+   * （不弹错误，用户可直接 Ctrl/Cmd+C）。
+   */
+  const copyEntryId = async (id: string): Promise<void> => {
+    try {
+      const clipboard = typeof navigator === 'undefined' ? undefined : navigator.clipboard
+      if (clipboard === undefined || typeof clipboard.writeText !== 'function') throw new Error('clipboard unavailable')
+      await clipboard.writeText(id)
+      actions.toast('success', t('memoryIdCopied'))
+      return
+    } catch {
+      // 降级路径：全选标题区的 id 文本。
+    }
+    const node = idTextRef.current
+    if (node === null || typeof document === 'undefined' || typeof window === 'undefined') return
+    const selection = window.getSelection()
+    if (selection === null) return
+    const range = document.createRange()
+    range.selectNodeContents(node)
+    selection.removeAllRanges()
+    selection.addRange(range)
+  }
+
   /** Full-list fetch + client-side audit rules for the current scope. */
   const openAudit = async (): Promise<void> => {
     if (auditBusy || (scope === 'project' && project === '')) return
@@ -952,13 +1044,17 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const retrievalRate = percentText(recallTotals.searchUsed, recallTotals.searched)
   const recentCaptureRows = (stats?.recentCaptures ?? []).slice(0, RECENT_CAPTURE_ROWS)
   const showEditor = creating || selectedId !== null
+  // 宿主官方 Markdown 渲染组件（可选）：拿不到时退回「只读提示 + 系统应用打开」。
+  const HostMarkdownText = loadHostMarkdownText()
   const typeOptions: ReadonlyArray<{ value: MemoryType | '', label: string }> = [
     { value: '', label: t('memoryTypeAll') },
     ...TYPE_VALUES.map(value => ({ value, label: t(TYPE_LABEL_KEYS[value]) })),
   ]
 
-  // Client-side refinements over the fetched list: tag filter first, then sort.
-  const visibleEntries = tagFilter === '' ? entries : entries.filter(item => item.tags.includes(tagFilter))
+  // Client-side refinements over the fetched list: 归档默认隐藏（服务端已按
+// includeArchived 过滤，这里再兜底旧服务端），然后按标签筛选、排序。
+  const visibleEntries = (showArchived ? entries : entries.filter(item => item.status !== 'archived'))
+    .filter(item => tagFilter === '' || item.tags.includes(tagFilter))
   const sortedEntries = sort === 'recent'
     ? [...visibleEntries].sort((left, right) => timeOf(right.updatedAt) - timeOf(left.updatedAt))
     : visibleEntries
@@ -967,6 +1063,95 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
     && auditResult.stale.length === 0
     && auditResult.duplicates.length === 0
     && auditResult.lowValue.length === 0
+
+  /** 诊断对话框的一块：前 10 条直接展示，其余折叠在 details 里。 */
+  const diagnosisSection = (title: string, rows: ReactNode[], empty: string): ReactNode => (
+    <section className={css.diagnosisSection}>
+      <h3 className={css.statsTitle}>{title}</h3>
+      {rows.length === 0
+        ? <span className={css.statLabel}>{empty}</span>
+        : (
+          <>
+            <div className={css.diagnosisList}>{rows.slice(0, DIAGNOSIS_ROWS)}</div>
+            {rows.length > DIAGNOSIS_ROWS
+              ? (
+                <details className={css.diagnosisMore}>
+                  <summary>{t('memoryDiagnosisMore', { count: rows.length - DIAGNOSIS_ROWS })}</summary>
+                  <div className={css.diagnosisList}>{rows.slice(DIAGNOSIS_ROWS)}</div>
+                </details>
+              )
+              : null}
+          </>
+        )}
+    </section>
+  )
+
+  const diagnosisEmptyText = t('memoryDiagnosisEmpty')
+  const injectionRows = (diagnosisStats?.recentInjections ?? []).map((row, index) => {
+    const at = formatTime(row.at)
+    return (
+      <div key={`${index}-${row.at}-${row.sessionId}`} className={css.diagnosisRow}>
+        {at !== '' ? <span className={css.diagnosisRowTime}>{at}</span> : null}
+        <span className={css.diagnosisRowMain}>
+          <span>{t('memoryDiagnosisEntries', { count: row.entries })}</span>
+          <span>{t('memoryDiagnosisChars', { count: row.chars })}</span>
+          {row.truncated ? <Badge tone="warn">{t('memoryDiagnosisTruncated')}</Badge> : null}
+        </span>
+      </div>
+    )
+  })
+  const captureRows = (diagnosisStats?.recentCaptures ?? []).map((row, index) => {
+    const at = formatTime(row.at)
+    const note = captureNoteOf(row, t)
+    return (
+      <div key={`${index}-${row.id}`} className={css.diagnosisRow}>
+        {at !== '' ? <span className={css.diagnosisRowTime}>{at}</span> : null}
+        <span className={css.diagnosisRowMain}>
+          <span>{t('memoryCaptureWritten', { count: row.written })}</span>
+          {note !== '' ? <span title={note}>{note}</span> : null}
+        </span>
+        {row.undone === true ? <Badge tone="plain">{t('memoryCaptureUndone')}</Badge> : null}
+      </div>
+    )
+  })
+  const retrievalRows = (diagnosisStats?.recentRetrievals ?? []).map((row, index) => {
+    const at = formatTime(row.at)
+    const query = row.query.trim()
+    return (
+      <div key={`${index}-${row.at}-${row.sessionId}`} className={css.diagnosisRow}>
+        {at !== '' ? <span className={css.diagnosisRowTime}>{at}</span> : null}
+        <span className={css.diagnosisRowMain}>
+          <span title={query}>{t('memoryDiagnosisQuery', { query: query === '' ? '—' : query })}</span>
+          <span>{t('memoryDiagnosisResults', { count: row.results })}</span>
+          {row.ids.length > 0 ? <span className={css.diagnosisRowIds}>{row.ids.slice(0, 3).join(', ')}</span> : null}
+        </span>
+      </div>
+    )
+  })
+  const maintenanceRunRows = diagnosisRuns.map(run => {
+    const at = formatTime(run.at)
+    return (
+      <div key={run.id !== '' ? run.id : `${run.at}-${run.status}`} className={css.diagnosisRow}>
+        {at !== '' ? <span className={css.diagnosisRowTime}>{at}</span> : null}
+        <Badge tone={maintenanceTone(run)}>
+          {run.undone ? t('memoryMaintenanceStatusUndone') : t(maintenanceStatusKey(run.status))}
+        </Badge>
+        <span className={css.diagnosisRowMain}>{t('memoryMaintenanceResult', { ...run.counts })}</span>
+        {run.status === 'completed' && !run.undone && run.id !== ''
+          ? (
+            <Button
+              variant="ghost"
+              icon="rotateCcw"
+              disabled={diagnosisUndoBusyId !== null}
+              onClick={() => { void undoDiagnosisRun(run.id) }}
+            >
+              {diagnosisUndoBusyId === run.id ? <Spinner /> : null}{t('memoryDiagnosisUndo')}
+            </Button>
+          )
+          : null}
+      </div>
+    )
+  })
 
   /** One selectable audit finding row (checkbox + card summary + suggestion). */
   const auditRow = (item: AuditEntry, hint: string): ReactNode => (
@@ -1143,6 +1328,16 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
         <div className={css.listHead}>
           <h2 className={css.sectionTitle}>{t('memoryListTitle')}</h2>
           <span className={css.listHeadTools}>
+            <button
+              type="button"
+              className={css.archiveToggle}
+              aria-pressed={showArchived}
+              title={t('memoryShowArchived')}
+              onClick={() => { setShowArchived(current => !current) }}
+            >
+              <Icon name="folder" size={14} />
+              <span>{t('memoryShowArchived')}</span>
+            </button>
             <Select
               label={t('memorySortLabel')}
               size="sm"
@@ -1181,8 +1376,10 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
         {listReady && listError === '' && sortedEntries.length === 0
           ? (
             <EmptyBlock
-              description={appliedQuery !== '' || typeFilter !== '' || tagFilter !== '' ? t('memoryListEmptyFiltered') : t('memoryListEmpty')}
-              action={appliedQuery === '' && typeFilter === '' && tagFilter === ''
+              description={appliedQuery !== '' || typeFilter !== '' || tagFilter !== '' || (!showArchived && entries.length > 0)
+                ? t('memoryListEmptyFiltered')
+                : t('memoryListEmpty')}
+              action={appliedQuery === '' && typeFilter === '' && tagFilter === '' && (showArchived || entries.length === 0)
                 ? (
                   <Button variant="primary" icon="plus" disabled={projectRequired} onClick={startCreate}>
                     {t('memoryNew')}
@@ -1227,6 +1424,11 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                     onClick={(event) => {
                       event.stopPropagation()
                       setTagFilter(tag)
+                    }}
+                    onKeyDown={(event) => {
+                      // 标签是卡片内的按钮：Enter/Space 不要再冒泡到卡片，
+                      // 否则会同时打开详情；原生按钮激活仍由浏览器默认行为完成。
+                      if (event.key === 'Enter' || event.key === ' ') event.stopPropagation()
                     }}
                   >
                     {tag}
@@ -1373,6 +1575,11 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
           />
           <IconButton icon="settings" title={t('memorySettingsButton')} onClick={() => { setSettingsOpen(true) }} />
           <IconButton
+            icon="info"
+            title={t('memoryDiagnosisButton')}
+            onClick={openDiagnosis}
+          />
+          <IconButton
             icon="clipboardCheck"
             title={auditBusy ? t('memoryAuditRunning') : t('memoryAuditButton')}
             busy={auditBusy}
@@ -1414,6 +1621,18 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
             <DialogShell
               t={t}
               title={creating ? t('memoryCreateTitle') : t('memoryEditTitle')}
+              titleMeta={entry !== null && !creating
+                ? (
+                  <span className={css.detailIdRow}>
+                    <code ref={idTextRef} className={css.detailId} title={entry.id}>{entry.id}</code>
+                    <IconButton
+                      icon="clipboardCheck"
+                      title={t('memoryCopyId')}
+                      onClick={() => { void copyEntryId(entry.id) }}
+                    />
+                  </span>
+                )
+                : undefined}
               wide
               onClose={closeEditor}
             >
@@ -1557,8 +1776,14 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                           />
                         )
                         : (
-                          <div className={css.readonlyBox}>
-                            <span className={css.readonlyHint}>{t('memoryBodyReadOnlyHint')}</span>
+                          <div className={`${css.readonlyBox}${HostMarkdownText === null ? '' : ` ${css.previewBox}`}`}>
+                            {HostMarkdownText !== null && entry !== null
+                              ? (
+                                <div className={css.previewBody}>
+                                  <HostMarkdownText text={entry.content} variant="body" />
+                                </div>
+                              )
+                              : <span className={css.readonlyHint}>{t('memoryBodyReadOnlyHint')}</span>}
                             {entry !== null
                               ? (
                                 <Button
@@ -1865,6 +2090,49 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                     </>
                   )}
               </div>
+            </DialogShell>
+          </div>
+        )
+        : null}
+
+      {stateReady && diagnosisOpen
+        ? (
+          <div className={css.dialogPortal}>
+            <DialogShell
+              t={t}
+              title={t('memoryDiagnosisTitle')}
+              wide
+              onClose={() => { if (diagnosisUndoBusyId === null) setDiagnosisOpen(false) }}
+              footer={[
+                <Button
+                  key="close"
+                  variant="secondary"
+                  disabled={diagnosisUndoBusyId !== null}
+                  onClick={() => { if (diagnosisUndoBusyId === null) setDiagnosisOpen(false) }}
+                >
+                  {t('close')}
+                </Button>,
+              ]}
+            >
+              {diagnosisBusy && diagnosisStats === null
+                ? <LoadingBlock text={t('memoryLoading')} />
+                : diagnosisError !== ''
+                  ? (
+                    <div className={css.errorBox}>
+                      <span className={css.errorText}>{diagnosisError}</span>
+                      <Button variant="secondary" icon="refresh" onClick={() => { void loadDiagnosis() }}>
+                        {t('memoryRetry')}
+                      </Button>
+                    </div>
+                  )
+                  : (
+                    <div className={css.diagnosisStack}>
+                      {diagnosisSection(t('memoryDiagnosisInjections'), injectionRows, diagnosisEmptyText)}
+                      {diagnosisSection(t('memoryDiagnosisCaptures'), captureRows, diagnosisEmptyText)}
+                      {diagnosisSection(t('memoryDiagnosisRetrievals'), retrievalRows, diagnosisEmptyText)}
+                      {diagnosisSection(t('memoryDiagnosisMaintenance'), maintenanceRunRows, diagnosisEmptyText)}
+                    </div>
+                  )}
             </DialogShell>
           </div>
         )
