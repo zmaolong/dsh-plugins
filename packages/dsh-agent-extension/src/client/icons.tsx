@@ -20,6 +20,7 @@ export const ICONS: Record<string, readonly ShapePart[]> = {
   arrowRight: ['M5 12h14', 'm12 5 7 7-7 7'],
   more: [[5, 12, 1.4], [12, 12, 1.4], [19, 12, 1.4]],
   download: ['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4', 'M7 10l5 5 5-5', 'M12 15V3'],
+  arrowUpRight: ['M7 7h10v10', 'M7 17 17 7'],
   search: [{ circle: [11, 11, 8] }, 'm21 21-4.3-4.3'],
   x: ['M18 6 6 18', 'm6 6 12 12'],
   external: ['M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6', 'M15 3h6v6', 'M10 14 21 3'],

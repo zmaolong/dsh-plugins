@@ -265,15 +265,10 @@ export const zh = {
   memoryAuditDeleteConfirm: '将删除所选 {count} 条记忆，且无法恢复。',
   memoryAuditDone: '已处理 {count} 条记忆',
   memoryAuditPartial: '{count} 条处理失败，可重新体检后重试',
-  memoryDetailTabTitle: '记忆详情',
-  memoryDetailAutoMaintained: '记忆由智能体随会话自动维护，正文只读。',
-  memoryDetailPreviewHint: '正文在右侧预览中查看',
-  memoryDetailNoSession: '预览不可用：请先打开一个会话',
-  memoryDetailPreviewFailed: '预览打开失败：{message}',
-  memoryDetailEmptyContent: '暂无正文',
-  memoryDetailMissing: '记忆不存在或已删除',
-  memoryDetailDirtyDiscarded: '未保存的修改已丢弃',
-  memoryDetailReadError: '无法读取记忆：{message}',
+  memoryOpenNative: '用系统应用打开',
+  memoryBodyReadOnlyHint: '正文只读；用系统应用打开阅读。',
+  memoryOpenNativeFailed: '无法用系统应用打开：{message}',
+  memoryOpenNativeUnavailable: '当前环境不支持用系统应用打开文件',
 } as const
 
 /** English dictionary (sentence case; same key set as `zh`). */
@@ -532,15 +527,10 @@ export const en: Record<HubLocaleKey, string> = {
   memoryAuditDeleteConfirm: 'This deletes the {count} selected memories and cannot be undone.',
   memoryAuditDone: 'Processed {count} memories',
   memoryAuditPartial: '{count} failed — rerun the audit and retry',
-  memoryDetailTabTitle: 'Memory detail',
-  memoryDetailAutoMaintained: 'Memories are maintained by the agent; content is read-only.',
-  memoryDetailPreviewHint: 'Content is shown in the preview pane',
-  memoryDetailNoSession: 'Preview unavailable: open a conversation first',
-  memoryDetailPreviewFailed: 'Could not open the preview: {message}',
-  memoryDetailEmptyContent: 'No content yet',
-  memoryDetailMissing: 'This memory no longer exists',
-  memoryDetailDirtyDiscarded: 'Unsaved changes were discarded',
-  memoryDetailReadError: 'Could not load this memory: {message}',
+  memoryOpenNative: 'Open in system app',
+  memoryBodyReadOnlyHint: 'The content is read-only; open it in a system app to read.',
+  memoryOpenNativeFailed: 'Could not open in a system app: {message}',
+  memoryOpenNativeUnavailable: 'This environment cannot open files in a system app',
 }
 
 /** Japanese dictionary (same key set as `zh`). */
@@ -799,15 +789,10 @@ export const ja: Record<HubLocaleKey, string> = {
   memoryAuditDeleteConfirm: '選択した {count} 件のメモリを削除します。元に戻せません。',
   memoryAuditDone: '{count} 件のメモリを処理しました',
   memoryAuditPartial: '{count} 件が失敗しました。再診断して再試行してください',
-  memoryDetailTabTitle: 'メモリの詳細',
-  memoryDetailAutoMaintained: 'メモリはエージェントがセッションに合わせて自動的に維持します。本文は読み取り専用です。',
-  memoryDetailPreviewHint: '本文は右側のプレビューで確認できます',
-  memoryDetailNoSession: 'プレビューを利用できません：先にセッションを開いてください',
-  memoryDetailPreviewFailed: 'プレビューを開けませんでした：{message}',
-  memoryDetailEmptyContent: '本文はまだありません',
-  memoryDetailMissing: 'メモリが存在しないか、削除されています',
-  memoryDetailDirtyDiscarded: '保存されていない変更は破棄されました',
-  memoryDetailReadError: 'メモリを読み取れません：{message}',
+  memoryOpenNative: 'システムアプリで開く',
+  memoryBodyReadOnlyHint: '本文は読み取り専用です。システムアプリで開いて読んでください。',
+  memoryOpenNativeFailed: 'システムアプリで開けませんでした：{message}',
+  memoryOpenNativeUnavailable: 'この環境ではシステムアプリでファイルを開けません',
 }
 
 /** Spanish dictionary (same key set as `zh`). */
@@ -1066,15 +1051,10 @@ export const es: Record<HubLocaleKey, string> = {
   memoryAuditDeleteConfirm: 'Se eliminarán las {count} entradas seleccionadas y no se puede deshacer.',
   memoryAuditDone: 'Se procesaron {count} entradas',
   memoryAuditPartial: '{count} fallaron; ejecute la revisión de nuevo e inténtelo otra vez',
-  memoryDetailTabTitle: 'Detalle de la memoria',
-  memoryDetailAutoMaintained: 'El agente mantiene la memoria automáticamente a lo largo de las sesiones; el contenido es de solo lectura.',
-  memoryDetailPreviewHint: 'El contenido se muestra en el panel de vista previa',
-  memoryDetailNoSession: 'Vista previa no disponible: abra primero una sesión',
-  memoryDetailPreviewFailed: 'No se pudo abrir la vista previa: {message}',
-  memoryDetailEmptyContent: 'Aún no hay contenido',
-  memoryDetailMissing: 'Esta memoria ya no existe',
-  memoryDetailDirtyDiscarded: 'Los cambios sin guardar se descartaron',
-  memoryDetailReadError: 'No se pudo cargar esta memoria: {message}',
+  memoryOpenNative: 'Abrir en la aplicación del sistema',
+  memoryBodyReadOnlyHint: 'El contenido es de solo lectura; ábralo en la aplicación del sistema para leerlo.',
+  memoryOpenNativeFailed: 'No se pudo abrir en la aplicación del sistema: {message}',
+  memoryOpenNativeUnavailable: 'Este entorno no puede abrir archivos en la aplicación del sistema',
 }
 
 /** French dictionary (same key set as `zh`). */
@@ -1333,15 +1313,10 @@ export const fr: Record<HubLocaleKey, string> = {
   memoryAuditDeleteConfirm: 'Les {count} entrées sélectionnées seront supprimées ; action irréversible.',
   memoryAuditDone: '{count} entrées traitées',
   memoryAuditPartial: '{count} échec(s) — relancez l’audit puis réessayez',
-  memoryDetailTabTitle: 'Détails de la mémoire',
-  memoryDetailAutoMaintained: 'La mémoire est entretenue automatiquement par l’agent au fil des sessions ; le contenu est en lecture seule.',
-  memoryDetailPreviewHint: 'Le contenu s’affiche dans le volet d’aperçu',
-  memoryDetailNoSession: 'Aperçu indisponible : ouvrez d’abord une session',
-  memoryDetailPreviewFailed: 'Impossible d’ouvrir l’aperçu : {message}',
-  memoryDetailEmptyContent: 'Aucun contenu pour le moment',
-  memoryDetailMissing: 'Cette mémoire n’existe plus',
-  memoryDetailDirtyDiscarded: 'Les modifications non enregistrées ont été abandonnées',
-  memoryDetailReadError: 'Impossible de charger cette mémoire : {message}',
+  memoryOpenNative: 'Ouvrir dans l’application système',
+  memoryBodyReadOnlyHint: 'Le contenu est en lecture seule ; ouvrez-le dans l’application système pour le lire.',
+  memoryOpenNativeFailed: 'Impossible d’ouvrir dans l’application système : {message}',
+  memoryOpenNativeUnavailable: 'Cet environnement ne permet pas d’ouvrir des fichiers dans l’application système',
 }
 
 /** German dictionary (same key set as `zh`). */
@@ -1600,15 +1575,10 @@ export const de: Record<HubLocaleKey, string> = {
   memoryAuditDeleteConfirm: 'Die {count} ausgewählten Einträge werden gelöscht; das kann nicht rückgängig gemacht werden.',
   memoryAuditDone: '{count} Einträge verarbeitet',
   memoryAuditPartial: '{count} fehlgeschlagen — Audit erneut ausführen und wiederholen',
-  memoryDetailTabTitle: 'Gedächtnisdetails',
-  memoryDetailAutoMaintained: 'Das Gedächtnis wird vom Agenten im Verlauf von Sitzungen automatisch gepflegt; der Inhalt ist schreibgeschützt.',
-  memoryDetailPreviewHint: 'Der Inhalt wird im Vorschaubereich angezeigt',
-  memoryDetailNoSession: 'Vorschau nicht verfügbar: Öffnen Sie zuerst eine Sitzung',
-  memoryDetailPreviewFailed: 'Vorschau konnte nicht geöffnet werden: {message}',
-  memoryDetailEmptyContent: 'Noch kein Inhalt',
-  memoryDetailMissing: 'Dieses Gedächtnis existiert nicht mehr',
-  memoryDetailDirtyDiscarded: 'Nicht gespeicherte Änderungen wurden verworfen',
-  memoryDetailReadError: 'Gedächtnis konnte nicht geladen werden: {message}',
+  memoryOpenNative: 'In der System-App öffnen',
+  memoryBodyReadOnlyHint: 'Der Inhalt ist schreibgeschützt; öffnen Sie ihn in der System-App, um ihn zu lesen.',
+  memoryOpenNativeFailed: 'In der System-App konnte nicht geöffnet werden: {message}',
+  memoryOpenNativeUnavailable: 'Diese Umgebung kann Dateien nicht in einer System-App öffnen',
 }
 
 /** Russian dictionary (same key set as `zh`). */
@@ -1867,15 +1837,10 @@ export const ru: Record<HubLocaleKey, string> = {
   memoryAuditDeleteConfirm: 'Выбранные {count} записей будут удалены; это нельзя отменить.',
   memoryAuditDone: 'Обработано записей: {count}',
   memoryAuditPartial: '{count} не удалось — повторите проверку и попробуйте снова',
-  memoryDetailTabTitle: 'Подробности памяти',
-  memoryDetailAutoMaintained: 'Агент автоматически ведет память по ходу сессий; содержимое доступно только для чтения.',
-  memoryDetailPreviewHint: 'Содержимое отображается на панели предпросмотра',
-  memoryDetailNoSession: 'Предпросмотр недоступен: сначала откройте сессию',
-  memoryDetailPreviewFailed: 'Не удалось открыть предпросмотр: {message}',
-  memoryDetailEmptyContent: 'Содержимого пока нет',
-  memoryDetailMissing: 'Эта память не существует или была удалена',
-  memoryDetailDirtyDiscarded: 'Несохраненные изменения отброшены',
-  memoryDetailReadError: 'Не удалось прочитать память: {message}',
+  memoryOpenNative: 'Открыть в системном приложении',
+  memoryBodyReadOnlyHint: 'Содержимое доступно только для чтения; откройте его в системном приложении, чтобы прочитать.',
+  memoryOpenNativeFailed: 'Не удалось открыть в системном приложении: {message}',
+  memoryOpenNativeUnavailable: 'Эта среда не поддерживает открытие файлов в системном приложении',
 }
 
 /** Portuguese dictionary (same key set as `zh`). */
@@ -2134,15 +2099,10 @@ export const pt: Record<HubLocaleKey, string> = {
   memoryAuditDeleteConfirm: 'As {count} entradas selecionadas serão excluídas; não pode ser desfeito.',
   memoryAuditDone: '{count} entradas processadas',
   memoryAuditPartial: '{count} falharam — execute a auditoria novamente e tente outra vez',
-  memoryDetailTabTitle: 'Detalhes da memória',
-  memoryDetailAutoMaintained: 'A memória é mantida automaticamente pelo agente ao longo das sessões; o conteúdo é somente leitura.',
-  memoryDetailPreviewHint: 'O conteúdo é exibido no painel de pré-visualização',
-  memoryDetailNoSession: 'Pré-visualização indisponível: abra uma sessão primeiro',
-  memoryDetailPreviewFailed: 'Não foi possível abrir a pré-visualização: {message}',
-  memoryDetailEmptyContent: 'Ainda não há conteúdo',
-  memoryDetailMissing: 'Esta memória não existe mais',
-  memoryDetailDirtyDiscarded: 'As alterações não salvas foram descartadas',
-  memoryDetailReadError: 'Não foi possível carregar esta memória: {message}',
+  memoryOpenNative: 'Abrir no aplicativo do sistema',
+  memoryBodyReadOnlyHint: 'O conteúdo é somente leitura; abra-o no aplicativo do sistema para ler.',
+  memoryOpenNativeFailed: 'Não foi possível abrir no aplicativo do sistema: {message}',
+  memoryOpenNativeUnavailable: 'Este ambiente não pode abrir arquivos no aplicativo do sistema',
 }
 
 /** Every dictionary key of the plugin namespace. */

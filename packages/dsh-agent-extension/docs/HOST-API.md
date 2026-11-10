@@ -586,7 +586,7 @@ lastRefreshed/display/owner/featured/plugins[]/refreshError/warnings`；
 | GET | `/memory/state` | `{settings, projects[], stats}`；projects 含 `entryCount`，stats 含最近会话注入/命中率 |
 | GET | `/memory/list` | 查询参数 `scope=global|project`、`project`、`query`、`type`、`includeArchived=0|1` |
 | GET | `/memory/get` | 查询参数 `scope`、`project`、`id` |
-| GET | `/memory/preview-file` | 查询参数 `scope`、`project`、`id` → `{path, name, empty}`：按条目生成只含正文的临时 Markdown（剥掉 frontmatter），供宿主右侧栏预览页签只读渲染 |
+| GET | `/memory/preview-file` | 查询参数 `scope`、`project`、`id` → `{path, name, empty}`：按条目生成只含正文的临时 Markdown（剥掉 frontmatter），供「用系统应用打开」交给本机关联应用 |
 | POST | `/memory/save` | `{scope, project?, id?, name, description, type, content, tags?, importance?, supersedes?}`；同指纹只强化 |
 | POST | `/memory/status` | `{scope, project?, id, status: active|stale|archived}` |
 | POST | `/memory/delete` | `{scope, project?, id}` |

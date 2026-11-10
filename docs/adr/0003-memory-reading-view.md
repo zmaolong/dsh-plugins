@@ -1,6 +1,6 @@
 # 0003 记忆阅读面复用宿主右侧栏：自定义参数页签 + 原生分屏文件预览
 
-- 状态：已采纳
+- 状态：已被 [ADR-0004](0004-memory-detail-in-panel-native-open.md) 取代（preview.16 撤回侧栏双窗格，改为面板内弹窗 + 系统应用打开；本文件保留作决策历史）
 - 日期：2026-11-10
 - 背景：`dsh-agent-extension` 的记忆详情只有编辑弹窗内的一个 `<textarea>`，正文以 Markdown 源码示人，阅读体验差；同时记忆以阅读为主、由智能体随会话自动维护。宿主内置的 `MarkdownText`/`DetailDocument` 没有给第三方插件的 ctx 或 slot 通道，直接导入又撞本仓库的 purity 门禁与「禁止 import `@deepseek-ai/*`」规则。规格见 [`packages/dsh-agent-extension/docs/memory-reading-view.spec.md`](../../packages/dsh-agent-extension/docs/memory-reading-view.spec.md)。
 

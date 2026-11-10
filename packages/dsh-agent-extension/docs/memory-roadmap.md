@@ -3,24 +3,24 @@
 > 本文档是自包含的实施规划：下一个上下文可直接按此实施，不依赖历史会话。
 > 现状基线：`0.0.1-preview.9`（commit `e76b086`）。
 
-## 本阶段：记忆详情面（preview.14，已完成）
+## 本阶段：记忆详情（preview.16，已完成）
 
-把记忆的阅读路径从「编辑弹窗内看 Markdown 源码」改为宿主右侧栏原生双窗格；正文只读、元信息有限调整。
-方案与取舍见 [ADR-0003](../../../docs/adr/0003-memory-reading-view.md)，实施级规格见
-[`memory-reading-view.spec.md`](memory-reading-view.spec.md)。
+记忆阅读路径：**面板内详情弹窗 + 系统应用打开**。preview.14/15 曾按 ADR-0003 做成宿主右侧栏双窗格，
+真机确认「点条目必退出面板、返回丢失列表状态」不可接受，已在 preview.16 撤回；决策见
+[ADR-0004](../../../docs/adr/0004-memory-detail-in-panel-native-open.md)，旧规格标记废弃。
 
-- **交互**：点击列表卡片 → 退出插件主面板（`ctx.layout.selectPanel(null)`）→ 宿主侧栏展开
-  「记忆详情」自定义页签 + 原生文件预览页签（`openResource(..., { preferNewPane: true })`）；
-  宽度不足或已达 2 窗格上限时降级为同窗格页签切换。无前台 Session 时 toast 提示并回退插件面板。
-  详情页签顶部有「返回」按钮，切回插件面板的记忆列表（宿主主面板与右侧栏互斥，这是页内出口）。
+- **交互**：点击列表卡片在面板内打开宽弹窗（不切换主面板）；名称/描述/类型/标签/重要性可改，
+  保存、停用/恢复、归档、两步删除保留；正文不在弹窗内展示，改为「正文只读」提示 +
+  「用系统应用打开」按钮。
+- **系统阅读**：按钮 → `GET /memory/preview-file` 取仅正文临时 md → 宿主 Client Remote
+  `session.openWorkspacePath({path})` 交关联应用（Typora/VS Code/记事本等）；纯 Web 宿主
+  `canOpenWorkspacePath()` 为 false 时 toast 提示不支持；宿主拒绝时 toast 失败原因。
 - **数据面**：`GET /memory/preview-file` → `MemoryStore.previewFile`；`src/memory/preview.ts`
   生成只含正文的临时 `.md`（按 id 目录、幂等覆写、7 天清理、删除记忆时清理）。
-- **参数页签**：`src/client/memory-detail.tsx`（名称/描述/类型/标签/重要性 + 保存、停用/恢复、
-  归档、两步删除；切换记忆时丢弃未保存修改并提示）；页签 id/kind/槽 key 均为 `agent-extension-memory`。
-- **列表改造**：点击卡片调用 `actions.openMemoryDetail`，弹窗只保留「新建」（写正文）。
-- **依赖**：零新增运行时依赖；宿主侧栏 API 为 pre-stable，升级宿主后须回归
-  [`memory-reading-view.spec.md`](memory-reading-view.spec.md) §5 全链路。
-- **验收**：离线 `check/test/build` 全绿；zdebug 真机双主题、宽屏双窗格 + 窄屏降级、
+- **撤回内容**：宿主侧栏页签注册、controller 打开时序、参数页签组件、resource 地址拼装与相关测试。
+- **依赖**：零新增运行时依赖；依赖宿主 Client Remote `remote`/`remote.session`（`openWorkspacePath`
+  为宿主公开 Remote 能力，pre-stable，升级宿主后回归原生打开链路）。
+- **验收**：离线 `check/test/build` 全绿；zdebug 真机面板内弹窗、原生打开（Typora 实际拉起）、
   console error = 0；`GET /memory/preview-file` 返回路径存在且内容无 frontmatter。
 
 ## 背景：已完成（preview.5 → 9）

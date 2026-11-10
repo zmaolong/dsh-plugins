@@ -2,15 +2,16 @@
  * Memory tab of the Agent Extension panel: one compact toolbar row (scope
  * switch, project select, active-filter chips, search with a type-filter
  * dropdown, and the action icons), the entry list as a full-width card grid
- * with tag-chip filtering and a recency sort, a wide dialog that only creates
- * memories, the Markdown export, a settings dialog (capture-injection switches
- * and limits persist immediately; per-session statistics live there too), and
- * a health-audit dialog (stale / duplicate / low-value findings with batch
+ * with tag-chip filtering and a recency sort, a wide detail dialog for
+ * create / edit / save / deactivate / archive / restore / two-step delete,
+ * the Markdown export, a settings dialog (capture-injection switches and
+ * limits persist immediately; per-session statistics live there too), and a
+ * health-audit dialog (stale / duplicate / low-value findings with batch
  * archive / deactivate / delete reusing the existing endpoints).
  *
- * Opening an entry leaves the panel for the host's right Sidebar detail
- * surface (metadata page plus read-only preview); the controller's
- * `openMemoryDetail` owns that sequence because this view unmounts on click.
+ * The view owns its local state (the hub snapshot only carries the section
+ * tab) and talks to the host's `/memory/*` routes through `api()`; all copy
+ * comes from `t()` and every toast goes through `actions.toast`.
  *
  * @module dsh-agent-extension/client/MemoryView
  */
@@ -22,26 +23,19 @@ import { Badge, Button, EmptyBlock, IconButton, LoadingBlock, Select, Spinner, c
 import { DialogShell } from './dialogs.tsx'
 import { Icon } from './icons.tsx'
 import { Switch } from './Switch.tsx'
-import {
-  TYPE_LABEL_KEYS,
-  TYPE_VALUES,
-  integer,
-  normalizeEntry,
-  normalizeSummary,
-  record,
-  statusLabel,
-  statusTone,
-  text,
-  typeLabel,
-  type MemoryEntrySummary,
-  type MemoryForm,
-  type MemoryScope,
-  type MemoryType,
-} from './memory-model.ts'
 import { errorMessageFor, formatTime, type JsonRecord, type Translate } from './presentation.ts'
 import type { HubActions } from './store.ts'
 import panelCss from './panel.module.css'
 import css from './memory.module.css'
+
+/** Scope of a memory query: the shared global store or one project store. */
+export type MemoryScope = 'global' | 'project'
+
+/** Fixed memory types understood by the host. */
+export type MemoryType = 'preference' | 'decision' | 'gotcha' | 'project' | 'reference'
+
+/** Lifecycle status of one memory entry. */
+export type MemoryStatus = 'active' | 'stale' | 'archived'
 
 /** Capture / injection settings stored by the host. */
 export interface MemorySettings {
@@ -79,10 +73,58 @@ export interface MemoryStats {
   sessions: MemorySessionStat[]
 }
 
+/** One list row of the memory store. */
+export interface MemoryEntrySummary {
+  id: string
+  name: string
+  description: string
+  type: string
+  tags: string[]
+  importance: number
+  status: string
+  reinforcement: number
+  createdAt: string
+  updatedAt: string
+}
+
+/** Full entry returned by get / save / status. */
+export interface MemoryEntry extends MemoryEntrySummary {
+  content: string
+  originSessionId: string
+  supersedes: string[]
+  obsoleteVotes: number
+}
+
+/** Editable form of the detail pane. */
+interface MemoryForm {
+  name: string
+  description: string
+  type: MemoryType
+  tags: string[]
+  importance: number
+  content: string
+}
+
 /** Props of MemoryView (bound from the slot inject face). */
 export interface MemoryViewProps {
   actions: HubActions
   t: Translate
+}
+
+const TYPE_VALUES: readonly MemoryType[] = ['preference', 'decision', 'gotcha', 'project', 'reference']
+
+const TYPE_LABEL_KEYS: Record<MemoryType, string> = {
+  preference: 'memoryTypePreference',
+  decision: 'memoryTypeDecision',
+  gotcha: 'memoryTypeGotcha',
+  project: 'memoryTypeProject',
+  reference: 'memoryTypeReference',
+}
+
+const STATUS_LABEL_KEYS: Record<MemoryStatus, string> = {
+  active: 'memoryStatusActive',
+  stale: 'memoryStatusStale',
+  archived: 'memoryStatusArchived',
 }
 
 const DEFAULT_SETTINGS: MemorySettings = {
@@ -101,6 +143,54 @@ const EMPTY_FORM: MemoryForm = {
   tags: [],
   importance: 50,
   content: '',
+}
+
+/** Loose JSON object guard. */
+function record(value: unknown): JsonRecord {
+  return value !== null && typeof value === 'object' && !Array.isArray(value) ? value as JsonRecord : {}
+}
+
+/** Coerce to a trimmed string; missing values become the fallback. */
+function text(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : typeof value === 'number' ? String(value) : fallback
+}
+
+/** Coerce to a clamped integer; NaN falls back. */
+function integer(value: unknown, min: number, max: number, fallback: number): number {
+  const parsed = typeof value === 'number'
+    ? value
+    : typeof value === 'string' && value.trim() !== '' ? Number(value) : Number.NaN
+  if (!Number.isFinite(parsed)) return fallback
+  return Math.min(max, Math.max(min, Math.round(parsed)))
+}
+
+/** Normalize one list row. */
+function normalizeSummary(raw: unknown): MemoryEntrySummary {
+  const item = record(raw)
+  return {
+    id: text(item.id),
+    name: text(item.name),
+    description: text(item.description),
+    type: text(item.type),
+    tags: Array.isArray(item.tags) ? item.tags.filter((tag): tag is string => typeof tag === 'string') : [],
+    importance: integer(item.importance, 0, 100, 50),
+    status: text(item.status),
+    reinforcement: integer(item.reinforcement, 0, Number.MAX_SAFE_INTEGER, 0),
+    createdAt: text(item.createdAt),
+    updatedAt: text(item.updatedAt),
+  }
+}
+
+/** Normalize one full entry. */
+function normalizeEntry(raw: unknown): MemoryEntry {
+  const item = record(raw)
+  return {
+    ...normalizeSummary(item),
+    content: text(item.content),
+    originSessionId: text(item.originSessionId),
+    supersedes: Array.isArray(item.supersedes) ? item.supersedes.filter((id): id is string => typeof id === 'string') : [],
+    obsoleteVotes: integer(item.obsoleteVotes, 0, Number.MAX_SAFE_INTEGER, 0),
+  }
 }
 
 /** Normalize the projects array, newest `lastSeen` first. */
@@ -162,6 +252,36 @@ function normalizeStats(raw: unknown): MemoryStats {
   }
 }
 
+/** Form values of one loaded entry. */
+function formOf(entry: MemoryEntry): MemoryForm {
+  const type = TYPE_VALUES.find(value => value === entry.type) ?? 'preference'
+  return {
+    name: entry.name,
+    description: entry.description,
+    type,
+    tags: [...entry.tags],
+    importance: entry.importance,
+    content: entry.content,
+  }
+}
+
+/** Localized type label; unknown values fall back to the raw server text. */
+function typeLabel(value: string, t: Translate): string {
+  const type = TYPE_VALUES.find(entry => entry === value)
+  return type ? t(TYPE_LABEL_KEYS[type]) : value
+}
+
+/** Localized status label; unknown values fall back to the raw server text. */
+function statusLabel(value: string, t: Translate): string {
+  const status = value === 'active' || value === 'stale' || value === 'archived' ? value : null
+  return status ? t(STATUS_LABEL_KEYS[status]) : value
+}
+
+/** Badge tone of one status. */
+function statusTone(value: string): 'success' | 'warn' | 'plain' {
+  return value === 'active' ? 'success' : value === 'stale' ? 'warn' : 'plain'
+}
+
 /**
  * Trigger a browser download of an exported Markdown file.
  * Throws when the environment has no object-URL support so the caller can
@@ -216,9 +336,16 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const [listBusy, setListBusy] = useState(false)
   const [listError, setListError] = useState('')
   const [listToken, setListToken] = useState(0)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [entry, setEntry] = useState<MemoryEntry | null>(null)
   const [creating, setCreating] = useState(false)
+  const [detailStatus, setDetailStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
+  const [detailError, setDetailError] = useState('')
   const [form, setForm] = useState<MemoryForm>(EMPTY_FORM)
   const [saveBusy, setSaveBusy] = useState(false)
+  const [statusBusy, setStatusBusy] = useState(false)
+  const [deleteBusy, setDeleteBusy] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [exportBusy, setExportBusy] = useState(false)
   const [settings, setSettings] = useState<MemorySettings>(DEFAULT_SETTINGS)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -234,6 +361,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
 
   // The user's explicit scope choice wins over the auto-selected defaults.
   const userChoseRef = useRef(false)
+  const detailSeq = useRef(0)
   // Latest local settings (kept in sync synchronously) and the last value the
   // server confirmed; a failed persist rolls the UI back to the latter.
   const settingsRef = useRef<MemorySettings>(DEFAULT_SETTINGS)
@@ -325,32 +453,73 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
 
   const latestProjectKey = (list: MemoryProject[]): string => list[0]?.key ?? ''
 
-  const closeCreate = (): void => {
+  const closeEditor = (): void => {
+    detailSeq.current += 1
+    setSelectedId(null)
+    setEntry(null)
     setCreating(false)
+    setConfirmDelete(false)
+    setDetailStatus('idle')
+    setDetailError('')
     setTagDraft('')
   }
 
   const chooseScope = (next: MemoryScope): void => {
     userChoseRef.current = true
     setScope(next)
-    closeCreate()
+    closeEditor()
     if (next === 'project' && project === '') setProject(latestProjectKey(projects))
   }
 
   const chooseProject = (next: string): void => {
     userChoseRef.current = true
     setProject(next)
-    closeCreate()
+    closeEditor()
   }
 
   const startCreate = (): void => {
+    detailSeq.current += 1
     setCreating(true)
+    setSelectedId(null)
+    setEntry(null)
     setForm(EMPTY_FORM)
+    setDetailStatus('idle')
+    setDetailError('')
+    setConfirmDelete(false)
     setTagDraft('')
   }
 
-  /** Create one memory from the dialog; the reading surface is only opened from the list. */
-  const createEntry = async (): Promise<void> => {
+  const openEntry = (id: string): void => {
+    const seq = ++detailSeq.current
+    setCreating(false)
+    setSelectedId(id)
+    setEntry(null)
+    setForm(EMPTY_FORM)
+    setConfirmDelete(false)
+    setTagDraft('')
+    setDetailStatus('loading')
+    setDetailError('')
+    const params = new URLSearchParams()
+    params.set('scope', scope)
+    if (scope === 'project') params.set('project', project)
+    params.set('id', id)
+    void (async () => {
+      try {
+        const data = await api<JsonRecord>(`/memory/get?${params.toString()}`)
+        if (seq !== detailSeq.current) return
+        const loaded = normalizeEntry(data.entry)
+        setEntry(loaded)
+        setForm(formOf(loaded))
+        setDetailStatus('ready')
+      } catch (error) {
+        if (seq !== detailSeq.current) return
+        setDetailError(errorMessageFor(error, t))
+        setDetailStatus('error')
+      }
+    })()
+  }
+
+  const saveEntry = async (): Promise<void> => {
     if (saveBusy) return
     const name = form.name.trim()
     if (name === '' || form.content.trim() === '') {
@@ -373,14 +542,58 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
         importance: form.importance,
       }
       if (scope === 'project') body.project = project
-      await api<JsonRecord>('/memory/save', { method: 'POST', body })
+      if (!creating && entry) body.id = entry.id
+      const data = await api<JsonRecord>('/memory/save', { method: 'POST', body })
+      const saved = normalizeEntry(data.entry)
+      setEntry(saved)
+      setForm(formOf(saved))
+      setTagDraft('')
+      setSelectedId(saved.id)
+      setCreating(false)
+      setDetailStatus('ready')
       actions.toast('success', t('memorySaved'))
-      closeCreate()
       setListToken(token => token + 1)
     } catch (error) {
       actions.toast('error', errorMessageFor(error, t))
     } finally {
       setSaveBusy(false)
+    }
+  }
+
+  const changeStatus = async (status: MemoryStatus): Promise<void> => {
+    if (entry === null || statusBusy) return
+    setStatusBusy(true)
+    try {
+      const body: Record<string, unknown> = { scope, id: entry.id, status }
+      if (scope === 'project') body.project = project
+      const data = await api<JsonRecord>('/memory/status', { method: 'POST', body })
+      const updated = normalizeEntry(data.entry)
+      setEntry(updated)
+      setForm(formOf(updated))
+      setConfirmDelete(false)
+      actions.toast('success', t('memoryStatusDone'))
+      setListToken(token => token + 1)
+    } catch (error) {
+      actions.toast('error', errorMessageFor(error, t))
+    } finally {
+      setStatusBusy(false)
+    }
+  }
+
+  const removeEntry = async (): Promise<void> => {
+    if (entry === null || deleteBusy) return
+    setDeleteBusy(true)
+    try {
+      const body: Record<string, unknown> = { scope, id: entry.id }
+      if (scope === 'project') body.project = project
+      await api<JsonRecord>('/memory/delete', { method: 'POST', body })
+      actions.toast('success', t('memoryDeleted', { name: entry.name }))
+      closeEditor()
+      setListToken(token => token + 1)
+    } catch (error) {
+      actions.toast('error', errorMessageFor(error, t))
+    } finally {
+      setDeleteBusy(false)
     }
   }
 
@@ -522,7 +735,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const projectRequired = scope === 'project' && project === ''
   const projectMissing = scope === 'project' && projects.length === 0
   const hitRate = hitRateOf(stats)
-  const showEditor = creating
+  const showEditor = creating || selectedId !== null
   const typeOptions: ReadonlyArray<{ value: MemoryType | '', label: string }> = [
     { value: '', label: t('memoryTypeAll') },
     ...TYPE_VALUES.map(value => ({ value, label: t(TYPE_LABEL_KEYS[value]) })),
@@ -654,11 +867,11 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
               role="button"
               tabIndex={0}
               className={css.entryCard}
-              onClick={() => actions.openMemoryDetail({ scope, project, id: item.id })}
+              onClick={() => openEntry(item.id)}
               onKeyDown={(event) => {
                 if (event.key !== 'Enter' && event.key !== ' ') return
                 event.preventDefault()
-                actions.openMemoryDetail({ scope, project, id: item.id })
+                openEntry(item.id)
               }}
             >
               <span className={css.entryTitleRow}>
@@ -854,130 +1067,214 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
           <div className={css.dialogPortal}>
             <DialogShell
               t={t}
-              title={t('memoryCreateTitle')}
+              title={creating ? t('memoryCreateTitle') : t('memoryEditTitle')}
               wide
-              onClose={closeCreate}
+              onClose={closeEditor}
             >
-              <div style={columnGap(12)}>
-                <div className={css.formGrid}>
-                  <label className={css.field}>
-                    <span className={css.fieldLabel}>{t('memoryFieldName')}</span>
-                    <input
-                      className={css.input}
-                      type="text"
-                      aria-label={t('memoryFieldName')}
-                      value={form.name}
-                      onChange={(event) => { setForm(current => ({ ...current, name: event.target.value })) }}
-                    />
-                  </label>
-                  <label className={css.field}>
-                    <span className={css.fieldLabel}>{t('memoryFieldDescription')}</span>
-                    <input
-                      className={css.input}
-                      type="text"
-                      aria-label={t('memoryFieldDescription')}
-                      value={form.description}
-                      onChange={(event) => { setForm(current => ({ ...current, description: event.target.value })) }}
-                    />
-                  </label>
-                  <label className={css.field}>
-                    <span className={css.fieldLabel}>{t('memoryFieldType')}</span>
-                    <Select
-                      label={t('memoryFieldType')}
-                      value={form.type}
-                      options={TYPE_VALUES.map(value => ({ value, label: t(TYPE_LABEL_KEYS[value]) }))}
-                      onChange={(next) => {
-                        const type = TYPE_VALUES.find(value => value === next) ?? 'preference'
-                        setForm(current => ({ ...current, type }))
-                      }}
-                    />
-                  </label>
-                  <label className={css.field}>
-                    <span className={css.fieldLabel}>{t('memoryFieldImportance')}</span>
-                    <div className={css.rangeRow}>
-                      <input
-                        className={css.rangeInput}
-                        type="range"
-                        min={0}
-                        max={100}
-                        step={1}
-                        aria-label={t('memoryFieldImportance')}
-                        value={form.importance}
-                        style={{ '--range-fill': `${form.importance}%` } as CSSProperties}
-                        onChange={(event) => {
-                          setForm(current => ({ ...current, importance: integer(event.target.value, 0, 100, current.importance) }))
-                        }}
-                      />
-                      <span className={css.rangeValue}>{String(form.importance)}</span>
-                    </div>
-                    <span className={css.fieldHint}>{t('memoryImportanceHint')}</span>
-                  </label>
-                </div>
-                <div className={css.field}>
-                  <span className={css.fieldLabel}>{t('memoryFieldTags')}</span>
-                  <div className={css.tagBox}>
-                    {form.tags.map((tag, index) => (
-                      <span key={`${index}-${tag}`} className={css.tagChip}>
-                        <span className={css.tagChipText}>{tag}</span>
-                        <button
-                          type="button"
-                          className={css.tagChipRemove}
-                          aria-label={t('memoryTagRemove', { tag })}
-                          onClick={() => {
-                            setForm(current => ({ ...current, tags: current.tags.filter((_, tagIndex) => tagIndex !== index) }))
-                          }}
-                        >
-                          <Icon name="x" size={12} />
-                        </button>
-                      </span>
-                    ))}
-                    <input
-                      className={css.tagInput}
-                      type="text"
-                      aria-label={t('memoryFieldTags')}
-                      value={tagDraft}
-                      onChange={(event) => {
-                        const next = event.target.value
-                        if (next.endsWith(',') || next.endsWith('，')) {
-                          appendTags(next)
-                          setTagDraft('')
-                        } else {
-                          setTagDraft(next)
-                        }
-                      }}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ',') {
-                          event.preventDefault()
-                          commitTagDraft()
-                          return
-                        }
-                        if (event.key === 'Backspace' && tagDraft === '' && form.tags.length > 0) {
-                          event.preventDefault()
-                          setForm(current => ({ ...current, tags: current.tags.slice(0, -1) }))
-                        }
-                      }}
-                      onBlur={commitTagDraft}
-                    />
+              {entry !== null && !creating
+                ? (
+                  <div className={css.editorStatus}>
+                    <Badge tone={statusTone(entry.status)}>{statusLabel(entry.status, t)}</Badge>
                   </div>
-                  <span className={css.fieldHint}>{t('memoryTagsHint')}</span>
-                </div>
-                <label className={css.field}>
-                  <span className={css.fieldLabel}>{t('memoryFieldContent')}</span>
-                  <textarea
-                    className={css.textarea}
-                    rows={8}
-                    aria-label={t('memoryFieldContent')}
-                    value={form.content}
-                    onChange={(event) => { setForm(current => ({ ...current, content: event.target.value })) }}
-                  />
-                </label>
-                <div className={css.formActions}>
-                  <Button variant="primary" disabled={saveBusy || projectRequired} onClick={() => { void createEntry() }}>
-                    {saveBusy ? <Spinner /> : null}{saveBusy ? t('memorySaving') : t('memorySave')}
-                  </Button>
-                  <Button variant="secondary" onClick={closeCreate}>{t('cancel')}</Button>
-                </div>
-              </div>
+                )
+                : null}
+              {detailStatus === 'loading' ? <LoadingBlock text={t('memoryLoading')} /> : null}
+              {detailStatus === 'error'
+                ? (
+                  <div className={css.errorBox}>
+                    <span className={css.errorText}>{detailError}</span>
+                    <Button
+                      variant="secondary"
+                      icon="refresh"
+                      onClick={() => { if (selectedId !== null) openEntry(selectedId) }}
+                    >
+                      {t('memoryRetry')}
+                    </Button>
+                  </div>
+                )
+                : null}
+              {detailStatus === 'idle' || detailStatus === 'ready'
+                ? (
+                  <div style={columnGap(12)}>
+                    <div className={css.formGrid}>
+                      <label className={css.field}>
+                        <span className={css.fieldLabel}>{t('memoryFieldName')}</span>
+                        <input
+                          className={css.input}
+                          type="text"
+                          aria-label={t('memoryFieldName')}
+                          value={form.name}
+                          onChange={(event) => { setForm(current => ({ ...current, name: event.target.value })) }}
+                        />
+                      </label>
+                      <label className={css.field}>
+                        <span className={css.fieldLabel}>{t('memoryFieldDescription')}</span>
+                        <input
+                          className={css.input}
+                          type="text"
+                          aria-label={t('memoryFieldDescription')}
+                          value={form.description}
+                          onChange={(event) => { setForm(current => ({ ...current, description: event.target.value })) }}
+                        />
+                      </label>
+                      <label className={css.field}>
+                        <span className={css.fieldLabel}>{t('memoryFieldType')}</span>
+                        <Select
+                          label={t('memoryFieldType')}
+                          value={form.type}
+                          options={TYPE_VALUES.map(value => ({ value, label: t(TYPE_LABEL_KEYS[value]) }))}
+                          onChange={(next) => {
+                            const type = TYPE_VALUES.find(value => value === next) ?? 'preference'
+                            setForm(current => ({ ...current, type }))
+                          }}
+                        />
+                      </label>
+                      <label className={css.field}>
+                        <span className={css.fieldLabel}>{t('memoryFieldImportance')}</span>
+                        <div className={css.rangeRow}>
+                          <input
+                            className={css.rangeInput}
+                            type="range"
+                            min={0}
+                            max={100}
+                            step={1}
+                            aria-label={t('memoryFieldImportance')}
+                            value={form.importance}
+                            style={{ '--range-fill': `${form.importance}%` } as CSSProperties}
+                            onChange={(event) => {
+                              setForm(current => ({ ...current, importance: integer(event.target.value, 0, 100, current.importance) }))
+                            }}
+                          />
+                          <span className={css.rangeValue}>{String(form.importance)}</span>
+                        </div>
+                        <span className={css.fieldHint}>{t('memoryImportanceHint')}</span>
+                      </label>
+                    </div>
+                    <div className={css.field}>
+                      <span className={css.fieldLabel}>{t('memoryFieldTags')}</span>
+                      <div className={css.tagBox}>
+                        {form.tags.map((tag, index) => (
+                          <span key={`${index}-${tag}`} className={css.tagChip}>
+                            <span className={css.tagChipText}>{tag}</span>
+                            <button
+                              type="button"
+                              className={css.tagChipRemove}
+                              aria-label={t('memoryTagRemove', { tag })}
+                              onClick={() => {
+                                setForm(current => ({ ...current, tags: current.tags.filter((_, tagIndex) => tagIndex !== index) }))
+                              }}
+                            >
+                              <Icon name="x" size={12} />
+                            </button>
+                          </span>
+                        ))}
+                        <input
+                          className={css.tagInput}
+                          type="text"
+                          aria-label={t('memoryFieldTags')}
+                          value={tagDraft}
+                          onChange={(event) => {
+                            const next = event.target.value
+                            if (next.endsWith(',') || next.endsWith('，')) {
+                              appendTags(next)
+                              setTagDraft('')
+                            } else {
+                              setTagDraft(next)
+                            }
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ',') {
+                              event.preventDefault()
+                              commitTagDraft()
+                              return
+                            }
+                            if (event.key === 'Backspace' && tagDraft === '' && form.tags.length > 0) {
+                              event.preventDefault()
+                              setForm(current => ({ ...current, tags: current.tags.slice(0, -1) }))
+                            }
+                          }}
+                          onBlur={commitTagDraft}
+                        />
+                      </div>
+                      <span className={css.fieldHint}>{t('memoryTagsHint')}</span>
+                    </div>
+                    <label className={css.field}>
+                      <span className={css.fieldLabel}>{t('memoryFieldContent')}</span>
+                      {creating
+                        ? (
+                          <textarea
+                            className={css.textarea}
+                            rows={8}
+                            aria-label={t('memoryFieldContent')}
+                            value={form.content}
+                            onChange={(event) => { setForm(current => ({ ...current, content: event.target.value })) }}
+                          />
+                        )
+                        : (
+                          <div className={css.readonlyBox}>
+                            <span className={css.readonlyHint}>{t('memoryBodyReadOnlyHint')}</span>
+                            {entry !== null
+                              ? (
+                                <Button
+                                  variant="secondary"
+                                  icon="arrowUpRight"
+                                  onClick={() => { actions.openMemoryInApp({ scope, project, id: entry.id }) }}
+                                >
+                                  {t('memoryOpenNative')}
+                                </Button>
+                              )
+                              : null}
+                          </div>
+                        )}
+                    </label>
+                    <div className={css.formActions}>
+                      <Button variant="primary" disabled={saveBusy || projectRequired} onClick={() => { void saveEntry() }}>
+                        {saveBusy ? <Spinner /> : null}{saveBusy ? t('memorySaving') : t('memorySave')}
+                      </Button>
+                      <Button variant="secondary" onClick={closeEditor}>{t('cancel')}</Button>
+                      {entry !== null && !creating
+                        ? (
+                          <span className={css.formActionsRight}>
+                            {entry.status !== 'active'
+                              ? (
+                                <Button variant="ghost" icon="check" disabled={statusBusy} onClick={() => { void changeStatus('active') }}>
+                                  {t('memoryRestore')}
+                                </Button>
+                              )
+                              : (
+                                <Button variant="ghost" icon="power" disabled={statusBusy} onClick={() => { void changeStatus('stale') }}>
+                                  {t('memoryDeactivate')}
+                                </Button>
+                              )}
+                            {entry.status !== 'archived'
+                              ? (
+                                <Button variant="ghost" icon="folder" disabled={statusBusy} onClick={() => { void changeStatus('archived') }}>
+                                  {t('memoryArchive')}
+                                </Button>
+                              )
+                              : null}
+                            {confirmDelete
+                              ? (
+                                <span className={css.confirmArea} role="group" aria-label={t('memoryDelete')}>
+                                  <span className={css.confirmText}>{t('memoryDeleteDescription', { name: entry.name })}</span>
+                                  <Button variant="danger" disabled={deleteBusy} onClick={() => { void removeEntry() }}>
+                                    {deleteBusy ? <Spinner /> : null}{deleteBusy ? t('memoryDeleting') : t('memoryDeleteConfirm')}
+                                  </Button>
+                                  <Button variant="secondary" onClick={() => setConfirmDelete(false)}>{t('cancel')}</Button>
+                                </span>
+                              )
+                              : (
+                                <Button variant="danger" icon="trash" onClick={() => setConfirmDelete(true)}>
+                                  {t('memoryDelete')}
+                                </Button>
+                              )}
+                          </span>
+                        )
+                        : null}
+                    </div>
+                  </div>
+                )
+                : null}
             </DialogShell>
           </div>
         )

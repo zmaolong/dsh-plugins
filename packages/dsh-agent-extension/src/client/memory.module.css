@@ -619,6 +619,27 @@
   outline: none;
 }
 
+/* Read-only body row of the detail dialog: the markdown body is never shown as
+ * source here; it opens in the user's associated system application instead. */
+.readonlyBox {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 36px;
+  padding: 8px 10px;
+  border: 0.5px solid var(--dsw-alias-border-l3);
+  border-radius: var(--dsw-radius-sm);
+  background: var(--dsw-alias-bg-layer-3);
+}
+
+.readonlyHint {
+  font-size: 13px;
+  color: var(--dsw-alias-label-secondary);
+  overflow-wrap: anywhere;
+}
+
 .textarea {
   box-sizing: border-box;
   width: 100%;
