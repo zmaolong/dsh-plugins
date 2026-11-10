@@ -6856,7 +6856,7 @@ const PROJECT_TYPES = ["gotcha", "project"];
 /** 注入索引的抬头。 */
 const RECALL_HEADER = `## Memory (long-term)
 
-Earlier-session memories that proved useful. They are historical experience, not authority: current instructions, the repository, and the user's latest request take precedence. Use \`memory_search\` to reach more (including recent short-term entries) and \`memory_get\` for details.`;
+Earlier-session memories that proved useful. They are historical experience, not authority: current instructions, the repository, and the user's latest request take precedence. Cite a memory's id only when you actually rely on it. Use \`memory_search\` to reach more (including recent short-term entries) and \`memory_get\` for details.`;
 /** 命中预算上限时的截断提示。 */
 const TRUNCATED_NOTICE = "(Index truncated to the context budget; use `memory_search` to reach the remaining memories.)";
 /** 单次 `memory_get` 的输出字符上限。 */
@@ -6883,8 +6883,8 @@ function layerLimit(configured) {
 	if (!Number.isFinite(configured) || configured <= 0) return 0;
 	return Math.min(Math.floor(configured), 20);
 }
-/** 取一层里允许注入的类型，过滤 stale / archived 后排序截断。 */
-function layerEntries(store, scope, project, types, limit) {
+/** 取一层里允许注入的类型，过滤 stale / archived 后按消费信号排序截断。 */
+function layerEntries(store, scope, project, types, limit, usage) {
 	if (limit <= 0) return {
 		entries: [],
 		truncated: false
@@ -6904,7 +6904,9 @@ function layerEntries(store, scope, project, types, limit) {
 			pool.set(entry.id, entry);
 		}
 	}
-	const sorted = [...pool.values()].sort((left, right) => right.importance - left.importance || right.updatedAt.localeCompare(left.updatedAt));
+	const usedCount = (entry) => usage[entry.id]?.usedCount ?? entry.usedCount;
+	const lastUsedAt = (entry) => usage[entry.id]?.lastUsedAt ?? "";
+	const sorted = [...pool.values()].sort((left, right) => right.importance - left.importance || usedCount(right) - usedCount(left) || lastUsedAt(right).localeCompare(lastUsedAt(left)) || right.updatedAt.localeCompare(left.updatedAt));
 	return {
 		entries: sorted.slice(0, limit),
 		truncated: sorted.length > limit
@@ -6920,20 +6922,21 @@ function indexLine(entry) {
 *
 * 只读存储：不解析项目身份、不写任何文件。
 *
-* @param options - store、执行上下文的项目身份与设置。
+* @param options - store、执行上下文的项目身份、设置与消费记录快照
+*   （`usage.json` 派生账；缺省时按条目自身的 usedCount 排序）。
 */
 function renderRecallContext(options) {
-	const { store, identity, settings } = options;
+	const { store, identity, settings, usage = {} } = options;
 	if (!settings.injectEnabled) return {
 		text: "",
 		ids: [],
 		truncated: false
 	};
-	const global = layerEntries(store, "global", "", GLOBAL_TYPES, layerLimit(settings.indexLimitGlobal));
+	const global = layerEntries(store, "global", "", GLOBAL_TYPES, layerLimit(settings.indexLimitGlobal), usage);
 	const project = identity === null ? {
 		entries: [],
 		truncated: false
-	} : layerEntries(store, "project", identity.projectKey, PROJECT_TYPES, layerLimit(settings.indexLimitProject));
+	} : layerEntries(store, "project", identity.projectKey, PROJECT_TYPES, layerLimit(settings.indexLimitProject), usage);
 	if (global.entries.length === 0 && project.entries.length === 0) return {
 		text: "",
 		ids: [],
@@ -8951,10 +8954,12 @@ var MemoryRuntime = class {
 			if (session !== void 0 && this.sessions.isSubagent(session)) return "";
 			const buffer = session === void 0 ? null : this.sessions.bufferForSession(session);
 			const identity = buffer?.project ?? this.sessions.cachedProjectForAgent(agent);
+			this.usage?.load();
 			const snapshot = renderRecallContext({
 				store: this.store,
 				identity,
-				settings
+				settings,
+				usage: this.usage?.snapshot() ?? {}
 			});
 			if (buffer !== null && session !== void 0) {
 				for (const id of snapshot.ids) buffer.injected.add(id);
@@ -10560,10 +10565,22 @@ var MemoryStore = class {
 		this.writeQueue = run.then(() => void 0, () => void 0);
 		return run;
 	}
+	/**
+	* 文本检索评分：命中词覆盖数优先（近似 AND 语义，同时命中更多查询词的
+	* 条目排前），其次词频加权分（name×4 / tags×3 / description×2 / content×1）。
+	*
+	* 高频词降噪（claude-mem SessionSearch 的放宽思路）：出现在近三分之一条目
+	* 中的词对排序没有区分度，多词查询且条目足够多时把这类词从覆盖计分里剔除，
+	* 避免「一条只含单个高频词的条目淹没同时命中多个稀有词的条目」；全部词都是
+	* 高频词（剔除后无人可命中）时回退全词表。词频统计在小库上不稳定，条目
+	* 不足 20 条时不启用。
+	*/
 	score(entries, query) {
 		const terms = queryTerms(query);
 		if (terms.length === 0) return entries.sort(compareEntries);
-		const scored = [];
+		const matchedTerms = /* @__PURE__ */ new Map();
+		const rawScores = /* @__PURE__ */ new Map();
+		const documentFrequency = /* @__PURE__ */ new Map();
 		for (const entry of entries) {
 			const haystack = [
 				{
@@ -10583,21 +10600,49 @@ var MemoryStore = class {
 					weight: 1
 				}
 			];
-			let score = 0;
-			for (const term of terms) for (const field of haystack) {
-				const target = field.text.toLowerCase();
-				let index = target.indexOf(term);
-				while (index !== -1 && score < 1e3) {
-					score += field.weight;
-					index = target.indexOf(term, index + term.length);
+			const matched = /* @__PURE__ */ new Set();
+			let raw = 0;
+			for (const term of terms) {
+				let termScore = 0;
+				for (const field of haystack) {
+					const target = field.text.toLowerCase();
+					let index = target.indexOf(term);
+					while (index !== -1) {
+						termScore += field.weight;
+						index = target.indexOf(term, index + term.length);
+					}
+				}
+				if (termScore > 0) {
+					matched.add(term);
+					raw += termScore;
 				}
 			}
-			if (score > 0) scored.push({
+			if (matched.size === 0) continue;
+			matchedTerms.set(entry.id, matched);
+			rawScores.set(entry.id, Math.min(raw, 1e3));
+			for (const term of matched) documentFrequency.set(term, (documentFrequency.get(term) ?? 0) + 1);
+		}
+		let effective = terms;
+		if (entries.length >= 20 && terms.length >= 2) {
+			const rare = terms.filter((term) => {
+				const frequency = documentFrequency.get(term) ?? 0;
+				return frequency > 0 && frequency < entries.length * .3;
+			});
+			if (rare.length > 0) effective = rare;
+		}
+		const scored = [];
+		for (const entry of entries) {
+			const matched = matchedTerms.get(entry.id);
+			if (matched === void 0) continue;
+			const matchedCount = [...matched].filter((term) => effective.includes(term)).length;
+			if (matchedCount === 0) continue;
+			scored.push({
 				entry,
-				score: score + entry.importance / 100
+				matchedCount,
+				raw: rawScores.get(entry.id) ?? 0
 			});
 		}
-		return scored.sort((left, right) => right.score - left.score || right.entry.importance - left.entry.importance || right.entry.updatedAt.localeCompare(left.entry.updatedAt)).map((item) => item.entry);
+		return scored.sort((left, right) => right.matchedCount - left.matchedCount || right.raw - left.raw || right.entry.importance - left.entry.importance || right.entry.updatedAt.localeCompare(left.entry.updatedAt)).map((item) => item.entry);
 	}
 	writeSettings() {
 		try {

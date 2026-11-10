@@ -281,6 +281,64 @@ describe('记忆存储：Markdown 事实、手改、去重与生命周期', () =
     expect(store.search('global', '', '', 1)[0]?.id).not.toBe(decision.id)
   })
 
+  it('多词查询按命中词覆盖排序：同时命中多词的条目胜过单词高频命中的高重要度条目', () => {
+    const store = makeStore()
+    const both = add(store, {
+      name: 'pnpm 离线测试',
+      description: 'pnpm 与 vitest 的离线测试配置',
+      content: '用 pnpm 跑 vitest 的离线测试。',
+      source: 'user',
+    })
+    // 单词高频 + 高重要度：旧排序（原始分 + importance）下它会排前。
+    const noisy = add(store, {
+      name: 'pnpm 常用命令',
+      description: 'pnpm install pnpm run pnpm test',
+      content: 'pnpm install。pnpm run build。pnpm test。',
+      importance: 90,
+      source: 'user',
+    })
+    const found = store.search('global', '', { query: 'pnpm vitest' })
+    expect(found.map(item => item.id)).toEqual([both.id, noisy.id])
+  })
+
+  it('高频词降噪：出现在三成以上条目的词退出覆盖计分，含稀有词的条目胜出', () => {
+    const store = makeStore()
+    // 21 条背景条目全部含 pnpm（条目数 ≥20 才启用降噪）。
+    for (let index = 0; index < 21; index += 1) {
+      add(store, {
+        name: `pnpm 常规条目 ${index}`,
+        description: `pnpm 使用记录 ${index}`,
+        content: `pnpm 第 ${index} 条。`,
+        importance: 90,
+        source: 'user',
+      })
+    }
+    const rare = add(store, {
+      name: 'vitest 专项',
+      description: 'vitest 的离线配置',
+      content: 'vitest 专属。',
+      source: 'user',
+    })
+    // pnpm 已被降噪剔除，只剩含 vitest 的条目参与结果。
+    const found = store.search('global', '', { query: 'pnpm vitest' })
+    expect(found.map(item => item.id)).toEqual([rare.id])
+  })
+
+  it('全部查询词都是高频词时回退全词表，不返回空', () => {
+    const store = makeStore()
+    for (let index = 0; index < 22; index += 1) {
+      add(store, {
+        name: `pnpm install 条目 ${index}`,
+        description: `pnpm install 用法 ${index}`,
+        content: `pnpm install 第 ${index} 条。`,
+        source: 'user',
+      })
+    }
+    // pnpm 与 install 都在三成以上条目中出现：剔除后无人可命中 → 回退全词表。
+    const found = store.search('global', '', { query: 'pnpm install', limit: 50 })
+    expect(found).toHaveLength(22)
+  })
+
   it('并发 saveAsync 经进程内写队列串行，不丢条目', async () => {
     const store = makeStore()
     const writes = Array.from({ length: 12 }, (_, index) => store.saveAsync({
@@ -578,6 +636,27 @@ describe('记忆存储：Markdown 事实、手改、去重与生命周期', () =
     expect(readFileSync(path.join(store.root, 'global', `${shortEntry.id}.md`), 'utf8')).toContain('tier: long')
     const after = renderRecallContext({ store, identity: null, settings: store.settings() })
     expect(after.ids).toContain(shortEntry.id)
+  })
+
+  it('注入排序纳入消费信号：同重要度下被消费过的条目优先，无记录时维持更新时间序', async () => {
+    const store = makeStore()
+    const used = add(store, { name: '被消费的偏好', description: 'x', content: 'y', source: 'user' })
+    await new Promise(resolve => setTimeout(resolve, 5))
+    const fresh = add(store, { name: '刚写入的偏好', description: 'x', content: 'y', source: 'user' })
+
+    // 无 usage 快照：退化旧行为，按 updatedAt 新者在前。
+    const before = renderRecallContext({ store, identity: null, settings: store.settings() })
+    expect(before.ids.indexOf(fresh.id)).toBeLessThan(before.ids.indexOf(used.id))
+
+    // 带 usage 快照：消费次数参与排序，被消费过的排前。
+    const after = renderRecallContext({
+      store,
+      identity: null,
+      settings: store.settings(),
+      usage: { [used.id]: { usedCount: 3, lastUsedAt: used.createdAt } },
+    })
+    expect(after.ids.indexOf(used.id)).toBeLessThan(after.ids.indexOf(fresh.id))
+    expect(after.text).toContain('only when you actually rely on it')
   })
 
   it('设置、捕获计数与命中率持久化到磁盘', () => {

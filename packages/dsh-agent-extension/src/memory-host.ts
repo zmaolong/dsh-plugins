@@ -376,7 +376,9 @@ export class MemoryRuntime {
       const buffer = session === undefined ? null : this.sessions.bufferForSession(session)
       // 项目身份只读：优先事件路径已解析的结果，其次读缓存；绝不在这里 resolveProject。
       const identity = buffer?.project ?? this.sessions.cachedProjectForAgent(agent)
-      const snapshot = renderRecallContext({ store: this.store, identity, settings })
+      // 消费信号参与注入排序；load 幂等，未触发过工具时也能拿到已落盘记录。
+      this.usage?.load()
+      const snapshot = renderRecallContext({ store: this.store, identity, settings, usage: this.usage?.snapshot() ?? {} })
       if (buffer !== null && session !== undefined) {
         for (const id of snapshot.ids) buffer.injected.add(id)
         this.sessions.noteInjection(session, {

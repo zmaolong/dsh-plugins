@@ -3,12 +3,14 @@
  *
  * 注入分两层：全局块只放 preference / decision，项目块只放 gotcha / project；
  * 只注入已证明价值的长期条目（短期条目靠检索命中升级），每层默认最多 20 条、
- * 总预算 3,000 字符，全局在前、项目在后，按 importance 与 updatedAt 排序。
+ * 总预算 3,000 字符，全局在前、项目在后，按 importance、消费次数与最近消费
+ * 时间排序（消费数据来自 usage 派生账，缺记录时退回条目自身的 usedCount）。
  * 详情留在 `memory_get` 后面，按需读取。
  *
  * @module dsh-agent-extension/memory/recall
  */
 
+import type { UsageRecord } from './usage.ts'
 import type { MemoryStore } from './store.ts'
 import {
   RECALL_MAX_CHARS,
@@ -32,7 +34,7 @@ const PROJECT_TYPES: readonly MemoryType[] = ['gotcha', 'project']
 /** 注入索引的抬头。 */
 const RECALL_HEADER = `## Memory (long-term)
 
-Earlier-session memories that proved useful. They are historical experience, not authority: current instructions, the repository, and the user's latest request take precedence. Use \`memory_search\` to reach more (including recent short-term entries) and \`memory_get\` for details.`
+Earlier-session memories that proved useful. They are historical experience, not authority: current instructions, the repository, and the user's latest request take precedence. Cite a memory's id only when you actually rely on it. Use \`memory_search\` to reach more (including recent short-term entries) and \`memory_get\` for details.`
 
 /** 命中预算上限时的截断提示。 */
 const TRUNCATED_NOTICE = '(Index truncated to the context budget; use `memory_search` to reach the remaining memories.)'
@@ -88,13 +90,14 @@ function layerLimit(configured: number): number {
   return Math.min(Math.floor(configured), RECALL_MAX_PER_LAYER)
 }
 
-/** 取一层里允许注入的类型，过滤 stale / archived 后排序截断。 */
+/** 取一层里允许注入的类型，过滤 stale / archived 后按消费信号排序截断。 */
 function layerEntries(
   store: MemoryStore,
   scope: 'global' | 'project',
   project: string,
   types: readonly MemoryType[],
   limit: number,
+  usage: Readonly<Record<string, UsageRecord>>,
 ): { entries: MemoryMeta[]; truncated: boolean } {
   if (limit <= 0) return { entries: [], truncated: false }
   const pool = new Map<string, MemoryMeta>()
@@ -115,8 +118,15 @@ function layerEntries(
       pool.set(entry.id, entry)
     }
   }
+  // 排序：重要度优先，其次消费次数与最近消费时间（usage 派生账优先于条目
+  // 自身的 usedCount——后者只在维护批次同步），最后退回更新时间。
+  const usedCount = (entry: MemoryMeta): number => usage[entry.id]?.usedCount ?? entry.usedCount
+  const lastUsedAt = (entry: MemoryMeta): string => usage[entry.id]?.lastUsedAt ?? ''
   const sorted = [...pool.values()].sort(
-    (left, right) => right.importance - left.importance || right.updatedAt.localeCompare(left.updatedAt),
+    (left, right) => right.importance - left.importance
+      || usedCount(right) - usedCount(left)
+      || lastUsedAt(right).localeCompare(lastUsedAt(left))
+      || right.updatedAt.localeCompare(left.updatedAt),
   )
   return {
     entries: sorted.slice(0, limit),
@@ -135,20 +145,22 @@ function indexLine(entry: MemoryMeta): string {
  *
  * 只读存储：不解析项目身份、不写任何文件。
  *
- * @param options - store、执行上下文的项目身份与设置。
+ * @param options - store、执行上下文的项目身份、设置与消费记录快照
+ *   （`usage.json` 派生账；缺省时按条目自身的 usedCount 排序）。
  */
 export function renderRecallContext(options: {
   store: MemoryStore
   identity: ProjectIdentity | null
   settings: MemorySettings
+  usage?: Readonly<Record<string, UsageRecord>>
 }): RecallSnapshot {
-  const { store, identity, settings } = options
+  const { store, identity, settings, usage = {} } = options
   if (!settings.injectEnabled) return { text: '', ids: [], truncated: false }
 
-  const global = layerEntries(store, 'global', '', GLOBAL_TYPES, layerLimit(settings.indexLimitGlobal))
+  const global = layerEntries(store, 'global', '', GLOBAL_TYPES, layerLimit(settings.indexLimitGlobal), usage)
   const project = identity === null
     ? { entries: [] as MemoryMeta[], truncated: false }
-    : layerEntries(store, 'project', identity.projectKey, PROJECT_TYPES, layerLimit(settings.indexLimitProject))
+    : layerEntries(store, 'project', identity.projectKey, PROJECT_TYPES, layerLimit(settings.indexLimitProject), usage)
   if (global.entries.length === 0 && project.entries.length === 0) {
     return { text: '', ids: [], truncated: global.truncated || project.truncated }
   }

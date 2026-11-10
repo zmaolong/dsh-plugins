@@ -140,3 +140,28 @@
   （candidates 17），模型正确继承宿主默认（deepseek-official/deepseek-flash），LLM 调用在
   zdebug 因无 API key 失败（MISSING_CREDENTIAL，错误文案清晰指引配置）——真实研判需在已配
   凭据的桌面 profile 验证，代码链路（候选/路由/失败处理）全部正确。
+
+### 2026-11-11：B10 检索排序与注入消费信号（preview.26）
+
+定时优化轮（无人值守）从 `.reference/` 七项目调研检索/注入机制（claude-mem/hindsight/agentcairn/
+codex/OpenViking），选定两项零 schema 变更的改进落地：
+
+- **`memory_search` 多词覆盖排序 + 高频词降噪**（`src/memory/store.ts` `score()` 重构，来源：
+  claude-mem `SessionSearch` 的 AND→OR 放宽 + 稀有词选择）：排序键从「原始加权分 + importance/100」
+  改为「命中查询词覆盖数 → 原始加权分 → importance → updatedAt」——同时命中更多词的条目必然
+  排在只命中单词的条目前，修复「一条只含单个高频词的条目淹没同时命中多个词的条目」。高频词降噪：
+  条目 ≥20 且查询词 ≥2 时，出现在 ≥30% 条目中的词（df 统计即时计算，无索引）从覆盖计分剔除
+  （「有人命中」的词才进稀有词表，剔除后无人可命中则回退全词表）；小库不做降噪（词频统计不稳定）。
+- **注入排序纳入消费信号**（`src/memory/recall.ts` + `memory-host.ts` 接线，来源：hindsight
+  proof_norm 的消费闭环思路、codex 消费反哺）：`layerEntries` 排序键从「importance → updatedAt」
+  改为「importance → usedCount → lastUsedAt → updatedAt」，usage 快照由 memory-host 传入
+  （`usage.load()` 幂等预载 + `snapshot()`），无记录退回条目自身 usedCount（维护批次同步值）。
+  「被消费才升级长期」的分层语义由此贯通到注入排序——同重要度下被用过的条目先曝光。
+- **注入抬头补引用规约**（来源：codex `read_path_v2.md`、agentcairn trust boundary）：header
+  加一句 "Cite a memory's id only when you actually rely on it."——引用纪律同时让 `injectedUsed`
+  的记账口径（靠 id 引用/回读）更可靠。
+- **不采纳**（本轮评估过）：ACT-R 强化日期史（claude-mem `strength.ts`，需 schema v4 迁移 +
+  全链字段改造，留后续批次）；stale 条目 ×0.5 降权注入（agentcairn validity penalty，与 v3
+  「注入收紧只放 active+long」的既定边界冲突）；多路召回 RRF（单路召回暂无融合需求）。
+- **验证**：363 用例全绿（新增 4：多词覆盖排序、高频词降噪、全高频回退、注入消费信号排序）。
+  纯服务端改动，未涉客户端 slots/UI/宿主契约，按 AGENTS.md 跳过真机自测。

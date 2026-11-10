@@ -1416,10 +1416,22 @@ export class MemoryStore {
     return run
   }
 
+  /**
+   * 文本检索评分：命中词覆盖数优先（近似 AND 语义，同时命中更多查询词的
+   * 条目排前），其次词频加权分（name×4 / tags×3 / description×2 / content×1）。
+   *
+   * 高频词降噪（claude-mem SessionSearch 的放宽思路）：出现在近三分之一条目
+   * 中的词对排序没有区分度，多词查询且条目足够多时把这类词从覆盖计分里剔除，
+   * 避免「一条只含单个高频词的条目淹没同时命中多个稀有词的条目」；全部词都是
+   * 高频词（剔除后无人可命中）时回退全词表。词频统计在小库上不稳定，条目
+   * 不足 20 条时不启用。
+   */
   private score(entries: MemoryEntry[], query: string): MemoryEntry[] {
     const terms = queryTerms(query)
     if (terms.length === 0) return entries.sort(compareEntries)
-    const scored: Array<{ entry: MemoryEntry, score: number }> = []
+    const matchedTerms = new Map<string, Set<string>>()
+    const rawScores = new Map<string, number>()
+    const documentFrequency = new Map<string, number>()
     for (const entry of entries) {
       const haystack = [
         { text: entry.name, weight: 4 },
@@ -1427,21 +1439,50 @@ export class MemoryStore {
         { text: entry.description, weight: 2 },
         { text: entry.content, weight: 1 },
       ]
-      let score = 0
+      const matched = new Set<string>()
+      let raw = 0
       for (const term of terms) {
+        let termScore = 0
         for (const field of haystack) {
           const target = field.text.toLowerCase()
           let index = target.indexOf(term)
-          while (index !== -1 && score < 1000) {
-            score += field.weight
+          while (index !== -1) {
+            termScore += field.weight
             index = target.indexOf(term, index + term.length)
           }
         }
+        if (termScore > 0) {
+          matched.add(term)
+          raw += termScore
+        }
       }
-      if (score > 0) scored.push({ entry, score: score + entry.importance / 100 })
+      if (matched.size === 0) continue
+      matchedTerms.set(entry.id, matched)
+      rawScores.set(entry.id, Math.min(raw, 1000))
+      for (const term of matched) {
+        documentFrequency.set(term, (documentFrequency.get(term) ?? 0) + 1)
+      }
+    }
+    // 降噪词表：只在「有人命中」的词里挑稀有词；没有稀有词就用全词表。
+    let effective = terms
+    if (entries.length >= 20 && terms.length >= 2) {
+      const rare = terms.filter(term => {
+        const frequency = documentFrequency.get(term) ?? 0
+        return frequency > 0 && frequency < entries.length * 0.3
+      })
+      if (rare.length > 0) effective = rare
+    }
+    const scored: Array<{ entry: MemoryEntry, matchedCount: number, raw: number }> = []
+    for (const entry of entries) {
+      const matched = matchedTerms.get(entry.id)
+      if (matched === undefined) continue
+      const matchedCount = [...matched].filter(term => effective.includes(term)).length
+      if (matchedCount === 0) continue
+      scored.push({ entry, matchedCount, raw: rawScores.get(entry.id) ?? 0 })
     }
     return scored
-      .sort((left, right) => right.score - left.score
+      .sort((left, right) => right.matchedCount - left.matchedCount
+        || right.raw - left.raw
         || right.entry.importance - left.entry.importance
         || right.entry.updatedAt.localeCompare(left.entry.updatedAt))
       .map(item => item.entry)
