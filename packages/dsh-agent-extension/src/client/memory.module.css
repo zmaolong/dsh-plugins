@@ -308,9 +308,12 @@
   color: var(--dsw-alias-label-primary);
 }
 
-/* High-importance marker: a small warn-toned pill next to the name. */
+/* High-importance marker: pinned to the card's top-right corner, away from the
+ * wrapping title text. */
 .entryImportance {
   flex: none;
+  align-self: flex-start;
+  margin-left: auto;
   padding: 0 6px;
   border-radius: 999px;
   corner-shape: round;
