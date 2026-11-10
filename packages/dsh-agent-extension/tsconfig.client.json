@@ -9,5 +9,5 @@
     "types": ["node"],
     "noEmit": true
   },
-  "include": ["src/client/**/*.ts", "src/client/**/*.tsx", "src/css-modules.d.ts", "tests/**/*.client.spec.ts", "tests/**/*.client.spec.tsx"]
+  "include": ["src/client/**/*.ts", "src/client/**/*.tsx", "src/shared/**/*.ts", "src/css-modules.d.ts", "tests/**/*.client.spec.ts", "tests/**/*.client.spec.tsx"]
 }

@@ -25,75 +25,19 @@ import { Icon } from './icons.tsx'
 import { Switch } from './Switch.tsx'
 import { errorMessageFor, formatTime, type JsonRecord, type Translate } from './presentation.ts'
 import type { HubActions } from './store.ts'
+import {
+  defaultSettings,
+  type MemoryDetailRow,
+  type MemoryListRow,
+  type MemoryProjectWire,
+  type MemoryScope,
+  type MemorySettings,
+  type MemoryStats,
+  type MemoryStatus,
+  type MemoryType,
+} from '../shared/memory-wire.ts'
 import panelCss from './panel.module.css'
 import css from './memory.module.css'
-
-/** Scope of a memory query: the shared global store or one project store. */
-export type MemoryScope = 'global' | 'project'
-
-/** Fixed memory types understood by the host. */
-export type MemoryType = 'preference' | 'decision' | 'gotcha' | 'project' | 'reference'
-
-/** Lifecycle status of one memory entry. */
-export type MemoryStatus = 'active' | 'stale' | 'archived'
-
-/** Capture / injection settings stored by the host. */
-export interface MemorySettings {
-  captureEnabled: boolean
-  captureSessionEnd: boolean
-  injectEnabled: boolean
-  indexLimitGlobal: number
-  indexLimitProject: number
-  maxChars: number
-}
-
-/** One detected project scope. */
-export interface MemoryProject {
-  key: string
-  displayName: string
-  source: string
-  remote: string
-  lastSeen: string
-  entryCount: number
-}
-
-/** Per-session injection statistics. */
-export interface MemorySessionStat {
-  sessionId: string
-  injected: number
-  injectedUsed: number
-  overflow: number
-  updatedAt: string
-}
-
-/** Aggregate stats of the capture pipeline. */
-export interface MemoryStats {
-  captureRuns: number
-  capturedEntries: number
-  sessions: MemorySessionStat[]
-}
-
-/** One list row of the memory store. */
-export interface MemoryEntrySummary {
-  id: string
-  name: string
-  description: string
-  type: string
-  tags: string[]
-  importance: number
-  status: string
-  reinforcement: number
-  createdAt: string
-  updatedAt: string
-}
-
-/** Full entry returned by get / save / status. */
-export interface MemoryEntry extends MemoryEntrySummary {
-  content: string
-  originSessionId: string
-  supersedes: string[]
-  obsoleteVotes: number
-}
 
 /** Editable form of the detail pane. */
 interface MemoryForm {
@@ -127,14 +71,7 @@ const STATUS_LABEL_KEYS: Record<MemoryStatus, string> = {
   archived: 'memoryStatusArchived',
 }
 
-const DEFAULT_SETTINGS: MemorySettings = {
-  captureEnabled: true,
-  captureSessionEnd: true,
-  injectEnabled: true,
-  indexLimitGlobal: 50,
-  indexLimitProject: 30,
-  maxChars: 12000,
-}
+const DEFAULT_SETTINGS: MemorySettings = defaultSettings()
 
 const EMPTY_FORM: MemoryForm = {
   name: '',
@@ -165,7 +102,7 @@ function integer(value: unknown, min: number, max: number, fallback: number): nu
 }
 
 /** Normalize one list row. */
-function normalizeSummary(raw: unknown): MemoryEntrySummary {
+function normalizeSummary(raw: unknown): MemoryListRow {
   const item = record(raw)
   return {
     id: text(item.id),
@@ -182,7 +119,7 @@ function normalizeSummary(raw: unknown): MemoryEntrySummary {
 }
 
 /** Normalize one full entry. */
-function normalizeEntry(raw: unknown): MemoryEntry {
+function normalizeEntry(raw: unknown): MemoryDetailRow {
   const item = record(raw)
   return {
     ...normalizeSummary(item),
@@ -193,10 +130,10 @@ function normalizeEntry(raw: unknown): MemoryEntry {
   }
 }
 
-/** Normalize the projects array, newest `lastSeen` first. */
-function normalizeProjects(raw: unknown): MemoryProject[] {
+/** 归一化项目数组，按 lastSeen 从新到旧排序。 */
+function normalizeProjects(raw: unknown): MemoryProjectWire[] {
   const list = Array.isArray(raw) ? raw : []
-  const projects: MemoryProject[] = []
+  const projects: MemoryProjectWire[] = []
   for (const entry of list) {
     const item = record(entry)
     const key = text(item.key)
@@ -205,7 +142,7 @@ function normalizeProjects(raw: unknown): MemoryProject[] {
       key,
       displayName: text(item.displayName) || key,
       source: text(item.source),
-      remote: text(item.remote),
+      identity: text(item.identity),
       lastSeen: text(item.lastSeen),
       entryCount: integer(item.entryCount, 0, Number.MAX_SAFE_INTEGER, 0),
     })
@@ -218,7 +155,7 @@ function timeOf(value: string): number {
   return Number.isFinite(time) ? time : 0
 }
 
-/** Normalize the settings block. */
+/** 归一化设置块。 */
 function normalizeSettings(raw: unknown): MemorySettings {
   const item = record(raw)
   return {
@@ -228,14 +165,15 @@ function normalizeSettings(raw: unknown): MemorySettings {
     indexLimitGlobal: integer(item.indexLimitGlobal, 0, 200, DEFAULT_SETTINGS.indexLimitGlobal),
     indexLimitProject: integer(item.indexLimitProject, 0, 200, DEFAULT_SETTINGS.indexLimitProject),
     maxChars: integer(item.maxChars, 1000, 40000, DEFAULT_SETTINGS.maxChars),
+    updatedAt: text(item.updatedAt),
   }
 }
 
-/** Normalize the stats block. */
+/** 归一化统计块（v2：会话命中、跳过原因与最近样本）。 */
 function normalizeStats(raw: unknown): MemoryStats {
   const item = record(raw)
   const sessionsRaw = Array.isArray(item.sessions) ? item.sessions : []
-  const sessions: MemorySessionStat[] = sessionsRaw.map((entry) => {
+  const sessions: MemoryStats['sessions'] = sessionsRaw.map((entry) => {
     const session = record(entry)
     return {
       sessionId: text(session.sessionId),
@@ -245,15 +183,45 @@ function normalizeStats(raw: unknown): MemoryStats {
       updatedAt: text(session.updatedAt),
     }
   })
+  const skipReasons: Record<string, number> = {}
+  for (const [reason, count] of Object.entries(record(item.skipReasons))) {
+    skipReasons[reason] = integer(count, 0, Number.MAX_SAFE_INTEGER, 0)
+  }
+  const recentInjections: MemoryStats['recentInjections'] = (Array.isArray(item.recentInjections) ? item.recentInjections : [])
+    .map(record)
+    .map(sample => ({
+      sessionId: text(sample.sessionId),
+      at: text(sample.at),
+      entries: integer(sample.entries, 0, Number.MAX_SAFE_INTEGER, 0),
+      chars: integer(sample.chars, 0, Number.MAX_SAFE_INTEGER, 0),
+      truncated: sample.truncated === true,
+    }))
+  const recentCaptures: MemoryStats['recentCaptures'] = (Array.isArray(item.recentCaptures) ? item.recentCaptures : [])
+    .map(record)
+    .map((sample) => {
+      const skippedReason = text(sample.skippedReason)
+      const error = text(sample.error)
+      return {
+        at: text(sample.at),
+        sessionId: text(sample.sessionId),
+        written: integer(sample.written, 0, Number.MAX_SAFE_INTEGER, 0),
+        ...(skippedReason === '' ? {} : { skippedReason }),
+        ...(error === '' ? {} : { error }),
+      }
+    })
   return {
     captureRuns: integer(item.captureRuns, 0, Number.MAX_SAFE_INTEGER, 0),
     capturedEntries: integer(item.capturedEntries, 0, Number.MAX_SAFE_INTEGER, 0),
+    captureSkips: integer(item.captureSkips, 0, Number.MAX_SAFE_INTEGER, 0),
     sessions,
+    skipReasons,
+    recentInjections,
+    recentCaptures,
   }
 }
 
 /** Form values of one loaded entry. */
-function formOf(entry: MemoryEntry): MemoryForm {
+function formOf(entry: MemoryDetailRow): MemoryForm {
   const type = TYPE_VALUES.find(value => value === entry.type) ?? 'preference'
   return {
     name: entry.name,
@@ -324,20 +292,20 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const [stateBusy, setStateBusy] = useState(false)
   const [stateError, setStateError] = useState('')
   const [stateToken, setStateToken] = useState(0)
-  const [projects, setProjects] = useState<MemoryProject[]>([])
+  const [projects, setProjects] = useState<MemoryProjectWire[]>([])
   const [stats, setStats] = useState<MemoryStats | null>(null)
   const [scope, setScope] = useState<MemoryScope>('global')
   const [project, setProject] = useState('')
   const [query, setQuery] = useState('')
   const [appliedQuery, setAppliedQuery] = useState('')
   const [typeFilter, setTypeFilter] = useState<MemoryType | ''>('')
-  const [entries, setEntries] = useState<MemoryEntrySummary[]>([])
+  const [entries, setEntries] = useState<MemoryListRow[]>([])
   const [listReady, setListReady] = useState(false)
   const [listBusy, setListBusy] = useState(false)
   const [listError, setListError] = useState('')
   const [listToken, setListToken] = useState(0)
   const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [entry, setEntry] = useState<MemoryEntry | null>(null)
+  const [entry, setEntry] = useState<MemoryDetailRow | null>(null)
   const [creating, setCreating] = useState(false)
   const [detailStatus, setDetailStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [detailError, setDetailError] = useState('')
@@ -451,7 +419,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
     return () => { cancelled = true }
   }, [stateReady, scope, project, appliedQuery, typeFilter, listToken, t])
 
-  const latestProjectKey = (list: MemoryProject[]): string => list[0]?.key ?? ''
+  const latestProjectKey = (list: MemoryProjectWire[]): string => list[0]?.key ?? ''
 
   const closeEditor = (): void => {
     detailSeq.current += 1

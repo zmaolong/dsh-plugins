@@ -1,9 +1,9 @@
 # dsh-agent-extension
 
-> **试验性预览版（`0.0.1-preview.5`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
+> **试验性预览版（`0.0.1-preview.17`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
 > npm 上只发布 `preview` dist-tag（`latest` 暂不指向本版本）。
 > 需要安装时请锁定精确版本：
-> `dsh plugin --profile web add dsh-agent-extension@0.0.1-preview.5`。
+> `dsh plugin --profile web add dsh-agent-extension@0.0.1-preview.17`。
 > 版本说明：npm 公开线为 `0.0.1-preview.N`，首个正式版定为 `0.0.1`（预览线的稳定版）；
 > 官方化工具链形态（TypeScript + JSX + CSS Modules + tsdown + vitest，对齐官方插件形态，
 > 破坏性重构、不做旧版兼容）自 `dsh-agent-plugin-hub` 时代的 `0.0.1-preview.6` 延续；
@@ -24,6 +24,27 @@ DSH 的**智能体扩展**（Agent Extension）：管理智能体插件、技能
 `mcpServers` 等能力。已知格式包括 Claude Code、CodeBuddy、ZCode；它们不是 DSH 插件
 （cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
+
+## 0.0.1-preview.17 变更（记忆子系统 v2 · B0 地基）
+
+> 决策依据：[ADR-0005](../../docs/adr/0005-memory-recall-v2.md) ~ [ADR-0008](../../docs/adr/0008-host-ui-primitives-channel.md)；实施规划见 [`docs/memory-roadmap.md`](docs/memory-roadmap.md)。
+
+- **schema v2 + 自动迁移**：条目新增 `lastUsedAt/usedCount/confidence/pinned/mergedFrom/source`，
+  frontmatter 写 `schema: 2`；首次加载先把 v1 文件备份到 `memory/.backup-v1-<时间>/` 再就地补齐，
+  幂等；旧 `MEMORY.md` 索引移入备份并停止生成；
+- **召回改为会话首步快照**：索引按会话渲染一次并缓存，宿主按内容去重、会话压缩后自动重注入；
+  分层注入（全局只放 `preference`/`decision`，项目只放 `gotcha`/`project`，每层 ≤20 条、总预算 3,000 字符），
+  索引行含 `id · 类型 · 名称 · 80 字描述 · 重要性`；
+- **取消轮末自动捕获**：改为模型主动 `memory_save`（先 `memory_search` 查重，仅显式要求或稳定事实才写）
+  + 会话结束一次补漏提炼，每会话最多一次额外模型请求；`force` 关键词只对当前轮生效；
+- **工具契约收紧**：`memory_search` 返回摘要行并把类型过滤下推到存储层；`memory_get` 单次 ≤3 条 /
+  4,000 字符并显式提示截断；`memory_forget` 不再诱导模型二次调用归档；
+- **数据面修复**：手改 Markdown 立即生效（文件 mtime+size 指纹）；`tags: []` 能清空；`supersedes`
+  在更新与强化路径生效；未知 frontmatter 字段透传保留；进程内写串行化；统计数据面新增
+  跳过原因、最近注入与最近捕获样本；
+- **客户端共享类型**：服务端/浏览器共用 `src/shared/memory-wire.ts`，去掉重复声明与
+  `indexLimitProject` 默认值漂移（统一 50）。
+- **测试**：全量 281 个离线用例（新增迁移、运行时 fake 宿主用例）。
 
 ## 0.0.1-preview.5 变更（新增「记忆」能力）
 
@@ -320,12 +341,12 @@ hook 命令按 Claude Code 约定执行：工作目录为插件根，stdin 传 J
 |---|---|
 | 作用域 | `global`（用户级、跨项目）/ `project`（单项目，worktree 与克隆共享） |
 | 类型 | `preference` / `decision` / `gotcha` / `project` / `reference` |
-| 自动捕获 | 轮末闸门命中才异步提炼；模型路由取会话当前请求头；可全局/项目关闭，会话结束补漏可关 |
+| 捕获 | 模型主动 `memory_save`（先查重；仅显式要求或稳定偏好/决策/坑/项目事实才写）+ 会话结束一次补漏提炼；每会话最多一次额外模型请求 |
 | 显式写入 | 模型工具 `memory_save`；用户命令 `/remember [global] <内容>` |
-| 召回 | 开场注入有界索引 + `memory_search` / `memory_get` 按需取详情；`memory_forget` 与 `/forget` 标记过时 |
-| 过时 | 一票 `stale`（不注入、仍可搜）、两票 `archived`（默认不可见） |
-| 管理面板 | 记忆 tab：作用域切换、搜索、类型筛选、新建、开关、索引预算、命中率、导出、记忆体检 |
-| 阅读面 | 点击条目在面板内弹出详情对话框：元信息可有限调整、正文只读；「用系统应用打开」把仅正文的临时 Markdown 交给 Typora/VS Code 等关联应用（纯 Web 宿主提示不支持），不切换主面板 |
+| 召回 | 会话首步注入分层索引快照（全局 `preference`/`decision`，项目 `gotcha`/`project`；每层 ≤20 条、预算 3,000 字符），`memory_search` 出摘要、`memory_get` 按需取全文（单次 ≤3 条 / 4,000 字符）；面板可显式刷新索引 |
+| 过时 | 一票 `stale`（不注入、仍可搜），归档由维护 Run 或用户在面板确认 |
+| 数据模型 | 条目 schema v2：`lastUsedAt/usedCount/confidence/pinned/mergedFrom/source`；首次加载自动迁移并备份 |
+| 管理面板 | 记忆 tab：作用域切换、搜索、类型筛选、新建、开关、索引预算、统计、导出、记忆体检；详情弹窗可调元信息，「用系统应用打开」把仅正文的临时 Markdown 交给关联应用 |
 
 写入即去重：名称/描述/正文指纹相同只强化原条目，不重复新增。记忆中不含项目内容：
 项目目录只写 `.dsh/agent-extension/memory/config.json`（身份文件，已自动 exclude）。
@@ -376,11 +397,11 @@ hook 命令按 Claude Code 约定执行：工作目录为插件根，stdin 传 J
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| GET | `/agent-plugin/api/memory/state` | 设置 + 已知项目（含条目数）+ 捕获/命中率统计 |
-| GET | `/agent-plugin/api/memory/list` | `scope=global|project`、`project=<key>`、`query`、`type`、`includeArchived` |
+| GET | `/agent-plugin/api/memory/state` | 设置 + 已知项目（含条目数）+ 统计（捕获计数、跳过原因、最近注入/捕获样本） |
+| GET | `/agent-plugin/api/memory/list` | `scope=global|project`、`project=<key>`、`query`、`type`、`includeArchived`、`content=1` |
 | GET | `/agent-plugin/api/memory/get` | 单条详情（`id`） |
 | GET | `/agent-plugin/api/memory/preview-file` | 生成仅正文的预览 Markdown，返回 `{path, name, empty}` |
-| POST | `/agent-plugin/api/memory/save` | 新建/更新（写） |
+| POST | `/agent-plugin/api/memory/save` | 新建/更新（写）；同指纹只强化 |
 | POST | `/agent-plugin/api/memory/status` | `active` / `stale` / `archived` |
 | POST | `/agent-plugin/api/memory/delete` | 永久删除单条 |
 | POST | `/agent-plugin/api/memory/settings` | 自动捕获、注入开关、索引条数、字符预算 |
@@ -399,11 +420,12 @@ home 解析：配置 `home` → `DSH_AGENT_EXTENSION_HOME` → `~/.dsh/agent-ext
 ├─ cache/markets/<marketId>/                     # git 市场浅克隆 / url 快照 / 来源克隆
 ├─ logs/hub.log          # 运行日志；损坏文件备份也是 corrupt-*.json
 ├─ tmp/                  # 原子写临时文件与 hub.lock 进程锁
-└─ memory/               # 记忆（schema v1）
-   ├─ settings.json      # 自动捕获/注入开关、索引条数、字符预算
-   ├─ stats.json         # 捕获计数与最近 100 个会话的注入/命中率
+└─ memory/               # 记忆（条目 schema v2）
+   ├─ settings.json      # 捕获/注入开关、索引条数、字符预算
+   ├─ stats.json         # schema 2：捕获计数、跳过原因、最近注入/捕获样本、会话注入统计
    ├─ projects.json      # 已知项目身份登记（含已见目录）
-   ├─ global/            # MEMORY.md 索引 + 一条事实一个 Markdown
+   ├─ .backup-v1-<时间>/ # 首次迁移时的 v1 条目与旧 MEMORY.md 备份
+   ├─ global/            # 一条事实一个 Markdown（frontmatter 含 schema: 2）
    └─ projects/<key>/    # 同上，按项目身份分目录
 ```
 

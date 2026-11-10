@@ -1,107 +1,166 @@
 /**
- * File-backed memory store.
+ * 基于文件系统的记忆存储。
  *
- * Layout under the plugin home (`~/.dsh/agent-extension/memory` by default):
+ * 插件 home 下的目录布局（默认 `~/.dsh/agent-extension/memory`）：
  *
  * ```
  * memory/
- *   settings.json          user-tunable capture / injection settings
- *   stats.json             capture counters and per-session recall counters
- *   projects.json          known project identities
- *   global/MEMORY.md       global index (human + model readable)
- *   global/<id>.md         one fact per file (frontmatter + Markdown body)
- *   projects/<key>/...     same layout, scoped to one project identity
+ *   settings.json          用户可调的捕获 / 注入设置
+ *   stats.json             捕获 / 召回计数与有界最近样本
+ *   projects.json         已登记的项目身份
+ *   global/<id>.md         一事实一文件（frontmatter + Markdown 正文）
+ *   projects/<key>/...     同一布局，限定到一个项目身份
+ *   .backup-v1-<time>/    首次加载时对 schema v1 文件与旧 MEMORY.md 的备份
  * ```
  *
- * Markdown is authoritative; `MEMORY.md` is regenerated after every mutation
- * and the in-memory cache is invalidated by directory mtime, so hand edits and
- * our own writes stay consistent.
+ * Markdown 是唯一真源：一事实一文件；缓存按每个文件的 `mtime + size` 指纹
+ * 失效（只做 stat，不做内容哈希），因此手改文件会立即生效。B0 起不再生成
+ * 也不再读取 `MEMORY.md`，旧副本会在首次加载时移入迁移备份目录。
  *
  * @module dsh-agent-extension/memory/store
  */
 
 import { createHash, randomBytes } from 'node:crypto'
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync } from 'node:fs'
 import path from 'node:path'
 
 import { parseFrontmatter } from '../frontmatter.ts'
 import type { LogFn } from '../log.ts'
+import {
+  MEMORY_INDEX_FILE,
+  migrateMemoryTree,
+  unknownFrontmatterLines,
+  writeAtomicText,
+  type MemoryMigrationReport,
+  type ParsedMemoryDocument,
+} from './migrate.ts'
 import { previewRoot, removePreviewEntry, writePreviewFile, type PreviewFile } from './preview.ts'
 import {
   LIMITS,
+  MEMORY_SCHEMA,
   clampInt,
   defaultSettings,
   isMemoryStatus,
   isMemoryType,
   normalizeIds,
+  normalizeSource,
   normalizeTags,
   text,
   type MemoryEntry,
   type MemoryMeta,
   type MemoryScope,
   type MemorySettings,
+  type MemorySource,
   type MemoryStats,
   type MemoryStatus,
   type MemoryType,
   type ProjectIdentity,
   type ProjectRecord,
+  type RecentCapture,
+  type RecentInjection,
   type SessionRecallStats,
 } from './types.ts'
 
-/** Input of one create/update write. */
+/** 一次创建/更新写入的输入。 */
 export interface SaveMemoryInput {
   id?: string
   name: string
   description: string
   type: MemoryType
   scope: MemoryScope
-  /** Resolved project key; ignored for the global scope. */
+  /** 解析后的项目 key；全局作用域忽略。 */
   project?: string
   content: string
   tags?: string[]
   importance?: number
   supersedes?: string[]
   originSessionId?: string
+  /** 来源；缺省 `capture`（迁移条目与未标注写入统一取 capture）。 */
+  source?: MemorySource
+  /** 0-100 置信度；缺省 50。 */
+  confidence?: number
+  /** 固定条目；缺省 false。 */
+  pinned?: boolean
+  /** 合并来源 id；缺省空数组。 */
+  mergedFrom?: string[]
 }
 
-/** Store constructor options. */
+/** Store 构造参数。 */
 export interface MemoryStoreOptions {
-  /** Plugin home (`~/.dsh/agent-extension`); memories live under `memory/`. */
+  /** 插件 home（`~/.dsh/agent-extension`）；记忆落在其下的 `memory/`。 */
   home: string
   log?: LogFn
   /** 预览文件根目录覆盖；默认 `os.tmpdir()/dsh-agent-extension-memory-preview`（测试传临时目录）。 */
   previewRoot?: string
 }
 
-/** Result of `forget`. */
+/** `forget` 的结果。 */
 export interface ForgetResult {
   entry: MemoryEntry
   archived: boolean
 }
 
-const INDEX_FILE = 'MEMORY.md'
+/**
+ * 下推到 `search` 的可选过滤器。
+ *
+ * 旧的位置参数形式 `search(scope, project, query, limit)` 仍然支持；新调用方
+ * 用 options 对象形式。
+ */
+export interface MemorySearchOptions {
+  /** 自由文本查询；空值表示返回排名索引。 */
+  query?: string
+  /** 只返回该类型（在截断之前过滤）。 */
+  type?: MemoryType
+  /** 是否包含归档条目（默认 false）。 */
+  includeArchived?: boolean
+  /** 最大结果数（1-50，默认 10）。 */
+  limit?: number
+}
+
 const SETTINGS_FILE = 'settings.json'
 const STATS_FILE = 'stats.json'
 const PROJECTS_FILE = 'projects.json'
-const INDEX_HEADER = '# MEMORY INDEX\n\n'
+/** JSON 文档仍各自带 schema；条目统一用 `MEMORY_SCHEMA`。 */
 const SETTINGS_SCHEMA = 1
-const STATS_SCHEMA = 1
+const STATS_SCHEMA = 2
 const PROJECTS_SCHEMA = 1
-/** Injected index line cap; details stay one tool call away. */
+/** 注入索引单行截断长度；详情留给一次工具调用。 */
 const INDEX_LINE_CHARS = 120
-/** Stats rows retained for the hit-rate readout. */
+/** 命中率读数保留的会话统计行数。 */
 const SESSION_STATS_KEEP = LIMITS.statsSessions
+/** stats.json 中有界的最近样本数组上限。 */
+const RECENT_SAMPLE_KEEP = LIMITS.statsRecent
+/** stats.json 中保留的不同跳过原因上限。 */
+const SKIP_REASON_KEEP = 50
 
-/** Escape one single-line frontmatter scalar. */
+/** 一个文件的缓存记录：条目 + 未知 frontmatter 行（写回时透传）。 */
+interface CachedEntry {
+  entry: MemoryEntry
+  extras: string[]
+}
+
+/** 一个作用域的缓存：以全部 `.md` 文件的 `mtime+size` 指纹失效。 */
+interface ScopeCache {
+  stamp: string
+  entries: CachedEntry[]
+}
+
+/** 转义一个单行 frontmatter 标量。 */
 function scalar(value: string): string {
   const single = value.replace(/[\r\n]+/gu, ' ').replace(/\\/gu, '\\\\').replace(/"/gu, '\\"')
   return `"${single}"`
 }
 
-/** Render one entry file (frontmatter plus body). */
-function renderEntry(entry: MemoryEntry): string {
+/**
+ * 渲染一个条目文件（frontmatter + 正文）。
+ *
+ * `extras` 承载未知 frontmatter 原始行；它们追加在已知字段之后，保证手写
+ * 元数据在每次重写后仍然存在。
+ */
+function renderEntry(entry: MemoryEntry, extras: readonly string[] = []): string {
   const lines = [
     '---',
+    `schema: ${MEMORY_SCHEMA}`,
     `id: ${scalar(entry.id)}`,
     `name: ${scalar(entry.name)}`,
     `description: ${scalar(entry.description)}`,
@@ -110,22 +169,29 @@ function renderEntry(entry: MemoryEntry): string {
     `project: ${scalar(entry.project)}`,
     `tags: [${entry.tags.map(scalar).join(', ')}]`,
     `importance: ${entry.importance}`,
+    `confidence: ${entry.confidence}`,
     `status: ${entry.status}`,
     `reinforcement: ${entry.reinforcement}`,
     `obsoleteVotes: ${entry.obsoleteVotes}`,
+    `pinned: ${entry.pinned ? 'true' : 'false'}`,
+    `usedCount: ${entry.usedCount}`,
+    ...(entry.lastUsedAt === undefined || entry.lastUsedAt === '' ? [] : [`lastUsedAt: ${scalar(entry.lastUsedAt)}`]),
     `supersedes: [${entry.supersedes.map(scalar).join(', ')}]`,
+    `mergedFrom: [${entry.mergedFrom.map(scalar).join(', ')}]`,
+    `source: ${entry.source}`,
     `originSessionId: ${scalar(entry.originSessionId)}`,
     `createdAt: ${scalar(entry.createdAt)}`,
     `updatedAt: ${scalar(entry.updatedAt)}`,
-    '---',
-    '',
-    entry.content.trim(),
-    '',
   ]
+  for (const line of extras) {
+    if (line.trim() === '---') continue
+    lines.push(line)
+  }
+  lines.push('---', '', entry.content.trim(), '')
   return lines.join('\n')
 }
 
-/** Normalize a string for fingerprints and duplicate detection. */
+/** 归一化字符串，用于指纹与重复检测。 */
 function normalizeForFingerprint(value: string): string {
   return value
     .toLowerCase()
@@ -134,26 +200,33 @@ function normalizeForFingerprint(value: string): string {
     .replace(/\s+/gu, ' ')
 }
 
-/** Content fingerprint: identical facts reinforce instead of duplicating. */
+/** 内容指纹：相同事实走强化而不是重复新增。 */
 export function fingerprintOf(name: string, description: string, content: string): string {
   const normalized = `${normalizeForFingerprint(name)}\n${normalizeForFingerprint(description)}\n${normalizeForFingerprint(content)}`
   return createHash('sha256').update(normalized).digest('hex')
 }
 
-/** Generate one stable-looking entry id. */
+/** 生成一个看起来稳定、实际唯一的条目 id。 */
 function newEntryId(): string {
   return `m-${Date.now().toString(36)}-${randomBytes(3).toString('hex')}`
 }
 
-/** Parse one loaded Markdown document into a normalized entry, or null when unusable. */
-function parseEntry(file: string, scope: MemoryScope, project: string): MemoryEntry | null {
-  let source = ''
-  try {
-    source = readFileSync(file, 'utf8')
-  } catch {
-    return null
-  }
-  const parsed = parseFrontmatter(source)
+/** 把未知 JSON 值收窄成普通对象。 */
+function objectOf(raw: unknown): Record<string, unknown> {
+  return raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {}
+}
+
+/**
+ * 把一份 Markdown 解析成规范化条目，并带回未知 frontmatter 行；不可用时返回 null。
+ *
+ * @param source - 原始 Markdown。
+ * @param file - 文件路径（id 缺省时取文件名）。
+ * @param scope - 文件所在目录的作用域。
+ * @param project - 项目作用域的项目 key。
+ */
+function parseDocument(source: string, file: string, scope: MemoryScope, project: string): ParsedMemoryDocument | null {
+  const normalized = source.replace(/^\uFEFF/u, '')
+  const parsed = parseFrontmatter(normalized)
   const data = parsed.data
   const id = text(data.id) || path.basename(file, '.md')
   const name = text(data.name)
@@ -161,16 +234,22 @@ function parseEntry(file: string, scope: MemoryScope, project: string): MemoryEn
   const type = isMemoryType(data.type) ? data.type : 'reference'
   const status = isMemoryStatus(data.status) ? data.status : 'active'
   const importance = clampInt(data.importance, 0, 100, 50)
+  const confidence = clampInt(data.confidence, 0, 100, 50)
   const reinforcement = clampInt(data.reinforcement, 0, 100000, 0)
   const obsoleteVotes = clampInt(data.obsoleteVotes, 0, 100, 0)
+  const pinned = data.pinned === true
+  const usedCount = clampInt(data.usedCount, 0, 1000000, 0)
   const tags = normalizeTags(data.tags)
   const supersedes = normalizeIds(data.supersedes)
+  const mergedFrom = normalizeIds(data.mergedFrom)
+  const sourceValue = normalizeSource(data.source)
+  const lastUsedAt = text(data.lastUsedAt)
   const createdAt = text(data.createdAt) || new Date().toISOString()
   const updatedAt = text(data.updatedAt) || createdAt
   const originSessionId = text(data.originSessionId)
   const content = parsed.body.trim()
   if (name === '') return null
-  return {
+  const entry: MemoryEntry = {
     id,
     name,
     description,
@@ -179,26 +258,36 @@ function parseEntry(file: string, scope: MemoryScope, project: string): MemoryEn
     project,
     tags,
     importance,
+    confidence,
     status,
     reinforcement,
     obsoleteVotes,
+    pinned,
+    usedCount,
     supersedes,
+    mergedFrom,
+    source: sourceValue,
     originSessionId,
     createdAt,
     updatedAt,
     content,
+    ...(lastUsedAt === '' ? {} : { lastUsedAt }),
   }
+  return { entry, extras: unknownFrontmatterLines(normalized) }
 }
 
-/** Write one file atomically through a sibling temp file. */
-function writeAtomic(file: string, content: string): void {
-  mkdirSync(path.dirname(file), { recursive: true })
-  const tmp = `${file}.tmp-${process.pid}-${randomBytes(2).toString('hex')}`
-  writeFileSync(tmp, content, 'utf8')
-  renameSync(tmp, file)
+/** 读取并解析一个记忆文件（IO/解析失败返回 null）。 */
+function readDocument(file: string, scope: MemoryScope, project: string): ParsedMemoryDocument | null {
+  let source = ''
+  try {
+    source = readFileSync(file, 'utf8')
+  } catch {
+    return null
+  }
+  return parseDocument(source, file, scope, project)
 }
 
-/** Read a JSON file, returning null on any failure. */
+/** 读取 JSON 文件；任何失败返回 null。 */
 function readJson(file: string): unknown {
   try {
     return JSON.parse(readFileSync(file, 'utf8')) as unknown
@@ -207,9 +296,15 @@ function readJson(file: string): unknown {
   }
 }
 
-/** Normalize a possibly-invalid settings document. */
+/** 文档声明的 schema 版本；缺失/非法返回 0（读取端按容错处理，不阻断）。 */
+function documentSchema(raw: unknown): number {
+  const value = objectOf(raw).schema
+  return typeof value === 'number' && Number.isFinite(value) ? value : 0
+}
+
+/** 归一化一份可能非法的 settings 文档。 */
 function normalizeSettings(raw: unknown): MemorySettings {
-  const value = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {}
+  const value = objectOf(raw)
   const fallback = defaultSettings()
   return {
     captureEnabled: typeof value.captureEnabled === 'boolean' ? value.captureEnabled : fallback.captureEnabled,
@@ -222,9 +317,9 @@ function normalizeSettings(raw: unknown): MemorySettings {
   }
 }
 
-/** Normalize one stats session row. */
+/** 归一化一行会话召回统计。 */
 function normalizeRecallRow(raw: unknown): SessionRecallStats | null {
-  const value = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {}
+  const value = objectOf(raw)
   const sessionId = text(value.sessionId)
   if (sessionId === '') return null
   return {
@@ -236,23 +331,76 @@ function normalizeRecallRow(raw: unknown): SessionRecallStats | null {
   }
 }
 
-/** Normalize the persisted stats document. */
+/** 归一化持久化的跳过原因计数表（有界）。 */
+function normalizeSkipReasons(raw: unknown): Record<string, number> {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return {}
+  const out: Record<string, number> = {}
+  let count = 0
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (count >= SKIP_REASON_KEEP) break
+    const reason = text(key).slice(0, 80)
+    if (reason === '') continue
+    out[reason] = clampInt(value, 0, 100000000, 0)
+    count += 1
+  }
+  return out
+}
+
+/** 归一化一条注入样本。 */
+function normalizeInjectionRow(raw: unknown): RecentInjection | null {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null
+  const value = raw as Record<string, unknown>
+  return {
+    sessionId: text(value.sessionId),
+    at: text(value.at) || new Date().toISOString(),
+    entries: clampInt(value.entries, 0, 100000, 0),
+    chars: clampInt(value.chars, 0, 10000000, 0),
+    truncated: value.truncated === true,
+  }
+}
+
+/** 归一化一条捕获样本。 */
+function normalizeCaptureRow(raw: unknown): RecentCapture | null {
+  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null
+  const value = raw as Record<string, unknown>
+  const row: RecentCapture = {
+    at: text(value.at) || new Date().toISOString(),
+    sessionId: text(value.sessionId),
+    written: clampInt(value.written, 0, 100000, 0),
+  }
+  const reason = text(value.skippedReason)
+  if (reason !== '') row.skippedReason = reason
+  const error = text(value.error)
+  if (error !== '') row.error = error
+  return row
+}
+
+/** 归一化持久化的 stats 文档（schema v1 的旧行补齐 v2 默认值）。 */
 function normalizeStats(raw: unknown): MemoryStats {
-  const value = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {}
+  const value = objectOf(raw)
   const sessions = Array.isArray(value.sessions)
     ? value.sessions.map(normalizeRecallRow).filter((row): row is SessionRecallStats => row !== null)
+    : []
+  const recentInjections = Array.isArray(value.recentInjections)
+    ? value.recentInjections.map(normalizeInjectionRow).filter((row): row is RecentInjection => row !== null)
+    : []
+  const recentCaptures = Array.isArray(value.recentCaptures)
+    ? value.recentCaptures.map(normalizeCaptureRow).filter((row): row is RecentCapture => row !== null)
     : []
   return {
     captureRuns: clampInt(value.captureRuns, 0, 100000000, 0),
     capturedEntries: clampInt(value.capturedEntries, 0, 100000000, 0),
     captureSkips: clampInt(value.captureSkips, 0, 100000000, 0),
     sessions: sessions.slice(0, SESSION_STATS_KEEP),
+    skipReasons: normalizeSkipReasons(value.skipReasons),
+    recentInjections: recentInjections.slice(0, RECENT_SAMPLE_KEEP),
+    recentCaptures: recentCaptures.slice(0, RECENT_SAMPLE_KEEP),
   }
 }
 
-/** Normalize one project record. */
+/** 归一化一条项目登记。 */
 function normalizeProject(raw: unknown, entryCount: (key: string) => number): ProjectRecord | null {
-  const value = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {}
+  const value = objectOf(raw)
   const key = text(value.key)
   if (key === '') return null
   const source = value.source === 'git-remote' || value.source === 'git-common' || value.source === 'path'
@@ -269,20 +417,20 @@ function normalizeProject(raw: unknown, entryCount: (key: string) => number): Pr
   }
 }
 
-/** Validate a project key for path use (anything else is hashed). */
+/** 校验项目 key 能否直接用作目录名（否则做哈希）。 */
 function safeProjectKey(key: string): string {
   const trimmed = text(key)
   if (/^[A-Za-z0-9_-]{1,80}$/u.test(trimmed)) return trimmed
   return `h_${createHash('sha256').update(trimmed).digest('hex').slice(0, 16)}`
 }
 
-/** The memory store; owned by the plugin runtime and shared by tools and the API. */
+/** 记忆存储；由插件运行时持有，工具与管理 API 共享同一实例。 */
 export class MemoryStore {
-  /** Root of the memory tree (`<home>/memory`). */
+  /** 记忆树根目录（`<home>/memory`）。 */
   readonly root: string
   /** 预览文件根目录（宿主右侧栏读取的临时 Markdown）。 */
   readonly previewDir: string
-  /** Persistent project registry file. */
+  /** 持久化项目登记文件。 */
   private readonly projectsFile: string
   private readonly settingsFile: string
   private readonly statsFile: string
@@ -290,7 +438,12 @@ export class MemoryStore {
   private settingsValue: MemorySettings | null = null
   private statsValue: MemoryStats | null = null
   private projectsValue: ProjectRecord[] | null = null
-  private readonly cache = new Map<string, { mtimeMs: number, entries: MemoryEntry[] }>()
+  private readonly cache = new Map<string, ScopeCache>()
+  /**
+   * 进程内写串行化队列：新增的异步写入口共享同一条 Promise 链，避免复合
+   * 「读-改-写」交叉；同步入口本身是 JS 单线程上的原子同步段（不引入文件锁）。
+   */
+  private writeQueue: Promise<unknown> = Promise.resolve()
 
   constructor(options: MemoryStoreOptions) {
     this.root = path.join(options.home, 'memory')
@@ -301,31 +454,45 @@ export class MemoryStore {
     this.log = options.log ?? (() => {})
   }
 
-  /** Ensure the memory root exists. */
+  /** 确保记忆根目录存在、执行一次 v1 迁移，再归一化 JSON 文档。 */
   start(): void {
     mkdirSync(this.root, { recursive: true })
     mkdirSync(path.join(this.root, 'global'), { recursive: true })
     mkdirSync(path.join(this.root, 'projects'), { recursive: true })
+    try {
+      const report = this.migrate()
+      if (report.backupDir !== null && (report.migrated > 0 || report.indexesRemoved > 0)) {
+        this.log('info', `记忆 schema v2 迁移：升级 ${report.migrated} 个条目，移走 ${report.indexesRemoved} 个旧索引（备份 ${path.basename(report.backupDir)}）`)
+      }
+      if (report.failed > 0) this.log('warn', `记忆迁移有 ${report.failed} 个文件失败（原文件保持）`)
+    } catch (error) {
+      // 迁移失败绝不让宿主启动失败；原文件未动，下次加载重试。
+      this.log('error', `记忆迁移失败（原文件保持）：${error instanceof Error ? error.message : String(error)}`)
+    }
     // Normalize on first touch so invalid files are repaired once and logged.
     void this.settings()
     void this.stats()
     void this.projects()
   }
 
-  /** Settings of this install. */
+  /** 本安装的设置。 */
   settings(): MemorySettings {
     if (this.settingsValue !== null) return this.settingsValue
     const raw = readJson(this.settingsFile)
-    if (raw !== null && (typeof raw !== 'object' || Array.isArray(raw))) this.log('warn', 'memory/settings.json 结构异常，已按默认值修复')
+    if (raw !== null && (typeof raw !== 'object' || Array.isArray(raw))) {
+      this.log('warn', 'memory/settings.json 结构异常，已按默认值修复')
+    } else if (raw !== null && documentSchema(raw) !== SETTINGS_SCHEMA) {
+      this.log('warn', `memory/settings.json schema=${documentSchema(raw)}（当前 ${SETTINGS_SCHEMA}），按容错读取`)
+    }
     this.settingsValue = normalizeSettings(raw)
     if (raw === null && existsSync(this.settingsFile)) this.log('warn', 'memory/settings.json 无法解析，已按默认值修复')
     return this.settingsValue
   }
 
   /**
-   * Merge a partial settings patch.
+   * 合并一份部分设置补丁。
    *
-   * @param patch - fields to update.
+   * @param patch - 要更新的字段。
    */
   updateSettings(patch: Partial<MemorySettings>): MemorySettings {
     const current = this.settings()
@@ -339,37 +506,103 @@ export class MemoryStore {
     return next
   }
 
-  /** Capture and recall counters. */
+  /** 捕获与召回计数（schema v2 形状；旧文件读取时补默认字段）。 */
   stats(): MemoryStats {
     if (this.statsValue !== null) return this.statsValue
-    this.statsValue = normalizeStats(readJson(this.statsFile))
+    const raw = readJson(this.statsFile)
+    if (raw !== null && (typeof raw !== 'object' || Array.isArray(raw))) {
+      this.log('warn', 'memory/stats.json 结构异常，已按默认值修复')
+    } else if (raw !== null && documentSchema(raw) !== STATS_SCHEMA) {
+      this.log('warn', `memory/stats.json schema=${documentSchema(raw)}（当前 ${STATS_SCHEMA}），按容错读取`)
+    }
+    this.statsValue = normalizeStats(raw)
+    if (raw === null && existsSync(this.statsFile)) this.log('warn', 'memory/stats.json 无法解析，已按默认值修复')
     return this.statsValue
   }
 
   /**
-   * Record one capture attempt.
+   * 记录一次捕获尝试。
    *
-   * @param entries - memories written or reinforced.
-   * @param skipped - the gate rejected the turn.
+   * @param entries - 写入或强化的条数。
+   * @param skipped - 闸门拒绝了本轮。
+   * @param detail - 可选的会话 id / 跳过原因 / 失败信息；带跳过原因时同时
+   *   累加 `skipReasons`。
    */
-  recordCapture(entries: number, skipped: boolean): void {
+  recordCapture(
+    entries: number,
+    skipped: boolean,
+    detail: { sessionId?: string; skippedReason?: string; error?: string } = {},
+  ): void {
     const current = this.stats()
+    const written = Math.max(0, entries)
+    const reason = text(detail.skippedReason).slice(0, 80)
+    const record: RecentCapture = {
+      at: new Date().toISOString(),
+      sessionId: text(detail.sessionId),
+      written,
+    }
+    if (reason !== '') record.skippedReason = reason
+    const errorText = text(detail.error)
+    if (errorText !== '') record.error = errorText
+    const skipReasons = { ...current.skipReasons }
+    if (reason !== '') skipReasons[reason] = (skipReasons[reason] ?? 0) + 1
     this.statsValue = {
       ...current,
       captureRuns: skipped ? current.captureRuns : current.captureRuns + 1,
-      capturedEntries: current.capturedEntries + Math.max(0, entries),
+      capturedEntries: current.capturedEntries + written,
       captureSkips: skipped ? current.captureSkips + 1 : current.captureSkips,
+      skipReasons: normalizeSkipReasons(skipReasons),
+      recentCaptures: [record, ...current.recentCaptures].slice(0, RECENT_SAMPLE_KEEP),
     }
     this.writeStats()
   }
 
   /**
-   * Record what one session's assembly actually used.
+   * 只累加一次捕获闸门拒绝原因，不追加捕获样本。
    *
-   * @param sessionId - session whose prompt received the index.
-   * @param injectedIds - index ids injected into the prompt.
-   * @param usedIds - ids the model fetched through the memory tools.
-   * @param overflow - search hits outside the injected set.
+   * @param reason - 闸门原因 key。
+   * @param count - 该原因发生次数（默认 1）。
+   */
+  recordSkip(reason: string, count = 1): void {
+    const key = text(reason).slice(0, 80)
+    if (key === '') return
+    const current = this.stats()
+    const skipReasons: Record<string, number> = {
+      ...current.skipReasons,
+      [key]: (current.skipReasons[key] ?? 0) + Math.max(1, Math.round(count)),
+    }
+    this.statsValue = { ...current, skipReasons: normalizeSkipReasons(skipReasons) }
+    this.writeStats()
+  }
+
+  /**
+   * 追加一条提示词装配样本（有界，只保留最新 50 条）。
+   *
+   * @param detail - 会话 id、注入条数、渲染字符数与截断标记。
+   */
+  recordInjection(detail: { sessionId?: string; entries: number; chars: number; truncated?: boolean }): void {
+    const current = this.stats()
+    const record: RecentInjection = {
+      sessionId: text(detail.sessionId),
+      at: new Date().toISOString(),
+      entries: clampInt(detail.entries, 0, 100000, 0),
+      chars: clampInt(detail.chars, 0, 10000000, 0),
+      truncated: detail.truncated === true,
+    }
+    this.statsValue = {
+      ...current,
+      recentInjections: [record, ...current.recentInjections].slice(0, RECENT_SAMPLE_KEEP),
+    }
+    this.writeStats()
+  }
+
+  /**
+   * 记录某个会话装配时实际使用了哪些注入条目。
+   *
+   * @param sessionId - 收到索引注入的会话。
+   * @param injectedIds - 注入到提示词里的索引 id。
+   * @param usedIds - 模型通过记忆工具实际取过的 id。
+   * @param overflow - 不在注入集合里的检索命中数。
    */
   recordRecall(sessionId: string, injectedIds: readonly string[], usedIds: readonly string[], overflow: number): void {
     if (sessionId === '') return
@@ -388,7 +621,7 @@ export class MemoryStore {
     this.writeStats()
   }
 
-  /** Known projects, most recently seen first. */
+  /** 已知项目，最近出现的在前。 */
   listProjects(): ProjectRecord[] {
     const projects = this.projects()
     return [...projects]
@@ -397,9 +630,9 @@ export class MemoryStore {
   }
 
   /**
-   * Register (or refresh) one project identity.
+   * 登记（或刷新）一个项目身份。
    *
-   * @param identity - resolved identity of the session's working directory.
+   * @param identity - 会话工作目录解析出的身份。
    */
   touchProject(identity: ProjectIdentity): ProjectRecord {
     const projects = this.projects()
@@ -427,24 +660,24 @@ export class MemoryStore {
     return { ...record, entryCount: this.countEntries('project', record.key) }
   }
 
-  /** Resolve one known project by key. */
+  /** 按 key 查一个已知项目。 */
   getProject(key: string): ProjectRecord | undefined {
     const found = this.projects().find(project => project.key === key)
     return found === undefined ? undefined : { ...found, entryCount: this.countEntries('project', key) }
   }
 
-  /** Count live (non-archived) entries of one scope. */
+  /** 统计某个作用域存活（非归档）条目数。 */
   countEntries(scope: MemoryScope, project = ''): number {
     return this.load(scope, project).filter(entry => entry.status !== 'archived').length
   }
 
   /**
-   * List memories of one scope.
+   * 列出某个作用域的记忆。
    *
-   * @param scope - memory scope.
-   * @param project - project key for the project scope.
-   * @param options - query, type filter, archived inclusion; `includeContent`
-   *   keeps the Markdown body in the payload (health-audit consumers).
+   * @param scope - 记忆作用域。
+   * @param project - 项目作用域的项目 key。
+   * @param options - 查询、类型过滤、是否含归档；`includeContent` 为 true 时
+   *   保留 Markdown 正文（体检类消费者用）。
    */
   list(
     scope: MemoryScope,
@@ -463,23 +696,46 @@ export class MemoryStore {
   }
 
   /**
-   * Search one scope (and the global scope when `scope` is `'all'`).
+   * 检索一个作用域（`scope === 'all'` 时同时检索全局）。
    *
-   * @param scope - `global`, `project`, or `all`.
-   * @param project - project key for project-scope searches.
-   * @param query - free-text query; empty returns the ranked index.
-   * @param limit - maximum results.
+   * 接受两种调用形式：
+   * - 旧形式：`search(scope, project, query, limit)`；
+   * - 下推：`search(scope, project, { query, type, includeArchived, limit })`。
+   *
+   * 过滤在截断之前完成，因此类型过滤不会被其它类型的高排名条目挤掉。
+   *
+   * @param scope - `global`、`project` 或 `all`。
+   * @param project - 项目作用域的项目 key。
+   * @param request - 旧形式的自由文本查询，或 options 对象。
+   * @param limit - 旧形式的最大结果数。
+   * @param options - 旧形式附加的下推过滤器。
    */
-  search(scope: MemoryScope | 'all', project: string, query: string, limit = 10): MemoryMeta[] {
+  search(
+    scope: MemoryScope | 'all',
+    project: string,
+    request: string | MemorySearchOptions = '',
+    limit = 10,
+    options: MemorySearchOptions = {},
+  ): MemoryMeta[] {
+    let query = ''
+    let filters = options
+    if (typeof request === 'string') {
+      query = text(request)
+    } else {
+      filters = request
+      query = text(request.query)
+    }
     const pool: MemoryEntry[] = []
     if (scope !== 'project') pool.push(...this.load('global', ''))
     if (scope !== 'global' && project !== '') pool.push(...this.load('project', project))
-    const candidates = pool.filter(entry => entry.status !== 'archived')
-    const scored = text(query) === '' ? candidates.sort(compareEntries) : this.score(candidates, text(query))
-    return scored.slice(0, clampInt(limit, 1, 50, 10)).map(toMeta)
+    const candidates = pool.filter(entry =>
+      (filters.includeArchived === true || entry.status !== 'archived')
+      && (filters.type === undefined || entry.type === filters.type))
+    const scored = query === '' ? candidates.sort(compareEntries) : this.score(candidates, query)
+    return scored.slice(0, clampInt(filters.limit ?? limit, 1, 50, 10)).map(toMeta)
   }
 
-  /** Read one memory. */
+  /** 读取一条记忆。 */
   get(scope: MemoryScope, project: string, id: string): MemoryEntry | undefined {
     return this.load(scope, project).find(entry => entry.id === id)
   }
@@ -500,13 +756,12 @@ export class MemoryStore {
   }
 
   /**
-   * Create or reinforce one memory.
+   * 创建或强化一条记忆。
    *
-   * Writes whose name/description/content fingerprint matches a live memory of
-   * the same scope only reinforce that memory; `supersedes` marks the replaced
-   * memories stale.
+   * name/description/content 指纹与同一作用域的存活记忆相同时只强化原条目；
+   * `supersedes` 在所有写入路径上都会把被取代条目标记为 stale。
    *
-   * @param input - complete write.
+   * @param input - 完整写入。
    */
   save(input: SaveMemoryInput): MemoryEntry {
     const scope = input.scope
@@ -518,7 +773,18 @@ export class MemoryStore {
     const type = input.type
     const importance = clampInt(input.importance, 0, 100, 50)
     const tags = normalizeTags(input.tags)
-    const supersedes = normalizeIds(input.supersedes).filter(id => id !== input.id)
+    const tagsProvided = input.tags !== undefined
+    const supersedesInput = input.supersedes === undefined
+      ? undefined
+      : normalizeIds(input.supersedes).filter(id => id !== input.id)
+    const confidence = clampInt(input.confidence, 0, 100, 50)
+    const confidenceProvided = input.confidence !== undefined
+    const pinned = input.pinned === true
+    const pinnedProvided = input.pinned !== undefined
+    const source = normalizeSource(input.source)
+    const sourceProvided = input.source !== undefined
+    const mergedFrom = normalizeIds(input.mergedFrom)
+    const mergedProvided = input.mergedFrom !== undefined
     const now = new Date().toISOString()
 
     const existingById = input.id === undefined ? undefined : entries.find(entry => entry.id === input.id)
@@ -530,27 +796,47 @@ export class MemoryStore {
         content,
         type,
         importance,
-        tags: tags.length > 0 ? tags : existingById.tags,
-        supersedes: supersedes.length > 0 ? supersedes : existingById.supersedes,
+        // 显式传 [] 必须清空标签；缺省才保留旧值。
+        tags: tagsProvided ? tags : existingById.tags,
+        // 空 supersedes 视为「未提供」，避免 UI 编辑时误清历史取代关系。
+        supersedes: supersedesInput === undefined || supersedesInput.length === 0
+          ? existingById.supersedes
+          : supersedesInput,
+        ...(confidenceProvided ? { confidence } : {}),
+        ...(pinnedProvided ? { pinned } : {}),
+        ...(sourceProvided ? { source } : {}),
+        ...(mergedProvided && mergedFrom.length > 0
+          ? { mergedFrom: [...new Set([...existingById.mergedFrom, ...mergedFrom])] }
+          : {}),
         updatedAt: now,
       }
       this.writeEntry(scope, project, updated)
-      this.applySupersedes(scope, project, supersedes, updated.id)
+      this.applySupersedes(scope, project, supersedesInput ?? [], updated.id)
       return updated
     }
 
     const fingerprint = fingerprintOf(name, description, content)
     const duplicate = entries.find(entry => entry.status !== 'archived' && fingerprintOf(entry.name, entry.description, entry.content) === fingerprint)
     if (duplicate !== undefined) {
+      // 强化路径也要处理 supersedes：只对尚未记录的新 id 记一次票，保持幂等。
+      const addedSupersedes = (supersedesInput ?? []).filter(id => !duplicate.supersedes.includes(id))
       const reinforced: MemoryEntry = {
         ...duplicate,
         description: duplicate.description !== '' ? duplicate.description : description,
         importance: Math.max(duplicate.importance, importance),
         tags: [...new Set([...duplicate.tags, ...tags])].slice(0, LIMITS.tags),
         reinforcement: duplicate.reinforcement + 1,
+        supersedes: addedSupersedes.length === 0 ? duplicate.supersedes : [...duplicate.supersedes, ...addedSupersedes],
+        ...(confidenceProvided ? { confidence } : {}),
+        ...(pinnedProvided ? { pinned } : {}),
+        ...(sourceProvided ? { source } : {}),
+        ...(mergedProvided && mergedFrom.length > 0
+          ? { mergedFrom: [...new Set([...duplicate.mergedFrom, ...mergedFrom])] }
+          : {}),
         updatedAt: now,
       }
       this.writeEntry(scope, project, reinforced)
+      this.applySupersedes(scope, project, addedSupersedes, reinforced.id)
       return reinforced
     }
 
@@ -563,21 +849,26 @@ export class MemoryStore {
       project,
       tags,
       importance,
+      confidence: confidenceProvided ? confidence : 50,
       status: 'active',
       reinforcement: 0,
       obsoleteVotes: 0,
-      supersedes,
+      pinned: pinnedProvided ? pinned : false,
+      usedCount: 0,
+      supersedes: supersedesInput ?? [],
+      mergedFrom,
+      source: sourceProvided ? source : 'capture',
       originSessionId: text(input.originSessionId),
       createdAt: now,
       updatedAt: now,
       content,
     }
     this.writeEntry(scope, project, entry)
-    this.applySupersedes(scope, project, supersedes, entry.id)
+    this.applySupersedes(scope, project, supersedesInput ?? [], entry.id)
     return entry
   }
 
-  /** Change the lifecycle status of one memory. */
+  /** 修改一条记忆的生命周期状态。 */
   setStatus(scope: MemoryScope, project: string, id: string, status: MemoryStatus): MemoryEntry {
     const entry = this.get(scope, project, id)
     if (entry === undefined) throw new Error(`记忆不存在：${id}`)
@@ -587,13 +878,13 @@ export class MemoryStore {
   }
 
   /**
-   * Vote one memory obsolete. The first vote marks it stale (still searchable);
-   * the second archives it so it leaves injection and default search.
+   * 给一条记忆投过时票：第一票标记 stale（仍可检索），第二票归档，使其
+   * 不再注入、默认检索也看不到。
    *
-   * @param scope - memory scope.
-   * @param project - project key for the project scope.
-   * @param id - memory id.
-   * @param reason - free-text reason kept in the log only.
+   * @param scope - 记忆作用域。
+   * @param project - 项目作用域的项目 key。
+   * @param id - 记忆 id。
+   * @param reason - 自由文本原因，只写日志。
    */
   forget(scope: MemoryScope, project: string, id: string, reason = ''): ForgetResult {
     const entry = this.get(scope, project, id)
@@ -606,7 +897,7 @@ export class MemoryStore {
     return { entry: updated, archived: status === 'archived' }
   }
 
-  /** Delete one memory file permanently. */
+  /** 永久删除一条记忆文件。 */
   remove(scope: MemoryScope, project: string, id: string): boolean {
     const entry = this.get(scope, project, id)
     if (entry === undefined) return false
@@ -616,7 +907,6 @@ export class MemoryStore {
       return false
     }
     this.invalidate(scope, project)
-    this.rewriteIndex(scope, project)
     return true
   }
 
@@ -630,11 +920,40 @@ export class MemoryStore {
   }
 
   /**
-   * Index lines injected into the system prompt, newest/highest importance first.
+   * 异步串行版 `save`：并发写场景共用进程内写队列（同步 `save` 保留给现有调用方）。
    *
-   * @param scope - memory scope.
-   * @param project - project key for the project scope.
-   * @param limit - maximum entries.
+   * @param input - 完整写入。
+   */
+  saveAsync(input: SaveMemoryInput): Promise<MemoryEntry> {
+    return this.enqueueWrite(() => this.save(input))
+  }
+
+  /** 异步串行版 `setStatus`。 */
+  setStatusAsync(scope: MemoryScope, project: string, id: string, status: MemoryStatus): Promise<MemoryEntry> {
+    return this.enqueueWrite(() => this.setStatus(scope, project, id, status))
+  }
+
+  /** 异步串行版 `forget`。 */
+  forgetAsync(scope: MemoryScope, project: string, id: string, reason = ''): Promise<ForgetResult> {
+    return this.enqueueWrite(() => this.forget(scope, project, id, reason))
+  }
+
+  /** 异步串行版 `remove`。 */
+  removeAsync(scope: MemoryScope, project: string, id: string): Promise<boolean> {
+    return this.enqueueWrite(() => this.remove(scope, project, id))
+  }
+
+  /** 等待当前已排队的写操作全部完成（测试与销毁时用）。 */
+  async flushWrites(): Promise<void> {
+    await this.writeQueue
+  }
+
+  /**
+   * 注入到系统提示词的索引行，按重要度/新鲜度排序。
+   *
+   * @param scope - 记忆作用域。
+   * @param project - 项目作用域的项目 key。
+   * @param limit - 最大条目数。
    */
   indexLines(scope: MemoryScope, project: string, limit: number): { lines: string[], ids: string[] } {
     const entries = this.load(scope, project)
@@ -650,17 +969,17 @@ export class MemoryStore {
   }
 
   /**
-   * Export one scope as one Markdown document.
+   * 把一个作用域导出成单个 Markdown 文档（未知 frontmatter 字段一并保留）。
    *
-   * @param scope - memory scope.
-   * @param project - project key for the project scope.
+   * @param scope - 记忆作用域。
+   * @param project - 项目作用域的项目 key。
    */
   exportMarkdown(scope: MemoryScope, project = ''): { filename: string, content: string } {
-    const entries = [...this.load(scope, project)].sort(compareEntries)
+    const records = [...this.loadRecords(scope, project)].sort((left, right) => compareEntries(left.entry, right.entry))
     const title = scope === 'global'
       ? '全局记忆'
       : `项目记忆（${this.getProject(project)?.displayName ?? project}）`
-    const content = `# ${title}\n\n${entries.map(entry => renderEntry(entry).trimEnd()).join('\n\n---\n\n')}\n`
+    const content = `# ${title}\n\n${records.map(record => renderEntry(record.entry, record.extras).trimEnd()).join('\n\n---\n\n')}\n`
     const date = new Date().toISOString().slice(0, 10)
     const filename = scope === 'global' ? `memory-global-${date}.md` : `memory-project-${safeProjectKey(project)}-${date}.md`
     return { filename, content }
@@ -674,54 +993,81 @@ export class MemoryStore {
     return path.join(this.scopeDir(scope, project), `${id}.md`)
   }
 
-  private load(scope: MemoryScope, project: string): MemoryEntry[] {
+  /** 扫描一个作用域并返回缓存记录；文件 `mtime+size` 变化即整目录重读。 */
+  private loadRecords(scope: MemoryScope, project: string): CachedEntry[] {
     const dir = this.scopeDir(scope, project)
-    let mtimeMs = 0
+    let names: string[] = []
     try {
-      mtimeMs = statSync(dir).mtimeMs
+      names = readdirSync(dir).filter(name => name.endsWith('.md') && name !== MEMORY_INDEX_FILE).sort()
     } catch {
+      this.cache.delete(`${scope}:${project}`)
       return []
     }
+    const stamps: string[] = []
+    for (const name of names) {
+      const file = path.join(dir, name)
+      try {
+        const info = statSync(file)
+        stamps.push(`${name}:${info.mtimeMs}:${info.size}`)
+      } catch {
+        stamps.push(`${name}:missing`)
+      }
+    }
+    const stamp = stamps.join('|')
     const cacheKey = `${scope}:${project}`
     const cached = this.cache.get(cacheKey)
-    if (cached !== undefined && cached.mtimeMs === mtimeMs) return cached.entries
-    let files: string[] = []
-    try {
-      files = readdirSync(dir).filter(name => name.endsWith('.md') && name !== INDEX_FILE)
-    } catch {
-      files = []
+    if (cached !== undefined && cached.stamp === stamp) return cached.entries
+    const records: CachedEntry[] = []
+    for (const name of names) {
+      const parsed = readDocument(path.join(dir, name), scope, project)
+      if (parsed !== null) records.push({ entry: parsed.entry, extras: parsed.extras })
     }
-    const entries: MemoryEntry[] = []
-    for (const name of files) {
-      const entry = parseEntry(path.join(dir, name), scope, project)
-      if (entry !== null) entries.push(entry)
-    }
-    this.cache.set(cacheKey, { mtimeMs, entries })
-    return entries
+    this.cache.set(cacheKey, { stamp, entries: records })
+    return records
+  }
+
+  private load(scope: MemoryScope, project: string): MemoryEntry[] {
+    return this.loadRecords(scope, project).map(record => record.entry)
+  }
+
+  /** 读取某条已知记录的未知 frontmatter 行（新条目不查盘）。 */
+  private extrasOf(scope: MemoryScope, project: string, id: string): string[] {
+    const found = this.loadRecords(scope, project).find(record => record.entry.id === id)
+    return found?.extras ?? []
   }
 
   private invalidate(scope: MemoryScope, project: string): void {
     this.cache.delete(`${scope}:${project}`)
   }
 
-  private writeEntry(scope: MemoryScope, project: string, entry: MemoryEntry): void {
+  /**
+   * 写一条记忆：原子写（tmp + rename），并保留该文件原有的未知 frontmatter 字段。
+   */
+  private writeEntry(scope: MemoryScope, project: string, entry: MemoryEntry, extras?: readonly string[]): void {
+    const preserved = extras ?? this.extrasOf(scope, project, entry.id)
     try {
-      writeAtomic(this.entryFile(scope, project, entry.id), renderEntry(entry))
+      writeAtomicText(this.entryFile(scope, project, entry.id), renderEntry(entry, preserved))
     } catch (error) {
       this.log('error', `写记忆失败 ${entry.id}：${error instanceof Error ? error.message : String(error)}`)
       throw error
     }
     this.invalidate(scope, project)
-    this.rewriteIndex(scope, project)
   }
 
+  /**
+   * 标记被取代的条目为 stale；已 stale/archived 的不重复计票（幂等）。
+   */
   private applySupersedes(scope: MemoryScope, project: string, ids: readonly string[], sourceId: string): void {
     for (const id of ids) {
+      if (id === sourceId) continue
       const entry = this.get(scope, project, id)
-      if (entry === undefined || entry.id === sourceId) continue
+      if (entry === undefined) continue
+      if (entry.status === 'archived') continue
+      // 已由别的条目计过票：不重复累加，避免反复 save 把条目误归档。
+      if (entry.status === 'stale' && entry.obsoleteVotes > 0) continue
       const updated: MemoryEntry = {
         ...entry,
-        status: entry.status === 'archived' ? 'archived' : 'stale',
+        status: 'stale',
         obsoleteVotes: entry.obsoleteVotes + 1,
         updatedAt: new Date().toISOString(),
       }
@@ -729,21 +1075,22 @@ export class MemoryStore {
     }
   }
 
-  private rewriteIndex(scope: MemoryScope, project: string): void {
-    const dir = this.scopeDir(scope, project)
-    const entries = this.load(scope, project)
-      .filter(entry => entry.status === 'active')
-      .sort((left, right) => right.importance - left.importance || right.updatedAt.localeCompare(left.updatedAt))
-    const lines = entries.map((entry) => {
-      const head = `- [${entry.id}] (${entry.type}, ${entry.updatedAt.slice(0, 10)}) ${entry.name}`
-      return entry.description === '' ? head : `${head} — ${entry.description}`
+  /** 执行一次 v1 → v2 迁移（幂等；无 v1 文件时不做任何事）。 */
+  private migrate(): MemoryMigrationReport {
+    return migrateMemoryTree({
+      root: this.root,
+      log: this.log,
+      parse: (source, scope, project, file) => parseDocument(source, file, scope, project),
+      render: (entry, extras) => renderEntry(entry, extras),
     })
-    try {
-      mkdirSync(dir, { recursive: true })
-      writeAtomic(path.join(dir, INDEX_FILE), `${INDEX_HEADER}${lines.join('\n')}${lines.length === 0 ? '' : '\n'}`)
-    } catch (error) {
-      this.log('warn', `重写记忆索引失败：${error instanceof Error ? error.message : String(error)}`)
-    }
+  }
+
+  /** 把写操作挂到进程内串行队列。 */
+  private enqueueWrite<T>(operation: () => T | Promise<T>): Promise<T> {
+    const run = this.writeQueue.then(() => operation())
+    // 单次失败不阻断后续写操作。
+    this.writeQueue = run.then(() => undefined, () => undefined)
+    return run
   }
 
   private score(entries: MemoryEntry[], query: string): MemoryEntry[] {
@@ -779,7 +1126,7 @@ export class MemoryStore {
 
   private writeSettings(): void {
     try {
-      writeAtomic(this.settingsFile, `${JSON.stringify({ schema: SETTINGS_SCHEMA, ...this.settings() }, null, 2)}\n`)
+      writeAtomicText(this.settingsFile, `${JSON.stringify({ schema: SETTINGS_SCHEMA, ...this.settings() }, null, 2)}\n`)
     } catch (error) {
       this.log('warn', `写 settings.json 失败：${error instanceof Error ? error.message : String(error)}`)
     }
@@ -787,7 +1134,7 @@ export class MemoryStore {
 
   private writeStats(): void {
     try {
-      writeAtomic(this.statsFile, `${JSON.stringify({ schema: STATS_SCHEMA, ...this.stats() }, null, 2)}\n`)
+      writeAtomicText(this.statsFile, `${JSON.stringify({ schema: STATS_SCHEMA, ...this.stats() }, null, 2)}\n`)
     } catch (error) {
       this.log('warn', `写 stats.json 失败：${error instanceof Error ? error.message : String(error)}`)
     }
@@ -796,8 +1143,13 @@ export class MemoryStore {
   private projects(): ProjectRecord[] {
     if (this.projectsValue !== null) return this.projectsValue
     const raw = readJson(this.projectsFile)
-    const value = raw !== null && typeof raw === 'object' && !Array.isArray(raw) ? raw as Record<string, unknown> : {}
-    const list = Array.isArray(value.projects) ? value.projects : []
+    if (raw !== null && (typeof raw !== 'object' || Array.isArray(raw))) {
+      this.log('warn', 'memory/projects.json 结构异常，已按空登记修复')
+    } else if (raw !== null && documentSchema(raw) !== PROJECTS_SCHEMA) {
+      this.log('warn', `memory/projects.json schema=${documentSchema(raw)}（当前 ${PROJECTS_SCHEMA}），按容错读取`)
+    }
+    const stored = objectOf(raw)
+    const list = Array.isArray(stored.projects) ? stored.projects : []
     this.projectsValue = list
       .map(item => normalizeProject(item, key => this.countEntries('project', key)))
       .filter((item): item is ProjectRecord => item !== null)
@@ -806,19 +1158,19 @@ export class MemoryStore {
 
   private writeProjects(): void {
     try {
-      writeAtomic(this.projectsFile, `${JSON.stringify({ schema: PROJECTS_SCHEMA, projects: this.projects() }, null, 2)}\n`)
+      writeAtomicText(this.projectsFile, `${JSON.stringify({ schema: PROJECTS_SCHEMA, projects: this.projects() }, null, 2)}\n`)
     } catch (error) {
       this.log('warn', `写 projects.json 失败：${error instanceof Error ? error.message : String(error)}`)
     }
   }
 }
 
-/** Entry ordering used outside text search: importance, then freshness. */
+/** 文本检索之外的排序：重要度优先，其次更新时间。 */
 function compareEntries(left: MemoryEntry, right: MemoryEntry): number {
   return right.importance - left.importance || right.updatedAt.localeCompare(left.updatedAt)
 }
 
-/** Project one entry to its list metadata (the body stays out of list payloads). */
+/** 把一个条目投影成列表元数据（正文不进入列表载荷）。 */
 function toMeta(entry: MemoryEntry): MemoryMeta {
   return {
     id: entry.id,
@@ -829,21 +1181,26 @@ function toMeta(entry: MemoryEntry): MemoryMeta {
     project: entry.project,
     tags: entry.tags,
     importance: entry.importance,
+    confidence: entry.confidence,
     status: entry.status,
     reinforcement: entry.reinforcement,
     obsoleteVotes: entry.obsoleteVotes,
+    pinned: entry.pinned,
+    usedCount: entry.usedCount,
     supersedes: entry.supersedes,
+    mergedFrom: entry.mergedFrom,
+    source: entry.source,
     originSessionId: entry.originSessionId,
     createdAt: entry.createdAt,
     updatedAt: entry.updatedAt,
+    ...(entry.lastUsedAt === undefined ? {} : { lastUsedAt: entry.lastUsedAt }),
   }
 }
 
 /**
- * Query terms: whitespace words plus CJK bigrams, so Chinese queries match
- * without a tokenizer dependency.
+ * 查询词：空白分词 + 中文 bigram，因此中文查询无需分词依赖也能命中。
  *
- * @param query - raw user query.
+ * @param query - 用户原始查询。
  */
 export function queryTerms(query: string): string[] {
   const lowered = query.toLowerCase().trim()
@@ -858,4 +1215,3 @@ export function queryTerms(query: string): string[] {
   }
   return [...terms]
 }
-

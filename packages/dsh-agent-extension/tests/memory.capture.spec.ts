@@ -68,6 +68,15 @@ describe('自动捕获：闸门、摘要与提炼', () => {
     expect(hasForceSignal([], digestOf([human(1, '看看这个函数')], 's-1', 1))).toBe(false)
   })
 
+  it('force 只看当前轮：上一轮说过「记住」不会泄漏到本轮', () => {
+    const previous: TurnEvent = { ...human(1, '记住：提交信息用中文'), turn: 1 }
+    const current: TurnEvent = { ...human(2, '看看这个函数'), turn: 2 }
+    // 缓冲里仍带着上一轮事件，但摘要属于第 2 轮 → 本轮不得命中 force。
+    expect(hasForceSignal([previous, current], digestOf([current], 's-1', 2))).toBe(false)
+    const askedAgain: TurnEvent = { ...human(3, '记住：以后都用 pnpm'), turn: 2 }
+    expect(hasForceSignal([previous, askedAgain], digestOf([askedAgain], 's-1', 2))).toBe(true)
+  })
+
   it('提炼请求载荷是合法 JSON，且带项目与既有记忆', () => {
     const digest = digestOf([human(1, '以后都用 pnpm')], 's-1', 1)
     const messages = buildExtractionMessages({

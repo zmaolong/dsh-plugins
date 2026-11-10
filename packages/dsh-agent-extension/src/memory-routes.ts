@@ -19,7 +19,11 @@ import {
   normalizeIds,
   normalizeTags,
   text,
+  type MemoryGetWire,
+  type MemoryListWire,
+  type MemoryPreviewFileWire,
   type MemoryScope,
+  type MemoryStateWire,
   type MemoryStatus,
 } from './memory/types.ts'
 
@@ -61,7 +65,11 @@ function projectOf(store: MemoryStore, requested: unknown, scope: MemoryScope): 
 }
 
 /** Dispatch one GET /memory/* request. */
-export async function dispatchMemoryGet(store: MemoryStore, route: string, params: URLSearchParams): Promise<unknown> {
+export async function dispatchMemoryGet(
+  store: MemoryStore,
+  route: string,
+  params: URLSearchParams,
+): Promise<MemoryStateWire | MemoryListWire | MemoryGetWire | MemoryPreviewFileWire> {
   if (route === '/memory/state') {
     return {
       settings: store.settings(),

@@ -25,6 +25,8 @@ export interface TurnEvent {
   seq: number
   type: string
   data: unknown
+  /** 事件所属轮次；带轮次的缓冲事件用来把 force 限制在当前轮。 */
+  turn?: number
 }
 
 /** Compact digest of the part of one turn that capture reads. */
@@ -84,12 +86,15 @@ export function wordCount(value: string): number {
 /** Explicit user request to remember or forget something; bypasses size gates. */
 const FORCE_PATTERN = /记住|记一下|记下这个|以后都|以后用|之后都|别再|不要再用|别忘|永远不要|always use|never use|remember (?:this|that)|don'?t forget/iu
 
-/** Whether the user explicitly asked for persistence. */
+/** Whether the user explicitly asked for persistence in the current turn. */
 export function hasForceSignal(events: readonly TurnEvent[], digest: TurnDigest): boolean {
   const joined = digest.userTexts.join('\n')
   if (FORCE_PATTERN.test(joined)) return true
+  // 只看当前轮：缓冲事件带 turn 时，之前轮次说过「记住」不能泄漏到本轮。
+  // 不带 turn 的事件（纯函数单测/旧调用）保持原有语义。
   return events.some((event) => {
     if (event.type !== 'user/message') return false
+    if (event.turn !== undefined && event.turn !== digest.turn) return false
     const content = textOfUserEvent(event.data)
     return FORCE_PATTERN.test(content)
   })

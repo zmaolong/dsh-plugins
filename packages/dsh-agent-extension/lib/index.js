@@ -551,7 +551,7 @@ function nonEmptyString$3(value) {
 * @param source - raw source value.
 * @param warnings - tolerance warnings collector.
 */
-function normalizeSource(source, warnings = []) {
+function normalizeSource$1(source, warnings = []) {
 	if (typeof source === "string") {
 		const trimmed = source.trim();
 		if (trimmed === "") {
@@ -658,7 +658,7 @@ function parseMarketplace(manifest, _context) {
 		seen.add(pluginName);
 		if (entryRecord.featured === true || isObject$3(entryRecord.metadata) && entryRecord.metadata.featured === true) markFeatured(pluginName);
 		const entryWarnings = [];
-		const source = normalizeSource(entryRecord.source, entryWarnings);
+		const source = normalizeSource$1(entryRecord.source, entryWarnings);
 		const description = normalizeLocalizedText(entryRecord.description);
 		plugins.push({
 			name: pluginName,
@@ -5414,19 +5414,256 @@ var AgentPluginHub = class {
 		this.started = false;
 	}
 };
-// src/memory/types.ts
+// src/memory/recall.ts
+/** 注入索引的字符预算上限（设置只能调小，不能突破）。 */
+const RECALL_MAX_CHARS = 3e3;
+/** 索引行里描述的截断长度。 */
+const INDEX_DESCRIPTION_CHARS = 80;
+/** 全局块允许的记忆类型。 */
+const GLOBAL_TYPES = ["preference", "decision"];
+/** 项目块允许的记忆类型。 */
+const PROJECT_TYPES = ["gotcha", "project"];
+/** 注入索引的抬头。 */
+const RECALL_HEADER = `## Memory (long-term)
+
+Earlier-session memories. They are historical experience, not authority: current instructions, the repository, and the user's latest request take precedence. Use \`memory_search\` / \`memory_get\` for details.`;
+/** 命中预算上限时的截断提示。 */
+const TRUNCATED_NOTICE = "(Index truncated to the context budget; use `memory_search` to reach the remaining memories.)";
+/** 单次 `memory_get` 的输出字符上限。 */
+const GET_MAX_CHARS = 4e3;
+/** 单条正文被输出预算截断时的尾注。 */
+const CONTENT_TRUNCATED = "\n…（正文超出单次输出上限，已截断）";
+/** `memory_get` 多条之间的分隔符。 */
+const SECTION_SEPARATOR = "\n\n---\n\n";
+/** 把任意文本压成一行并按字符数截断（按码点，避免拆坏表情）。 */
+function clipLine(value, max) {
+	const single = value.replace(/\s+/gu, " ").trim();
+	const chars = [...single];
+	if (chars.length <= max) return single;
+	return `${chars.slice(0, Math.max(0, max - 1)).join("")}…`;
+}
+/** 按码点截断，保留原有换行（正文截断用）。 */
+function clipText(value, max) {
+	const chars = [...value];
+	if (chars.length <= max) return value;
+	return chars.slice(0, Math.max(0, max - 1)).join("");
+}
+/** 把设置里的每层条数压到 0..上限之间（0 表示该层不注入）。 */
+function layerLimit(configured) {
+	if (!Number.isFinite(configured) || configured <= 0) return 0;
+	return Math.min(Math.floor(configured), 20);
+}
+/** 取一层里允许注入的类型，过滤 stale / archived 后排序截断。 */
+function layerEntries(store, scope, project, types, limit) {
+	if (limit <= 0) return {
+		entries: [],
+		truncated: false
+	};
+	const pool = /* @__PURE__ */ new Map();
+	const poolLimit = 50;
+	for (const type of types) {
+		const found = store.search(scope, project, {
+			query: "",
+			type,
+			includeArchived: false,
+			limit: poolLimit
+		});
+		for (const entry of found) {
+			if (entry.status !== "active") continue;
+			pool.set(entry.id, entry);
+		}
+	}
+	const sorted = [...pool.values()].sort((left, right) => right.importance - left.importance || right.updatedAt.localeCompare(left.updatedAt));
+	return {
+		entries: sorted.slice(0, limit),
+		truncated: sorted.length > limit
+	};
+}
+/** 渲染一条注入索引行：`id · 类型 · 名称 · 80 字描述 · 重要性`。 */
+function indexLine(entry) {
+	const description = clipLine(entry.description, INDEX_DESCRIPTION_CHARS);
+	return `- ${entry.id} · ${entry.type} · ${entry.name} · ${description === "" ? "（无描述）" : description} · ${entry.importance}`;
+}
 /**
-* Memory domain vocabulary and its wire shapes.
+* 渲染一份供 systemPrompt.context 注入的记忆索引。
 *
-* A memory is one durable fact captured from a session (or written by the model
-* / user) and injected into later sessions as historical experience. Two scopes
-* exist: `global` facts follow the user across projects, `project` facts belong
-* to one git repository (worktrees and clones share it through the resolved
-* project identity).
+* 只读存储：不解析项目身份、不写任何文件。
 *
-* @module dsh-agent-extension/memory/types
+* @param options - store、执行上下文的项目身份与设置。
 */
-/** Kinds of durable fact a memory can record. */
+function renderRecallContext(options) {
+	const { store, identity, settings } = options;
+	if (!settings.injectEnabled) return {
+		text: "",
+		ids: [],
+		truncated: false
+	};
+	const global = layerEntries(store, "global", "", GLOBAL_TYPES, layerLimit(settings.indexLimitGlobal));
+	const project = identity === null ? {
+		entries: [],
+		truncated: false
+	} : layerEntries(store, "project", identity.projectKey, PROJECT_TYPES, layerLimit(settings.indexLimitProject));
+	if (global.entries.length === 0 && project.entries.length === 0) return {
+		text: "",
+		ids: [],
+		truncated: global.truncated || project.truncated
+	};
+	const blocks = [];
+	if (global.entries.length > 0) blocks.push({
+		title: "Global:",
+		lines: global.entries.map((entry) => ({
+			text: indexLine(entry),
+			id: entry.id
+		}))
+	});
+	if (project.entries.length > 0) blocks.push({
+		title: `Project (${identity?.displayName ?? ""}):`,
+		lines: project.entries.map((entry) => ({
+			text: indexLine(entry),
+			id: entry.id
+		}))
+	});
+	let budget = Math.min(settings.maxChars, RECALL_MAX_CHARS) - RECALL_HEADER.length - 2 - 93 - 2;
+	if (budget <= 0) return {
+		text: "",
+		ids: [],
+		truncated: true
+	};
+	let truncated = global.truncated || project.truncated;
+	const kept = [];
+	for (const block of blocks) {
+		const titleCost = block.title.length + 1;
+		if (budget - titleCost <= 0) {
+			truncated = true;
+			continue;
+		}
+		const lines = [];
+		let remaining = budget - titleCost;
+		for (const line of block.lines) {
+			const cost = line.text.length + 1;
+			if (cost > remaining) {
+				truncated = true;
+				break;
+			}
+			lines.push(line);
+			remaining -= cost;
+		}
+		if (lines.length > 0) kept.push({
+			title: block.title,
+			lines
+		});
+		budget = remaining;
+	}
+	const body = kept.map((block) => `${block.title}\n${block.lines.map((line) => line.text).join("\n")}`).join("\n\n");
+	if (body === "") return {
+		text: "",
+		ids: [],
+		truncated: true
+	};
+	return {
+		text: `${RECALL_HEADER}\n\n${body}${truncated ? `\n\n${TRUNCATED_NOTICE}` : ""}`,
+		ids: kept.flatMap((block) => block.lines.map((line) => line.id)),
+		truncated
+	};
+}
+/** 渲染 `memory_search` 的摘要结果：每行一条 `id · 类型 · 名称 · 一句话 · 更新时间`。 */
+function formatSearchResult(entries, query) {
+	if (entries.length === 0) return query === "" ? "当前作用域还没有记忆。" : `没有匹配 ${JSON.stringify(query)} 的记忆。`;
+	const lines = entries.map((entry) => {
+		const description = clipLine(entry.description, 120);
+		return `${entry.id} · ${entry.type} · ${entry.name} · ${description === "" ? "（无描述）" : description} · ${entry.updatedAt.slice(0, 10)}`;
+	});
+	const subject = query === "" ? "当前作用域的排名索引" : `查询 ${JSON.stringify(query)}`;
+	return `找到 ${entries.length} 条记忆（${subject}）；拿到 id 后用 memory_get 取全文：\n${lines.join("\n")}`;
+}
+/** 渲染一条记忆的完整段落（标题 + 元信息 + 描述 + 正文）。 */
+function getSection(entry) {
+	const scope = entry.project === "" ? entry.scope : `${entry.scope} | project: ${entry.project}`;
+	return `${[
+		`## [${entry.id}] ${entry.name}`,
+		`type: ${entry.type} | scope: ${scope} | status: ${entry.status} | importance: ${entry.importance} | updated: ${entry.updatedAt}`,
+		entry.description
+	].join("\n")}\n\n${entry.content}`;
+}
+/** 渲染一组 id 列表，过长时显式说明还省略了多少。 */
+function idList(ids) {
+	const shown = ids.slice(0, 10).join(", ");
+	return ids.length > 10 ? `${shown} 等 ${ids.length} 个` : shown;
+}
+/**
+* 渲染 `memory_get` 的结果。
+*
+* 单次最多返回 3 条、总输出不超过 4,000 字符；被忽略的 id、被预算截断的
+* 情况都显式写出，绝不静默丢弃。
+*
+* @param entries - 找到的记忆（调用方已按 3 条截断）。
+* @param missing - 未找到的 id。
+* @param options - 因超过 3 条而忽略的 id。
+*/
+function formatGetResult(entries, missing, options = {}) {
+	const ignored = [...options.ignoredIds ?? []];
+	const sections = [];
+	const remaining = [];
+	let used = 0;
+	let truncated = false;
+	for (let index = 0; index < entries.length; index += 1) {
+		const entry = entries[index];
+		if (entry === void 0) continue;
+		const section = getSection(entry);
+		const separatorCost = sections.length > 0 ? 7 : 0;
+		const headCost = section.length - entry.content.length;
+		const bodyBudget = 3600 - used - separatorCost - headCost;
+		if (bodyBudget >= 80) {
+			const body = entry.content.length <= bodyBudget ? entry.content : `${clipText(entry.content, Math.max(20, bodyBudget - 18))}${CONTENT_TRUNCATED}`;
+			const rendered = `${section.slice(0, headCost)}${body}`;
+			sections.push(rendered);
+			used += separatorCost + rendered.length;
+			if (body !== entry.content) {
+				truncated = true;
+				remaining.push(...entries.slice(index + 1).map((item) => item.id));
+				break;
+			}
+			continue;
+		}
+		truncated = true;
+		remaining.push(...entries.slice(index).map((item) => item.id));
+		break;
+	}
+	const notices = [];
+	if (ignored.length > 0) notices.push(`已忽略 ${ignored.length} 个 id（单次最多 3 条），请再取下一批：${idList(ignored)}`);
+	if (truncated) notices.push(remaining.length > 0 ? `已截断，请再取下一批（剩余 id：${idList(remaining)}）` : "已截断，请再取下一批。");
+	if (missing.length > 0) notices.push(`未找到：${idList(missing)}`);
+	const parts = [];
+	if (sections.length > 0) parts.push(sections.join(SECTION_SEPARATOR));
+	else if (entries.length === 0 && notices.length === 0) parts.push("未找到任何记忆。");
+	parts.push(...notices);
+	let text = parts.join("\n\n");
+	if (text.length > 4e3) text = `${[...text].slice(0, Math.max(0, 3999)).join("")}…`;
+	return text;
+}
+/** 渲染 `/memory` 命令的概况。 */
+function formatCommandSummary(store, identity) {
+	const projects = store.listProjects();
+	const global = store.countEntries("global");
+	const project = identity === null ? 0 : store.countEntries("project", identity.projectKey);
+	return [
+		`全局记忆：${global} 条`,
+		identity === null ? "项目记忆：未识别到项目（不在 git 仓库内）" : `项目记忆：${project} 条（${identity.displayName}）`,
+		`已知项目：${projects.length} 个`,
+		"用 memory_search / memory_get 取详情；管理界面在「智能体扩展 → 记忆」。"
+	].join("\n");
+}
+// src/shared/memory-wire.ts
+/**
+* 记忆的跨端词汇：宿主半与浏览器半共用的纯类型、常量与归一化助手。
+*
+* 这里只放无运行时依赖、无 node 内置模块的声明与纯函数，浏览器构建可以直接
+* 内联；服务端专属的 schema 版本、项目身份解析与 Markdown 归一化助手留在
+* `memory/types.ts`，由它转出本模块的公开面，历史导入路径保持不变。
+*
+* @module dsh-agent-extension/shared/memory-wire
+*/
+/** 一条记忆可以记录的事实类型。 */
 const MEMORY_TYPES = [
 	"preference",
 	"decision",
@@ -5434,7 +5671,14 @@ const MEMORY_TYPES = [
 	"project",
 	"reference"
 ];
-/** Default settings: capture and injection on, 50/50 index entries, 12k chars. */
+/** 一条记忆的来源通道。 */
+const MEMORY_SOURCES = [
+	"capture",
+	"tool",
+	"user",
+	"import"
+];
+/** 默认设置：捕获与注入开启，各 50 条索引，12k 字符。 */
 function defaultSettings() {
 	return {
 		captureEnabled: true,
@@ -5446,7 +5690,7 @@ function defaultSettings() {
 		updatedAt: (/* @__PURE__ */ new Date()).toISOString()
 	};
 }
-/** Largest accepted values for user-tunable bounds. */
+/** 用户可调边界与存储硬上限。 */
 const LIMITS = {
 	indexEntries: 200,
 	maxChars: 4e4,
@@ -5457,27 +5701,38 @@ const LIMITS = {
 	tag: 40,
 	entriesPerScope: 2e3,
 	projects: 200,
-	statsSessions: 100
+	statsSessions: 100,
+	/** 最近捕获/注入样本上限（stats.json 的有界数组）。 */
+	statsRecent: 50
 };
-/** Whether a value is one of the memory kinds. */
+/** 值是否是一种记忆来源。 */
+function isMemorySource(value) {
+	return typeof value === "string" && MEMORY_SOURCES.includes(value);
+}
+/** 归一化来源值：缺失或未知时回退。 */
+function normalizeSource(value, fallback = "capture") {
+	return isMemorySource(value) ? value : fallback;
+}
+/** 值是否是一种记忆类型。 */
 function isMemoryType(value) {
 	return typeof value === "string" && MEMORY_TYPES.includes(value);
 }
-/** Whether a value is one of the memory statuses. */
+/** 值是否是一种记忆状态。 */
 function isMemoryStatus(value) {
 	return value === "active" || value === "stale" || value === "archived";
 }
-/** Clamp an integer into `[min, max]`, falling back for non-numbers. */
+/** 把整数夹到 `[min, max]`；非数字回退。 */
 function clampInt(value, min, max, fallback) {
 	const numeric = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
 	if (!Number.isFinite(numeric)) return fallback;
 	return Math.min(max, Math.max(min, Math.round(numeric)));
 }
-/** Trim to a non-empty string, or the empty string. */
+// src/memory/types.ts
+/** 去空白后的非空字符串，或空字符串。 */
 function text(value) {
 	return typeof value === "string" ? value.trim() : "";
 }
-/** Normalize a tag list: trim, drop empties/commas, dedupe, cap length and count. */
+/** 归一化标签列表：去空白、丢空项/逗号、去重、限制长度与数量。 */
 function normalizeTags(value) {
 	const raw = Array.isArray(value) ? value : typeof value === "string" ? value.split(",") : [];
 	const out = [];
@@ -5489,7 +5744,7 @@ function normalizeTags(value) {
 	}
 	return out;
 }
-/** Normalize an id list. */
+/** 归一化 id 列表：去重、丢空项。 */
 function normalizeIds(value) {
 	const raw = Array.isArray(value) ? value : [];
 	const out = [];
@@ -5526,18 +5781,6 @@ function contentText(content) {
 /** Human word count: latin words plus one per CJK character. */
 function wordCount(value) {
 	return (value.match(/[A-Za-z0-9]+/gu)?.length ?? 0) + (value.match(/[\u3400-\u9fff]/gu)?.length ?? 0);
-}
-/** Explicit user request to remember or forget something; bypasses size gates. */
-const FORCE_PATTERN = /记住|记一下|记下这个|以后都|以后用|之后都|别再|不要再用|别忘|永远不要|always use|never use|remember (?:this|that)|don'?t forget/iu;
-/** Whether the user explicitly asked for persistence. */
-function hasForceSignal(events, digest) {
-	const joined = digest.userTexts.join("\n");
-	if (FORCE_PATTERN.test(joined)) return true;
-	return events.some((event) => {
-		if (event.type !== "user/message") return false;
-		const content = textOfUserEvent(event.data);
-		return FORCE_PATTERN.test(content);
-	});
 }
 /** Whether a `user/message` payload is a human prompt rather than synthetic context. */
 function isHumanMessage(data) {
@@ -5616,42 +5859,6 @@ function digestOf(events, sessionId, turn) {
 	digest.toolNames = [...new Set(digest.toolNames)].slice(0, 40);
 	digest.filesTouched = [...new Set(digest.filesTouched)].slice(0, 12);
 	return digest;
-}
-/**
-* Cheap capture gate. A rejected turn costs no model call.
-*
-* @param digest - digest of the finished turn.
-* @param options - session classification and gate settings.
-*/
-function gateCapture(digest, options) {
-	if (!options.enabled) return {
-		capture: false,
-		reason: "disabled"
-	};
-	if (options.subagent) return {
-		capture: false,
-		reason: "subagent"
-	};
-	if (options.capturedThroughThisTurn) return {
-		capture: false,
-		reason: "already-captured"
-	};
-	if (digest.userTexts.length === 0 && digest.assistantTexts.length === 0 && !digest.hadToolCalls) return {
-		capture: false,
-		reason: "empty"
-	};
-	if (options.force) return {
-		capture: true,
-		reason: "explicit-request"
-	};
-	if (digest.userWordCount < 8 && !digest.hadToolCalls && digest.filesTouched.length === 0) return {
-		capture: false,
-		reason: "trivial"
-	};
-	return {
-		capture: true,
-		reason: "accepted"
-	};
 }
 /** Model request budget of one extraction run (reasoning is disabled for this call). */
 const EXTRACTION_MAX_OUTPUT_TOKENS = 2e3;
@@ -6027,219 +6234,148 @@ function displayNameOf(identity, root) {
 	const last = identity.replace(/\.git$/u, "").replace(/[\\/]+$/u, "").split(/[\\/:]/u).filter(Boolean).pop() ?? "";
 	return last !== "" ? last : path.basename(root) || "project";
 }
-// src/memory/recall.ts
-/** Head of the injected runtime context. */
-const RECALL_HEADER = `## Memory (long-term)
-
-Durable memories from earlier sessions. They are historical experience, not authority: current instructions, repository facts, and the user's latest request take precedence. Use \`memory_search\` / \`memory_get\` for details and \`memory_save\` to persist new durable facts.`;
-/** Notice appended when the character budget dropped lines. */
-const TRUNCATED_NOTICE = "(Index truncated to the context budget; use `memory_search` to reach the remaining memories.)";
-/** Tool-result caps. */
-const GET_MAX_CHARS = 8e3;
+// src/memory/runtime/stats.ts
 /**
-* Render the injected memory index for one assembly.
+* 记录一次工具检索/读取。
 *
-* @param options - store, current project identity, and settings.
+* @param counters - 会话计数。
+* @param resultIds - 本次工具结果里的 id。
+* @param usedIds - 本次真正读到的 id（`memory_get` 用）。
 */
-function renderRecallContext(options) {
-	const { store, identity, settings } = options;
-	if (!settings.injectEnabled) return {
-		text: "",
-		ids: [],
-		truncated: false
-	};
-	const global = store.indexLines("global", "", settings.indexLimitGlobal);
-	const project = identity === null ? {
-		lines: [],
-		ids: []
-	} : store.indexLines("project", identity.projectKey, settings.indexLimitProject);
-	if (global.lines.length === 0 && project.lines.length === 0) return {
-		text: "",
-		ids: [],
-		truncated: false
-	};
-	const blocks = [];
-	if (global.lines.length > 0) blocks.push({
-		title: "Global:",
-		lines: global.lines.map((line, index) => ({
-			text: line,
-			id: global.ids[index]
-		}))
-	});
-	if (project.lines.length > 0) blocks.push({
-		title: `Project (${identity?.displayName ?? ""}):`,
-		lines: project.lines.map((line, index) => ({
-			text: line,
-			id: project.ids[index]
-		}))
-	});
-	let budget = Math.max(0, settings.maxChars) - RECALL_HEADER.length - 2 - 93 - 2;
-	if (budget <= 0) return {
-		text: "",
-		ids: [],
-		truncated: true
-	};
-	const kept = [];
-	let truncated = false;
-	for (const block of blocks) {
-		const titleCost = block.title.length + 1;
-		if (budget - titleCost <= 0) {
-			truncated = true;
-			continue;
-		}
-		const lines = [];
-		let remaining = budget - titleCost;
-		for (const line of block.lines) {
-			const cost = line.text.length + 1;
-			if (cost > remaining) {
-				truncated = true;
-				break;
-			}
-			lines.push(line);
-			remaining -= cost;
-		}
-		if (lines.length > 0) kept.push({
-			title: block.title,
-			lines
+function noteToolUsage(counters, resultIds, usedIds) {
+	for (const id of usedIds) counters.used.add(id);
+	for (const id of resultIds) if (counters.injected.has(id)) counters.used.add(id);
+	else counters.overflow.add(id);
+}
+/**
+* 把一个会话的召回计数与装配样本写入存储（best effort，失败只记日志）。
+*
+* @param options - 存储、会话 id、计数、可选装配样本与日志。
+*/
+function flushRecall(options) {
+	const { store, sessionId, counters, injection, log } = options;
+	if (counters.injected.size > 0 || counters.overflow.size > 0) try {
+		store.recordRecall(sessionId, [...counters.injected], [...counters.used], counters.overflow.size);
+	} catch (error) {
+		log("warn", `写命中率统计失败：${error instanceof Error ? error.message : String(error)}`);
+	}
+	if (injection !== void 0 && injection.entries > 0) try {
+		store.recordInjection({
+			sessionId,
+			entries: injection.entries,
+			chars: injection.chars,
+			truncated: injection.truncated
 		});
-		budget = remaining;
+	} catch (error) {
+		log("warn", `写注入样本失败：${error instanceof Error ? error.message : String(error)}`);
 	}
-	const body = kept.map((block) => `${block.title}\n${block.lines.map((line) => line.text).join("\n")}`).join("\n\n");
-	if (body === "") return {
-		text: "",
-		ids: [],
-		truncated
-	};
-	return {
-		text: `${RECALL_HEADER}\n\n${body}${truncated ? `\n\n${TRUNCATED_NOTICE}` : ""}`,
-		ids: kept.flatMap((block) => block.lines.map((line) => line.id)),
-		truncated
-	};
 }
-/** Render `memory_search` results. */
-function formatSearchResult(entries, query) {
-	if (entries.length === 0) return `No memories match ${JSON.stringify(query)}.`;
-	const lines = entries.map((entry) => `- [${entry.id}] (${entry.type}, ${entry.updatedAt.slice(0, 10)}) ${entry.name}${entry.description === "" ? "" : ` — ${entry.description}`}`);
-	return `${entries.length} memories match ${JSON.stringify(query)} (use memory_get with these ids for full content):\n${lines.join("\n")}`;
-}
-/** Render `memory_get` results. */
-function formatGetResult(entries, missing) {
-	const sections = [];
-	let budget = GET_MAX_CHARS;
-	let omitted = 0;
-	for (const entry of entries) {
-		const section = [
-			`## [${entry.id}] ${entry.name}`,
-			`type: ${entry.type} | scope: ${entry.scope}${entry.project === "" ? "" : ` | project: ${entry.project}`} | status: ${entry.status} | importance: ${entry.importance} | updated: ${entry.updatedAt}`,
-			entry.description,
-			"",
-			entry.content
-		].join("\n");
-		if (section.length > budget) {
-			omitted += 1;
-			continue;
-		}
-		sections.push(section);
-		budget -= section.length + 2;
+/**
+* 记录一次捕获尝试（best effort）。
+*
+* @param store - 记忆存储。
+* @param log - 失败日志。
+* @param entries - 写入或强化的条数。
+* @param skipped - 本轮没有产出（失败/空轮/被闸门拒绝）。
+* @param detail - 会话 id 与跳过原因，供面板「最近捕获」展示。
+*/
+function recordCaptureAttempt(store, log, entries, skipped, detail = {}) {
+	try {
+		store.recordCapture(entries, skipped, detail);
+	} catch (error) {
+		log("warn", `写捕获统计失败：${error instanceof Error ? error.message : String(error)}`);
 	}
-	const parts = [];
-	if (sections.length > 0) parts.push(sections.join("\n\n---\n\n"));
-	else if (entries.length === 0) parts.push("No memory found for the requested ids.");
-	if (omitted > 0) parts.push(`(${omitted} memories omitted by the result budget; fetch fewer ids per call.)`);
-	if (missing.length > 0) parts.push(`Not found: ${missing.join(", ")}`);
-	return parts.join("\n\n");
 }
-/** Render the `/memory` command summary. */
-function formatCommandSummary(store, identity) {
-	const projects = store.listProjects();
-	const global = store.countEntries("global");
-	const project = identity === null ? 0 : store.countEntries("project", identity.projectKey);
-	return [
-		`全局记忆：${global} 条`,
-		identity === null ? "项目记忆：未识别到项目（不在 git 仓库内）" : `项目记忆：${project} 条（${identity.displayName}）`,
-		`已知项目：${projects.length} 个`,
-		"用 memory_search / memory_get 取详情；管理界面在「智能体扩展 → 记忆」。"
-	].join("\n");
-}
-// src/memory-host.ts
-/** Buffered events per session; capture only reads the current turn. */
+// src/memory/runtime/capture-session.ts
+/** 每个会话缓冲的事件数上限；只影响记忆提炼输入。 */
 const EVENT_BUFFER_LIMIT = 400;
-/** Sessions kept in memory; the oldest is evicted first. */
+/** 内存里保留的会话数；最久未活跃的先淘汰。 */
 const SESSION_LIMIT = 200;
-/** Project resolution cache lifetime. */
+/** 项目身份缓存寿命。 */
 const PROJECT_CACHE_TTL_MS = 3e4;
-/** Minimum gap between project-registry touches. */
+/** 项目登记（projects.json）的最小间隔。 */
 const PROJECT_TOUCH_INTERVAL_MS = 3e5;
-/** Maximum characters the extraction request may produce. */
+/** 一次提炼请求最多收集的字符数。 */
 const EXTRACTION_MAX_CHARS = 2e4;
-/** Static usage guide injected into every agent's system prompt. */
-const MEMORY_GUIDE = `## Memory
-
-Durable memory tools are available: \`memory_search\`, \`memory_get\`, \`memory_save\`, \`memory_forget\`.
-- Save a memory when the user explicitly asks to remember something, or when a stable preference, decision, gotcha, or project fact emerges that will matter in later sessions.
-- Never save transient task state, secrets, credentials, or large code excerpts.
-- A memory describes experience from earlier sessions. Current instructions, the repository, and the user's latest request take precedence over it.
-- Call \`memory_forget\` when one of your memories is clearly outdated.`;
-/** The memory runtime: host services, capture queue and recall counters. */
-var MemoryRuntime = class {
-	ctx;
+/** 会话缓冲、项目身份与提炼队列。 */
+var CaptureSessions = class {
 	store;
 	log;
+	getLlm;
 	abort = new AbortController();
 	buffers = /* @__PURE__ */ new Map();
 	projectCache = /* @__PURE__ */ new Map();
 	projectTouches = /* @__PURE__ */ new Map();
 	operations = /* @__PURE__ */ new Set();
-	disposers = [];
-	llmService = null;
-	started = false;
 	disposed = false;
 	constructor(options) {
-		this.ctx = options.ctx;
 		this.store = options.store;
 		this.log = options.log;
+		this.getLlm = options.llm;
 	}
-	/** Wire host events, prompt contributions, tools and commands. */
-	start() {
-		if (this.started) return;
-		this.started = true;
-		const steps = [
-			["存储目录", () => this.store.start()],
-			["事件监听", () => this.registerEventListeners()],
-			["提示词注入", () => this.registerPromptContributions()],
-			["模型工具", () => this.registerTools()],
-			["命令", () => this.registerCommands()]
-		];
-		for (const [label, run] of steps) try {
-			run();
+	/** 缓冲一条会话事件；首个事件顺带解析（并登记）项目身份。 */
+	onSessionEvent(session, event) {
+		if (this.disposed) return;
+		const buffer = this.bufferForSession(session);
+		const data = event.data !== null && typeof event.data === "object" ? event.data : {};
+		if (event.type === "turn/start") buffer.currentTurn = typeof data.turn === "number" ? data.turn : buffer.currentTurn + 1;
+		else if (event.type === "turn/end") {
+			if (typeof data.turn === "number") buffer.currentTurn = data.turn;
+		}
+		buffer.events.push({
+			seq: event.seq,
+			type: event.type,
+			data: event.data,
+			turn: buffer.currentTurn
+		});
+		if (buffer.events.length > EVENT_BUFFER_LIMIT) buffer.events.splice(0, buffer.events.length - EVENT_BUFFER_LIMIT);
+		buffer.lastTouchedAt = Date.now();
+		this.ensureProject(buffer);
+	}
+	/**
+	* 轮末：只落盘召回统计，不再触发任何模型请求（ADR-0006）。
+	*
+	* 轮末仍更新 agent 与模型路由，供会话末补漏使用。
+	*/
+	onTurnStopping(payload) {
+		if (this.disposed) return;
+		const agent = (payload !== null && typeof payload === "object" ? payload : {}).agent;
+		if (agent?.session === void 0) return;
+		const buffer = this.bufferForSession(agent.session);
+		buffer.agent = agent;
+		buffer.modelRoute = this.modelRouteOf(agent) ?? buffer.modelRoute;
+		this.ensureProject(buffer);
+		this.flushRecall(buffer);
+	}
+	/** 会话销毁：批量补漏提炼一次，然后释放缓冲。 */
+	onAgentDisposed(payload) {
+		if (this.disposed) return;
+		const agent = (payload !== null && typeof payload === "object" ? payload : {}).agent;
+		const sessionId = this.sessionIdOf(agent);
+		if (sessionId === "") return;
+		const buffer = this.buffers.get(sessionId);
+		if (buffer === void 0) return;
+		this.flushRecall(buffer);
+		try {
+			this.captureSessionEnd(buffer, agent);
 		} catch (error) {
-			this.log("warn", `记忆初始化「${label}」失败：${error instanceof Error ? error.message : String(error)}`);
+			this.log("warn", `会话结束补漏失败：${error instanceof Error ? error.message : String(error)}`);
+		} finally {
+			this.buffers.delete(sessionId);
 		}
 	}
-	/** Stop background work and flush session counters. */
-	async dispose() {
-		if (this.disposed) return;
-		this.disposed = true;
-		this.abort.abort();
-		for (const dispose of this.disposers.splice(0)) try {
-			dispose();
-		} catch {}
-		for (const buffer of this.buffers.values()) this.flushRecall(buffer);
-		await Promise.allSettled([...this.operations]);
-	}
-	/** Resolve the project identity of one working directory (cached and registered). */
+	/** 解析项目身份（写路径，工具/命令/事件可用；提示词装配不要调用）。 */
 	projectForPath(cwd) {
 		const directory = text(cwd);
 		if (directory === "") return null;
-		let local = directory;
-		const cached = this.projectCache.get(local);
+		const cached = this.projectCache.get(directory);
 		if (cached !== void 0 && Date.now() - cached.at < PROJECT_CACHE_TTL_MS) {
 			this.touchProject(cached.identity);
 			return cached.identity;
 		}
 		try {
-			const identity = resolveProject(local);
-			this.projectCache.set(local, {
+			const identity = resolveProject(directory);
+			this.projectCache.set(directory, {
 				identity,
 				at: Date.now()
 			});
@@ -6250,10 +6386,19 @@ var MemoryRuntime = class {
 			return null;
 		}
 	}
-	/** Resolve the project identity of one live agent (null when it has no cwd). */
+	/** 解析某 agent 的项目身份（写路径）。 */
 	projectForAgent(agent) {
 		return this.projectForPath(agent?.session?.header?.cwd);
 	}
+	/** 只读项目身份：提示词装配用，不解析、不写盘。 */
+	cachedProjectForAgent(agent) {
+		const directory = text(agent?.session?.header?.cwd);
+		if (directory === "") return null;
+		const cached = this.projectCache.get(directory);
+		if (cached === void 0 || Date.now() - cached.at >= PROJECT_CACHE_TTL_MS) return null;
+		return cached.identity;
+	}
+	/** 登记项目（写 projects.json），5 分钟内同一项目只写一次。 */
 	touchProject(identity) {
 		const last = this.projectTouches.get(identity.projectKey) ?? 0;
 		if (Date.now() - last < PROJECT_TOUCH_INTERVAL_MS) return;
@@ -6264,483 +6409,129 @@ var MemoryRuntime = class {
 			this.log("warn", `登记项目失败：${error instanceof Error ? error.message : String(error)}`);
 		}
 	}
-	registerEventListeners() {
-		this.listen("session/event", (...args) => {
-			this.onSessionEvent(args[0], args[1]);
-		});
-		this.listen("agent/turn-stopping", (...args) => {
-			this.onTurnStopping(args[0]);
-		});
-		this.listen("agent/disposed", (...args) => {
-			this.onAgentDisposed(args[0]);
-		});
-	}
-	listen(event, listener) {
-		try {
-			const dispose = this.ctx.on(event, (...args) => {
-				try {
-					listener(...args);
-				} catch (error) {
-					this.log("warn", `处理 ${event} 失败：${error instanceof Error ? error.message : String(error)}`);
-				}
-			});
-			if (typeof dispose === "function") this.disposers.push(dispose);
-		} catch (error) {
-			this.log("warn", `订阅 ${event} 失败：${error instanceof Error ? error.message : String(error)}`);
-		}
-	}
-	registerPromptContributions() {
-		const systemPrompt = this.service("systemPrompt");
-		if (systemPrompt !== null) {
-			this.applyPrompt(systemPrompt);
-			return;
-		}
-		this.log("info", "等待 systemPrompt 服务就绪后注册记忆提示词");
-		try {
-			this.ctx.inject(["systemPrompt"], (scope) => {
-				const ready = this.serviceFrom(scope, "systemPrompt");
-				if (ready !== null) this.applyPrompt(ready);
-			});
-		} catch (error) {
-			this.log("warn", `等待 systemPrompt 服务失败：${error instanceof Error ? error.message : String(error)}`);
-		}
-	}
-	applyPrompt(systemPrompt) {
-		let registered = 0;
-		try {
-			const section = systemPrompt.section({
-				name: "agent-extension:memory-guide",
-				order: 700,
-				text: MEMORY_GUIDE,
-				interpolate: false
-			});
-			this.disposers.push(section);
-			registered += 1;
-		} catch (error) {
-			this.log("warn", `注册记忆使用指南失败：${error instanceof Error ? error.message : String(error)}`);
-		}
-		try {
-			const context = systemPrompt.context({
-				name: "agent-extension:memory",
-				order: 150,
-				required: false,
-				interpolate: false,
-				text: (assembly) => this.recallText(assembly.agent)
-			});
-			this.disposers.push(context);
-			registered += 1;
-		} catch (error) {
-			this.log("warn", `注册记忆上下文失败：${error instanceof Error ? error.message : String(error)}`);
-		}
-		if (registered > 0) this.log("info", "记忆提示词已注册（使用指南 + 索引注入）");
-	}
-	recallText(agent) {
-		if (agent === void 0 || this.disposed) return "";
-		try {
-			const settings = this.store.settings();
-			if (!settings.injectEnabled) return "";
-			const buffer = agent.session === void 0 ? null : this.bufferFor(agent.session);
-			if (buffer !== null && buffer.subagent) return "";
-			const identity = this.projectForAgent(agent);
-			const snapshot = renderRecallContext({
-				store: this.store,
-				identity,
-				settings
-			});
-			if (buffer !== null) for (const id of snapshot.ids) buffer.injected.add(id);
-			return snapshot.text;
-		} catch (error) {
-			this.log("warn", `渲染记忆上下文失败：${error instanceof Error ? error.message : String(error)}`);
-			return "";
-		}
-	}
-	registerTools() {
-		const tools = this.service("tools");
-		if (tools !== null) {
-			this.applyTools(tools);
-			return;
-		}
-		this.log("info", "等待 tools 服务就绪后注册记忆工具");
-		try {
-			this.ctx.inject(["tools"], (scope) => {
-				const ready = this.serviceFrom(scope, "tools");
-				if (ready !== null) this.applyTools(ready);
-			});
-		} catch (error) {
-			this.log("warn", `等待 tools 服务失败：${error instanceof Error ? error.message : String(error)}`);
-		}
-	}
-	applyTools(tools) {
-		const registrations = [
-			this.searchTool(),
-			this.getTool(),
-			this.saveTool(),
-			this.forgetTool()
-		];
-		let registered = 0;
-		for (const definition of registrations) try {
-			this.disposers.push(tools.register(definition));
-			registered += 1;
-		} catch (error) {
-			this.log("warn", `注册工具 ${definition.name} 失败：${error instanceof Error ? error.message : String(error)}`);
-		}
-		if (registered > 0) this.log("info", `记忆工具已注册：${registered} 个（memory_search / memory_get / memory_save / memory_forget）`);
-	}
-	output(schema = { type: "string" }) {
-		return {
-			schema,
-			render: (_args, value) => [{
-				type: "text",
-				text: String(value ?? "")
-			}]
+	/** 取（或创建）一个会话缓冲；做容量淘汰。 */
+	bufferForSession(session) {
+		const sessionId = this.sessionIdOf({ session });
+		const existing = this.buffers.get(sessionId);
+		if (existing !== void 0) return existing;
+		const buffer = {
+			session,
+			sessionId,
+			agent: null,
+			subagent: session.header?.origin === "subagent",
+			currentTurn: 0,
+			lastCapturedTurn: 0,
+			events: [],
+			injected: /* @__PURE__ */ new Set(),
+			used: /* @__PURE__ */ new Set(),
+			overflow: /* @__PURE__ */ new Set(),
+			project: null,
+			modelRoute: null,
+			injection: null,
+			injectionRecorded: false,
+			running: false,
+			pending: null,
+			lastTouchedAt: Date.now()
 		};
-	}
-	searchTool() {
-		return {
-			name: "memory_search",
-			description: "Search durable long-term memories (global and current project) by keywords. Returns ids and one-line summaries; use memory_get for full content.",
-			parameters: {
-				type: "object",
-				properties: {
-					query: {
-						type: "string",
-						description: "Keywords to search; empty lists the ranked index."
-					},
-					scope: {
-						type: "string",
-						enum: [
-							"all",
-							"global",
-							"project"
-						],
-						description: "Search scope; defaults to all."
-					},
-					type: {
-						type: "string",
-						enum: [
-							"preference",
-							"decision",
-							"gotcha",
-							"project",
-							"reference"
-						]
-					},
-					limit: {
-						type: "number",
-						description: "Maximum results (default 10, max 50)."
-					}
-				},
-				required: ["query"]
-			},
-			output: this.output(),
-			execute: async (args, exec) => {
-				const record = args !== null && typeof args === "object" ? args : {};
-				const query = text(record.query);
-				const scopeValue = record.scope === "global" || record.scope === "project" ? record.scope : "all";
-				const type = isMemoryType(record.type) ? record.type : void 0;
-				const limit = clampInt(record.limit, 1, 50, 10);
-				const project = this.projectForAgent(exec.agent);
-				const results = this.store.search(scopeValue, project?.projectKey ?? "", query, limit).filter((entry) => type === void 0 || entry.type === type);
-				this.noteToolUsage(exec.agent, results.map((entry) => entry.id), []);
-				return formatSearchResult(results, query);
+		this.buffers.set(sessionId, buffer);
+		if (this.buffers.size > SESSION_LIMIT) {
+			let oldest = null;
+			for (const candidate of this.buffers.values()) {
+				if (candidate.running) continue;
+				if (oldest === null || candidate.lastTouchedAt < oldest.lastTouchedAt) oldest = candidate;
 			}
-		};
-	}
-	getTool() {
-		return {
-			name: "memory_get",
-			description: "Read the full content of one or more memories by id (fetch ids from memory_search).",
-			parameters: {
-				type: "object",
-				properties: { ids: {
-					type: "array",
-					items: { type: "string" },
-					description: "Memory ids returned by memory_search."
-				} },
-				required: ["ids"]
-			},
-			output: this.output(),
-			execute: async (args, exec) => {
-				const ids = normalizeIds((args !== null && typeof args === "object" ? args : {}).ids).slice(0, 10);
-				const project = this.projectForAgent(exec.agent);
-				const entries = [];
-				const missing = [];
-				for (const id of ids) {
-					const entry = this.store.get("project", project?.projectKey ?? "", id) ?? this.store.get("global", "", id);
-					if (entry === void 0) missing.push(id);
-					else entries.push(entry);
-				}
-				this.noteToolUsage(exec.agent, entries.map((entry) => entry.id), []);
-				return formatGetResult(entries, missing);
-			}
-		};
-	}
-	saveTool() {
-		return {
-			name: "memory_save",
-			description: "Persist one durable fact (preference, decision, gotcha, project fact or reference) so later sessions can recall it. Use when the user explicitly asks to remember something.",
-			parameters: {
-				type: "object",
-				properties: {
-					name: {
-						type: "string",
-						description: "Short title (<=60 chars)."
-					},
-					description: {
-						type: "string",
-						description: "One-sentence summary."
-					},
-					type: {
-						type: "string",
-						enum: [
-							"preference",
-							"decision",
-							"gotcha",
-							"project",
-							"reference"
-						]
-					},
-					scope: {
-						type: "string",
-						enum: ["global", "project"],
-						description: "global for cross-project preferences, project for repository facts."
-					},
-					content: {
-						type: "string",
-						description: "Markdown body with the durable detail."
-					},
-					tags: {
-						type: "array",
-						items: { type: "string" }
-					},
-					importance: {
-						type: "number",
-						description: "0-100; default 50."
-					},
-					supersedes: {
-						type: "array",
-						items: { type: "string" },
-						description: "Memory ids this fact replaces."
-					}
-				},
-				required: [
-					"name",
-					"description",
-					"type",
-					"content"
-				]
-			},
-			output: this.output(),
-			execute: async (args, exec) => {
-				const record = args !== null && typeof args === "object" ? args : {};
-				const project = this.projectForAgent(exec.agent);
-				const scope = record.scope === "global" || project === null ? "global" : "project";
-				const entry = this.store.save({
-					name: text(record.name),
-					description: text(record.description),
-					type: isMemoryType(record.type) ? record.type : "reference",
-					scope,
-					project: scope === "project" ? project?.projectKey ?? "" : "",
-					content: text(record.content),
-					tags: normalizeTags(record.tags),
-					importance: clampInt(record.importance, 0, 100, 50),
-					supersedes: normalizeIds(record.supersedes),
-					originSessionId: exec.agent?.session?.id ?? ""
-				});
-				if (scope === "project" && project !== null) this.touchProject(project);
-				return `${entry.reinforcement > 0 ? "Reinforced" : "Saved"} memory ${entry.id} (${entry.type}, ${entry.scope}).`;
-			}
-		};
-	}
-	forgetTool() {
-		return {
-			name: "memory_forget",
-			description: "Flag one memory as outdated. The first call marks it stale; the second call archives it so it stops being injected.",
-			parameters: {
-				type: "object",
-				properties: {
-					id: {
-						type: "string",
-						description: "Memory id from memory_search."
-					},
-					reason: {
-						type: "string",
-						description: "Why the memory no longer holds."
-					}
-				},
-				required: ["id"]
-			},
-			output: this.output(),
-			execute: async (args, exec) => {
-				const record = args !== null && typeof args === "object" ? args : {};
-				const id = text(record.id);
-				const project = this.projectForAgent(exec.agent);
-				const scope = this.store.get("project", project?.projectKey ?? "", id) !== void 0 ? "project" : "global";
-				const projectKey = scope === "project" ? project?.projectKey ?? "" : "";
-				return this.store.forget(scope, projectKey, id, text(record.reason)).archived ? `Memory ${id} archived after two obsolete votes.` : `Memory ${id} marked stale (1/2 votes). Call memory_forget again to archive it.`;
-			}
-		};
-	}
-	registerCommands() {
-		const commands = this.ctx.commands;
-		if (commands === void 0) return;
-		const definitions = [
-			{
-				name: "remember",
-				description: "保存一条长期记忆（默认项目级，可写 global）",
-				input: { hint: "[global] <要记住的内容>" },
-				handler: (input) => this.commandRemember(input)
-			},
-			{
-				name: "forget",
-				description: "把一条记忆标记为过时（两次标记后归档）",
-				input: { hint: "<记忆 id>" },
-				handler: (input) => this.commandForget(input)
-			},
-			{
-				name: "memory",
-				description: "查看当前全局/项目记忆概况",
-				handler: (input) => this.commandMemory(input)
-			}
-		];
-		for (const definition of definitions) try {
-			const dispose = commands.register(definition);
-			if (typeof dispose === "function") this.disposers.push(dispose);
-		} catch (error) {
-			this.log("warn", `注册命令 /${definition.name} 失败：${error instanceof Error ? error.message : String(error)}`);
+			if (oldest !== null && oldest !== buffer) this.buffers.delete(oldest.sessionId);
 		}
+		return buffer;
 	}
-	commandRemember(input) {
-		const raw = text(input.rawInput);
-		if (raw === "") return {
-			kind: "error",
-			text: "用法：/remember [global] <要记住的内容>"
-		};
-		const scope = /^global\s+/iu.test(raw) ? "global" : "project";
-		const body = raw.replace(/^global\s+/iu, "").trim();
-		if (body === "") return {
-			kind: "error",
-			text: "用法：/remember [global] <要记住的内容>"
-		};
-		const project = this.projectForAgent(input.agent);
-		const resolvedScope = scope === "global" || project === null ? "global" : "project";
-		const name = body.length > LIMITS.name ? `${body.slice(0, LIMITS.name - 1)}…` : body;
-		const entry = this.store.save({
-			name,
-			description: body.slice(0, LIMITS.description),
-			type: "preference",
-			scope: resolvedScope,
-			project: resolvedScope === "project" ? project?.projectKey ?? "" : "",
-			content: body,
-			importance: 70,
-			originSessionId: input.agent?.session?.id ?? ""
-		});
-		if (resolvedScope === "project" && project !== null) this.touchProject(project);
-		const target = resolvedScope === "global" ? "全局" : `项目（${project?.displayName ?? ""}）`;
-		return {
-			kind: "success",
-			text: `${entry.reinforcement > 0 ? "已强化已有记忆" : "已记住"}：${entry.name}（${target}，id=${entry.id}）`
-		};
+	/** 该会话是否是子代理（子代理不注入、不捕获）。 */
+	isSubagent(session) {
+		if (session === void 0) return false;
+		return this.bufferForSession(session).subagent;
 	}
-	commandForget(input) {
-		const id = text(input.rawInput);
-		if (id === "") return {
-			kind: "error",
-			text: "用法：/forget <记忆 id>"
-		};
-		const project = this.projectForAgent(input.agent);
-		const inProject = this.store.get("project", project?.projectKey ?? "", id) !== void 0;
-		try {
-			return {
-				kind: "success",
-				text: this.store.forget(inProject ? "project" : "global", inProject ? project?.projectKey ?? "" : "", id).archived ? `记忆 ${id} 已归档（两次标记为过时）。` : `记忆 ${id} 已标记为过时（1/2）；再次标记将归档。`
-			};
-		} catch (error) {
-			return {
-				kind: "error",
-				text: error instanceof Error ? error.message : String(error)
-			};
-		}
+	/** 工具检索/读取的命中记账（纯内存）。 */
+	noteToolUsage(agent, resultIds, usedIds) {
+		const session = agent?.session;
+		if (session === void 0) return;
+		noteToolUsage(this.bufferForSession(session), resultIds, usedIds);
 	}
-	commandMemory(input) {
-		const identity = this.projectForAgent(input.agent);
-		return {
-			kind: "success",
-			text: formatCommandSummary(this.store, identity)
-		};
-	}
-	onSessionEvent(session, event) {
+	/** 记下一次装配样本（纯内存；下次轮末/会话末批量落盘）。 */
+	noteInjection(session, sample) {
 		if (this.disposed) return;
-		const buffer = this.bufferFor(session);
-		const data = event.data !== null && typeof event.data === "object" ? event.data : {};
-		if (event.type === "turn/start" || event.type === "turn/end") buffer.currentTurn = typeof data.turn === "number" ? data.turn : buffer.currentTurn;
-		buffer.events.push({
-			seq: event.seq,
-			type: event.type,
-			data: event.data,
-			turn: buffer.currentTurn
-		});
-		if (buffer.events.length > EVENT_BUFFER_LIMIT) buffer.events.splice(0, buffer.events.length - EVENT_BUFFER_LIMIT);
-		buffer.lastTouchedAt = Date.now();
+		const buffer = this.bufferForSession(session);
+		buffer.injection = sample;
+		buffer.injectionRecorded = false;
 	}
-	onTurnStopping(payload) {
+	/** 会话 id；缺省为空串。 */
+	sessionIdOf(agent) {
+		const id = agent?.session?.id;
+		return typeof id === "string" ? id : "";
+	}
+	/** 停止后台工作：中断流、落盘计数、等待在途任务。 */
+	async dispose() {
 		if (this.disposed) return;
-		const agent = (payload !== null && typeof payload === "object" ? payload : {}).agent;
-		if (agent?.session === void 0) return;
-		const buffer = this.bufferFor(agent.session);
-		buffer.agent = agent;
-		buffer.modelRoute = this.modelRouteOf(agent);
-		this.flushRecall(buffer);
-		if (buffer.subagent) return;
+		this.disposed = true;
+		this.abort.abort();
+		for (const buffer of this.buffers.values()) this.flushRecall(buffer);
+		this.buffers.clear();
+		await Promise.allSettled([...this.operations]);
+	}
+	/** 首次事件时解析项目身份；此后只读缓冲里的值。 */
+	ensureProject(buffer) {
+		if (buffer.project !== null) return;
+		const identity = this.projectForPath(buffer.session.header?.cwd);
+		if (identity !== null) buffer.project = identity;
+	}
+	/** 落盘一个会话的召回计数与装配样本。 */
+	flushRecall(buffer) {
+		const injection = buffer.injection !== null && !buffer.injectionRecorded ? buffer.injection : void 0;
+		flushRecall({
+			store: this.store,
+			sessionId: buffer.sessionId,
+			counters: buffer,
+			...injection === void 0 ? {} : { injection },
+			log: this.log
+		});
+		if (injection !== void 0) buffer.injectionRecorded = true;
+	}
+	/** 会话末的批量补漏：开关、子代理、模型路由都满足才发一次请求。 */
+	captureSessionEnd(buffer, agent) {
 		const settings = this.store.settings();
-		if (!settings.captureEnabled) {
-			buffer.lastCapturedTurn = buffer.currentTurn;
+		if (!settings.captureEnabled) return;
+		if (!settings.captureSessionEnd) return;
+		if (buffer.subagent) return;
+		if (agent !== void 0) buffer.agent = agent;
+		buffer.modelRoute = buffer.modelRoute ?? this.modelRouteOf(agent);
+		if (buffer.modelRoute === null) {
+			this.log("warn", "会话结束补漏缺少模型路由（会话尚无请求头），跳过");
+			recordCaptureAttempt(this.store, this.log, 0, true, {
+				sessionId: buffer.sessionId,
+				skippedReason: "no-model-route"
+			});
 			return;
 		}
-		const digest = this.digestForTurns(buffer, buffer.currentTurn);
-		if (digest === null) return;
-		const force = hasForceSignal(buffer.events.map((event) => ({
-			seq: event.seq,
-			type: event.type,
-			data: event.data
-		})), digest);
-		if (!gateCapture(digest, {
-			subagent: buffer.subagent,
-			enabled: settings.captureEnabled,
-			capturedThroughThisTurn: buffer.lastCapturedTurn >= buffer.currentTurn,
-			force
-		}).capture) {
-			buffer.lastCapturedTurn = buffer.currentTurn;
-			this.store.recordCapture(0, true);
+		const digest = this.digestForTurns(buffer, buffer.currentTurn, buffer.lastCapturedTurn + 1);
+		if (digest === null || digest.userTexts.length === 0 && digest.assistantTexts.length === 0 && !digest.hadToolCalls) {
+			recordCaptureAttempt(this.store, this.log, 0, true, {
+				sessionId: buffer.sessionId,
+				skippedReason: "empty-session"
+			});
 			return;
 		}
 		this.enqueueExtraction(buffer, digest);
 	}
-	onAgentDisposed(payload) {
-		if (this.disposed) return;
-		const agent = (payload !== null && typeof payload === "object" ? payload : {}).agent;
-		const sessionId = this.sessionIdOf(agent);
-		if (sessionId === "") return;
-		const buffer = this.buffers.get(sessionId);
-		if (buffer === void 0) return;
-		this.flushRecall(buffer);
-		const settings = this.store.settings();
-		if (settings.captureEnabled && settings.captureSessionEnd && !buffer.subagent && buffer.modelRoute !== null) {
-			const digest = this.digestForTurns(buffer, Number.MAX_SAFE_INTEGER, buffer.lastCapturedTurn + 1);
-			if (digest !== null) this.enqueueExtraction(buffer, digest);
-		}
-		this.buffers.delete(sessionId);
-	}
+	/** 取 `[fromTurn, turn]` 区间的事件摘要。 */
 	digestForTurns(buffer, turn, fromTurn) {
-		const from = fromTurn ?? turn;
-		const events = buffer.events.filter((event) => event.turn >= from && event.turn <= turn).map((event) => ({
+		const events = buffer.events.filter((event) => event.turn >= fromTurn && event.turn <= turn).map((event) => ({
 			seq: event.seq,
 			type: event.type,
-			data: event.data
+			data: event.data,
+			turn: event.turn
 		}));
 		if (events.length === 0) return null;
 		return digestOf(events, buffer.sessionId, turn);
 	}
+	/** 入队一次提炼：单运行 + 单排队（新的覆盖旧的）。 */
 	enqueueExtraction(buffer, digest) {
 		buffer.lastCapturedTurn = Math.max(buffer.lastCapturedTurn, digest.turn);
 		if (buffer.running) {
@@ -6759,22 +6550,32 @@ var MemoryRuntime = class {
 		this.operations.add(task);
 		task.finally(() => this.operations.delete(task));
 	}
+	/** 一次提炼请求：拼输入、收集文本、解析并写入。 */
 	async runExtraction(buffer, digest) {
-		const llm = this.llm();
+		const llm = this.getLlm();
 		if (llm === null) {
 			this.log("warn", "记忆提炼需要 llm 服务，但宿主尚未提供");
-			this.store.recordCapture(0, true);
+			recordCaptureAttempt(this.store, this.log, 0, true, {
+				sessionId: buffer.sessionId,
+				skippedReason: "llm-unavailable"
+			});
 			return;
 		}
 		if (buffer.modelRoute === null) {
 			this.log("warn", "记忆提炼缺少模型路由（会话尚无请求头），跳过");
-			this.store.recordCapture(0, true);
+			recordCaptureAttempt(this.store, this.log, 0, true, {
+				sessionId: buffer.sessionId,
+				skippedReason: "no-model-route"
+			});
 			return;
 		}
 		const project = buffer.project ?? this.projectForPath(buffer.session.header?.cwd);
 		buffer.project = project;
 		const projectKey = project?.projectKey ?? "";
-		const existing = this.store.search("all", projectKey, "", 50).map((entry) => ({
+		const existing = this.store.search("all", projectKey, {
+			query: "",
+			limit: 50
+		}).filter((entry) => entry.status === "active").map((entry) => ({
 			id: entry.id,
 			type: entry.type,
 			name: entry.name,
@@ -6828,7 +6629,10 @@ var MemoryRuntime = class {
 		if (items === null) {
 			const shape = [...chunkTypes].map(([type, count]) => `${type}:${count}`).join(" ");
 			this.log("warn", `记忆提炼返回了无法解析的 JSON，已跳过（长度 ${raw.length}，结束 ${finishReason || "unknown"}，块 ${shape || "none"}，开头：${raw.slice(0, 160).replace(/\s+/gu, " ")}）`);
-			this.store.recordCapture(0, true);
+			recordCaptureAttempt(this.store, this.log, 0, true, {
+				sessionId: buffer.sessionId,
+				skippedReason: "parse-error"
+			});
 			return;
 		}
 		let written = 0;
@@ -6852,75 +6656,648 @@ var MemoryRuntime = class {
 				this.log("warn", `写入记忆失败：${error instanceof Error ? error.message : String(error)}`);
 			}
 		}
-		this.store.recordCapture(written, written === 0);
+		recordCaptureAttempt(this.store, this.log, written, written === 0, {
+			sessionId: buffer.sessionId,
+			...written === 0 ? { skippedReason: "no-durable-fact" } : {}
+		});
 		if (written > 0 && project !== null) this.touchProject(project);
 	}
+	/** 会话最近一次请求头里的模型路由，退化到 agent options。 */
 	modelRouteOf(agent) {
 		try {
-			const config = (agent.session?.requestHeader?.())?.config;
+			const config = (agent?.session?.requestHeader?.())?.config;
 			if (config !== void 0 && typeof config.provider === "string" && config.provider !== "" && typeof config.model === "string" && config.model !== "") return {
 				provider: config.provider,
 				model: config.model
 			};
 		} catch {}
-		const options = agent.options;
+		const options = agent?.options;
 		if (options !== void 0 && typeof options.provider === "string" && options.provider !== "" && typeof options.model === "string" && options.model !== "") return {
 			provider: options.provider,
 			model: options.model
 		};
 		return null;
 	}
-	noteToolUsage(agent, resultIds, usedIds) {
-		const session = agent?.session;
-		if (session === void 0) return;
-		const buffer = this.bufferFor(session);
-		for (const id of usedIds) buffer.used.add(id);
-		for (const id of resultIds) if (buffer.injected.has(id)) buffer.used.add(id);
-		else buffer.overflow.add(id);
-	}
-	flushRecall(buffer) {
-		if (buffer.injected.size === 0 && buffer.overflow.size === 0) return;
-		try {
-			this.store.recordRecall(buffer.sessionId, [...buffer.injected], [...buffer.used], buffer.overflow.size);
-		} catch (error) {
-			this.log("warn", `写命中率统计失败：${error instanceof Error ? error.message : String(error)}`);
-		}
-	}
-	bufferFor(session) {
-		const sessionId = this.sessionIdOf({ session });
-		const existing = this.buffers.get(sessionId);
-		if (existing !== void 0) return existing;
-		const buffer = {
-			session,
-			sessionId,
-			agent: null,
-			subagent: session.header?.origin === "subagent",
-			currentTurn: 0,
-			lastCapturedTurn: 0,
-			events: [],
-			injected: /* @__PURE__ */ new Set(),
-			used: /* @__PURE__ */ new Set(),
-			overflow: /* @__PURE__ */ new Set(),
-			project: null,
-			modelRoute: null,
-			running: false,
-			pending: null,
-			lastTouchedAt: Date.now()
+};
+// src/memory/runtime/commands.ts
+/** `/remember` 的 handler。 */
+function commandRemember(input, options) {
+	const raw = text(input.rawInput);
+	if (raw === "") return {
+		kind: "error",
+		text: "用法：/remember [global] <要记住的内容>"
+	};
+	const requestedGlobal = /^global\s+/iu.test(raw);
+	const body = raw.replace(/^global\s+/iu, "").trim();
+	if (body === "") return {
+		kind: "error",
+		text: "用法：/remember [global] <要记住的内容>"
+	};
+	const project = options.projectForAgent(input.agent);
+	const scope = requestedGlobal || project === null ? "global" : "project";
+	const name = body.length > LIMITS.name ? `${body.slice(0, LIMITS.name - 1)}…` : body;
+	const entry = options.store.save({
+		name,
+		description: body.slice(0, LIMITS.description),
+		type: "preference",
+		scope,
+		project: scope === "project" ? project?.projectKey ?? "" : "",
+		content: body.slice(0, LIMITS.content),
+		importance: 70,
+		originSessionId: input.agent?.session?.id ?? "",
+		source: "user"
+	});
+	if (scope === "project" && project !== null) options.touchProject(project);
+	const target = scope === "global" ? "全局" : `项目（${project?.displayName ?? ""}）`;
+	return {
+		kind: "success",
+		text: `${entry.reinforcement > 0 ? "已强化已有记忆" : "已记住"}：${entry.name}（${target}，id=${entry.id}）`
+	};
+}
+/** `/forget` 的 handler：只投一票，归档交给面板。 */
+function commandForget(input, options) {
+	const id = text(input.rawInput);
+	if (id === "") return {
+		kind: "error",
+		text: "用法：/forget <记忆 id>"
+	};
+	const project = options.projectForAgent(input.agent);
+	const inProject = options.store.get("project", project?.projectKey ?? "", id) !== void 0;
+	try {
+		return {
+			kind: "success",
+			text: options.store.forget(inProject ? "project" : "global", inProject ? project?.projectKey ?? "" : "", id).archived ? `记忆 ${id} 已归档。` : `记忆 ${id} 已标记为过时；归档由用户在面板确认。`
 		};
-		this.buffers.set(sessionId, buffer);
-		if (this.buffers.size > SESSION_LIMIT) {
-			let oldest = null;
-			for (const candidate of this.buffers.values()) {
-				if (candidate.running) continue;
-				if (oldest === null || candidate.lastTouchedAt < oldest.lastTouchedAt) oldest = candidate;
-			}
-			if (oldest !== null && oldest !== buffer) this.buffers.delete(oldest.sessionId);
-		}
-		return buffer;
+	} catch (error) {
+		return {
+			kind: "error",
+			text: error instanceof Error ? error.message : String(error)
+		};
 	}
-	sessionIdOf(agent) {
-		const id = agent?.session?.id;
-		return typeof id === "string" ? id : "";
+}
+/** `/memory` 的 handler：全局 + 当前项目的概况。 */
+function commandMemory(input, options) {
+	const identity = options.projectForAgent(input.agent);
+	return {
+		kind: "success",
+		text: formatCommandSummary(options.store, identity)
+	};
+}
+/**
+* 注册三个记忆命令；注册失败逐条记录。
+*
+* @param commands - 宿主 commands 服务。
+* @param options - 存储与项目身份能力。
+* @param log - 注册失败日志。
+*/
+function registerMemoryCommands(commands, options, log) {
+	const definitions = [
+		{
+			name: "remember",
+			description: "保存一条长期记忆（默认项目级，可写 global）",
+			input: { hint: "[global] <要记住的内容>" },
+			handler: (input) => commandRemember(input, options)
+		},
+		{
+			name: "forget",
+			description: "把一条记忆标记为过时（归档由面板确认）",
+			input: { hint: "<记忆 id>" },
+			handler: (input) => commandForget(input, options)
+		},
+		{
+			name: "memory",
+			description: "查看当前全局/项目记忆概况",
+			handler: (input) => commandMemory(input, options)
+		}
+	];
+	const disposers = [];
+	for (const definition of definitions) try {
+		const dispose = commands.register(definition);
+		if (typeof dispose === "function") disposers.push(dispose);
+	} catch (error) {
+		log("warn", `注册命令 /${definition.name} 失败：${error instanceof Error ? error.message : String(error)}`);
+	}
+	return disposers;
+}
+// src/memory/runtime/prompt.ts
+/** 静态使用指南；保持极短，不复述「什么时候该记」的长篇策略。 */
+const MEMORY_GUIDE = `## Memory
+
+长期记忆工具：\`memory_search\` / \`memory_get\` / \`memory_save\` / \`memory_forget\`。
+- 保存前先 \`memory_search\` 查重；仅当用户显式要求记住，或出现稳定的偏好、决策、坑、项目事实且没有重复时才调用 \`memory_save\`。
+- 不记录临时任务状态、密钥、凭证或大段代码；正文上限 8000 字符。
+- 静态规则放 \`AGENTS.md\`，这里只存跨会话的长期事实；记忆是历史经验，当前指令与用户最新要求优先。
+- 记忆过时用 \`memory_forget\` 标记；归档由用户在面板确认。`;
+/** section 与 context 在宿主提示词里的固定名字（面板刷新按名字定位）。 */
+const MEMORY_GUIDE_SECTION = "agent-extension:memory-guide";
+const MEMORY_CONTEXT_SECTION = "agent-extension:memory";
+/** 会话 → 已渲染索引字符串的缓存上限（与运行时会话缓冲同量级）。 */
+const RECALL_CACHE_LIMIT = 200;
+/**
+* 会话首步索引缓存。
+*
+* 只存内存；`invalidate` 由 `MemoryRuntime.invalidateRecall()` 暴露给面板。
+*/
+var RecallCache = class {
+	entries = /* @__PURE__ */ new Map();
+	limit;
+	constructor(limit = RECALL_CACHE_LIMIT) {
+		this.limit = Math.max(1, limit);
+	}
+	/** 取某会话已渲染的字符串；未命中返回 undefined。 */
+	get(sessionId) {
+		if (sessionId === "") return void 0;
+		return this.entries.get(sessionId);
+	}
+	/** 记录某会话的首步渲染结果；超出上限时淘汰最早的一条。 */
+	set(sessionId, value) {
+		if (sessionId === "") return;
+		if (!this.entries.has(sessionId) && this.entries.size >= this.limit) {
+			const oldest = this.entries.keys().next().value;
+			if (oldest !== void 0) this.entries.delete(oldest);
+		}
+		this.entries.set(sessionId, value);
+	}
+	/** 失效一个会话（不传则清空全部）；下一次装配会重新渲染。 */
+	invalidate(sessionId) {
+		if (sessionId === void 0) {
+			this.entries.clear();
+			return;
+		}
+		this.entries.delete(sessionId);
+	}
+	/** 当前缓存条数（诊断与测试用）。 */
+	get size() {
+		return this.entries.size;
+	}
+};
+/**
+* 向宿主的 systemPrompt 服务注册两条提示词贡献。
+*
+* 注册失败逐条记录并继续；返回的 disposer 由调用方统一回收。
+*
+* @param systemPrompt - 宿主提示词服务。
+* @param recallText - 渲染某 agent 的索引（内部按会话缓存）。
+* @param log - 失败日志。
+*/
+function registerMemoryPrompt(systemPrompt, recallText, log) {
+	const disposers = [];
+	try {
+		const section = {
+			name: MEMORY_GUIDE_SECTION,
+			order: 700,
+			text: MEMORY_GUIDE,
+			interpolate: false
+		};
+		disposers.push(systemPrompt.section(section));
+	} catch (error) {
+		log("warn", `注册记忆使用指南失败：${error instanceof Error ? error.message : String(error)}`);
+	}
+	try {
+		const context = {
+			name: MEMORY_CONTEXT_SECTION,
+			order: 150,
+			required: false,
+			interpolate: false,
+			text: (assembly) => recallText(assembly.agent)
+		};
+		disposers.push(systemPrompt.context(context));
+	} catch (error) {
+		log("warn", `注册记忆上下文失败：${error instanceof Error ? error.message : String(error)}`);
+	}
+	if (disposers.length > 0) log("info", "记忆提示词已注册（使用指南 + 索引注入）");
+	return disposers;
+}
+// src/memory/runtime/tools.ts
+/** 注册到宿主记忆工具的名字；路由与管理面按此列表判断工具是否存在。 */
+const MEMORY_TOOL_NAMES = [
+	"memory_search",
+	"memory_get",
+	"memory_save",
+	"memory_forget"
+];
+/** 给外部调用方收窄记忆类型。 */
+function asMemoryType(value) {
+	return isMemoryType(value) ? value : void 0;
+}
+/** 统一的结果渲染器：工具返回值是纯文本。 */
+function textOutput() {
+	return {
+		schema: { type: "string" },
+		render: (_args, value) => [{
+			type: "text",
+			text: String(value ?? "")
+		}]
+	};
+}
+/** 构造四个记忆工具的定义（不注册）。 */
+function createMemoryTools(options) {
+	const { store } = options;
+	return [
+		{
+			name: "memory_search",
+			description: "Search durable long-term memories (global and current project) by keywords; an empty query lists the ranked index. Each result is one summary line: id · type · name · one-sentence description · updated date. Call memory_get with those ids for full content. The `type` filter is pushed down to the store.",
+			parameters: {
+				type: "object",
+				properties: {
+					query: {
+						type: "string",
+						description: "Keywords to search; an empty string lists the ranked index."
+					},
+					scope: {
+						type: "string",
+						enum: [
+							"all",
+							"global",
+							"project"
+						],
+						description: "Search scope; defaults to all."
+					},
+					type: {
+						type: "string",
+						enum: [
+							"preference",
+							"decision",
+							"gotcha",
+							"project",
+							"reference"
+						],
+						description: "Only return memories of this type (filtered by the store)."
+					},
+					limit: {
+						type: "number",
+						description: "Maximum results (default 10, max 50)."
+					}
+				},
+				required: ["query"]
+			},
+			output: textOutput(),
+			execute: async (args, exec) => {
+				const record = args !== null && typeof args === "object" ? args : {};
+				const query = text(record.query);
+				const scopeValue = record.scope === "global" || record.scope === "project" ? record.scope : "all";
+				const type = asMemoryType(record.type);
+				const limit = clampInt(record.limit, 1, 50, 10);
+				const project = options.projectForAgent(exec.agent);
+				const results = store.search(scopeValue, project?.projectKey ?? "", {
+					query,
+					...type === void 0 ? {} : { type },
+					includeArchived: false,
+					limit
+				});
+				options.noteToolUsage(exec.agent, results.map((entry) => entry.id), []);
+				return formatSearchResult(results, query);
+			}
+		},
+		{
+			name: "memory_get",
+			description: `Read the full content of one to three memories by id (ids come from memory_search). One call returns at most 3 memories and ${formatNumber(GET_MAX_CHARS)} characters; when the output budget cuts the result it says so explicitly and lists the ids to fetch next.`,
+			parameters: {
+				type: "object",
+				properties: { ids: {
+					type: "array",
+					items: { type: "string" },
+					description: `Memory ids from memory_search (at most 3 per call).`
+				} },
+				required: ["ids"]
+			},
+			output: textOutput(),
+			execute: async (args, exec) => {
+				const ids = normalizeIds((args !== null && typeof args === "object" ? args : {}).ids);
+				const requested = ids.slice(0, 3);
+				const ignored = ids.slice(3);
+				const project = options.projectForAgent(exec.agent);
+				const entries = [];
+				const missing = [];
+				for (const id of requested) {
+					const entry = store.get("project", project?.projectKey ?? "", id) ?? store.get("global", "", id);
+					if (entry === void 0) missing.push(id);
+					else entries.push(entry);
+				}
+				options.noteToolUsage(exec.agent, [], entries.map((entry) => entry.id));
+				return formatGetResult(entries, missing, { ignoredIds: ignored });
+			}
+		},
+		{
+			name: "memory_save",
+			description: "Persist one durable fact (stable preference, decision, gotcha, project fact or reference) so later sessions can recall it. First run memory_search to check for duplicates; save only when the user explicitly asks to remember something, or when such a stable fact emerges and no existing memory already covers it. `scope` is required: global = a cross-project user preference or working convention; project = anything tied to this repository. The Markdown body is capped at 8000 characters; longer input is truncated.",
+			parameters: {
+				type: "object",
+				properties: {
+					name: {
+						type: "string",
+						description: "Short title (<=60 chars)."
+					},
+					description: {
+						type: "string",
+						description: "One-sentence summary."
+					},
+					type: {
+						type: "string",
+						enum: [
+							"preference",
+							"decision",
+							"gotcha",
+							"project",
+							"reference"
+						]
+					},
+					scope: {
+						type: "string",
+						enum: ["global", "project"],
+						description: "Required. global = cross-project preference/convention; project = fact tied to this repository."
+					},
+					content: {
+						type: "string",
+						description: "Markdown body with the durable detail (<=8000 chars)."
+					},
+					tags: {
+						type: "array",
+						items: { type: "string" }
+					},
+					importance: {
+						type: "number",
+						description: "0-100; default 50."
+					},
+					supersedes: {
+						type: "array",
+						items: { type: "string" },
+						description: "Memory ids this fact replaces."
+					}
+				},
+				required: [
+					"name",
+					"description",
+					"type",
+					"scope",
+					"content"
+				]
+			},
+			output: textOutput(),
+			execute: async (args, exec) => {
+				const record = args !== null && typeof args === "object" ? args : {};
+				const name = text(record.name);
+				const content = text(record.content);
+				if (name === "") return "未保存：name 不能为空。";
+				if (content === "") return "未保存：content 不能为空。";
+				const scopeValue = record.scope;
+				if (scopeValue !== "global" && scopeValue !== "project") return "未保存：scope 必填，只能是 global（跨项目偏好/约定）或 project（本仓库事实）。";
+				const project = options.projectForAgent(exec.agent);
+				if (scopeValue === "project" && project === null) return "未保存：当前会话没有项目身份（工作目录不在 git 仓库内），请改用 scope=global。";
+				const scope = scopeValue;
+				const description = text(record.description).slice(0, LIMITS.description) || content.replace(/\s+/gu, " ").slice(0, LIMITS.description);
+				const entry = store.save({
+					name: name.slice(0, LIMITS.name),
+					description,
+					type: asMemoryType(record.type) ?? "reference",
+					scope,
+					project: scope === "project" ? project?.projectKey ?? "" : "",
+					content: content.slice(0, LIMITS.content),
+					tags: normalizeTags(record.tags),
+					importance: clampInt(record.importance, 0, 100, 50),
+					supersedes: normalizeIds(record.supersedes),
+					originSessionId: exec.agent?.session?.id ?? "",
+					source: "tool"
+				});
+				if (scope === "project" && project !== null) options.touchProject(project);
+				return `${entry.reinforcement > 0 ? "已强化已有记忆" : "已保存记忆"} ${entry.id}（${entry.type}，${entry.scope}）。`;
+			}
+		},
+		{
+			name: "memory_forget",
+			description: "Flag one memory as outdated. This marks it stale (it stops being injected but stays searchable); archiving is confirmed by the user in the management panel, so never call this twice to force an archive.",
+			parameters: {
+				type: "object",
+				properties: {
+					id: {
+						type: "string",
+						description: "Memory id from memory_search."
+					},
+					reason: {
+						type: "string",
+						description: "Why the memory no longer holds."
+					}
+				},
+				required: ["id"]
+			},
+			output: textOutput(),
+			execute: async (args, exec) => {
+				const record = args !== null && typeof args === "object" ? args : {};
+				const id = text(record.id);
+				if (id === "") return "未标记：id 不能为空。";
+				const project = options.projectForAgent(exec.agent);
+				const scope = store.get("project", project?.projectKey ?? "", id) !== void 0 ? "project" : "global";
+				try {
+					return store.forget(scope, scope === "project" ? project?.projectKey ?? "" : "", id, text(record.reason)).archived ? `记忆 ${id} 已归档。` : `记忆 ${id} 已标记过时；归档由用户在面板确认。`;
+				} catch (error) {
+					return `未标记：${error instanceof Error ? error.message : String(error)}`;
+				}
+			}
+		}
+	];
+}
+/**
+* 向宿主 tools 服务注册四个记忆工具。
+*
+* @param tools - 宿主 tools 服务。
+* @param options - 存储与项目身份能力。
+* @param log - 注册失败日志。
+*/
+function registerMemoryTools(tools, options, log) {
+	const disposers = [];
+	for (const definition of createMemoryTools(options)) try {
+		disposers.push(tools.register(definition));
+	} catch (error) {
+		log("warn", `注册工具 ${definition.name} 失败：${error instanceof Error ? error.message : String(error)}`);
+	}
+	if (disposers.length > 0) log("info", `记忆工具已注册：${disposers.length} 个（${MEMORY_TOOL_NAMES.join(" / ")}）`);
+	return disposers;
+}
+/** 给工具描述用的千位分隔数字（避免模板里写死 4,000 的魔法串）。 */
+function formatNumber(value) {
+	return value.toLocaleString("en-US");
+}
+// src/memory-host.ts
+/** 记忆运行时：宿主服务注册、会话索引缓存与生命周期。 */
+var MemoryRuntime = class {
+	ctx;
+	store;
+	log;
+	sessions;
+	recallCache = new RecallCache();
+	disposers = [];
+	llmService = null;
+	started = false;
+	disposed = false;
+	constructor(options) {
+		this.ctx = options.ctx;
+		this.store = options.store;
+		this.log = options.log;
+		this.sessions = new CaptureSessions({
+			store: options.store,
+			log: options.log,
+			llm: () => this.llm()
+		});
+	}
+	/** 接上宿主事件、提示词、工具与命令；单项失败不阻断其它项。 */
+	start() {
+		if (this.started) return;
+		this.started = true;
+		const steps = [
+			["存储目录", () => this.store.start()],
+			["事件监听", () => this.registerEventListeners()],
+			["提示词注入", () => this.registerPromptContributions()],
+			["模型工具", () => this.registerTools()],
+			["命令", () => this.registerCommands()]
+		];
+		for (const [label, run] of steps) try {
+			run();
+		} catch (error) {
+			this.log("warn", `记忆初始化「${label}」失败：${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
+	/** 停止后台工作、落盘统计并释放注册。 */
+	async dispose() {
+		if (this.disposed) return;
+		this.disposed = true;
+		const stopping = this.sessions.dispose();
+		for (const dispose of this.disposers.splice(0)) try {
+			dispose();
+		} catch {}
+		this.recallCache.invalidate();
+		await stopping;
+	}
+	/**
+	* 清空索引缓存；不传 sessionId 时清空全部。
+	*
+	* B1 面板「刷新索引」会调用；当前只暴露方法。
+	*/
+	invalidateRecall(sessionId) {
+		this.recallCache.invalidate(sessionId);
+	}
+	/** 解析工作目录的项目身份（写路径，登记项目）。 */
+	projectForPath(cwd) {
+		return this.sessions.projectForPath(cwd);
+	}
+	/** 解析某个 agent 的项目身份（写路径）。 */
+	projectForAgent(agent) {
+		return this.sessions.projectForAgent(agent);
+	}
+	registerEventListeners() {
+		this.listen("session/event", (...args) => {
+			this.sessions.onSessionEvent(args[0], args[1]);
+		});
+		this.listen("agent/turn-stopping", (...args) => {
+			this.sessions.onTurnStopping(args[0]);
+		});
+		this.listen("agent/disposed", (...args) => {
+			this.sessions.onAgentDisposed(args[0]);
+		});
+	}
+	listen(event, listener) {
+		try {
+			const dispose = this.ctx.on(event, (...args) => {
+				try {
+					listener(...args);
+				} catch (error) {
+					this.log("warn", `处理 ${event} 失败：${error instanceof Error ? error.message : String(error)}`);
+				}
+			});
+			if (typeof dispose === "function") this.disposers.push(dispose);
+		} catch (error) {
+			this.log("warn", `订阅 ${event} 失败：${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
+	registerPromptContributions() {
+		const systemPrompt = this.service("systemPrompt");
+		if (systemPrompt !== null) {
+			this.applyPrompt(systemPrompt);
+			return;
+		}
+		this.log("info", "等待 systemPrompt 服务就绪后注册记忆提示词");
+		try {
+			this.ctx.inject(["systemPrompt"], (scope) => {
+				const ready = this.serviceFrom(scope, "systemPrompt");
+				if (ready !== null) this.applyPrompt(ready);
+			});
+		} catch (error) {
+			this.log("warn", `等待 systemPrompt 服务失败：${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
+	applyPrompt(systemPrompt) {
+		this.disposers.push(...registerMemoryPrompt(systemPrompt, (agent) => this.recallText(agent), this.log));
+	}
+	/** 提示词装配入口：同一会话首步渲染一次，之后命中缓存。 */
+	recallText(agent) {
+		if (agent === void 0 || this.disposed) return "";
+		const sessionId = typeof agent.session?.id === "string" ? agent.session.id : "";
+		if (sessionId === "") return this.renderRecall(agent);
+		const cached = this.recallCache.get(sessionId);
+		if (cached !== void 0) return cached;
+		const rendered = this.renderRecall(agent);
+		this.recallCache.set(sessionId, rendered);
+		return rendered;
+	}
+	/** 真正的索引渲染；只读存储与内存缓冲，不解析项目身份。 */
+	renderRecall(agent) {
+		try {
+			const settings = this.store.settings();
+			if (!settings.injectEnabled) return "";
+			const session = agent.session;
+			if (session !== void 0 && this.sessions.isSubagent(session)) return "";
+			const buffer = session === void 0 ? null : this.sessions.bufferForSession(session);
+			const identity = buffer?.project ?? this.sessions.cachedProjectForAgent(agent);
+			const snapshot = renderRecallContext({
+				store: this.store,
+				identity,
+				settings
+			});
+			if (buffer !== null && session !== void 0) {
+				for (const id of snapshot.ids) buffer.injected.add(id);
+				this.sessions.noteInjection(session, {
+					entries: snapshot.ids.length,
+					chars: snapshot.text.length,
+					truncated: snapshot.truncated
+				});
+			}
+			return snapshot.text;
+		} catch (error) {
+			this.log("warn", `渲染记忆上下文失败：${error instanceof Error ? error.message : String(error)}`);
+			return "";
+		}
+	}
+	registerTools() {
+		const tools = this.service("tools");
+		if (tools !== null) {
+			this.applyTools(tools);
+			return;
+		}
+		this.log("info", "等待 tools 服务就绪后注册记忆工具");
+		try {
+			this.ctx.inject(["tools"], (scope) => {
+				const ready = this.serviceFrom(scope, "tools");
+				if (ready !== null) this.applyTools(ready);
+			});
+		} catch (error) {
+			this.log("warn", `等待 tools 服务失败：${error instanceof Error ? error.message : String(error)}`);
+		}
+	}
+	applyTools(tools) {
+		this.disposers.push(...registerMemoryTools(tools, {
+			store: this.store,
+			projectForAgent: (agent) => this.sessions.projectForAgent(agent),
+			noteToolUsage: (agent, resultIds, usedIds) => this.sessions.noteToolUsage(agent, resultIds, usedIds),
+			touchProject: (identity) => this.sessions.touchProject(identity)
+		}, this.log));
+	}
+	registerCommands() {
+		const commands = this.ctx.commands;
+		if (commands === void 0) return;
+		this.disposers.push(...registerMemoryCommands(commands, {
+			store: this.store,
+			projectForAgent: (agent) => this.sessions.projectForAgent(agent),
+			touchProject: (identity) => this.sessions.touchProject(identity)
+		}, this.log));
 	}
 	service(name) {
 		try {
@@ -6948,6 +7325,280 @@ var MemoryRuntime = class {
 		return this.llmService;
 	}
 };
+/** 迁移备份目录前缀。 */
+const MEMORY_BACKUP_PREFIX = ".backup-v1-";
+/**
+* 由 store 负责渲染/维护的 frontmatter 字段；其余字段原样写回。
+*
+* 保持与 `renderEntry` 的字段集合一致（新增字段时两处同步）。
+*/
+const KNOWN_ENTRY_FIELDS = /* @__PURE__ */ new Set([
+	"schema",
+	"id",
+	"name",
+	"description",
+	"type",
+	"scope",
+	"project",
+	"tags",
+	"importance",
+	"confidence",
+	"status",
+	"reinforcement",
+	"obsoleteVotes",
+	"pinned",
+	"usedCount",
+	"lastUsedAt",
+	"supersedes",
+	"mergedFrom",
+	"source",
+	"originSessionId",
+	"createdAt",
+	"updatedAt"
+]);
+/** 去掉文件头 BOM；手改文件可能带。 */
+function stripBom(source) {
+	return source.replace(/^\uFEFF/u, "");
+}
+/**
+* 按字段把 frontmatter 拆成原始行块（不做 YAML 解析）。
+*
+* 缩进行、列表项、空行与注释都归属上一个字段块；无法解析的顶层杂行单独成块。
+* 这样未知字段（含嵌套结构）可以原样写回，而不会被重新序列化破坏。
+*
+* @param source - 原始 Markdown。
+*/
+function splitFrontmatterBlocks(source) {
+	const normalized = stripBom(source).replace(/\r\n/gu, "\n");
+	if (!normalized.startsWith("---\n")) return [];
+	const end = normalized.indexOf("\n---", 4);
+	if (end === -1) return [];
+	const header = normalized.slice(4, end);
+	const blocks = [];
+	let current = null;
+	for (const line of header.split("\n")) {
+		if (line.trim() === "") {
+			if (current !== null) current.lines.push(line);
+			continue;
+		}
+		if (line.trimStart().startsWith("#")) {
+			if (current !== null) current.lines.push(line);
+			else blocks.push({
+				key: null,
+				lines: [line]
+			});
+			continue;
+		}
+		if (/^\s/u.test(line) || /^-\s+/u.test(line)) {
+			if (current !== null) current.lines.push(line);
+			else blocks.push({
+				key: null,
+				lines: [line]
+			});
+			continue;
+		}
+		const pair = /^([A-Za-z0-9_.-]+)\s*:\s*(.*)$/u.exec(line);
+		if (pair === null) {
+			blocks.push({
+				key: null,
+				lines: [line]
+			});
+			current = null;
+			continue;
+		}
+		current = {
+			key: pair[1],
+			lines: [line]
+		};
+		blocks.push(current);
+	}
+	return blocks;
+}
+/** 提取未知字段的原始 frontmatter 行（写回时追加在已知字段之后）。 */
+function unknownFrontmatterLines(source) {
+	const lines = [];
+	for (const block of splitFrontmatterBlocks(source)) {
+		if (block.key === null || KNOWN_ENTRY_FIELDS.has(block.key)) continue;
+		for (const line of block.lines) {
+			if (line.trim() === "---") continue;
+			lines.push(line);
+		}
+	}
+	return lines;
+}
+/**
+* 读取条目声明的 schema 版本；缺失或非法按 v1（0）处理，便于迁移。
+*
+* @param source - 原始 Markdown。
+*/
+function entrySchemaOf(source) {
+	const value = parseFrontmatter(stripBom(source)).data.schema;
+	if (typeof value === "number" && Number.isFinite(value)) return value;
+	return 0;
+}
+/** 该文件是否需要 v1 → v2 迁移（schema 缺失/低于当前版本）。 */
+function needsEntryMigration(source) {
+	return entrySchemaOf(source) < 2;
+}
+/** 原子写文本：同目录临时文件 + rename（与 store 的写盘约定一致）。 */
+function writeAtomicText(file, content) {
+	mkdirSync(path.dirname(file), { recursive: true });
+	const tmp = `${file}.tmp-${process.pid}-${randomBytes(2).toString("hex")}`;
+	writeFileSync(tmp, content, "utf8");
+	renameSync(tmp, file);
+}
+/** 扫描一个作用域目录，返回待迁移条目与旧索引文件。 */
+function scanScopeDir(options) {
+	const { dir, root, scope, project, log, parse, report } = options;
+	let names = [];
+	try {
+		names = readdirSync(dir).filter((name) => name.endsWith(".md")).sort();
+	} catch {
+		return {
+			candidates: [],
+			indexes: []
+		};
+	}
+	const candidates = [];
+	const indexes = [];
+	for (const name of names) {
+		const file = path.join(dir, name);
+		const relative = path.relative(root, file);
+		if (name === "MEMORY.md") {
+			indexes.push({
+				file,
+				relative
+			});
+			continue;
+		}
+		let source = "";
+		try {
+			source = readFileSync(file, "utf8");
+		} catch (error) {
+			report.failed += 1;
+			log("warn", `记忆迁移跳过不可读文件 ${relative}：${error instanceof Error ? error.message : String(error)}`);
+			continue;
+		}
+		if (!needsEntryMigration(source)) continue;
+		const parsed = parse(source, scope, project, file);
+		if (parsed === null) {
+			report.failed += 1;
+			log("warn", `记忆迁移跳过无法解析的文件 ${relative}（原文件保持）`);
+			continue;
+		}
+		candidates.push({
+			file,
+			relative,
+			scope,
+			project,
+			entry: parsed.entry,
+			extras: parsed.extras
+		});
+	}
+	return {
+		candidates,
+		indexes
+	};
+}
+/** 生成唯一的备份目录（同一时刻重复迁移也不会覆盖旧备份）。 */
+function uniqueBackupDir(root) {
+	const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/gu, "-").replace(/Z$/u, "");
+	let candidate = path.join(root, `${MEMORY_BACKUP_PREFIX}${stamp}`);
+	let suffix = 2;
+	while (existsSync(candidate)) {
+		candidate = path.join(root, `${MEMORY_BACKUP_PREFIX}${stamp}-${suffix}`);
+		suffix += 1;
+	}
+	return candidate;
+}
+/** 把文件按相对路径复制进备份目录；失败返回 false（调用方不写回）。 */
+function backupFile(backupDir, file, relative, log) {
+	const target = path.join(backupDir, relative);
+	try {
+		mkdirSync(path.dirname(target), { recursive: true });
+		copyFileSync(file, target);
+		return true;
+	} catch (error) {
+		log("error", `记忆迁移备份失败 ${relative}（原文件保持）：${error instanceof Error ? error.message : String(error)}`);
+		return false;
+	}
+}
+/**
+* 扫描并迁移整个记忆树。
+*
+* @param options - 根目录、日志与 store 的解析/渲染回调。
+* @returns 迁移计数与备份目录；没有任何 v1 条目时 backupDir 为 null。
+*/
+function migrateMemoryTree(options) {
+	const report = {
+		migrated: 0,
+		failed: 0,
+		indexesRemoved: 0,
+		backupDir: null
+	};
+	const scopes = [{
+		dir: path.join(options.root, "global"),
+		scope: "global",
+		project: ""
+	}];
+	let projectKeys = [];
+	try {
+		projectKeys = readdirSync(path.join(options.root, "projects"), { withFileTypes: true }).filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+	} catch {
+		projectKeys = [];
+	}
+	for (const key of projectKeys) scopes.push({
+		dir: path.join(options.root, "projects", key),
+		scope: "project",
+		project: key
+	});
+	const candidates = [];
+	const indexes = [];
+	for (const scope of scopes) {
+		const scanned = scanScopeDir({
+			...scope,
+			root: options.root,
+			log: options.log,
+			parse: options.parse,
+			report
+		});
+		candidates.push(...scanned.candidates);
+		indexes.push(...scanned.indexes);
+	}
+	if (candidates.length === 0 && indexes.length === 0) return report;
+	const backupDir = uniqueBackupDir(options.root);
+	try {
+		mkdirSync(backupDir, { recursive: true });
+	} catch (error) {
+		options.log("error", `记忆迁移无法创建备份目录（本次不写回）：${error instanceof Error ? error.message : String(error)}`);
+		report.failed += candidates.length + indexes.length;
+		return report;
+	}
+	report.backupDir = backupDir;
+	const backedUp = [];
+	for (const candidate of candidates) if (backupFile(backupDir, candidate.file, candidate.relative, options.log)) backedUp.push(candidate);
+	else report.failed += 1;
+	const backedIndexes = indexes.filter((item) => {
+		if (backupFile(backupDir, item.file, item.relative, options.log)) return true;
+		report.failed += 1;
+		return false;
+	});
+	for (const candidate of backedUp) try {
+		writeAtomicText(candidate.file, options.render(candidate.entry, candidate.extras));
+		report.migrated += 1;
+	} catch (error) {
+		report.failed += 1;
+		options.log("error", `记忆迁移写回失败 ${candidate.relative}（原文件保持）：${error instanceof Error ? error.message : String(error)}`);
+	}
+	for (const index of backedIndexes) try {
+		unlinkSync(index.file);
+		report.indexesRemoved += 1;
+	} catch (error) {
+		report.failed += 1;
+		options.log("warn", `记忆迁移移除旧索引失败 ${index.relative}：${error instanceof Error ? error.message : String(error)}`);
+	}
+	return report;
+}
 // src/memory/preview.ts
 /**
 * 记忆预览文件的数据面：把记忆正文写成宿主可直接预览的临时 Markdown。
@@ -7080,46 +7731,55 @@ function removePreviewDir(dir) {
 }
 // src/memory/store.ts
 /**
-* File-backed memory store.
+* 基于文件系统的记忆存储。
 *
-* Layout under the plugin home (`~/.dsh/agent-extension/memory` by default):
+* 插件 home 下的目录布局（默认 `~/.dsh/agent-extension/memory`）：
 *
 * ```
 * memory/
-*   settings.json          user-tunable capture / injection settings
-*   stats.json             capture counters and per-session recall counters
-*   projects.json          known project identities
-*   global/MEMORY.md       global index (human + model readable)
-*   global/<id>.md         one fact per file (frontmatter + Markdown body)
-*   projects/<key>/...     same layout, scoped to one project identity
+*   settings.json          用户可调的捕获 / 注入设置
+*   stats.json             捕获 / 召回计数与有界最近样本
+*   projects.json         已登记的项目身份
+*   global/<id>.md         一事实一文件（frontmatter + Markdown 正文）
+*   projects/<key>/...     同一布局，限定到一个项目身份
+*   .backup-v1-<time>/    首次加载时对 schema v1 文件与旧 MEMORY.md 的备份
 * ```
 *
-* Markdown is authoritative; `MEMORY.md` is regenerated after every mutation
-* and the in-memory cache is invalidated by directory mtime, so hand edits and
-* our own writes stay consistent.
+* Markdown 是唯一真源：一事实一文件；缓存按每个文件的 `mtime + size` 指纹
+* 失效（只做 stat，不做内容哈希），因此手改文件会立即生效。B0 起不再生成
+* 也不再读取 `MEMORY.md`，旧副本会在首次加载时移入迁移备份目录。
 *
 * @module dsh-agent-extension/memory/store
 */
-const INDEX_FILE = "MEMORY.md";
 const SETTINGS_FILE = "settings.json";
 const STATS_FILE = "stats.json";
 const PROJECTS_FILE = "projects.json";
-const INDEX_HEADER = "# MEMORY INDEX\n\n";
+/** JSON 文档仍各自带 schema；条目统一用 `MEMORY_SCHEMA`。 */
 const SETTINGS_SCHEMA = 1;
-const STATS_SCHEMA = 1;
+const STATS_SCHEMA = 2;
 const PROJECTS_SCHEMA = 1;
-/** Injected index line cap; details stay one tool call away. */
+/** 注入索引单行截断长度；详情留给一次工具调用。 */
 const INDEX_LINE_CHARS = 120;
-/** Stats rows retained for the hit-rate readout. */
+/** 命中率读数保留的会话统计行数。 */
 const SESSION_STATS_KEEP = LIMITS.statsSessions;
-/** Escape one single-line frontmatter scalar. */
+/** stats.json 中有界的最近样本数组上限。 */
+const RECENT_SAMPLE_KEEP = LIMITS.statsRecent;
+/** stats.json 中保留的不同跳过原因上限。 */
+const SKIP_REASON_KEEP = 50;
+/** 转义一个单行 frontmatter 标量。 */
 function scalar(value) {
 	return `"${value.replace(/[\r\n]+/gu, " ").replace(/\\/gu, "\\\\").replace(/"/gu, "\\\"")}"`;
 }
-/** Render one entry file (frontmatter plus body). */
-function renderEntry(entry) {
-	return [
+/**
+* 渲染一个条目文件（frontmatter + 正文）。
+*
+* `extras` 承载未知 frontmatter 原始行；它们追加在已知字段之后，保证手写
+* 元数据在每次重写后仍然存在。
+*/
+function renderEntry(entry, extras = []) {
+	const lines = [
 		"---",
+		`schema: 2`,
 		`id: ${scalar(entry.id)}`,
 		`name: ${scalar(entry.name)}`,
 		`description: ${scalar(entry.description)}`,
@@ -7128,41 +7788,55 @@ function renderEntry(entry) {
 		`project: ${scalar(entry.project)}`,
 		`tags: [${entry.tags.map(scalar).join(", ")}]`,
 		`importance: ${entry.importance}`,
+		`confidence: ${entry.confidence}`,
 		`status: ${entry.status}`,
 		`reinforcement: ${entry.reinforcement}`,
 		`obsoleteVotes: ${entry.obsoleteVotes}`,
+		`pinned: ${entry.pinned ? "true" : "false"}`,
+		`usedCount: ${entry.usedCount}`,
+		...entry.lastUsedAt === void 0 || entry.lastUsedAt === "" ? [] : [`lastUsedAt: ${scalar(entry.lastUsedAt)}`],
 		`supersedes: [${entry.supersedes.map(scalar).join(", ")}]`,
+		`mergedFrom: [${entry.mergedFrom.map(scalar).join(", ")}]`,
+		`source: ${entry.source}`,
 		`originSessionId: ${scalar(entry.originSessionId)}`,
 		`createdAt: ${scalar(entry.createdAt)}`,
-		`updatedAt: ${scalar(entry.updatedAt)}`,
-		"---",
-		"",
-		entry.content.trim(),
-		""
-	].join("\n");
+		`updatedAt: ${scalar(entry.updatedAt)}`
+	];
+	for (const line of extras) {
+		if (line.trim() === "---") continue;
+		lines.push(line);
+	}
+	lines.push("---", "", entry.content.trim(), "");
+	return lines.join("\n");
 }
-/** Normalize a string for fingerprints and duplicate detection. */
+/** 归一化字符串，用于指纹与重复检测。 */
 function normalizeForFingerprint(value) {
 	return value.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim().replace(/\s+/gu, " ");
 }
-/** Content fingerprint: identical facts reinforce instead of duplicating. */
+/** 内容指纹：相同事实走强化而不是重复新增。 */
 function fingerprintOf(name, description, content) {
 	const normalized = `${normalizeForFingerprint(name)}\n${normalizeForFingerprint(description)}\n${normalizeForFingerprint(content)}`;
 	return createHash("sha256").update(normalized).digest("hex");
 }
-/** Generate one stable-looking entry id. */
+/** 生成一个看起来稳定、实际唯一的条目 id。 */
 function newEntryId() {
 	return `m-${Date.now().toString(36)}-${randomBytes(3).toString("hex")}`;
 }
-/** Parse one loaded Markdown document into a normalized entry, or null when unusable. */
-function parseEntry(file, scope, project) {
-	let source = "";
-	try {
-		source = readFileSync(file, "utf8");
-	} catch {
-		return null;
-	}
-	const parsed = parseFrontmatter(source);
+/** 把未知 JSON 值收窄成普通对象。 */
+function objectOf(raw) {
+	return raw !== null && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+}
+/**
+* 把一份 Markdown 解析成规范化条目，并带回未知 frontmatter 行；不可用时返回 null。
+*
+* @param source - 原始 Markdown。
+* @param file - 文件路径（id 缺省时取文件名）。
+* @param scope - 文件所在目录的作用域。
+* @param project - 项目作用域的项目 key。
+*/
+function parseDocument(source, file, scope, project) {
+	const normalized = source.replace(/^\uFEFF/u, "");
+	const parsed = parseFrontmatter(normalized);
 	const data = parsed.data;
 	const id = text(data.id) || path.basename(file, ".md");
 	const name = text(data.name);
@@ -7170,42 +7844,60 @@ function parseEntry(file, scope, project) {
 	const type = isMemoryType(data.type) ? data.type : "reference";
 	const status = isMemoryStatus(data.status) ? data.status : "active";
 	const importance = clampInt(data.importance, 0, 100, 50);
+	const confidence = clampInt(data.confidence, 0, 100, 50);
 	const reinforcement = clampInt(data.reinforcement, 0, 1e5, 0);
 	const obsoleteVotes = clampInt(data.obsoleteVotes, 0, 100, 0);
+	const pinned = data.pinned === true;
+	const usedCount = clampInt(data.usedCount, 0, 1e6, 0);
 	const tags = normalizeTags(data.tags);
 	const supersedes = normalizeIds(data.supersedes);
+	const mergedFrom = normalizeIds(data.mergedFrom);
+	const sourceValue = normalizeSource(data.source);
+	const lastUsedAt = text(data.lastUsedAt);
 	const createdAt = text(data.createdAt) || (/* @__PURE__ */ new Date()).toISOString();
 	const updatedAt = text(data.updatedAt) || createdAt;
 	const originSessionId = text(data.originSessionId);
 	const content = parsed.body.trim();
 	if (name === "") return null;
 	return {
-		id,
-		name,
-		description,
-		type,
-		scope,
-		project,
-		tags,
-		importance,
-		status,
-		reinforcement,
-		obsoleteVotes,
-		supersedes,
-		originSessionId,
-		createdAt,
-		updatedAt,
-		content
+		entry: {
+			id,
+			name,
+			description,
+			type,
+			scope,
+			project,
+			tags,
+			importance,
+			confidence,
+			status,
+			reinforcement,
+			obsoleteVotes,
+			pinned,
+			usedCount,
+			supersedes,
+			mergedFrom,
+			source: sourceValue,
+			originSessionId,
+			createdAt,
+			updatedAt,
+			content,
+			...lastUsedAt === "" ? {} : { lastUsedAt }
+		},
+		extras: unknownFrontmatterLines(normalized)
 	};
 }
-/** Write one file atomically through a sibling temp file. */
-function writeAtomic(file, content) {
-	mkdirSync(path.dirname(file), { recursive: true });
-	const tmp = `${file}.tmp-${process.pid}-${randomBytes(2).toString("hex")}`;
-	writeFileSync(tmp, content, "utf8");
-	renameSync(tmp, file);
+/** 读取并解析一个记忆文件（IO/解析失败返回 null）。 */
+function readDocument(file, scope, project) {
+	let source = "";
+	try {
+		source = readFileSync(file, "utf8");
+	} catch {
+		return null;
+	}
+	return parseDocument(source, file, scope, project);
 }
-/** Read a JSON file, returning null on any failure. */
+/** 读取 JSON 文件；任何失败返回 null。 */
 function readJson(file) {
 	try {
 		return JSON.parse(readFileSync(file, "utf8"));
@@ -7213,9 +7905,14 @@ function readJson(file) {
 		return null;
 	}
 }
-/** Normalize a possibly-invalid settings document. */
+/** 文档声明的 schema 版本；缺失/非法返回 0（读取端按容错处理，不阻断）。 */
+function documentSchema(raw) {
+	const value = objectOf(raw).schema;
+	return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+/** 归一化一份可能非法的 settings 文档。 */
 function normalizeSettings(raw) {
-	const value = raw !== null && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+	const value = objectOf(raw);
 	const fallback = defaultSettings();
 	return {
 		captureEnabled: typeof value.captureEnabled === "boolean" ? value.captureEnabled : fallback.captureEnabled,
@@ -7227,9 +7924,9 @@ function normalizeSettings(raw) {
 		updatedAt: text(value.updatedAt) || fallback.updatedAt
 	};
 }
-/** Normalize one stats session row. */
+/** 归一化一行会话召回统计。 */
 function normalizeRecallRow(raw) {
-	const value = raw !== null && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+	const value = objectOf(raw);
 	const sessionId = text(value.sessionId);
 	if (sessionId === "") return null;
 	return {
@@ -7240,20 +7937,66 @@ function normalizeRecallRow(raw) {
 		updatedAt: text(value.updatedAt) || (/* @__PURE__ */ new Date()).toISOString()
 	};
 }
-/** Normalize the persisted stats document. */
+/** 归一化持久化的跳过原因计数表（有界）。 */
+function normalizeSkipReasons(raw) {
+	if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return {};
+	const out = {};
+	let count = 0;
+	for (const [key, value] of Object.entries(raw)) {
+		if (count >= SKIP_REASON_KEEP) break;
+		const reason = text(key).slice(0, 80);
+		if (reason === "") continue;
+		out[reason] = clampInt(value, 0, 1e8, 0);
+		count += 1;
+	}
+	return out;
+}
+/** 归一化一条注入样本。 */
+function normalizeInjectionRow(raw) {
+	if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return null;
+	const value = raw;
+	return {
+		sessionId: text(value.sessionId),
+		at: text(value.at) || (/* @__PURE__ */ new Date()).toISOString(),
+		entries: clampInt(value.entries, 0, 1e5, 0),
+		chars: clampInt(value.chars, 0, 1e7, 0),
+		truncated: value.truncated === true
+	};
+}
+/** 归一化一条捕获样本。 */
+function normalizeCaptureRow(raw) {
+	if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return null;
+	const value = raw;
+	const row = {
+		at: text(value.at) || (/* @__PURE__ */ new Date()).toISOString(),
+		sessionId: text(value.sessionId),
+		written: clampInt(value.written, 0, 1e5, 0)
+	};
+	const reason = text(value.skippedReason);
+	if (reason !== "") row.skippedReason = reason;
+	const error = text(value.error);
+	if (error !== "") row.error = error;
+	return row;
+}
+/** 归一化持久化的 stats 文档（schema v1 的旧行补齐 v2 默认值）。 */
 function normalizeStats(raw) {
-	const value = raw !== null && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+	const value = objectOf(raw);
 	const sessions = Array.isArray(value.sessions) ? value.sessions.map(normalizeRecallRow).filter((row) => row !== null) : [];
+	const recentInjections = Array.isArray(value.recentInjections) ? value.recentInjections.map(normalizeInjectionRow).filter((row) => row !== null) : [];
+	const recentCaptures = Array.isArray(value.recentCaptures) ? value.recentCaptures.map(normalizeCaptureRow).filter((row) => row !== null) : [];
 	return {
 		captureRuns: clampInt(value.captureRuns, 0, 1e8, 0),
 		capturedEntries: clampInt(value.capturedEntries, 0, 1e8, 0),
 		captureSkips: clampInt(value.captureSkips, 0, 1e8, 0),
-		sessions: sessions.slice(0, SESSION_STATS_KEEP)
+		sessions: sessions.slice(0, SESSION_STATS_KEEP),
+		skipReasons: normalizeSkipReasons(value.skipReasons),
+		recentInjections: recentInjections.slice(0, RECENT_SAMPLE_KEEP),
+		recentCaptures: recentCaptures.slice(0, RECENT_SAMPLE_KEEP)
 	};
 }
-/** Normalize one project record. */
+/** 归一化一条项目登记。 */
 function normalizeProject(raw, entryCount) {
-	const value = raw !== null && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+	const value = objectOf(raw);
 	const key = text(value.key);
 	if (key === "") return null;
 	const source = value.source === "git-remote" || value.source === "git-common" || value.source === "path" ? value.source : "path";
@@ -7267,19 +8010,19 @@ function normalizeProject(raw, entryCount) {
 		entryCount: entryCount(key)
 	};
 }
-/** Validate a project key for path use (anything else is hashed). */
+/** 校验项目 key 能否直接用作目录名（否则做哈希）。 */
 function safeProjectKey(key) {
 	const trimmed = text(key);
 	if (/^[A-Za-z0-9_-]{1,80}$/u.test(trimmed)) return trimmed;
 	return `h_${createHash("sha256").update(trimmed).digest("hex").slice(0, 16)}`;
 }
-/** The memory store; owned by the plugin runtime and shared by tools and the API. */
+/** 记忆存储；由插件运行时持有，工具与管理 API 共享同一实例。 */
 var MemoryStore = class {
-	/** Root of the memory tree (`<home>/memory`). */
+	/** 记忆树根目录（`<home>/memory`）。 */
 	root;
 	/** 预览文件根目录（宿主右侧栏读取的临时 Markdown）。 */
 	previewDir;
-	/** Persistent project registry file. */
+	/** 持久化项目登记文件。 */
 	projectsFile;
 	settingsFile;
 	statsFile;
@@ -7288,6 +8031,11 @@ var MemoryStore = class {
 	statsValue = null;
 	projectsValue = null;
 	cache = /* @__PURE__ */ new Map();
+	/**
+	* 进程内写串行化队列：新增的异步写入口共享同一条 Promise 链，避免复合
+	* 「读-改-写」交叉；同步入口本身是 JS 单线程上的原子同步段（不引入文件锁）。
+	*/
+	writeQueue = Promise.resolve();
 	constructor(options) {
 		this.root = path.join(options.home, "memory");
 		this.previewDir = options.previewRoot ?? previewRoot();
@@ -7296,28 +8044,36 @@ var MemoryStore = class {
 		this.projectsFile = path.join(this.root, PROJECTS_FILE);
 		this.log = options.log ?? (() => {});
 	}
-	/** Ensure the memory root exists. */
+	/** 确保记忆根目录存在、执行一次 v1 迁移，再归一化 JSON 文档。 */
 	start() {
 		mkdirSync(this.root, { recursive: true });
 		mkdirSync(path.join(this.root, "global"), { recursive: true });
 		mkdirSync(path.join(this.root, "projects"), { recursive: true });
+		try {
+			const report = this.migrate();
+			if (report.backupDir !== null && (report.migrated > 0 || report.indexesRemoved > 0)) this.log("info", `记忆 schema v2 迁移：升级 ${report.migrated} 个条目，移走 ${report.indexesRemoved} 个旧索引（备份 ${path.basename(report.backupDir)}）`);
+			if (report.failed > 0) this.log("warn", `记忆迁移有 ${report.failed} 个文件失败（原文件保持）`);
+		} catch (error) {
+			this.log("error", `记忆迁移失败（原文件保持）：${error instanceof Error ? error.message : String(error)}`);
+		}
 		this.settings();
 		this.stats();
 		this.projects();
 	}
-	/** Settings of this install. */
+	/** 本安装的设置。 */
 	settings() {
 		if (this.settingsValue !== null) return this.settingsValue;
 		const raw = readJson(this.settingsFile);
 		if (raw !== null && (typeof raw !== "object" || Array.isArray(raw))) this.log("warn", "memory/settings.json 结构异常，已按默认值修复");
+		else if (raw !== null && documentSchema(raw) !== SETTINGS_SCHEMA) this.log("warn", `memory/settings.json schema=${documentSchema(raw)}（当前 ${SETTINGS_SCHEMA}），按容错读取`);
 		this.settingsValue = normalizeSettings(raw);
 		if (raw === null && existsSync(this.settingsFile)) this.log("warn", "memory/settings.json 无法解析，已按默认值修复");
 		return this.settingsValue;
 	}
 	/**
-	* Merge a partial settings patch.
+	* 合并一份部分设置补丁。
 	*
-	* @param patch - fields to update.
+	* @param patch - 要更新的字段。
 	*/
 	updateSettings(patch) {
 		const next = normalizeSettings({
@@ -7329,35 +8085,95 @@ var MemoryStore = class {
 		this.writeSettings();
 		return next;
 	}
-	/** Capture and recall counters. */
+	/** 捕获与召回计数（schema v2 形状；旧文件读取时补默认字段）。 */
 	stats() {
 		if (this.statsValue !== null) return this.statsValue;
-		this.statsValue = normalizeStats(readJson(this.statsFile));
+		const raw = readJson(this.statsFile);
+		if (raw !== null && (typeof raw !== "object" || Array.isArray(raw))) this.log("warn", "memory/stats.json 结构异常，已按默认值修复");
+		else if (raw !== null && documentSchema(raw) !== STATS_SCHEMA) this.log("warn", `memory/stats.json schema=${documentSchema(raw)}（当前 ${STATS_SCHEMA}），按容错读取`);
+		this.statsValue = normalizeStats(raw);
+		if (raw === null && existsSync(this.statsFile)) this.log("warn", "memory/stats.json 无法解析，已按默认值修复");
 		return this.statsValue;
 	}
 	/**
-	* Record one capture attempt.
+	* 记录一次捕获尝试。
 	*
-	* @param entries - memories written or reinforced.
-	* @param skipped - the gate rejected the turn.
+	* @param entries - 写入或强化的条数。
+	* @param skipped - 闸门拒绝了本轮。
+	* @param detail - 可选的会话 id / 跳过原因 / 失败信息；带跳过原因时同时
+	*   累加 `skipReasons`。
 	*/
-	recordCapture(entries, skipped) {
+	recordCapture(entries, skipped, detail = {}) {
 		const current = this.stats();
+		const written = Math.max(0, entries);
+		const reason = text(detail.skippedReason).slice(0, 80);
+		const record = {
+			at: (/* @__PURE__ */ new Date()).toISOString(),
+			sessionId: text(detail.sessionId),
+			written
+		};
+		if (reason !== "") record.skippedReason = reason;
+		const errorText = text(detail.error);
+		if (errorText !== "") record.error = errorText;
+		const skipReasons = { ...current.skipReasons };
+		if (reason !== "") skipReasons[reason] = (skipReasons[reason] ?? 0) + 1;
 		this.statsValue = {
 			...current,
 			captureRuns: skipped ? current.captureRuns : current.captureRuns + 1,
-			capturedEntries: current.capturedEntries + Math.max(0, entries),
-			captureSkips: skipped ? current.captureSkips + 1 : current.captureSkips
+			capturedEntries: current.capturedEntries + written,
+			captureSkips: skipped ? current.captureSkips + 1 : current.captureSkips,
+			skipReasons: normalizeSkipReasons(skipReasons),
+			recentCaptures: [record, ...current.recentCaptures].slice(0, RECENT_SAMPLE_KEEP)
 		};
 		this.writeStats();
 	}
 	/**
-	* Record what one session's assembly actually used.
+	* 只累加一次捕获闸门拒绝原因，不追加捕获样本。
 	*
-	* @param sessionId - session whose prompt received the index.
-	* @param injectedIds - index ids injected into the prompt.
-	* @param usedIds - ids the model fetched through the memory tools.
-	* @param overflow - search hits outside the injected set.
+	* @param reason - 闸门原因 key。
+	* @param count - 该原因发生次数（默认 1）。
+	*/
+	recordSkip(reason, count = 1) {
+		const key = text(reason).slice(0, 80);
+		if (key === "") return;
+		const current = this.stats();
+		const skipReasons = {
+			...current.skipReasons,
+			[key]: (current.skipReasons[key] ?? 0) + Math.max(1, Math.round(count))
+		};
+		this.statsValue = {
+			...current,
+			skipReasons: normalizeSkipReasons(skipReasons)
+		};
+		this.writeStats();
+	}
+	/**
+	* 追加一条提示词装配样本（有界，只保留最新 50 条）。
+	*
+	* @param detail - 会话 id、注入条数、渲染字符数与截断标记。
+	*/
+	recordInjection(detail) {
+		const current = this.stats();
+		const record = {
+			sessionId: text(detail.sessionId),
+			at: (/* @__PURE__ */ new Date()).toISOString(),
+			entries: clampInt(detail.entries, 0, 1e5, 0),
+			chars: clampInt(detail.chars, 0, 1e7, 0),
+			truncated: detail.truncated === true
+		};
+		this.statsValue = {
+			...current,
+			recentInjections: [record, ...current.recentInjections].slice(0, RECENT_SAMPLE_KEEP)
+		};
+		this.writeStats();
+	}
+	/**
+	* 记录某个会话装配时实际使用了哪些注入条目。
+	*
+	* @param sessionId - 收到索引注入的会话。
+	* @param injectedIds - 注入到提示词里的索引 id。
+	* @param usedIds - 模型通过记忆工具实际取过的 id。
+	* @param overflow - 不在注入集合里的检索命中数。
 	*/
 	recordRecall(sessionId, injectedIds, usedIds, overflow) {
 		if (sessionId === "") return;
@@ -7378,7 +8194,7 @@ var MemoryStore = class {
 		};
 		this.writeStats();
 	}
-	/** Known projects, most recently seen first. */
+	/** 已知项目，最近出现的在前。 */
 	listProjects() {
 		return [...this.projects()].map((project) => ({
 			...project,
@@ -7386,9 +8202,9 @@ var MemoryStore = class {
 		})).sort((left, right) => right.lastSeen.localeCompare(left.lastSeen));
 	}
 	/**
-	* Register (or refresh) one project identity.
+	* 登记（或刷新）一个项目身份。
 	*
-	* @param identity - resolved identity of the session's working directory.
+	* @param identity - 会话工作目录解析出的身份。
 	*/
 	touchProject(identity) {
 		const projects = this.projects();
@@ -7416,7 +8232,7 @@ var MemoryStore = class {
 			entryCount: this.countEntries("project", record.key)
 		};
 	}
-	/** Resolve one known project by key. */
+	/** 按 key 查一个已知项目。 */
 	getProject(key) {
 		const found = this.projects().find((project) => project.key === key);
 		return found === void 0 ? void 0 : {
@@ -7424,17 +8240,17 @@ var MemoryStore = class {
 			entryCount: this.countEntries("project", key)
 		};
 	}
-	/** Count live (non-archived) entries of one scope. */
+	/** 统计某个作用域存活（非归档）条目数。 */
 	countEntries(scope, project = "") {
 		return this.load(scope, project).filter((entry) => entry.status !== "archived").length;
 	}
 	/**
-	* List memories of one scope.
+	* 列出某个作用域的记忆。
 	*
-	* @param scope - memory scope.
-	* @param project - project key for the project scope.
-	* @param options - query, type filter, archived inclusion; `includeContent`
-	*   keeps the Markdown body in the payload (health-audit consumers).
+	* @param scope - 记忆作用域。
+	* @param project - 项目作用域的项目 key。
+	* @param options - 查询、类型过滤、是否含归档；`includeContent` 为 true 时
+	*   保留 Markdown 正文（体检类消费者用）。
 	*/
 	list(scope, project = "", options = {}) {
 		const query = text(options.query);
@@ -7446,21 +8262,35 @@ var MemoryStore = class {
 		return options.includeContent === true ? sliced : sliced.map(toMeta);
 	}
 	/**
-	* Search one scope (and the global scope when `scope` is `'all'`).
+	* 检索一个作用域（`scope === 'all'` 时同时检索全局）。
 	*
-	* @param scope - `global`, `project`, or `all`.
-	* @param project - project key for project-scope searches.
-	* @param query - free-text query; empty returns the ranked index.
-	* @param limit - maximum results.
+	* 接受两种调用形式：
+	* - 旧形式：`search(scope, project, query, limit)`；
+	* - 下推：`search(scope, project, { query, type, includeArchived, limit })`。
+	*
+	* 过滤在截断之前完成，因此类型过滤不会被其它类型的高排名条目挤掉。
+	*
+	* @param scope - `global`、`project` 或 `all`。
+	* @param project - 项目作用域的项目 key。
+	* @param request - 旧形式的自由文本查询，或 options 对象。
+	* @param limit - 旧形式的最大结果数。
+	* @param options - 旧形式附加的下推过滤器。
 	*/
-	search(scope, project, query, limit = 10) {
+	search(scope, project, request = "", limit = 10, options = {}) {
+		let query = "";
+		let filters = options;
+		if (typeof request === "string") query = text(request);
+		else {
+			filters = request;
+			query = text(request.query);
+		}
 		const pool = [];
 		if (scope !== "project") pool.push(...this.load("global", ""));
 		if (scope !== "global" && project !== "") pool.push(...this.load("project", project));
-		const candidates = pool.filter((entry) => entry.status !== "archived");
-		return (text(query) === "" ? candidates.sort(compareEntries) : this.score(candidates, text(query))).slice(0, clampInt(limit, 1, 50, 10)).map(toMeta);
+		const candidates = pool.filter((entry) => (filters.includeArchived === true || entry.status !== "archived") && (filters.type === void 0 || entry.type === filters.type));
+		return (query === "" ? candidates.sort(compareEntries) : this.score(candidates, query)).slice(0, clampInt(filters.limit ?? limit, 1, 50, 10)).map(toMeta);
 	}
-	/** Read one memory. */
+	/** 读取一条记忆。 */
 	get(scope, project, id) {
 		return this.load(scope, project).find((entry) => entry.id === id);
 	}
@@ -7479,13 +8309,12 @@ var MemoryStore = class {
 		return writePreviewFile(entry, this.previewDir);
 	}
 	/**
-	* Create or reinforce one memory.
+	* 创建或强化一条记忆。
 	*
-	* Writes whose name/description/content fingerprint matches a live memory of
-	* the same scope only reinforce that memory; `supersedes` marks the replaced
-	* memories stale.
+	* name/description/content 指纹与同一作用域的存活记忆相同时只强化原条目；
+	* `supersedes` 在所有写入路径上都会把被取代条目标记为 stale。
 	*
-	* @param input - complete write.
+	* @param input - 完整写入。
 	*/
 	save(input) {
 		const scope = input.scope;
@@ -7497,7 +8326,16 @@ var MemoryStore = class {
 		const type = input.type;
 		const importance = clampInt(input.importance, 0, 100, 50);
 		const tags = normalizeTags(input.tags);
-		const supersedes = normalizeIds(input.supersedes).filter((id) => id !== input.id);
+		const tagsProvided = input.tags !== void 0;
+		const supersedesInput = input.supersedes === void 0 ? void 0 : normalizeIds(input.supersedes).filter((id) => id !== input.id);
+		const confidence = clampInt(input.confidence, 0, 100, 50);
+		const confidenceProvided = input.confidence !== void 0;
+		const pinned = input.pinned === true;
+		const pinnedProvided = input.pinned !== void 0;
+		const source = normalizeSource(input.source);
+		const sourceProvided = input.source !== void 0;
+		const mergedFrom = normalizeIds(input.mergedFrom);
+		const mergedProvided = input.mergedFrom !== void 0;
 		const now = (/* @__PURE__ */ new Date()).toISOString();
 		const existingById = input.id === void 0 ? void 0 : entries.find((entry) => entry.id === input.id);
 		if (existingById !== void 0) {
@@ -7508,26 +8346,37 @@ var MemoryStore = class {
 				content,
 				type,
 				importance,
-				tags: tags.length > 0 ? tags : existingById.tags,
-				supersedes: supersedes.length > 0 ? supersedes : existingById.supersedes,
+				tags: tagsProvided ? tags : existingById.tags,
+				supersedes: supersedesInput === void 0 || supersedesInput.length === 0 ? existingById.supersedes : supersedesInput,
+				...confidenceProvided ? { confidence } : {},
+				...pinnedProvided ? { pinned } : {},
+				...sourceProvided ? { source } : {},
+				...mergedProvided && mergedFrom.length > 0 ? { mergedFrom: [.../* @__PURE__ */ new Set([...existingById.mergedFrom, ...mergedFrom])] } : {},
 				updatedAt: now
 			};
 			this.writeEntry(scope, project, updated);
-			this.applySupersedes(scope, project, supersedes, updated.id);
+			this.applySupersedes(scope, project, supersedesInput ?? [], updated.id);
 			return updated;
 		}
 		const fingerprint = fingerprintOf(name, description, content);
 		const duplicate = entries.find((entry) => entry.status !== "archived" && fingerprintOf(entry.name, entry.description, entry.content) === fingerprint);
 		if (duplicate !== void 0) {
+			const addedSupersedes = (supersedesInput ?? []).filter((id) => !duplicate.supersedes.includes(id));
 			const reinforced = {
 				...duplicate,
 				description: duplicate.description !== "" ? duplicate.description : description,
 				importance: Math.max(duplicate.importance, importance),
 				tags: [.../* @__PURE__ */ new Set([...duplicate.tags, ...tags])].slice(0, LIMITS.tags),
 				reinforcement: duplicate.reinforcement + 1,
+				supersedes: addedSupersedes.length === 0 ? duplicate.supersedes : [...duplicate.supersedes, ...addedSupersedes],
+				...confidenceProvided ? { confidence } : {},
+				...pinnedProvided ? { pinned } : {},
+				...sourceProvided ? { source } : {},
+				...mergedProvided && mergedFrom.length > 0 ? { mergedFrom: [.../* @__PURE__ */ new Set([...duplicate.mergedFrom, ...mergedFrom])] } : {},
 				updatedAt: now
 			};
 			this.writeEntry(scope, project, reinforced);
+			this.applySupersedes(scope, project, addedSupersedes, reinforced.id);
 			return reinforced;
 		}
 		const entry = {
@@ -7539,20 +8388,25 @@ var MemoryStore = class {
 			project,
 			tags,
 			importance,
+			confidence: confidenceProvided ? confidence : 50,
 			status: "active",
 			reinforcement: 0,
 			obsoleteVotes: 0,
-			supersedes,
+			pinned: pinnedProvided ? pinned : false,
+			usedCount: 0,
+			supersedes: supersedesInput ?? [],
+			mergedFrom,
+			source: sourceProvided ? source : "capture",
 			originSessionId: text(input.originSessionId),
 			createdAt: now,
 			updatedAt: now,
 			content
 		};
 		this.writeEntry(scope, project, entry);
-		this.applySupersedes(scope, project, supersedes, entry.id);
+		this.applySupersedes(scope, project, supersedesInput ?? [], entry.id);
 		return entry;
 	}
-	/** Change the lifecycle status of one memory. */
+	/** 修改一条记忆的生命周期状态。 */
 	setStatus(scope, project, id, status) {
 		const entry = this.get(scope, project, id);
 		if (entry === void 0) throw new Error(`记忆不存在：${id}`);
@@ -7565,13 +8419,13 @@ var MemoryStore = class {
 		return updated;
 	}
 	/**
-	* Vote one memory obsolete. The first vote marks it stale (still searchable);
-	* the second archives it so it leaves injection and default search.
+	* 给一条记忆投过时票：第一票标记 stale（仍可检索），第二票归档，使其
+	* 不再注入、默认检索也看不到。
 	*
-	* @param scope - memory scope.
-	* @param project - project key for the project scope.
-	* @param id - memory id.
-	* @param reason - free-text reason kept in the log only.
+	* @param scope - 记忆作用域。
+	* @param project - 项目作用域的项目 key。
+	* @param id - 记忆 id。
+	* @param reason - 自由文本原因，只写日志。
 	*/
 	forget(scope, project, id, reason = "") {
 		const entry = this.get(scope, project, id);
@@ -7591,7 +8445,7 @@ var MemoryStore = class {
 			archived: status === "archived"
 		};
 	}
-	/** Delete one memory file permanently. */
+	/** 永久删除一条记忆文件。 */
 	remove(scope, project, id) {
 		const entry = this.get(scope, project, id);
 		if (entry === void 0) return false;
@@ -7601,7 +8455,6 @@ var MemoryStore = class {
 			return false;
 		}
 		this.invalidate(scope, project);
-		this.rewriteIndex(scope, project);
 		return true;
 	}
 	/**
@@ -7613,11 +8466,35 @@ var MemoryStore = class {
 		removePreviewEntry(id, this.previewDir);
 	}
 	/**
-	* Index lines injected into the system prompt, newest/highest importance first.
+	* 异步串行版 `save`：并发写场景共用进程内写队列（同步 `save` 保留给现有调用方）。
 	*
-	* @param scope - memory scope.
-	* @param project - project key for the project scope.
-	* @param limit - maximum entries.
+	* @param input - 完整写入。
+	*/
+	saveAsync(input) {
+		return this.enqueueWrite(() => this.save(input));
+	}
+	/** 异步串行版 `setStatus`。 */
+	setStatusAsync(scope, project, id, status) {
+		return this.enqueueWrite(() => this.setStatus(scope, project, id, status));
+	}
+	/** 异步串行版 `forget`。 */
+	forgetAsync(scope, project, id, reason = "") {
+		return this.enqueueWrite(() => this.forget(scope, project, id, reason));
+	}
+	/** 异步串行版 `remove`。 */
+	removeAsync(scope, project, id) {
+		return this.enqueueWrite(() => this.remove(scope, project, id));
+	}
+	/** 等待当前已排队的写操作全部完成（测试与销毁时用）。 */
+	async flushWrites() {
+		await this.writeQueue;
+	}
+	/**
+	* 注入到系统提示词的索引行，按重要度/新鲜度排序。
+	*
+	* @param scope - 记忆作用域。
+	* @param project - 项目作用域的项目 key。
+	* @param limit - 最大条目数。
 	*/
 	indexLines(scope, project, limit) {
 		const entries = this.load(scope, project).filter((entry) => entry.status === "active").sort((left, right) => right.importance - left.importance || right.updatedAt.localeCompare(left.updatedAt)).slice(0, clampInt(limit, 0, LIMITS.indexEntries, 0));
@@ -7631,14 +8508,14 @@ var MemoryStore = class {
 		};
 	}
 	/**
-	* Export one scope as one Markdown document.
+	* 把一个作用域导出成单个 Markdown 文档（未知 frontmatter 字段一并保留）。
 	*
-	* @param scope - memory scope.
-	* @param project - project key for the project scope.
+	* @param scope - 记忆作用域。
+	* @param project - 项目作用域的项目 key。
 	*/
 	exportMarkdown(scope, project = "") {
-		const entries = [...this.load(scope, project)].sort(compareEntries);
-		const content = `# ${scope === "global" ? "全局记忆" : `项目记忆（${this.getProject(project)?.displayName ?? project}）`}\n\n${entries.map((entry) => renderEntry(entry).trimEnd()).join("\n\n---\n\n")}\n`;
+		const records = [...this.loadRecords(scope, project)].sort((left, right) => compareEntries(left.entry, right.entry));
+		const content = `# ${scope === "global" ? "全局记忆" : `项目记忆（${this.getProject(project)?.displayName ?? project}）`}\n\n${records.map((record) => renderEntry(record.entry, record.extras).trimEnd()).join("\n\n---\n\n")}\n`;
 		const date = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
 		return {
 			filename: scope === "global" ? `memory-global-${date}.md` : `memory-project-${safeProjectKey(project)}-${date}.md`,
@@ -7651,72 +8528,100 @@ var MemoryStore = class {
 	entryFile(scope, project, id) {
 		return path.join(this.scopeDir(scope, project), `${id}.md`);
 	}
-	load(scope, project) {
+	/** 扫描一个作用域并返回缓存记录；文件 `mtime+size` 变化即整目录重读。 */
+	loadRecords(scope, project) {
 		const dir = this.scopeDir(scope, project);
-		let mtimeMs = 0;
+		let names = [];
 		try {
-			mtimeMs = statSync(dir).mtimeMs;
+			names = readdirSync(dir).filter((name) => name.endsWith(".md") && name !== "MEMORY.md").sort();
 		} catch {
+			this.cache.delete(`${scope}:${project}`);
 			return [];
 		}
+		const stamps = [];
+		for (const name of names) {
+			const file = path.join(dir, name);
+			try {
+				const info = statSync(file);
+				stamps.push(`${name}:${info.mtimeMs}:${info.size}`);
+			} catch {
+				stamps.push(`${name}:missing`);
+			}
+		}
+		const stamp = stamps.join("|");
 		const cacheKey = `${scope}:${project}`;
 		const cached = this.cache.get(cacheKey);
-		if (cached !== void 0 && cached.mtimeMs === mtimeMs) return cached.entries;
-		let files = [];
-		try {
-			files = readdirSync(dir).filter((name) => name.endsWith(".md") && name !== INDEX_FILE);
-		} catch {
-			files = [];
-		}
-		const entries = [];
-		for (const name of files) {
-			const entry = parseEntry(path.join(dir, name), scope, project);
-			if (entry !== null) entries.push(entry);
+		if (cached !== void 0 && cached.stamp === stamp) return cached.entries;
+		const records = [];
+		for (const name of names) {
+			const parsed = readDocument(path.join(dir, name), scope, project);
+			if (parsed !== null) records.push({
+				entry: parsed.entry,
+				extras: parsed.extras
+			});
 		}
 		this.cache.set(cacheKey, {
-			mtimeMs,
-			entries
+			stamp,
+			entries: records
 		});
-		return entries;
+		return records;
+	}
+	load(scope, project) {
+		return this.loadRecords(scope, project).map((record) => record.entry);
+	}
+	/** 读取某条已知记录的未知 frontmatter 行（新条目不查盘）。 */
+	extrasOf(scope, project, id) {
+		return this.loadRecords(scope, project).find((record) => record.entry.id === id)?.extras ?? [];
 	}
 	invalidate(scope, project) {
 		this.cache.delete(`${scope}:${project}`);
 	}
-	writeEntry(scope, project, entry) {
+	/**
+	* 写一条记忆：原子写（tmp + rename），并保留该文件原有的未知 frontmatter 字段。
+	*/
+	writeEntry(scope, project, entry, extras) {
+		const preserved = extras ?? this.extrasOf(scope, project, entry.id);
 		try {
-			writeAtomic(this.entryFile(scope, project, entry.id), renderEntry(entry));
+			writeAtomicText(this.entryFile(scope, project, entry.id), renderEntry(entry, preserved));
 		} catch (error) {
 			this.log("error", `写记忆失败 ${entry.id}：${error instanceof Error ? error.message : String(error)}`);
 			throw error;
 		}
 		this.invalidate(scope, project);
-		this.rewriteIndex(scope, project);
 	}
+	/**
+	* 标记被取代的条目为 stale；已 stale/archived 的不重复计票（幂等）。
+	*/
 	applySupersedes(scope, project, ids, sourceId) {
 		for (const id of ids) {
+			if (id === sourceId) continue;
 			const entry = this.get(scope, project, id);
-			if (entry === void 0 || entry.id === sourceId) continue;
+			if (entry === void 0) continue;
+			if (entry.status === "archived") continue;
+			if (entry.status === "stale" && entry.obsoleteVotes > 0) continue;
 			const updated = {
 				...entry,
-				status: entry.status === "archived" ? "archived" : "stale",
+				status: "stale",
 				obsoleteVotes: entry.obsoleteVotes + 1,
 				updatedAt: (/* @__PURE__ */ new Date()).toISOString()
 			};
 			this.writeEntry(scope, project, updated);
 		}
 	}
-	rewriteIndex(scope, project) {
-		const dir = this.scopeDir(scope, project);
-		const lines = this.load(scope, project).filter((entry) => entry.status === "active").sort((left, right) => right.importance - left.importance || right.updatedAt.localeCompare(left.updatedAt)).map((entry) => {
-			const head = `- [${entry.id}] (${entry.type}, ${entry.updatedAt.slice(0, 10)}) ${entry.name}`;
-			return entry.description === "" ? head : `${head} — ${entry.description}`;
+	/** 执行一次 v1 → v2 迁移（幂等；无 v1 文件时不做任何事）。 */
+	migrate() {
+		return migrateMemoryTree({
+			root: this.root,
+			log: this.log,
+			parse: (source, scope, project, file) => parseDocument(source, file, scope, project),
+			render: (entry, extras) => renderEntry(entry, extras)
 		});
-		try {
-			mkdirSync(dir, { recursive: true });
-			writeAtomic(path.join(dir, INDEX_FILE), `${INDEX_HEADER}${lines.join("\n")}${lines.length === 0 ? "" : "\n"}`);
-		} catch (error) {
-			this.log("warn", `重写记忆索引失败：${error instanceof Error ? error.message : String(error)}`);
-		}
+	}
+	/** 把写操作挂到进程内串行队列。 */
+	enqueueWrite(operation) {
+		const run = this.writeQueue.then(() => operation());
+		this.writeQueue = run.then(() => void 0, () => void 0);
+		return run;
 	}
 	score(entries, query) {
 		const terms = queryTerms(query);
@@ -7759,7 +8664,7 @@ var MemoryStore = class {
 	}
 	writeSettings() {
 		try {
-			writeAtomic(this.settingsFile, `${JSON.stringify({
+			writeAtomicText(this.settingsFile, `${JSON.stringify({
 				schema: SETTINGS_SCHEMA,
 				...this.settings()
 			}, null, 2)}\n`);
@@ -7769,7 +8674,7 @@ var MemoryStore = class {
 	}
 	writeStats() {
 		try {
-			writeAtomic(this.statsFile, `${JSON.stringify({
+			writeAtomicText(this.statsFile, `${JSON.stringify({
 				schema: STATS_SCHEMA,
 				...this.stats()
 			}, null, 2)}\n`);
@@ -7780,14 +8685,16 @@ var MemoryStore = class {
 	projects() {
 		if (this.projectsValue !== null) return this.projectsValue;
 		const raw = readJson(this.projectsFile);
-		const value = raw !== null && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
-		const list = Array.isArray(value.projects) ? value.projects : [];
+		if (raw !== null && (typeof raw !== "object" || Array.isArray(raw))) this.log("warn", "memory/projects.json 结构异常，已按空登记修复");
+		else if (raw !== null && documentSchema(raw) !== PROJECTS_SCHEMA) this.log("warn", `memory/projects.json schema=${documentSchema(raw)}（当前 ${PROJECTS_SCHEMA}），按容错读取`);
+		const stored = objectOf(raw);
+		const list = Array.isArray(stored.projects) ? stored.projects : [];
 		this.projectsValue = list.map((item) => normalizeProject(item, (key) => this.countEntries("project", key))).filter((item) => item !== null);
 		return this.projectsValue;
 	}
 	writeProjects() {
 		try {
-			writeAtomic(this.projectsFile, `${JSON.stringify({
+			writeAtomicText(this.projectsFile, `${JSON.stringify({
 				schema: PROJECTS_SCHEMA,
 				projects: this.projects()
 			}, null, 2)}\n`);
@@ -7796,11 +8703,11 @@ var MemoryStore = class {
 		}
 	}
 };
-/** Entry ordering used outside text search: importance, then freshness. */
+/** 文本检索之外的排序：重要度优先，其次更新时间。 */
 function compareEntries(left, right) {
 	return right.importance - left.importance || right.updatedAt.localeCompare(left.updatedAt);
 }
-/** Project one entry to its list metadata (the body stays out of list payloads). */
+/** 把一个条目投影成列表元数据（正文不进入列表载荷）。 */
 function toMeta(entry) {
 	return {
 		id: entry.id,
@@ -7811,20 +8718,25 @@ function toMeta(entry) {
 		project: entry.project,
 		tags: entry.tags,
 		importance: entry.importance,
+		confidence: entry.confidence,
 		status: entry.status,
 		reinforcement: entry.reinforcement,
 		obsoleteVotes: entry.obsoleteVotes,
+		pinned: entry.pinned,
+		usedCount: entry.usedCount,
 		supersedes: entry.supersedes,
+		mergedFrom: entry.mergedFrom,
+		source: entry.source,
 		originSessionId: entry.originSessionId,
 		createdAt: entry.createdAt,
-		updatedAt: entry.updatedAt
+		updatedAt: entry.updatedAt,
+		...entry.lastUsedAt === void 0 ? {} : { lastUsedAt: entry.lastUsedAt }
 	};
 }
 /**
-* Query terms: whitespace words plus CJK bigrams, so Chinese queries match
-* without a tokenizer dependency.
+* 查询词：空白分词 + 中文 bigram，因此中文查询无需分词依赖也能命中。
 *
-* @param query - raw user query.
+* @param query - 用户原始查询。
 */
 function queryTerms(query) {
 	const lowered = query.toLowerCase().trim();
