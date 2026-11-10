@@ -2,6 +2,15 @@
  * card takes the prominent elevation and panel radius with border: 0 (the
  * hairline rides the shadow's first layer). */
 
+/* Panel-local layer: JS anchors it to the host main-panel viewport so the mask
+ * covers the content area only (sidebars stay outside) and the card centers in
+ * that region; `inset: 0` is the whole-window fallback. */
+.regionLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
 .mask {
   position: absolute;
   inset: 0;
@@ -19,8 +28,8 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  width: min(480px, calc(100vw - 32px));
-  max-height: calc(100vh - 80px);
+  width: min(480px, 100%);
+  max-height: 100%;
   padding: 16px 0;
   border: 0;
   border-radius: var(--dsw-radius-panel);
@@ -34,11 +43,11 @@
 }
 
 .dialogNarrow {
-  width: min(420px, calc(100vw - 32px));
+  width: min(420px, 100%);
 }
 
 .dialogWide {
-  width: min(640px, calc(100vw - 32px));
+  width: min(640px, 100%);
 }
 
 .head {

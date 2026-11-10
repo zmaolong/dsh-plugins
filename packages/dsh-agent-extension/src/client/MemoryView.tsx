@@ -1,7 +1,8 @@
 /**
- * Memory tab of the Agent Extension panel: one compact toolbar row (scope
- * switch, project select, active-filter chips, search with a type-filter
- * dropdown, and the action icons), the entry list as a full-width card grid
+ * Memory tab of the Agent Extension panel: a two-row toolbar (scope switch,
+ * project select and the action cluster with 「新建记忆」rightmost on the first
+ * row; active-filter chips and the search field with its type-filter dropdown
+ * on the second), the entry list as a full-width card grid
  * with tag-chip filtering and a recency sort, a wide detail dialog for
  * create / edit / save / deactivate / archive / restore / two-step delete,
  * the Markdown export plus an index-refresh action, a settings dialog
@@ -24,7 +25,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { api } from './api.ts'
 import { runAudit, type AuditEntry, type AuditResult } from './audit.ts'
 import { Badge, Button, EmptyBlock, IconButton, LoadingBlock, Select, Spinner, columnGap } from './controls.tsx'
-import { DialogShell } from './dialogs.tsx'
+import { DialogShell, PanelDialogLayer } from './dialogs.tsx'
 import { Icon } from './icons.tsx'
 import { Switch } from './Switch.tsx'
 import { errorMessageFor, formatTime, type JsonRecord, type Translate } from './presentation.ts'
@@ -1451,7 +1452,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   return (
     <div className={`${panelCss.page} ${css.view}`} role="region" aria-label={t('memoryTitle')}>
       <header className={css.topbar}>
-        <div className={css.scopeRow}>
+        <div className={css.topbarRow}>
           <div className={css.segmented} role="group" aria-label={t('memoryScopeLabel')}>
             <button
               type="button"
@@ -1470,146 +1471,141 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
               {t('memoryScopeProject')}
             </button>
           </div>
-        </div>
-        {scope === 'project' && projects.length > 0
-          ? (
-            <Select
-              label={t('memoryProjectLabel')}
-              className={css.projectSelect}
-              value={project}
-              options={projects.map(item => ({ value: item.key, label: item.displayName }))}
-              onChange={chooseProject}
-            />
-          )
-          : null}
-        {(typeFilter !== '' || tagFilter !== '')
-          ? (
-            <div className={css.filterChips}>
-              {typeFilter !== ''
-                ? (
-                  <span className={css.filterChip}>
-                    <span className={css.filterChipText}>{typeLabel(typeFilter, t)}</span>
-                    <button
-                      type="button"
-                      className={css.filterChipClear}
-                      aria-label={t('memoryClearTypeFilter')}
-                      onClick={() => { setTypeFilter('') }}
-                    >
-                      <Icon name="x" size={12} />
-                    </button>
-                  </span>
-                )
-                : null}
-              {tagFilter !== ''
-                ? (
-                  <span className={css.filterChip}>
-                    <span className={css.filterChipText}>{tagFilter}</span>
-                    <button
-                      type="button"
-                      className={css.filterChipClear}
-                      aria-label={t('memoryClearTagFilter')}
-                      onClick={() => { setTagFilter('') }}
-                    >
-                      <Icon name="x" size={12} />
-                    </button>
-                  </span>
-                )
-                : null}
-            </div>
-          )
-          : null}
-        <div className={css.searchWrap}>
-          <Icon name="search" size={16} />
-          <input
-            className={css.searchInput}
-            type="search"
-            value={query}
-            placeholder={t('memorySearchPlaceholder')}
-            aria-label={t('memorySearchPlaceholder')}
-            onChange={(event) => { setQuery(event.target.value) }}
-            onKeyDown={(event) => {
-              if (event.key !== 'Enter') return
-              event.preventDefault()
-              submitSearch()
-            }}
-          />
-          {query !== ''
+          {scope === 'project' && projects.length > 0
             ? (
-              <button
-                type="button"
-                className={css.searchClear}
-                title={t('clearSearch')}
-                aria-label={t('clearSearch')}
-                onClick={() => { setQuery(''); setAppliedQuery('') }}
-              >
-                <Icon name="x" size={14} />
-              </button>
+              <Select
+                label={t('memoryProjectLabel')}
+                className={css.projectSelect}
+                value={project}
+                options={projects.map(item => ({ value: item.key, label: item.displayName }))}
+                onChange={chooseProject}
+              />
             )
             : null}
-          <Select
-            label={t('memoryTypeFilterLabel')}
-            title={t('memoryTypeFilterLabel')}
-            align="right"
-            value={typeFilter}
-            options={typeOptions}
-            onChange={(next) => { setTypeFilter(next === '' ? '' : (TYPE_VALUES.find(value => value === next) ?? '')) }}
-            triggerClassName={css.filterTrigger}
-            trigger={(
-              <>
-                <Icon name="filter" size={14} />
-                {typeFilter !== '' ? <span className={css.filterDot} /> : null}
-              </>
-            )}
-          />
+          <div className={css.actions}>
+            <IconButton
+              icon="download"
+              title={exportBusy ? t('memoryExporting') : t('memoryExportMarkdown')}
+              busy={exportBusy}
+              disabled={exportBusy || projectRequired}
+              onClick={() => { void exportMarkdown() }}
+            />
+            <IconButton icon="settings" title={t('memorySettingsButton')} onClick={() => { setSettingsOpen(true) }} />
+            <IconButton
+              icon="info"
+              title={t('memoryDiagnosisButton')}
+              onClick={openDiagnosis}
+            />
+            <IconButton
+              icon="clipboardCheck"
+              title={auditBusy ? t('memoryAuditRunning') : t('memoryAuditButton')}
+              busy={auditBusy}
+              disabled={auditBusy || projectRequired}
+              onClick={() => { void openAudit() }}
+            />
+            <IconButton
+              icon="wand"
+              title={t('memoryMaintenanceButton')}
+              busy={maintenanceBusy}
+              disabled={maintenanceBusy || maintenanceRunning}
+              onClick={() => { void openMaintenance() }}
+            />
+            <IconButton
+              icon="refresh"
+              title={stateBusy || listBusy ? t('refreshing') : t('refresh')}
+              busy={stateBusy || listBusy}
+              disabled={stateBusy || listBusy}
+              onClick={() => {
+                setStateToken(token => token + 1)
+                setListToken(token => token + 1)
+              }}
+            />
+            <Button variant="primary" icon="plus" disabled={projectMissing} onClick={startCreate}>
+              {t('memoryNew')}
+            </Button>
+          </div>
         </div>
-        <div className={css.actions}>
-          <Button variant="primary" icon="plus" disabled={projectMissing} onClick={startCreate}>
-            {t('memoryNew')}
-          </Button>
-          <IconButton
-            icon="download"
-            title={exportBusy ? t('memoryExporting') : t('memoryExportMarkdown')}
-            busy={exportBusy}
-            disabled={exportBusy || projectRequired}
-            onClick={() => { void exportMarkdown() }}
-          />
-          <IconButton icon="settings" title={t('memorySettingsButton')} onClick={() => { setSettingsOpen(true) }} />
-          <IconButton
-            icon="info"
-            title={t('memoryDiagnosisButton')}
-            onClick={openDiagnosis}
-          />
-          <IconButton
-            icon="clipboardCheck"
-            title={auditBusy ? t('memoryAuditRunning') : t('memoryAuditButton')}
-            busy={auditBusy}
-            disabled={auditBusy || projectRequired}
-            onClick={() => { void openAudit() }}
-          />
-          <IconButton
-            icon="wand"
-            title={t('memoryMaintenanceButton')}
-            busy={maintenanceBusy}
-            disabled={maintenanceBusy || maintenanceRunning}
-            onClick={() => { void openMaintenance() }}
-          />
-          <IconButton
-            icon="refresh"
-            title={t('memoryRefreshIndex')}
-            busy={refreshIndexBusy}
-            disabled={refreshIndexBusy}
-            onClick={() => { void refreshIndex() }}
-          />
-          <IconButton
-            icon="refresh"
-            title={stateBusy || listBusy ? t('refreshing') : t('refresh')}
-            busy={stateBusy || listBusy}
-            disabled={stateBusy || listBusy}
-            onClick={() => {
-              setStateToken(token => token + 1)
-              setListToken(token => token + 1)
-            }}
-          />
+        <div className={css.searchRow}>
+          {(typeFilter !== '' || tagFilter !== '')
+            ? (
+              <div className={css.filterChips}>
+                {typeFilter !== ''
+                  ? (
+                    <span className={css.filterChip}>
+                      <span className={css.filterChipText}>{typeLabel(typeFilter, t)}</span>
+                      <button
+                        type="button"
+                        className={css.filterChipClear}
+                        aria-label={t('memoryClearTypeFilter')}
+                        onClick={() => { setTypeFilter('') }}
+                      >
+                        <Icon name="x" size={12} />
+                      </button>
+                    </span>
+                  )
+                  : null}
+                {tagFilter !== ''
+                  ? (
+                    <span className={css.filterChip}>
+                      <span className={css.filterChipText}>{tagFilter}</span>
+                      <button
+                        type="button"
+                        className={css.filterChipClear}
+                        aria-label={t('memoryClearTagFilter')}
+                        onClick={() => { setTagFilter('') }}
+                      >
+                        <Icon name="x" size={12} />
+                      </button>
+                    </span>
+                  )
+                  : null}
+              </div>
+            )
+            : null}
+          <div className={css.searchWrap}>
+            <Icon name="search" size={16} />
+            <input
+              className={css.searchInput}
+              type="search"
+              value={query}
+              placeholder={t('memorySearchPlaceholder')}
+              aria-label={t('memorySearchPlaceholder')}
+              onChange={(event) => { setQuery(event.target.value) }}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter') return
+                event.preventDefault()
+                submitSearch()
+              }}
+            />
+            {query !== ''
+              ? (
+                <button
+                  type="button"
+                  className={css.searchClear}
+                  title={t('clearSearch')}
+                  aria-label={t('clearSearch')}
+                  onClick={() => { setQuery(''); setAppliedQuery('') }}
+                >
+                  <Icon name="x" size={14} />
+                </button>
+              )
+              : null}
+            <Select
+              label={t('memoryTypeFilterLabel')}
+              title={t('memoryTypeFilterLabel')}
+              align="right"
+              value={typeFilter}
+              options={typeOptions}
+              onChange={(next) => { setTypeFilter(next === '' ? '' : (TYPE_VALUES.find(value => value === next) ?? '')) }}
+              triggerClassName={css.filterTrigger}
+              trigger={(
+                <>
+                  <Icon name="filter" size={14} />
+                  {typeFilter !== '' ? <span className={css.filterDot} /> : null}
+                </>
+              )}
+            />
+          </div>
         </div>
       </header>
 
@@ -1617,7 +1613,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
 
       {stateReady && showEditor
         ? (
-          <div className={css.dialogPortal}>
+          <PanelDialogLayer>
             <DialogShell
               t={t}
               title={creating ? t('memoryCreateTitle') : t('memoryEditTitle')}
@@ -1847,13 +1843,13 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                 )
                 : null}
             </DialogShell>
-          </div>
+          </PanelDialogLayer>
         )
         : null}
 
       {stateReady && maintenanceOpen
         ? (
-          <div className={css.dialogPortal}>
+          <PanelDialogLayer>
             <DialogShell
               t={t}
               title={maintenanceTitle}
@@ -1863,14 +1859,29 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
             >
               {maintenanceBody}
             </DialogShell>
-          </div>
+          </PanelDialogLayer>
         )
         : null}
 
       {stateReady && settingsOpen
         ? (
-          <div className={css.dialogPortal}>
-            <DialogShell t={t} title={t('memorySettingsTitle')} onClose={() => { setSettingsOpen(false) }}>
+          <PanelDialogLayer>
+            <DialogShell
+              t={t}
+              title={t('memorySettingsTitle')}
+              onClose={() => { setSettingsOpen(false) }}
+              footer={[
+                <Button
+                  key="refresh-index"
+                  variant="secondary"
+                  icon="refresh"
+                  disabled={refreshIndexBusy}
+                  onClick={() => { void refreshIndex() }}
+                >
+                  {refreshIndexBusy ? <Spinner /> : null}{t('memoryRefreshIndex')}
+                </Button>,
+              ]}
+            >
               <div className={css.settingList}>
                 <div className={css.settingRow}>
                   <span className={css.settingLabel}>{t('memorySettingsCapture')}</span>
@@ -2020,13 +2031,13 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                   )}
               </div>
             </DialogShell>
-          </div>
+          </PanelDialogLayer>
         )
         : null}
 
       {stateReady && auditOpen && auditResult !== null
         ? (
-          <div className={css.dialogPortal}>
+          <PanelDialogLayer>
             <DialogShell t={t} title={t('memoryAuditTitle')} wide onClose={() => { setAuditOpen(false) }}>
               {auditEmpty
                 ? <EmptyBlock description={t('memoryAuditEmpty')} />
@@ -2091,13 +2102,13 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                   )}
               </div>
             </DialogShell>
-          </div>
+          </PanelDialogLayer>
         )
         : null}
 
       {stateReady && diagnosisOpen
         ? (
-          <div className={css.dialogPortal}>
+          <PanelDialogLayer>
             <DialogShell
               t={t}
               title={t('memoryDiagnosisTitle')}
@@ -2134,7 +2145,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                     </div>
                   )}
             </DialogShell>
-          </div>
+          </PanelDialogLayer>
         )
         : null}
     </div>

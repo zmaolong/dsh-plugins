@@ -1,6 +1,6 @@
-/* Memory tab: one compact toolbar row (scope switch, active-filter chips,
- * search + type-filter dropdown, action icons), entry list, detail editor, and
- * the settings dialog (capture-injection switches, limits, statistics). Shares
+/* Memory tab: a two-row toolbar (scope switch + project select and the action
+ * cluster top-right, search below), entry list, detail editor, and the
+ * settings dialog (capture-injection switches, limits, statistics). Shares
  * the page frame with panel.module.css and only consumes host theme tokens
  * (--dsw-alias-*); hover styles stay behind (hover: hover) and no local
  * palette is defined here. */
@@ -9,23 +9,20 @@
   gap: 20px;
 }
 
-/* Toolbar row: scope switch and search on the left, actions on the right. */
+/* Toolbar: two rows — scope switch + project select on the left of the first
+ * row with the action cluster on its right (「新建记忆」rightmost), and the
+ * search field with the active-filter chips on the second row. */
 .topbar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.topbarRow {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   gap: 12px 16px;
-}
-
-.scopeRow {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  /* The scope switch never shrinks; the project select is a sibling item on
-   * the topbar row, so wrapping decisions stay at the topbar level. */
-  flex: none;
 }
 
 .segmented {
@@ -44,8 +41,17 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
   margin-left: auto;
+}
+
+/* Second toolbar row: active-filter chips followed by the search field. */
+.searchRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
 }
 
 /* Search field with the inline type-filter trigger at its right edge. */
@@ -709,14 +715,6 @@
   font-size: 13px;
   color: var(--dsw-alias-state-error-primary);
   overflow-wrap: anywhere;
-}
-
-/* Settings + statistics live in a dialog: the view renders a fixed full-screen
- * portal so DialogShell's absolute mask covers the whole window. */
-.dialogPortal {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
 }
 
 .settingList {

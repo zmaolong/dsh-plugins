@@ -7,7 +7,7 @@
  * @module dsh-agent-extension/client/dialogs
  */
 
-import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from 'react'
 import clsx from 'clsx'
 import { Button, IconButton, Spinner } from './controls.tsx'
 import { Icon } from './icons.tsx'
@@ -15,6 +15,50 @@ import { useEscapeClose } from './overlay-hooks.ts'
 import { identity, type DialogState, type HubActions, type HubState, type UseHub } from './store.ts'
 import { formatTime, errorMessageFor, orderMarkets, type JsonRecord, type Translate } from './presentation.ts'
 import css from './dialogs.module.css'
+
+/** Scrollable ancestor that is the host's main-panel viewport, if any. */
+function panelViewportOf(node: HTMLElement): HTMLElement | null {
+  for (let parent = node.parentElement; parent !== null; parent = parent.parentElement) {
+    const overflowY = getComputedStyle(parent).overflowY
+    if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') return parent
+  }
+  return null
+}
+
+/**
+ * In-panel dialog layer: anchors the mask to the host main-panel viewport
+ * instead of the whole window, so dialogs stay centered in the content area
+ * while sidebars, split panes, or the window change size. Falls back to the
+ * viewport when the panel has no scrollable ancestor (tests, plain DOM).
+ */
+export function PanelDialogLayer({ children }: { children: ReactNode }): ReactNode {
+  const layerRef = useRef<HTMLDivElement | null>(null)
+  const [style, setStyle] = useState<CSSProperties | undefined>(undefined)
+  useLayoutEffect(() => {
+    const layer = layerRef.current
+    if (layer === null) return undefined
+    const viewport = panelViewportOf(layer)
+    if (viewport === null) return undefined
+    const measure = (): void => {
+      const box = viewport.getBoundingClientRect()
+      // clientWidth/Height drop the scrollbar gutters: a click on the gutter must
+      // scroll the list, not land on the mask and close the dialog.
+      const width = viewport.clientWidth
+      const height = viewport.clientHeight
+      if (width <= 0 || height <= 0) return
+      setStyle({ left: box.left, top: box.top, width, height })
+    }
+    measure()
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(measure) : undefined
+    observer?.observe(viewport)
+    window.addEventListener('resize', measure)
+    return () => {
+      observer?.disconnect()
+      window.removeEventListener('resize', measure)
+    }
+  }, [])
+  return <div ref={layerRef} className={css.regionLayer} style={style}>{children}</div>
+}
 
 /** Focusable descendants of the dialog, in document order. */
 function focusablesIn(dialog: HTMLElement): HTMLElement[] {

@@ -507,7 +507,18 @@ describe('MemoryView', () => {
     expect(bodyOf(exportCall)).toEqual({ scope: 'project', project: '/repo/new' })
   })
 
-  it('刷新索引调用 /memory/refresh-index 并提示成功，不重载列表', async () => {
+  it('工具条只保留一个刷新按钮，刷新索引收进设置对话框', async () => {
+    installFetch()
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    render(<MemoryView actions={controller.actions} t={t} />)
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    expect(screen.getAllByRole('button', { name: t('refresh') })).toHaveLength(1)
+    expect(screen.queryByRole('button', { name: t('memoryRefreshIndex') })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: t('memorySettingsButton') }))
+    expect(await screen.findByRole('button', { name: t('memoryRefreshIndex') })).toBeTruthy()
+  })
+
+  it('设置对话框内刷新索引调用 /memory/refresh-index 并提示成功，不重载列表', async () => {
     const { calls } = installFetch()
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
     const toast = vi.spyOn(controller.actions, 'toast')
@@ -515,7 +526,8 @@ describe('MemoryView', () => {
     await screen.findByRole('button', { name: /提交信息用中文/u })
     const listCallCount = (): number => calls.filter(call => call.url.includes('/memory/list')).length
     const listCallsBefore = listCallCount()
-    fireEvent.click(screen.getByRole('button', { name: t('memoryRefreshIndex') }))
+    fireEvent.click(screen.getByRole('button', { name: t('memorySettingsButton') }))
+    fireEvent.click(await screen.findByRole('button', { name: t('memoryRefreshIndex') }))
     await waitFor(() => {
       expect(calls.some(call => call.url.includes('/memory/refresh-index'))).toBe(true)
     })
@@ -529,6 +541,39 @@ describe('MemoryView', () => {
     })
     // 只刷新提示词索引，不触发列表重载。
     expect(listCallCount()).toBe(listCallsBefore)
+  })
+
+  it('弹窗浮层锚定到宿主主面板区域，而不是整个窗口', async () => {
+    installFetch()
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const { container } = render(
+      <div style={{ overflowY: 'auto' }}>
+        <MemoryView actions={controller.actions} t={t} />
+      </div>,
+    )
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    // 宿主主面板：一个可滚动的定位容器（真实宿主里是面板滚动层）。
+    const panel = container.firstElementChild as HTMLDivElement
+    Object.defineProperty(panel, 'clientWidth', { configurable: true, value: 1000 })
+    Object.defineProperty(panel, 'clientHeight', { configurable: true, value: 700 })
+    vi.spyOn(panel, 'getBoundingClientRect').mockReturnValue({
+      left: 280,
+      top: 12,
+      width: 1000,
+      height: 700,
+      right: 1280,
+      bottom: 712,
+      x: 280,
+      y: 12,
+      toJSON: () => ({}),
+    } as DOMRect)
+    fireEvent.click(screen.getByRole('button', { name: t('memorySettingsButton') }))
+    const dialog = await screen.findByRole('dialog', { name: t('memorySettingsTitle') })
+    const layer = dialog.parentElement?.parentElement as HTMLDivElement
+    expect(layer.style.left).toBe('280px')
+    expect(layer.style.top).toBe('12px')
+    expect(layer.style.width).toBe('1000px')
+    expect(layer.style.height).toBe('700px')
   })
 
   it('类型筛选激活时在搜索框左侧显示可清除的筛选 chip', async () => {
