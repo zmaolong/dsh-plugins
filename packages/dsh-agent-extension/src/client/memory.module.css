@@ -1,8 +1,9 @@
-/* Memory tab: one compact toolbar row (scope switch, search + type-filter
- * dropdown, action icons), entry list, detail editor, and the settings dialog
- * (capture-injection switches, limits, statistics). Shares the page frame with
- * panel.module.css and only consumes host theme tokens (--dsw-alias-*); hover
- * styles stay behind (hover: hover) and no local palette is defined here. */
+/* Memory tab: one compact toolbar row (scope switch, active-filter chips,
+ * search + type-filter dropdown, action icons), entry list, detail editor, and
+ * the settings dialog (capture-injection switches, limits, statistics). Shares
+ * the page frame with panel.module.css and only consumes host theme tokens
+ * (--dsw-alias-*); hover styles stay behind (hover: hover) and no local
+ * palette is defined here. */
 
 .view {
   gap: 20px;
@@ -229,6 +230,64 @@
   text-overflow: ellipsis;
 }
 
+/* Active-filter chips shown left of the search field: one per active type or
+ * tag filter, each with an inline clear button. */
+.filterChips {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+}
+
+.filterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 160px;
+  padding: 0 4px 0 8px;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  line-height: 22px;
+}
+
+.filterChipText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filterChipClear {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.filterChipClear:focus-visible {
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 1px;
+}
+
+@media (hover: hover) {
+  .filterChipClear:hover {
+    background: var(--dsw-alias-border-l3);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+
 /* Entry list takes the full row: a responsive card grid that wraps narrower
  * as the panel widens; the detail editor opens in a dialog on top. */
 .listPane {
@@ -260,6 +319,30 @@
   white-space: nowrap;
   font-size: 12px;
   color: var(--dsw-alias-label-tertiary);
+}
+
+/* Right side of the list header: the sort select and the entry count. */
+.listHeadTools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sortSelect {
+  height: 28px;
+  padding: 0 8px;
+  border: 0.5px solid var(--dsw-alias-border-l3);
+  border-radius: var(--dsw-radius-sm);
+  background: var(--dsw-alias-bg-layer-3);
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.sortSelect:focus-visible {
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 1px;
 }
 
 .entryGrid {
@@ -350,20 +433,36 @@
   color: var(--dsw-alias-label-tertiary);
 }
 
-/* Tag chips: at most two inline, an overflow counter beyond that. */
+/* Tag chips: at most two inline, an overflow counter beyond that; a chip is
+ * a button that filters the list by its tag. */
 .entryTag {
   flex: none;
   max-width: 120px;
   padding: 0 6px;
+  border: 0;
   border-radius: 999px;
   corner-shape: round;
   background: var(--dsw-alias-interactive-bg-hover);
   color: var(--dsw-alias-label-secondary);
+  font: inherit;
   font-size: 11px;
   line-height: 18px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
+}
+
+.entryTag:focus-visible {
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 1px;
+}
+
+@media (hover: hover) {
+  .entryTag:hover {
+    background: var(--dsw-alias-border-l3);
+    color: var(--dsw-alias-label-primary);
+  }
 }
 
 .entryTagMore {
@@ -434,6 +533,111 @@
 .textarea:focus-visible {
   outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
   outline-offset: 1px;
+}
+
+/* Importance slider: native range with the live value at its right edge. */
+.rangeRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rangeInput {
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  margin: 0;
+  accent-color: var(--dsw-alias-state-business-primary);
+}
+
+.rangeValue {
+  flex: none;
+  min-width: 28px;
+  text-align: right;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-primary);
+}
+
+/* Chip-style tag editor: committed chips plus a trailing inline input; the
+ * focus ring moves to the wrapping box. */
+.tagBox {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 0.5px solid var(--dsw-alias-border-l3);
+  border-radius: var(--dsw-radius-sm);
+  background: var(--dsw-alias-bg-layer-3);
+  cursor: text;
+}
+
+.tagBox:focus-within {
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 1px;
+}
+
+.tagChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 160px;
+  padding: 0 4px 0 8px;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+  font-size: 12px;
+  line-height: 22px;
+}
+
+.tagChipText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tagChipRemove {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  corner-shape: round;
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  cursor: pointer;
+}
+
+.tagChipRemove:focus-visible {
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 1px;
+}
+
+@media (hover: hover) {
+  .tagChipRemove:hover {
+    color: var(--dsw-alias-label-primary);
+  }
+}
+
+.tagInput {
+  flex: 1 1 80px;
+  min-width: 80px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
 }
 
 .textarea {

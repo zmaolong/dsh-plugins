@@ -216,7 +216,7 @@ window.__ModuleLoader__.load({
 			memoryFieldTags: "标签",
 			memoryFieldImportance: "重要性",
 			memoryFieldContent: "内容",
-			memoryTagsHint: "用逗号分隔多个标签",
+			memoryTagsHint: "回车或逗号添加标签",
 			memoryImportanceHint: "0–100，越大越优先注入",
 			memorySave: "保存",
 			memorySaving: "保存中…",
@@ -249,7 +249,14 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "已捕获条目",
 			memoryStatHitRate: "注入命中率",
 			memoryStatOverflow: "溢出合计",
-			memoryStatNoData: "暂无数据"
+			memoryStatNoData: "暂无数据",
+			memorySortLabel: "排序",
+			memorySortDefault: "重要度优先",
+			memorySortRecent: "最近更新",
+			memoryClearTypeFilter: "清除类型筛选",
+			memoryClearTagFilter: "清除标签筛选",
+			memoryTagRemove: "移除标签 {tag}",
+			memoryTagFilterHint: "点击按此标签筛选"
 		};
 		/** English dictionary (sentence case; same key set as `zh`). */
 		const en = {
@@ -451,7 +458,7 @@ window.__ModuleLoader__.load({
 			memoryFieldTags: "Tags",
 			memoryFieldImportance: "Importance",
 			memoryFieldContent: "Content",
-			memoryTagsHint: "Separate tags with commas",
+			memoryTagsHint: "Press Enter or comma to add a tag",
 			memoryImportanceHint: "0–100; higher values are injected first",
 			memorySave: "Save",
 			memorySaving: "Saving…",
@@ -484,7 +491,14 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "Entries captured",
 			memoryStatHitRate: "Injection hit rate",
 			memoryStatOverflow: "Overflow total",
-			memoryStatNoData: "No data yet"
+			memoryStatNoData: "No data yet",
+			memorySortLabel: "Sort",
+			memorySortDefault: "By importance",
+			memorySortRecent: "Recently updated",
+			memoryClearTypeFilter: "Clear type filter",
+			memoryClearTagFilter: "Clear tag filter",
+			memoryTagRemove: "Remove tag {tag}",
+			memoryTagFilterHint: "Click to filter by this tag"
 		};
 		/** Japanese dictionary (same key set as `zh`). */
 		const ja = {
@@ -686,7 +700,7 @@ window.__ModuleLoader__.load({
 			memoryFieldTags: "タグ",
 			memoryFieldImportance: "重要度",
 			memoryFieldContent: "内容",
-			memoryTagsHint: "タグはカンマ区切り",
+			memoryTagsHint: "Enter またはカンマでタグを追加",
 			memoryImportanceHint: "0〜100。大きいほど優先して注入されます",
 			memorySave: "保存",
 			memorySaving: "保存中…",
@@ -719,7 +733,14 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "キャプチャ済み件数",
 			memoryStatHitRate: "注入ヒット率",
 			memoryStatOverflow: "オーバーフロー合計",
-			memoryStatNoData: "データなし"
+			memoryStatNoData: "データなし",
+			memorySortLabel: "並び替え",
+			memorySortDefault: "重要度順",
+			memorySortRecent: "更新が新しい順",
+			memoryClearTypeFilter: "タイプ絞り込みを解除",
+			memoryClearTagFilter: "タグ絞り込みを解除",
+			memoryTagRemove: "タグ {tag} を削除",
+			memoryTagFilterHint: "クリックでこのタグで絞り込み"
 		};
 		/** Spanish dictionary (same key set as `zh`). */
 		const es = {
@@ -921,7 +942,7 @@ window.__ModuleLoader__.load({
 			memoryFieldTags: "Etiquetas",
 			memoryFieldImportance: "Importancia",
 			memoryFieldContent: "Contenido",
-			memoryTagsHint: "Separe las etiquetas con comas",
+			memoryTagsHint: "Pulse Intro o una coma para añadir la etiqueta",
 			memoryImportanceHint: "0–100; los valores altos se inyectan primero",
 			memorySave: "Guardar",
 			memorySaving: "Guardando…",
@@ -954,7 +975,14 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "Entradas capturadas",
 			memoryStatHitRate: "Tasa de acierto",
 			memoryStatOverflow: "Total de desbordamiento",
-			memoryStatNoData: "Sin datos"
+			memoryStatNoData: "Sin datos",
+			memorySortLabel: "Ordenar",
+			memorySortDefault: "Por importancia",
+			memorySortRecent: "Actualizadas recientemente",
+			memoryClearTypeFilter: "Quitar el filtro de tipo",
+			memoryClearTagFilter: "Quitar el filtro de etiqueta",
+			memoryTagRemove: "Quitar la etiqueta {tag}",
+			memoryTagFilterHint: "Haga clic para filtrar por esta etiqueta"
 		};
 		/** French dictionary (same key set as `zh`). */
 		const fr = {
@@ -1156,7 +1184,7 @@ window.__ModuleLoader__.load({
 			memoryFieldTags: "Étiquettes",
 			memoryFieldImportance: "Importance",
 			memoryFieldContent: "Contenu",
-			memoryTagsHint: "Séparez les étiquettes par des virgules",
+			memoryTagsHint: "Appuyez sur Entrée ou une virgule pour ajouter l’étiquette",
 			memoryImportanceHint: "0–100 ; les valeurs élevées sont injectées en premier",
 			memorySave: "Enregistrer",
 			memorySaving: "Enregistrement…",
@@ -1189,7 +1217,14 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "Entrées capturées",
 			memoryStatHitRate: "Taux de réussite",
 			memoryStatOverflow: "Total de débordement",
-			memoryStatNoData: "Aucune donnée"
+			memoryStatNoData: "Aucune donnée",
+			memorySortLabel: "Tri",
+			memorySortDefault: "Par importance",
+			memorySortRecent: "Récemment mises à jour",
+			memoryClearTypeFilter: "Effacer le filtre de type",
+			memoryClearTagFilter: "Effacer le filtre d’étiquette",
+			memoryTagRemove: "Supprimer l’étiquette {tag}",
+			memoryTagFilterHint: "Cliquez pour filtrer par cette étiquette"
 		};
 		/** German dictionary (same key set as `zh`). */
 		const de = {
@@ -1391,7 +1426,7 @@ window.__ModuleLoader__.load({
 			memoryFieldTags: "Tags",
 			memoryFieldImportance: "Wichtigkeit",
 			memoryFieldContent: "Inhalt",
-			memoryTagsHint: "Tags durch Kommas trennen",
+			memoryTagsHint: "Tag mit Eingabetaste oder Komma hinzufügen",
 			memoryImportanceHint: "0–100; höhere Werte werden zuerst injiziert",
 			memorySave: "Speichern",
 			memorySaving: "Speichern…",
@@ -1424,7 +1459,14 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "Erfasste Einträge",
 			memoryStatHitRate: "Trefferquote",
 			memoryStatOverflow: "Überlauf gesamt",
-			memoryStatNoData: "Keine Daten"
+			memoryStatNoData: "Keine Daten",
+			memorySortLabel: "Sortierung",
+			memorySortDefault: "Nach Wichtigkeit",
+			memorySortRecent: "Zuletzt aktualisiert",
+			memoryClearTypeFilter: "Typfilter löschen",
+			memoryClearTagFilter: "Tag-Filter löschen",
+			memoryTagRemove: "Tag {tag} entfernen",
+			memoryTagFilterHint: "Klicken, um nach diesem Tag zu filtern"
 		};
 		/** Russian dictionary (same key set as `zh`). */
 		const ru = {
@@ -1626,7 +1668,7 @@ window.__ModuleLoader__.load({
 			memoryFieldTags: "Теги",
 			memoryFieldImportance: "Важность",
 			memoryFieldContent: "Содержание",
-			memoryTagsHint: "Разделяйте теги запятыми",
+			memoryTagsHint: "Добавьте тег клавишей Enter или запятой",
 			memoryImportanceHint: "0–100; чем выше, тем раньше внедряется",
 			memorySave: "Сохранить",
 			memorySaving: "Сохранение…",
@@ -1659,7 +1701,14 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "Захвачено записей",
 			memoryStatHitRate: "Доля попаданий",
 			memoryStatOverflow: "Переполнение всего",
-			memoryStatNoData: "Нет данных"
+			memoryStatNoData: "Нет данных",
+			memorySortLabel: "Сортировка",
+			memorySortDefault: "По важности",
+			memorySortRecent: "Сначала недавние",
+			memoryClearTypeFilter: "Сбросить фильтр по типу",
+			memoryClearTagFilter: "Сбросить фильтр по тегу",
+			memoryTagRemove: "Удалить тег {tag}",
+			memoryTagFilterHint: "Нажмите, чтобы отфильтровать по этому тегу"
 		};
 		/** Portuguese dictionary (same key set as `zh`). */
 		const pt = {
@@ -1861,7 +1910,7 @@ window.__ModuleLoader__.load({
 			memoryFieldTags: "Etiquetas",
 			memoryFieldImportance: "Importância",
 			memoryFieldContent: "Conteúdo",
-			memoryTagsHint: "Separe as etiquetas com vírgulas",
+			memoryTagsHint: "Pressione Enter ou vírgula para adicionar a etiqueta",
 			memoryImportanceHint: "0–100; valores maiores são injetados primeiro",
 			memorySave: "Salvar",
 			memorySaving: "Salvando…",
@@ -1894,7 +1943,14 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "Entradas capturadas",
 			memoryStatHitRate: "Taxa de acerto",
 			memoryStatOverflow: "Total de excedente",
-			memoryStatNoData: "Sem dados"
+			memoryStatNoData: "Sem dados",
+			memorySortLabel: "Ordenação",
+			memorySortDefault: "Por importância",
+			memorySortRecent: "Atualizadas recentemente",
+			memoryClearTypeFilter: "Limpar o filtro de tipo",
+			memoryClearTagFilter: "Limpar o filtro de etiqueta",
+			memoryTagRemove: "Remover a etiqueta {tag}",
+			memoryTagFilterHint: "Clique para filtrar por esta etiqueta"
 		};
 		// src/client/api.ts
 		/** Envelope error carrying the host's stable code. */
@@ -5422,7 +5478,7 @@ window.__ModuleLoader__.load({
 			});
 		}
 		// \0dsh-css:E:\workspace\dsh-plugins\packages\dsh-agent-extension\src\client\memory.module.css.mjs
-		const css$2 = ".Iw3mRa_view{gap:20px}.Iw3mRa_topbar{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px 16px;display:flex}.Iw3mRa_scopeRow{flex:none;align-items:center;gap:12px;min-width:0;display:flex}.Iw3mRa_segmented{flex-wrap:wrap;align-items:center;gap:6px;display:inline-flex}.Iw3mRa_projectSelect{flex:0 220px;width:auto;min-width:0}.Iw3mRa_actions{flex-wrap:wrap;align-items:center;gap:8px;margin-left:auto;display:flex}.Iw3mRa_searchWrap{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-3);min-width:200px;max-width:480px;height:36px;color:var(--dsw-alias-label-tertiary);flex:220px;align-items:center;gap:8px;padding:0 10px;display:flex}.Iw3mRa_searchWrap>svg{flex:none}.Iw3mRa_searchInput{min-width:0;height:100%;color:var(--dsw-alias-label-primary);font:inherit;background:0 0;border:0;outline:none;flex:1;padding:0;font-size:14px}.Iw3mRa_searchInput::placeholder{color:var(--dsw-alias-label-tertiary)}.Iw3mRa_searchInput::-webkit-search-decoration,.Iw3mRa_searchInput::-webkit-search-cancel-button{-webkit-appearance:none;display:none}.Iw3mRa_searchClear{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_searchClear:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.Iw3mRa_searchClear:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.Iw3mRa_filterWrap{flex:none;display:inline-flex;position:relative}.Iw3mRa_filterWrap:focus{outline:none}.Iw3mRa_filterTrigger{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;justify-content:center;align-items:center;padding:0;display:flex;position:relative}.Iw3mRa_filterTrigger:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_filterTrigger:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.Iw3mRa_filterDot{corner-shape:round;background:var(--dsw-alias-state-business-primary);border-radius:999px;width:6px;height:6px;position:absolute;top:2px;right:2px}.Iw3mRa_menuBackdrop{z-index:40;background:0 0;position:fixed;inset:0}.Iw3mRa_filterMenu{z-index:41;border-radius:var(--dsw-radius-lg);background:var(--dsw-menu-surface-fill);min-width:160px;backdrop-filter:var(--dsw-menu-backdrop-filter);box-shadow:var(--dsw-elevation-panel);border:0;padding:4px;position:absolute;top:calc(100% + 4px);right:0}.Iw3mRa_filterItem{border-radius:var(--dsw-radius-md);width:100%;color:var(--dsw-alias-label-primary);font:inherit;text-align:left;white-space:nowrap;cursor:pointer;background:0 0;border:0;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;font-size:14px;display:flex}.Iw3mRa_filterItem:focus-visible{background:var(--dsw-alias-interactive-bg-hover);outline:none}@media (hover:hover){.Iw3mRa_filterItem:hover{background:var(--dsw-alias-interactive-bg-hover)}}.Iw3mRa_filterItem[aria-checked=true]{color:var(--dsw-alias-state-business-primary)}.Iw3mRa_filterItemText{text-overflow:ellipsis;min-width:0;overflow:hidden}.Iw3mRa_listPane{flex-direction:column;gap:8px;min-width:0;display:flex}.Iw3mRa_listHead{justify-content:space-between;align-items:baseline;gap:8px;padding:0 8px 8px;display:flex}.Iw3mRa_sectionTitle{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:16px;font-weight:500}.Iw3mRa_sectionCount{white-space:nowrap;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.Iw3mRa_entryGrid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;display:grid}.Iw3mRa_entryCard{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-3);min-width:0;color:inherit;font:inherit;text-align:left;cursor:pointer;flex-direction:column;gap:6px;padding:14px;transition:background .12s,border-color .12s;display:flex}.Iw3mRa_entryCard:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.Iw3mRa_entryCard:hover{border-color:var(--dsw-alias-border-l4);background:var(--dsw-alias-interactive-bg-hover)}}.Iw3mRa_entryTitleRow{align-items:center;gap:6px;min-width:0;display:flex}.Iw3mRa_entryName{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px;font-weight:500}.Iw3mRa_entryImportance{corner-shape:round;background:color-mix(in srgb, var(--dsw-alias-state-warn-primary) 14%, transparent);color:var(--dsw-alias-state-warn-primary);border-radius:999px;flex:none;padding:0 6px;font-size:11px;font-weight:600;line-height:18px}.Iw3mRa_entryDesc{-webkit-line-clamp:2;overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-secondary);-webkit-box-orient:vertical;font-size:13px;display:-webkit-box;overflow:hidden}.Iw3mRa_entryMeta{flex-wrap:wrap;align-items:center;gap:6px;display:flex}.Iw3mRa_entryTime{color:var(--dsw-alias-label-tertiary);margin-left:auto;font-size:12px}.Iw3mRa_entryTag{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:120px;color:var(--dsw-alias-label-secondary);text-overflow:ellipsis;white-space:nowrap;border-radius:999px;flex:none;padding:0 6px;font-size:11px;line-height:18px;overflow:hidden}.Iw3mRa_entryTagMore{color:var(--dsw-alias-label-tertiary);flex:none;font-size:11px}.Iw3mRa_editor{flex-direction:column;gap:12px;min-width:0;display:flex}.Iw3mRa_editorStatus{align-items:center;display:flex}.Iw3mRa_formGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;display:grid}@container (width<=720px){.Iw3mRa_formGrid{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_field{flex-direction:column;gap:4px;min-width:0;display:flex}.Iw3mRa_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500}.Iw3mRa_fieldHint{color:var(--dsw-alias-label-tertiary);font-size:11px}.Iw3mRa_input{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:100%;min-width:0;height:36px;color:var(--dsw-alias-label-primary);font:inherit;padding:0 10px;font-size:14px}.Iw3mRa_input:focus-visible,.Iw3mRa_textarea:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}.Iw3mRa_textarea{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:100%;min-height:180px;color:var(--dsw-alias-label-primary);font:inherit;resize:vertical;padding:8px 10px;font-size:14px;line-height:1.5}.Iw3mRa_formActions{flex-wrap:wrap;align-items:center;gap:8px;padding-top:4px;display:flex}.Iw3mRa_formActionsRight{flex-wrap:wrap;flex:auto;justify-content:flex-end;align-items:center;gap:8px;min-width:0;display:flex}.Iw3mRa_confirmArea{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;display:flex}.Iw3mRa_confirmText{color:var(--dsw-alias-state-error-primary);overflow-wrap:anywhere;font-size:13px}.Iw3mRa_dialogPortal{z-index:40;position:fixed;inset:0}.Iw3mRa_settingList{flex-direction:column;display:flex}.Iw3mRa_settingRow{justify-content:space-between;align-items:center;gap:12px;padding:8px 0;display:flex}.Iw3mRa_settingRow+.Iw3mRa_settingRow{border-top:.5px solid var(--dsw-alias-border-l3)}.Iw3mRa_settingLabel{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px}.Iw3mRa_numberGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;display:grid}@container (width<=720px){.Iw3mRa_numberGrid{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_divider{background:var(--dsw-alias-border-l2);height:.5px}.Iw3mRa_statsTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:14px;font-weight:500}.Iw3mRa_statGrid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;display:grid}.Iw3mRa_stat{border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);flex-direction:column;gap:2px;padding:10px 12px;display:flex}.Iw3mRa_statLabel{color:var(--dsw-alias-label-secondary);font-size:12px}.Iw3mRa_statValue{color:var(--dsw-alias-label-primary);font-size:16px;font-weight:600}.Iw3mRa_errorBox{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);flex-wrap:wrap;align-items:flex-start;gap:8px;padding:10px 12px;font-size:13px;display:flex}.Iw3mRa_errorText{overflow-wrap:anywhere;white-space:pre-wrap;flex:160px;min-width:0}";
+		const css$2 = ".Iw3mRa_view{gap:20px}.Iw3mRa_topbar{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px 16px;display:flex}.Iw3mRa_scopeRow{flex:none;align-items:center;gap:12px;min-width:0;display:flex}.Iw3mRa_segmented{flex-wrap:wrap;align-items:center;gap:6px;display:inline-flex}.Iw3mRa_projectSelect{flex:0 220px;width:auto;min-width:0}.Iw3mRa_actions{flex-wrap:wrap;align-items:center;gap:8px;margin-left:auto;display:flex}.Iw3mRa_searchWrap{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-3);min-width:200px;max-width:480px;height:36px;color:var(--dsw-alias-label-tertiary);flex:220px;align-items:center;gap:8px;padding:0 10px;display:flex}.Iw3mRa_searchWrap>svg{flex:none}.Iw3mRa_searchInput{min-width:0;height:100%;color:var(--dsw-alias-label-primary);font:inherit;background:0 0;border:0;outline:none;flex:1;padding:0;font-size:14px}.Iw3mRa_searchInput::placeholder{color:var(--dsw-alias-label-tertiary)}.Iw3mRa_searchInput::-webkit-search-decoration,.Iw3mRa_searchInput::-webkit-search-cancel-button{-webkit-appearance:none;display:none}.Iw3mRa_searchClear{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_searchClear:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.Iw3mRa_searchClear:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.Iw3mRa_filterWrap{flex:none;display:inline-flex;position:relative}.Iw3mRa_filterWrap:focus{outline:none}.Iw3mRa_filterTrigger{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;justify-content:center;align-items:center;padding:0;display:flex;position:relative}.Iw3mRa_filterTrigger:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_filterTrigger:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.Iw3mRa_filterDot{corner-shape:round;background:var(--dsw-alias-state-business-primary);border-radius:999px;width:6px;height:6px;position:absolute;top:2px;right:2px}.Iw3mRa_menuBackdrop{z-index:40;background:0 0;position:fixed;inset:0}.Iw3mRa_filterMenu{z-index:41;border-radius:var(--dsw-radius-lg);background:var(--dsw-menu-surface-fill);min-width:160px;backdrop-filter:var(--dsw-menu-backdrop-filter);box-shadow:var(--dsw-elevation-panel);border:0;padding:4px;position:absolute;top:calc(100% + 4px);right:0}.Iw3mRa_filterItem{border-radius:var(--dsw-radius-md);width:100%;color:var(--dsw-alias-label-primary);font:inherit;text-align:left;white-space:nowrap;cursor:pointer;background:0 0;border:0;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;font-size:14px;display:flex}.Iw3mRa_filterItem:focus-visible{background:var(--dsw-alias-interactive-bg-hover);outline:none}@media (hover:hover){.Iw3mRa_filterItem:hover{background:var(--dsw-alias-interactive-bg-hover)}}.Iw3mRa_filterItem[aria-checked=true]{color:var(--dsw-alias-state-business-primary)}.Iw3mRa_filterItemText{text-overflow:ellipsis;min-width:0;overflow:hidden}.Iw3mRa_filterChips{flex:none;align-items:center;gap:6px;display:flex}.Iw3mRa_filterChip{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:160px;color:var(--dsw-alias-label-secondary);border-radius:999px;align-items:center;gap:2px;padding:0 4px 0 8px;font-size:12px;line-height:22px;display:inline-flex}.Iw3mRa_filterChipText{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.Iw3mRa_filterChipClear{corner-shape:round;width:18px;height:18px;color:inherit;cursor:pointer;background:0 0;border:0;border-radius:999px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_filterChipClear:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_filterChipClear:hover{background:var(--dsw-alias-border-l3);color:var(--dsw-alias-label-primary)}}.Iw3mRa_listPane{flex-direction:column;gap:8px;min-width:0;display:flex}.Iw3mRa_listHead{justify-content:space-between;align-items:baseline;gap:8px;padding:0 8px 8px;display:flex}.Iw3mRa_sectionTitle{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:16px;font-weight:500}.Iw3mRa_sectionCount{white-space:nowrap;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.Iw3mRa_listHeadTools{align-items:center;gap:8px;display:flex}.Iw3mRa_sortSelect{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);height:28px;color:var(--dsw-alias-label-secondary);font:inherit;cursor:pointer;padding:0 8px;font-size:12px}.Iw3mRa_sortSelect:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}.Iw3mRa_entryGrid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;display:grid}.Iw3mRa_entryCard{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-3);min-width:0;color:inherit;font:inherit;text-align:left;cursor:pointer;flex-direction:column;gap:6px;padding:14px;transition:background .12s,border-color .12s;display:flex}.Iw3mRa_entryCard:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.Iw3mRa_entryCard:hover{border-color:var(--dsw-alias-border-l4);background:var(--dsw-alias-interactive-bg-hover)}}.Iw3mRa_entryTitleRow{align-items:center;gap:6px;min-width:0;display:flex}.Iw3mRa_entryName{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px;font-weight:500}.Iw3mRa_entryImportance{corner-shape:round;background:color-mix(in srgb, var(--dsw-alias-state-warn-primary) 14%, transparent);color:var(--dsw-alias-state-warn-primary);border-radius:999px;flex:none;padding:0 6px;font-size:11px;font-weight:600;line-height:18px}.Iw3mRa_entryDesc{-webkit-line-clamp:2;overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-secondary);-webkit-box-orient:vertical;font-size:13px;display:-webkit-box;overflow:hidden}.Iw3mRa_entryMeta{flex-wrap:wrap;align-items:center;gap:6px;display:flex}.Iw3mRa_entryTime{color:var(--dsw-alias-label-tertiary);margin-left:auto;font-size:12px}.Iw3mRa_entryTag{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:120px;color:var(--dsw-alias-label-secondary);font:inherit;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;border:0;border-radius:999px;flex:none;padding:0 6px;font-size:11px;line-height:18px;overflow:hidden}.Iw3mRa_entryTag:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_entryTag:hover{background:var(--dsw-alias-border-l3);color:var(--dsw-alias-label-primary)}}.Iw3mRa_entryTagMore{color:var(--dsw-alias-label-tertiary);flex:none;font-size:11px}.Iw3mRa_editor{flex-direction:column;gap:12px;min-width:0;display:flex}.Iw3mRa_editorStatus{align-items:center;display:flex}.Iw3mRa_formGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;display:grid}@container (width<=720px){.Iw3mRa_formGrid{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_field{flex-direction:column;gap:4px;min-width:0;display:flex}.Iw3mRa_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500}.Iw3mRa_fieldHint{color:var(--dsw-alias-label-tertiary);font-size:11px}.Iw3mRa_input{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:100%;min-width:0;height:36px;color:var(--dsw-alias-label-primary);font:inherit;padding:0 10px;font-size:14px}.Iw3mRa_input:focus-visible,.Iw3mRa_textarea:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}.Iw3mRa_rangeRow{align-items:center;gap:8px;display:flex}.Iw3mRa_rangeInput{min-width:0;height:36px;accent-color:var(--dsw-alias-state-business-primary);flex:1;margin:0}.Iw3mRa_rangeValue{text-align:right;font-variant-numeric:tabular-nums;min-width:28px;color:var(--dsw-alias-label-primary);flex:none;font-size:13px}.Iw3mRa_tagBox{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);cursor:text;flex-wrap:wrap;align-items:center;gap:6px;min-height:36px;padding:4px 8px;display:flex}.Iw3mRa_tagBox:focus-within{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}.Iw3mRa_tagChip{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:160px;color:var(--dsw-alias-label-primary);border-radius:999px;align-items:center;gap:2px;padding:0 4px 0 8px;font-size:12px;line-height:22px;display:inline-flex}.Iw3mRa_tagChipText{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.Iw3mRa_tagChipRemove{corner-shape:round;width:16px;height:16px;color:var(--dsw-alias-label-tertiary);cursor:pointer;background:0 0;border:0;border-radius:999px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_tagChipRemove:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_tagChipRemove:hover{color:var(--dsw-alias-label-primary)}}.Iw3mRa_tagInput{min-width:80px;height:26px;color:var(--dsw-alias-label-primary);font:inherit;background:0 0;border:0;outline:none;flex:80px;padding:0;font-size:13px}.Iw3mRa_textarea{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:100%;min-height:180px;color:var(--dsw-alias-label-primary);font:inherit;resize:vertical;padding:8px 10px;font-size:14px;line-height:1.5}.Iw3mRa_formActions{flex-wrap:wrap;align-items:center;gap:8px;padding-top:4px;display:flex}.Iw3mRa_formActionsRight{flex-wrap:wrap;flex:auto;justify-content:flex-end;align-items:center;gap:8px;min-width:0;display:flex}.Iw3mRa_confirmArea{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;display:flex}.Iw3mRa_confirmText{color:var(--dsw-alias-state-error-primary);overflow-wrap:anywhere;font-size:13px}.Iw3mRa_dialogPortal{z-index:40;position:fixed;inset:0}.Iw3mRa_settingList{flex-direction:column;display:flex}.Iw3mRa_settingRow{justify-content:space-between;align-items:center;gap:12px;padding:8px 0;display:flex}.Iw3mRa_settingRow+.Iw3mRa_settingRow{border-top:.5px solid var(--dsw-alias-border-l3)}.Iw3mRa_settingLabel{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px}.Iw3mRa_numberGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;display:grid}@container (width<=720px){.Iw3mRa_numberGrid{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_divider{background:var(--dsw-alias-border-l2);height:.5px}.Iw3mRa_statsTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:14px;font-weight:500}.Iw3mRa_statGrid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;display:grid}.Iw3mRa_stat{border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);flex-direction:column;gap:2px;padding:10px 12px;display:flex}.Iw3mRa_statLabel{color:var(--dsw-alias-label-secondary);font-size:12px}.Iw3mRa_statValue{color:var(--dsw-alias-label-primary);font-size:16px;font-weight:600}.Iw3mRa_errorBox{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);flex-wrap:wrap;align-items:flex-start;gap:8px;padding:10px 12px;font-size:13px;display:flex}.Iw3mRa_errorText{overflow-wrap:anywhere;white-space:pre-wrap;flex:160px;min-width:0}";
 		const tagId$2 = "dsh-agent-extension/memory.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$2) + "]") === null) {
 			const tag = document.createElement("style");
@@ -5454,6 +5510,10 @@ window.__ModuleLoader__.load({
 			"field": "Iw3mRa_field",
 			"fieldHint": "Iw3mRa_fieldHint",
 			"fieldLabel": "Iw3mRa_fieldLabel",
+			"filterChip": "Iw3mRa_filterChip",
+			"filterChipClear": "Iw3mRa_filterChipClear",
+			"filterChipText": "Iw3mRa_filterChipText",
+			"filterChips": "Iw3mRa_filterChips",
 			"filterDot": "Iw3mRa_filterDot",
 			"filterItem": "Iw3mRa_filterItem",
 			"filterItemText": "Iw3mRa_filterItemText",
@@ -5465,10 +5525,14 @@ window.__ModuleLoader__.load({
 			"formGrid": "Iw3mRa_formGrid",
 			"input": "Iw3mRa_input",
 			"listHead": "Iw3mRa_listHead",
+			"listHeadTools": "Iw3mRa_listHeadTools",
 			"listPane": "Iw3mRa_listPane",
 			"menuBackdrop": "Iw3mRa_menuBackdrop",
 			"numberGrid": "Iw3mRa_numberGrid",
 			"projectSelect": "Iw3mRa_projectSelect",
+			"rangeInput": "Iw3mRa_rangeInput",
+			"rangeRow": "Iw3mRa_rangeRow",
+			"rangeValue": "Iw3mRa_rangeValue",
 			"scopeRow": "Iw3mRa_scopeRow",
 			"searchClear": "Iw3mRa_searchClear",
 			"searchInput": "Iw3mRa_searchInput",
@@ -5479,11 +5543,17 @@ window.__ModuleLoader__.load({
 			"settingLabel": "Iw3mRa_settingLabel",
 			"settingList": "Iw3mRa_settingList",
 			"settingRow": "Iw3mRa_settingRow",
+			"sortSelect": "Iw3mRa_sortSelect",
 			"stat": "Iw3mRa_stat",
 			"statGrid": "Iw3mRa_statGrid",
 			"statLabel": "Iw3mRa_statLabel",
 			"statValue": "Iw3mRa_statValue",
 			"statsTitle": "Iw3mRa_statsTitle",
+			"tagBox": "Iw3mRa_tagBox",
+			"tagChip": "Iw3mRa_tagChip",
+			"tagChipRemove": "Iw3mRa_tagChipRemove",
+			"tagChipText": "Iw3mRa_tagChipText",
+			"tagInput": "Iw3mRa_tagInput",
 			"textarea": "Iw3mRa_textarea",
 			"topbar": "Iw3mRa_topbar",
 			"view": "Iw3mRa_view"
@@ -5491,8 +5561,9 @@ window.__ModuleLoader__.load({
 		// src/client/MemoryView.tsx
 		/**
 		* Memory tab of the Agent Extension panel: one compact toolbar row (scope
-		* switch, project select, search with a type-filter dropdown, and the action
-		* icons), the entry list as a full-width card grid, a wide detail dialog for
+		* switch, project select, active-filter chips, search with a type-filter
+		* dropdown, and the action icons), the entry list as a full-width card grid
+		* with tag-chip filtering and a recency sort, a wide detail dialog for
 		* create / edit / save / deactivate / archive / restore / two-step delete,
 		* the Markdown export, and a settings dialog (capture-injection switches and
 		* limits persist immediately; per-session statistics live there too).
@@ -5534,7 +5605,7 @@ window.__ModuleLoader__.load({
 			name: "",
 			description: "",
 			type: "preference",
-			tags: "",
+			tags: [],
 			importance: 50,
 			content: ""
 		};
@@ -5633,21 +5704,17 @@ window.__ModuleLoader__.load({
 				sessions
 			};
 		}
-		/** Form values of one loaded entry (tags join back to a comma list). */
+		/** Form values of one loaded entry. */
 		function formOf(entry) {
 			const type = TYPE_VALUES.find((value) => value === entry.type) ?? "preference";
 			return {
 				name: entry.name,
 				description: entry.description,
 				type,
-				tags: entry.tags.join(", "),
+				tags: [...entry.tags],
 				importance: entry.importance,
 				content: entry.content
 			};
-		}
-		/** Split the comma-separated tag field. */
-		function parseTags(value) {
-			return value.split(/[,，]/u).map((tag) => tag.trim()).filter((tag) => tag !== "");
 		}
 		/** Localized type label; unknown values fall back to the raw server text. */
 		function typeLabel(value, t) {
@@ -5726,6 +5793,9 @@ window.__ModuleLoader__.load({
 			const [settings, setSettings] = (0, react.useState)(DEFAULT_SETTINGS);
 			const [settingsOpen, setSettingsOpen] = (0, react.useState)(false);
 			const [filterOpen, setFilterOpen] = (0, react.useState)(false);
+			const [tagFilter, setTagFilter] = (0, react.useState)("");
+			const [sort, setSort] = (0, react.useState)("default");
+			const [tagDraft, setTagDraft] = (0, react.useState)("");
 			const userChoseRef = (0, react.useRef)(false);
 			const detailSeq = (0, react.useRef)(0);
 			const filterWrapRef = (0, react.useRef)(null);
@@ -5833,6 +5903,7 @@ window.__ModuleLoader__.load({
 				setConfirmDelete(false);
 				setDetailStatus("idle");
 				setDetailError("");
+				setTagDraft("");
 			};
 			const chooseScope = (next) => {
 				userChoseRef.current = true;
@@ -5854,6 +5925,7 @@ window.__ModuleLoader__.load({
 				setDetailStatus("idle");
 				setDetailError("");
 				setConfirmDelete(false);
+				setTagDraft("");
 			};
 			const openEntry = (id) => {
 				const seq = ++detailSeq.current;
@@ -5862,6 +5934,7 @@ window.__ModuleLoader__.load({
 				setEntry(null);
 				setForm(EMPTY_FORM);
 				setConfirmDelete(false);
+				setTagDraft("");
 				setDetailStatus("loading");
 				setDetailError("");
 				const params = new URLSearchParams();
@@ -5902,7 +5975,7 @@ window.__ModuleLoader__.load({
 						description: form.description.trim(),
 						type: form.type,
 						content: form.content,
-						tags: parseTags(form.tags),
+						tags: form.tags,
 						importance: form.importance
 					};
 					if (scope === "project") body.project = project;
@@ -5913,6 +5986,7 @@ window.__ModuleLoader__.load({
 					})).entry);
 					setEntry(saved);
 					setForm(formOf(saved));
+					setTagDraft("");
 					setSelectedId(saved.id);
 					setCreating(false);
 					setDetailStatus("ready");
@@ -6026,6 +6100,26 @@ window.__ModuleLoader__.load({
 				if (query === appliedQuery) setListToken((token) => token + 1);
 				else setAppliedQuery(query);
 			};
+			/** Append comma-separated text as deduplicated tag chips. */
+			const appendTags = (raw) => {
+				const parts = raw.split(/[,，]/u).map((part) => part.trim()).filter((part) => part !== "");
+				if (parts.length === 0) return;
+				setForm((current) => {
+					const tags = [...current.tags];
+					for (const part of parts) if (!tags.includes(part)) tags.push(part);
+					return {
+						...current,
+						tags
+					};
+				});
+			};
+			/** Commit the pending tag draft (Enter / comma / blur). */
+			const commitTagDraft = () => {
+				if (tagDraft === "") return;
+				const raw = tagDraft;
+				setTagDraft("");
+				appendTags(raw);
+			};
 			const projectRequired = scope === "project" && project === "";
 			const projectMissing = scope === "project" && projects.length === 0;
 			const hitRate = hitRateOf(stats);
@@ -6037,6 +6131,8 @@ window.__ModuleLoader__.load({
 				value,
 				label: t(TYPE_LABEL_KEYS[value])
 			}))];
+			const visibleEntries = tagFilter === "" ? entries : entries.filter((item) => item.tags.includes(tagFilter));
+			const sortedEntries = sort === "recent" ? [...visibleEntries].sort((left, right) => timeOf(right.updatedAt) - timeOf(left.updatedAt)) : visibleEntries;
 			let workspace = null;
 			if (!stateReady) workspace = stateError !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: memory_module_css_default.errorBox,
@@ -6063,9 +6159,26 @@ window.__ModuleLoader__.load({
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h2", {
 							className: memory_module_css_default.sectionTitle,
 							children: t("memoryListTitle")
-						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-							className: memory_module_css_default.sectionCount,
-							children: String(entries.length)
+						}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+							className: memory_module_css_default.listHeadTools,
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("select", {
+								className: memory_module_css_default.sortSelect,
+								"aria-label": t("memorySortLabel"),
+								value: sort,
+								onChange: (event) => {
+									setSort(event.target.value === "recent" ? "recent" : "default");
+								},
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
+									value: "default",
+									children: t("memorySortDefault")
+								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
+									value: "recent",
+									children: t("memorySortRecent")
+								})]
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								className: memory_module_css_default.sectionCount,
+								children: String(sortedEntries.length)
+							})]
 						})]
 					}),
 					stateError !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
@@ -6093,13 +6206,28 @@ window.__ModuleLoader__.load({
 						})]
 					}) : null,
 					!listReady && listBusy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(LoadingBlock, { text: t("memoryLoading") }) : null,
-					listReady && listError === "" && entries.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(EmptyBlock, { description: appliedQuery !== "" || typeFilter !== "" ? t("memoryListEmptyFiltered") : t("memoryListEmpty") }) : null,
+					listReady && listError === "" && sortedEntries.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(EmptyBlock, {
+						description: appliedQuery !== "" || typeFilter !== "" || tagFilter !== "" ? t("memoryListEmptyFiltered") : t("memoryListEmpty"),
+						action: appliedQuery === "" && typeFilter === "" && tagFilter === "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+							variant: "primary",
+							icon: "plus",
+							disabled: projectRequired,
+							onClick: startCreate,
+							children: t("memoryNew")
+						}) : null
+					}) : null,
 					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: memory_module_css_default.entryGrid,
-						children: entries.map((item) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
-							type: "button",
+						children: sortedEntries.map((item) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							role: "button",
+							tabIndex: 0,
 							className: memory_module_css_default.entryCard,
 							onClick: () => openEntry(item.id),
+							onKeyDown: (event) => {
+								if (event.key !== "Enter" && event.key !== " ") return;
+								event.preventDefault();
+								openEntry(item.id);
+							},
 							children: [
 								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 									className: memory_module_css_default.entryTitleRow,
@@ -6127,8 +6255,14 @@ window.__ModuleLoader__.load({
 											tone: statusTone(item.status),
 											children: statusLabel(item.status, t)
 										}) : null,
-										item.tags.slice(0, 2).map((tag, index) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										item.tags.slice(0, 2).map((tag, index) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+											type: "button",
 											className: memory_module_css_default.entryTag,
+											title: t("memoryTagFilterHint"),
+											onClick: (event) => {
+												event.stopPropagation();
+												setTagFilter(tag);
+											},
 											children: tag
 										}, `${index}-${tag}`)),
 										item.tags.length > 2 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
@@ -6184,6 +6318,44 @@ window.__ModuleLoader__.load({
 									value: item.key,
 									children: item.displayName
 								}, item.key))
+							}) : null,
+							typeFilter !== "" || tagFilter !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: memory_module_css_default.filterChips,
+								children: [typeFilter !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+									className: memory_module_css_default.filterChip,
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										className: memory_module_css_default.filterChipText,
+										children: typeLabel(typeFilter, t)
+									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+										type: "button",
+										className: memory_module_css_default.filterChipClear,
+										"aria-label": t("memoryClearTypeFilter"),
+										onClick: () => {
+											setTypeFilter("");
+										},
+										children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Icon, {
+											name: "x",
+											size: 12
+										})
+									})]
+								}) : null, tagFilter !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+									className: memory_module_css_default.filterChip,
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										className: memory_module_css_default.filterChipText,
+										children: tagFilter
+									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+										type: "button",
+										className: memory_module_css_default.filterChipClear,
+										"aria-label": t("memoryClearTagFilter"),
+										onClick: () => {
+											setTagFilter("");
+										},
+										children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Icon, {
+											name: "x",
+											size: 12
+										})
+									})]
+								}) : null]
 							}) : null,
 							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 								className: memory_module_css_default.searchWrap,
@@ -6410,19 +6582,26 @@ window.__ModuleLoader__.load({
 															className: memory_module_css_default.fieldLabel,
 															children: t("memoryFieldImportance")
 														}),
-														/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
-															className: memory_module_css_default.input,
-															type: "number",
-															min: 0,
-															max: 100,
-															"aria-label": t("memoryFieldImportance"),
-															value: form.importance,
-															onChange: (event) => {
-																setForm((current) => ({
-																	...current,
-																	importance: integer(event.target.value, 0, 100, current.importance)
-																}));
-															}
+														/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+															className: memory_module_css_default.rangeRow,
+															children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+																className: memory_module_css_default.rangeInput,
+																type: "range",
+																min: 0,
+																max: 100,
+																step: 1,
+																"aria-label": t("memoryFieldImportance"),
+																value: form.importance,
+																onChange: (event) => {
+																	setForm((current) => ({
+																		...current,
+																		importance: integer(event.target.value, 0, 100, current.importance)
+																	}));
+																}
+															}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+																className: memory_module_css_default.rangeValue,
+																children: String(form.importance)
+															})]
 														}),
 														/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 															className: memory_module_css_default.fieldHint,
@@ -6432,24 +6611,63 @@ window.__ModuleLoader__.load({
 												})
 											]
 										}),
-										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 											className: memory_module_css_default.field,
 											children: [
 												/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 													className: memory_module_css_default.fieldLabel,
 													children: t("memoryFieldTags")
 												}),
-												/* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
-													className: memory_module_css_default.input,
-													type: "text",
-													"aria-label": t("memoryFieldTags"),
-													value: form.tags,
-													onChange: (event) => {
-														setForm((current) => ({
-															...current,
-															tags: event.target.value
-														}));
-													}
+												/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+													className: memory_module_css_default.tagBox,
+													children: [form.tags.map((tag, index) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+														className: memory_module_css_default.tagChip,
+														children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+															className: memory_module_css_default.tagChipText,
+															children: tag
+														}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+															type: "button",
+															className: memory_module_css_default.tagChipRemove,
+															"aria-label": t("memoryTagRemove", { tag }),
+															onClick: () => {
+																setForm((current) => ({
+																	...current,
+																	tags: current.tags.filter((_, tagIndex) => tagIndex !== index)
+																}));
+															},
+															children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Icon, {
+																name: "x",
+																size: 12
+															})
+														})]
+													}, `${index}-${tag}`)), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+														className: memory_module_css_default.tagInput,
+														type: "text",
+														"aria-label": t("memoryFieldTags"),
+														value: tagDraft,
+														onChange: (event) => {
+															const next = event.target.value;
+															if (next.endsWith(",") || next.endsWith("，")) {
+																appendTags(next);
+																setTagDraft("");
+															} else setTagDraft(next);
+														},
+														onKeyDown: (event) => {
+															if (event.key === "Enter" || event.key === ",") {
+																event.preventDefault();
+																commitTagDraft();
+																return;
+															}
+															if (event.key === "Backspace" && tagDraft === "" && form.tags.length > 0) {
+																event.preventDefault();
+																setForm((current) => ({
+																	...current,
+																	tags: current.tags.slice(0, -1)
+																}));
+															}
+														},
+														onBlur: commitTagDraft
+													})]
 												}),
 												/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 													className: memory_module_css_default.fieldHint,

@@ -1,7 +1,8 @@
 /**
  * Memory tab of the Agent Extension panel: one compact toolbar row (scope
- * switch, project select, search with a type-filter dropdown, and the action
- * icons), the entry list as a full-width card grid, a wide detail dialog for
+ * switch, project select, active-filter chips, search with a type-filter
+ * dropdown, and the action icons), the entry list as a full-width card grid
+ * with tag-chip filtering and a recency sort, a wide detail dialog for
  * create / edit / save / deactivate / archive / restore / two-step delete,
  * the Markdown export, and a settings dialog (capture-injection switches and
  * limits persist immediately; per-session statistics live there too).
@@ -97,7 +98,7 @@ interface MemoryForm {
   name: string
   description: string
   type: MemoryType
-  tags: string
+  tags: string[]
   importance: number
   content: string
 }
@@ -137,7 +138,7 @@ const EMPTY_FORM: MemoryForm = {
   name: '',
   description: '',
   type: 'preference',
-  tags: '',
+  tags: [],
   importance: 50,
   content: '',
 }
@@ -249,22 +250,17 @@ function normalizeStats(raw: unknown): MemoryStats {
   }
 }
 
-/** Form values of one loaded entry (tags join back to a comma list). */
+/** Form values of one loaded entry. */
 function formOf(entry: MemoryEntry): MemoryForm {
   const type = TYPE_VALUES.find(value => value === entry.type) ?? 'preference'
   return {
     name: entry.name,
     description: entry.description,
     type,
-    tags: entry.tags.join(', '),
+    tags: [...entry.tags],
     importance: entry.importance,
     content: entry.content,
   }
-}
-
-/** Split the comma-separated tag field. */
-function parseTags(value: string): string[] {
-  return value.split(/[,，]/u).map(tag => tag.trim()).filter(tag => tag !== '')
 }
 
 /** Localized type label; unknown values fall back to the raw server text. */
@@ -352,6 +348,9 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const [settings, setSettings] = useState<MemorySettings>(DEFAULT_SETTINGS)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
+  const [tagFilter, setTagFilter] = useState('')
+  const [sort, setSort] = useState<'default' | 'recent'>('default')
+  const [tagDraft, setTagDraft] = useState('')
 
   // The user's explicit scope choice wins over the auto-selected defaults.
   const userChoseRef = useRef(false)
@@ -458,6 +457,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
     setConfirmDelete(false)
     setDetailStatus('idle')
     setDetailError('')
+    setTagDraft('')
   }
 
   const chooseScope = (next: MemoryScope): void => {
@@ -482,6 +482,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
     setDetailStatus('idle')
     setDetailError('')
     setConfirmDelete(false)
+    setTagDraft('')
   }
 
   const openEntry = (id: string): void => {
@@ -491,6 +492,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
     setEntry(null)
     setForm(EMPTY_FORM)
     setConfirmDelete(false)
+    setTagDraft('')
     setDetailStatus('loading')
     setDetailError('')
     const params = new URLSearchParams()
@@ -532,7 +534,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
         description: form.description.trim(),
         type: form.type,
         content: form.content,
-        tags: parseTags(form.tags),
+        tags: form.tags,
         importance: form.importance,
       }
       if (scope === 'project') body.project = project
@@ -541,6 +543,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
       const saved = normalizeEntry(data.entry)
       setEntry(saved)
       setForm(formOf(saved))
+      setTagDraft('')
       setSelectedId(saved.id)
       setCreating(false)
       setDetailStatus('ready')
@@ -641,6 +644,27 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
     else setAppliedQuery(query)
   }
 
+  /** Append comma-separated text as deduplicated tag chips. */
+  const appendTags = (raw: string): void => {
+    const parts = raw.split(/[,，]/u).map(part => part.trim()).filter(part => part !== '')
+    if (parts.length === 0) return
+    setForm(current => {
+      const tags = [...current.tags]
+      for (const part of parts) {
+        if (!tags.includes(part)) tags.push(part)
+      }
+      return { ...current, tags }
+    })
+  }
+
+  /** Commit the pending tag draft (Enter / comma / blur). */
+  const commitTagDraft = (): void => {
+    if (tagDraft === '') return
+    const raw = tagDraft
+    setTagDraft('')
+    appendTags(raw)
+  }
+
   const projectRequired = scope === 'project' && project === ''
   const projectMissing = scope === 'project' && projects.length === 0
   const hitRate = hitRateOf(stats)
@@ -649,6 +673,12 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
     { value: '', label: t('memoryTypeAll') },
     ...TYPE_VALUES.map(value => ({ value, label: t(TYPE_LABEL_KEYS[value]) })),
   ]
+
+  // Client-side refinements over the fetched list: tag filter first, then sort.
+  const visibleEntries = tagFilter === '' ? entries : entries.filter(item => item.tags.includes(tagFilter))
+  const sortedEntries = sort === 'recent'
+    ? [...visibleEntries].sort((left, right) => timeOf(right.updatedAt) - timeOf(left.updatedAt))
+    : visibleEntries
 
   let workspace: ReactNode = null
   if (!stateReady) {
@@ -674,7 +704,18 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
       <section className={css.listPane} aria-label={t('memoryListTitle')}>
         <div className={css.listHead}>
           <h2 className={css.sectionTitle}>{t('memoryListTitle')}</h2>
-          <span className={css.sectionCount}>{String(entries.length)}</span>
+          <span className={css.listHeadTools}>
+            <select
+              className={css.sortSelect}
+              aria-label={t('memorySortLabel')}
+              value={sort}
+              onChange={(event) => { setSort(event.target.value === 'recent' ? 'recent' : 'default') }}
+            >
+              <option value="default">{t('memorySortDefault')}</option>
+              <option value="recent">{t('memorySortRecent')}</option>
+            </select>
+            <span className={css.sectionCount}>{String(sortedEntries.length)}</span>
+          </span>
         </div>
         {stateError !== ''
           ? (
@@ -697,20 +738,33 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
           )
           : null}
         {!listReady && listBusy ? <LoadingBlock text={t('memoryLoading')} /> : null}
-        {listReady && listError === '' && entries.length === 0
+        {listReady && listError === '' && sortedEntries.length === 0
           ? (
             <EmptyBlock
-              description={appliedQuery !== '' || typeFilter !== '' ? t('memoryListEmptyFiltered') : t('memoryListEmpty')}
+              description={appliedQuery !== '' || typeFilter !== '' || tagFilter !== '' ? t('memoryListEmptyFiltered') : t('memoryListEmpty')}
+              action={appliedQuery === '' && typeFilter === '' && tagFilter === ''
+                ? (
+                  <Button variant="primary" icon="plus" disabled={projectRequired} onClick={startCreate}>
+                    {t('memoryNew')}
+                  </Button>
+                )
+                : null}
             />
           )
           : null}
         <div className={css.entryGrid}>
-          {entries.map(item => (
-            <button
+          {sortedEntries.map(item => (
+            <div
               key={item.id}
-              type="button"
+              role="button"
+              tabIndex={0}
               className={css.entryCard}
               onClick={() => openEntry(item.id)}
+              onKeyDown={(event) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return
+                event.preventDefault()
+                openEntry(item.id)
+              }}
             >
               <span className={css.entryTitleRow}>
                 <span className={css.entryName}>{item.name}</span>
@@ -725,7 +779,18 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                   ? <Badge tone={statusTone(item.status)}>{statusLabel(item.status, t)}</Badge>
                   : null}
                 {item.tags.slice(0, 2).map((tag, index) => (
-                  <span key={`${index}-${tag}`} className={css.entryTag}>{tag}</span>
+                  <button
+                    key={`${index}-${tag}`}
+                    type="button"
+                    className={css.entryTag}
+                    title={t('memoryTagFilterHint')}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      setTagFilter(tag)
+                    }}
+                  >
+                    {tag}
+                  </button>
                 ))}
                 {item.tags.length > 2
                   ? <span className={css.entryTagMore}>{`+${item.tags.length - 2}`}</span>
@@ -734,7 +799,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                   ? <span className={css.entryTime}>{formatTime(item.updatedAt)}</span>
                   : null}
               </span>
-            </button>
+            </div>
           ))}
         </div>
       </section>
@@ -776,6 +841,42 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                 <option key={item.key} value={item.key}>{item.displayName}</option>
               ))}
             </select>
+          )
+          : null}
+        {(typeFilter !== '' || tagFilter !== '')
+          ? (
+            <div className={css.filterChips}>
+              {typeFilter !== ''
+                ? (
+                  <span className={css.filterChip}>
+                    <span className={css.filterChipText}>{typeLabel(typeFilter, t)}</span>
+                    <button
+                      type="button"
+                      className={css.filterChipClear}
+                      aria-label={t('memoryClearTypeFilter')}
+                      onClick={() => { setTypeFilter('') }}
+                    >
+                      <Icon name="x" size={12} />
+                    </button>
+                  </span>
+                )
+                : null}
+              {tagFilter !== ''
+                ? (
+                  <span className={css.filterChip}>
+                    <span className={css.filterChipText}>{tagFilter}</span>
+                    <button
+                      type="button"
+                      className={css.filterChipClear}
+                      aria-label={t('memoryClearTagFilter')}
+                      onClick={() => { setTagFilter('') }}
+                    >
+                      <Icon name="x" size={12} />
+                    </button>
+                  </span>
+                )
+                : null}
+            </div>
           )
           : null}
         <div className={css.searchWrap}>
@@ -943,31 +1044,72 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                       </label>
                       <label className={css.field}>
                         <span className={css.fieldLabel}>{t('memoryFieldImportance')}</span>
-                        <input
-                          className={css.input}
-                          type="number"
-                          min={0}
-                          max={100}
-                          aria-label={t('memoryFieldImportance')}
-                          value={form.importance}
-                          onChange={(event) => {
-                            setForm(current => ({ ...current, importance: integer(event.target.value, 0, 100, current.importance) }))
-                          }}
-                        />
+                        <div className={css.rangeRow}>
+                          <input
+                            className={css.rangeInput}
+                            type="range"
+                            min={0}
+                            max={100}
+                            step={1}
+                            aria-label={t('memoryFieldImportance')}
+                            value={form.importance}
+                            onChange={(event) => {
+                              setForm(current => ({ ...current, importance: integer(event.target.value, 0, 100, current.importance) }))
+                            }}
+                          />
+                          <span className={css.rangeValue}>{String(form.importance)}</span>
+                        </div>
                         <span className={css.fieldHint}>{t('memoryImportanceHint')}</span>
                       </label>
                     </div>
-                    <label className={css.field}>
+                    <div className={css.field}>
                       <span className={css.fieldLabel}>{t('memoryFieldTags')}</span>
-                      <input
-                        className={css.input}
-                        type="text"
-                        aria-label={t('memoryFieldTags')}
-                        value={form.tags}
-                        onChange={(event) => { setForm(current => ({ ...current, tags: event.target.value })) }}
-                      />
+                      <div className={css.tagBox}>
+                        {form.tags.map((tag, index) => (
+                          <span key={`${index}-${tag}`} className={css.tagChip}>
+                            <span className={css.tagChipText}>{tag}</span>
+                            <button
+                              type="button"
+                              className={css.tagChipRemove}
+                              aria-label={t('memoryTagRemove', { tag })}
+                              onClick={() => {
+                                setForm(current => ({ ...current, tags: current.tags.filter((_, tagIndex) => tagIndex !== index) }))
+                              }}
+                            >
+                              <Icon name="x" size={12} />
+                            </button>
+                          </span>
+                        ))}
+                        <input
+                          className={css.tagInput}
+                          type="text"
+                          aria-label={t('memoryFieldTags')}
+                          value={tagDraft}
+                          onChange={(event) => {
+                            const next = event.target.value
+                            if (next.endsWith(',') || next.endsWith('，')) {
+                              appendTags(next)
+                              setTagDraft('')
+                            } else {
+                              setTagDraft(next)
+                            }
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter' || event.key === ',') {
+                              event.preventDefault()
+                              commitTagDraft()
+                              return
+                            }
+                            if (event.key === 'Backspace' && tagDraft === '' && form.tags.length > 0) {
+                              event.preventDefault()
+                              setForm(current => ({ ...current, tags: current.tags.slice(0, -1) }))
+                            }
+                          }}
+                          onBlur={commitTagDraft}
+                        />
+                      </div>
                       <span className={css.fieldHint}>{t('memoryTagsHint')}</span>
-                    </label>
+                    </div>
                     <label className={css.field}>
                       <span className={css.fieldLabel}>{t('memoryFieldContent')}</span>
                       <textarea

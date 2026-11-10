@@ -209,7 +209,7 @@ export const zh = {
   memoryFieldTags: '标签',
   memoryFieldImportance: '重要性',
   memoryFieldContent: '内容',
-  memoryTagsHint: '用逗号分隔多个标签',
+  memoryTagsHint: '回车或逗号添加标签',
   memoryImportanceHint: '0–100，越大越优先注入',
   memorySave: '保存',
   memorySaving: '保存中…',
@@ -243,6 +243,13 @@ export const zh = {
   memoryStatHitRate: '注入命中率',
   memoryStatOverflow: '溢出合计',
   memoryStatNoData: '暂无数据',
+  memorySortLabel: '排序',
+  memorySortDefault: '重要度优先',
+  memorySortRecent: '最近更新',
+  memoryClearTypeFilter: '清除类型筛选',
+  memoryClearTagFilter: '清除标签筛选',
+  memoryTagRemove: '移除标签 {tag}',
+  memoryTagFilterHint: '点击按此标签筛选',
 } as const
 
 /** English dictionary (sentence case; same key set as `zh`). */
@@ -445,7 +452,7 @@ export const en: Record<HubLocaleKey, string> = {
   memoryFieldTags: 'Tags',
   memoryFieldImportance: 'Importance',
   memoryFieldContent: 'Content',
-  memoryTagsHint: 'Separate tags with commas',
+  memoryTagsHint: 'Press Enter or comma to add a tag',
   memoryImportanceHint: '0–100; higher values are injected first',
   memorySave: 'Save',
   memorySaving: 'Saving…',
@@ -479,6 +486,13 @@ export const en: Record<HubLocaleKey, string> = {
   memoryStatHitRate: 'Injection hit rate',
   memoryStatOverflow: 'Overflow total',
   memoryStatNoData: 'No data yet',
+  memorySortLabel: 'Sort',
+  memorySortDefault: 'By importance',
+  memorySortRecent: 'Recently updated',
+  memoryClearTypeFilter: 'Clear type filter',
+  memoryClearTagFilter: 'Clear tag filter',
+  memoryTagRemove: 'Remove tag {tag}',
+  memoryTagFilterHint: 'Click to filter by this tag',
 }
 
 /** Japanese dictionary (same key set as `zh`). */
@@ -681,7 +695,7 @@ export const ja: Record<HubLocaleKey, string> = {
   memoryFieldTags: 'タグ',
   memoryFieldImportance: '重要度',
   memoryFieldContent: '内容',
-  memoryTagsHint: 'タグはカンマ区切り',
+  memoryTagsHint: 'Enter またはカンマでタグを追加',
   memoryImportanceHint: '0〜100。大きいほど優先して注入されます',
   memorySave: '保存',
   memorySaving: '保存中…',
@@ -715,6 +729,13 @@ export const ja: Record<HubLocaleKey, string> = {
   memoryStatHitRate: '注入ヒット率',
   memoryStatOverflow: 'オーバーフロー合計',
   memoryStatNoData: 'データなし',
+  memorySortLabel: '並び替え',
+  memorySortDefault: '重要度順',
+  memorySortRecent: '更新が新しい順',
+  memoryClearTypeFilter: 'タイプ絞り込みを解除',
+  memoryClearTagFilter: 'タグ絞り込みを解除',
+  memoryTagRemove: 'タグ {tag} を削除',
+  memoryTagFilterHint: 'クリックでこのタグで絞り込み',
 }
 
 /** Spanish dictionary (same key set as `zh`). */
@@ -917,7 +938,7 @@ export const es: Record<HubLocaleKey, string> = {
   memoryFieldTags: 'Etiquetas',
   memoryFieldImportance: 'Importancia',
   memoryFieldContent: 'Contenido',
-  memoryTagsHint: 'Separe las etiquetas con comas',
+  memoryTagsHint: 'Pulse Intro o una coma para añadir la etiqueta',
   memoryImportanceHint: '0–100; los valores altos se inyectan primero',
   memorySave: 'Guardar',
   memorySaving: 'Guardando…',
@@ -951,6 +972,13 @@ export const es: Record<HubLocaleKey, string> = {
   memoryStatHitRate: 'Tasa de acierto',
   memoryStatOverflow: 'Total de desbordamiento',
   memoryStatNoData: 'Sin datos',
+  memorySortLabel: 'Ordenar',
+  memorySortDefault: 'Por importancia',
+  memorySortRecent: 'Actualizadas recientemente',
+  memoryClearTypeFilter: 'Quitar el filtro de tipo',
+  memoryClearTagFilter: 'Quitar el filtro de etiqueta',
+  memoryTagRemove: 'Quitar la etiqueta {tag}',
+  memoryTagFilterHint: 'Haga clic para filtrar por esta etiqueta',
 }
 
 /** French dictionary (same key set as `zh`). */
@@ -1153,7 +1181,7 @@ export const fr: Record<HubLocaleKey, string> = {
   memoryFieldTags: 'Étiquettes',
   memoryFieldImportance: 'Importance',
   memoryFieldContent: 'Contenu',
-  memoryTagsHint: 'Séparez les étiquettes par des virgules',
+  memoryTagsHint: 'Appuyez sur Entrée ou une virgule pour ajouter l’étiquette',
   memoryImportanceHint: '0–100 ; les valeurs élevées sont injectées en premier',
   memorySave: 'Enregistrer',
   memorySaving: 'Enregistrement…',
@@ -1187,6 +1215,13 @@ export const fr: Record<HubLocaleKey, string> = {
   memoryStatHitRate: 'Taux de réussite',
   memoryStatOverflow: 'Total de débordement',
   memoryStatNoData: 'Aucune donnée',
+  memorySortLabel: 'Tri',
+  memorySortDefault: 'Par importance',
+  memorySortRecent: 'Récemment mises à jour',
+  memoryClearTypeFilter: 'Effacer le filtre de type',
+  memoryClearTagFilter: 'Effacer le filtre d’étiquette',
+  memoryTagRemove: 'Supprimer l’étiquette {tag}',
+  memoryTagFilterHint: 'Cliquez pour filtrer par cette étiquette',
 }
 
 /** German dictionary (same key set as `zh`). */
@@ -1389,7 +1424,7 @@ export const de: Record<HubLocaleKey, string> = {
   memoryFieldTags: 'Tags',
   memoryFieldImportance: 'Wichtigkeit',
   memoryFieldContent: 'Inhalt',
-  memoryTagsHint: 'Tags durch Kommas trennen',
+  memoryTagsHint: 'Tag mit Eingabetaste oder Komma hinzufügen',
   memoryImportanceHint: '0–100; höhere Werte werden zuerst injiziert',
   memorySave: 'Speichern',
   memorySaving: 'Speichern…',
@@ -1423,6 +1458,13 @@ export const de: Record<HubLocaleKey, string> = {
   memoryStatHitRate: 'Trefferquote',
   memoryStatOverflow: 'Überlauf gesamt',
   memoryStatNoData: 'Keine Daten',
+  memorySortLabel: 'Sortierung',
+  memorySortDefault: 'Nach Wichtigkeit',
+  memorySortRecent: 'Zuletzt aktualisiert',
+  memoryClearTypeFilter: 'Typfilter löschen',
+  memoryClearTagFilter: 'Tag-Filter löschen',
+  memoryTagRemove: 'Tag {tag} entfernen',
+  memoryTagFilterHint: 'Klicken, um nach diesem Tag zu filtern',
 }
 
 /** Russian dictionary (same key set as `zh`). */
@@ -1625,7 +1667,7 @@ export const ru: Record<HubLocaleKey, string> = {
   memoryFieldTags: 'Теги',
   memoryFieldImportance: 'Важность',
   memoryFieldContent: 'Содержание',
-  memoryTagsHint: 'Разделяйте теги запятыми',
+  memoryTagsHint: 'Добавьте тег клавишей Enter или запятой',
   memoryImportanceHint: '0–100; чем выше, тем раньше внедряется',
   memorySave: 'Сохранить',
   memorySaving: 'Сохранение…',
@@ -1659,6 +1701,13 @@ export const ru: Record<HubLocaleKey, string> = {
   memoryStatHitRate: 'Доля попаданий',
   memoryStatOverflow: 'Переполнение всего',
   memoryStatNoData: 'Нет данных',
+  memorySortLabel: 'Сортировка',
+  memorySortDefault: 'По важности',
+  memorySortRecent: 'Сначала недавние',
+  memoryClearTypeFilter: 'Сбросить фильтр по типу',
+  memoryClearTagFilter: 'Сбросить фильтр по тегу',
+  memoryTagRemove: 'Удалить тег {tag}',
+  memoryTagFilterHint: 'Нажмите, чтобы отфильтровать по этому тегу',
 }
 
 /** Portuguese dictionary (same key set as `zh`). */
@@ -1861,7 +1910,7 @@ export const pt: Record<HubLocaleKey, string> = {
   memoryFieldTags: 'Etiquetas',
   memoryFieldImportance: 'Importância',
   memoryFieldContent: 'Conteúdo',
-  memoryTagsHint: 'Separe as etiquetas com vírgulas',
+  memoryTagsHint: 'Pressione Enter ou vírgula para adicionar a etiqueta',
   memoryImportanceHint: '0–100; valores maiores são injetados primeiro',
   memorySave: 'Salvar',
   memorySaving: 'Salvando…',
@@ -1895,6 +1944,13 @@ export const pt: Record<HubLocaleKey, string> = {
   memoryStatHitRate: 'Taxa de acerto',
   memoryStatOverflow: 'Total de excedente',
   memoryStatNoData: 'Sem dados',
+  memorySortLabel: 'Ordenação',
+  memorySortDefault: 'Por importância',
+  memorySortRecent: 'Atualizadas recentemente',
+  memoryClearTypeFilter: 'Limpar o filtro de tipo',
+  memoryClearTagFilter: 'Limpar o filtro de etiqueta',
+  memoryTagRemove: 'Remover a etiqueta {tag}',
+  memoryTagFilterHint: 'Clique para filtrar por esta etiqueta',
 }
 
 /** Every dictionary key of the plugin namespace. */

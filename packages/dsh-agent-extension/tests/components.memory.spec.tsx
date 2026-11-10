@@ -72,7 +72,7 @@ const ENTRIES = [
     status: 'archived',
     reinforcement: 0,
     createdAt: '2026-10-01T00:00:00.000Z',
-    updatedAt: '2026-10-02T03:04:00.000Z',
+    updatedAt: '2026-11-09T00:00:00.000Z',
   },
 ]
 
@@ -200,7 +200,12 @@ describe('MemoryView', () => {
     expect(screen.getByRole('heading', { name: t('memoryCreateTitle') })).toBeTruthy()
     fireEvent.change(screen.getByLabelText(t('memoryFieldName')), { target: { value: '新记忆' } })
     fireEvent.change(screen.getByLabelText(t('memoryFieldDescription')), { target: { value: '描述内容' } })
-    fireEvent.change(screen.getByLabelText(t('memoryFieldTags')), { target: { value: 'git, 约定' } })
+    // 标签为 chip 输入：尾逗号与回车各提交一枚；重要性为滑块。
+    const tagInput = screen.getByLabelText(t('memoryFieldTags'))
+    fireEvent.change(tagInput, { target: { value: 'git,' } })
+    fireEvent.change(tagInput, { target: { value: '约定' } })
+    fireEvent.keyDown(tagInput, { key: 'Enter' })
+    fireEvent.change(screen.getByLabelText(t('memoryFieldImportance')), { target: { value: '90' } })
     fireEvent.change(screen.getByLabelText(t('memoryFieldContent')), { target: { value: '要记住的内容' } })
     fireEvent.click(screen.getByRole('button', { name: t('memorySave') }))
     await waitFor(() => {
@@ -215,6 +220,7 @@ describe('MemoryView', () => {
       description: '描述内容',
       content: '要记住的内容',
       tags: ['git', '约定'],
+      importance: 90,
       type: 'preference',
     })
     expect(bodyOf(saveCall).id).toBeUndefined()
@@ -321,5 +327,55 @@ describe('MemoryView', () => {
     const exportCall = calls.find(call => call.url.includes('/memory/export'))
     expect(exportCall?.init?.method).toBe('POST')
     expect(bodyOf(exportCall)).toEqual({ scope: 'project', project: '/repo/new' })
+  })
+
+  it('类型筛选激活时在搜索框左侧显示可清除的筛选 chip', async () => {
+    installFetch()
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    render(<MemoryView actions={controller.actions} t={t} />)
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    expect(screen.queryByRole('button', { name: t('memoryClearTypeFilter') })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: t('memoryTypeFilterLabel') }))
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: t('memoryTypeDecision') }))
+    expect(await screen.findByRole('button', { name: t('memoryClearTypeFilter') })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: t('memoryClearTypeFilter') }))
+    expect(screen.queryByRole('button', { name: t('memoryClearTypeFilter') })).toBeNull()
+  })
+
+  it('空库空态提供新建按钮，点击直接打开新建弹窗', async () => {
+    installFetch({ list: () => okResponse({ scope: 'project', project: '', total: 0, entries: [] }) })
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    render(<MemoryView actions={controller.actions} t={t} />)
+    expect(await screen.findByText(t('memoryListEmpty'))).toBeTruthy()
+    const emptyAction = screen.getAllByRole('button', { name: t('memoryNew') }).at(-1)
+    expect(emptyAction).toBeTruthy()
+    fireEvent.click(emptyAction as HTMLElement)
+    expect(screen.getByRole('heading', { name: t('memoryCreateTitle') })).toBeTruthy()
+  })
+
+  it('点击卡片上的标签按该标签筛选，清除 chip 后恢复全量', async () => {
+    installFetch()
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    render(<MemoryView actions={controller.actions} t={t} />)
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    expect(screen.getByRole('button', { name: /旧决策/u })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'git' }))
+    expect(screen.getByRole('button', { name: t('memoryClearTagFilter') })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /旧决策/u })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: t('memoryClearTagFilter') }))
+    expect(await screen.findByRole('button', { name: /旧决策/u })).toBeTruthy()
+  })
+
+  it('排序切换为最近更新时客户端重排卡片顺序', async () => {
+    installFetch()
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    render(<MemoryView actions={controller.actions} t={t} />)
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    // 默认顺序保持服务端返回序（重要度优先）：m1 在前。
+    const defaultCards = screen.getAllByRole('button', { name: /提交信息用中文|旧决策/u })
+    expect(defaultCards[0]?.textContent).toContain('提交信息用中文')
+    fireEvent.change(screen.getByRole('combobox', { name: t('memorySortLabel') }), { target: { value: 'recent' } })
+    const recentCards = screen.getAllByRole('button', { name: /提交信息用中文|旧决策/u })
+    expect(recentCards[0]?.textContent).toContain('旧决策')
   })
 })
