@@ -167,16 +167,24 @@ describe('MemoryView', () => {
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
     render(<MemoryView actions={controller.actions} t={t} />)
     await screen.findByRole('button', { name: /提交信息用中文/u })
-    const projectSelect = screen.getByRole('combobox', { name: t('memoryProjectLabel') })
-    expect((projectSelect as HTMLSelectElement).value).toBe('/repo/new')
+    const projectSelect = screen.getByRole('button', { name: t('memoryProjectLabel'), expanded: false })
+    expect(projectSelect.textContent).toContain('新项目')
+    // 下拉菜单列出全部项目，当前项目带 aria-checked 标记；选中即切换项目。
+    fireEvent.click(projectSelect)
+    expect((await screen.findByRole('menuitemradio', { name: '新项目' })).getAttribute('aria-checked')).toBe('true')
+    fireEvent.click(screen.getByRole('menuitemradio', { name: '旧项目' }))
+    await waitFor(() => {
+      expect(calls.some(call => call.url.includes('/memory/list') && call.url.includes(encodeURIComponent('/repo/old')))).toBe(true)
+    })
+    expect(screen.getByRole('button', { name: t('memoryProjectLabel'), expanded: false }).textContent).toContain('旧项目')
     fireEvent.click(screen.getByRole('button', { name: t('memoryScopeGlobal') }))
     await waitFor(() => {
       expect(calls.some(call => call.url.includes('/memory/list') && call.url.includes('scope=global'))).toBe(true)
     })
-    expect(screen.queryByRole('combobox', { name: t('memoryProjectLabel') })).toBeNull()
+    expect(screen.queryByRole('button', { name: t('memoryProjectLabel'), expanded: false })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: t('memoryScopeProject') }))
-    const restored = await screen.findByRole('combobox', { name: t('memoryProjectLabel') })
-    expect((restored as HTMLSelectElement).value).toBe('/repo/new')
+    const restored = await screen.findByRole('button', { name: t('memoryProjectLabel'), expanded: false })
+    expect(restored.textContent).toContain('旧项目')
   })
 
   it('类型筛选与回车搜索把条件带入 /memory/list', async () => {
@@ -206,6 +214,9 @@ describe('MemoryView', () => {
     await screen.findByRole('button', { name: /提交信息用中文/u })
     fireEvent.click(screen.getByRole('button', { name: t('memoryNew') }))
     expect(screen.getByRole('heading', { name: t('memoryCreateTitle') })).toBeTruthy()
+    // 类型是单选项下拉：展开菜单选择「决策」，不再是原生 select。
+    fireEvent.click(screen.getByRole('button', { name: t('memoryFieldType') }))
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: t('memoryTypeDecision') }))
     fireEvent.change(screen.getByLabelText(t('memoryFieldName')), { target: { value: '新记忆' } })
     fireEvent.change(screen.getByLabelText(t('memoryFieldDescription')), { target: { value: '描述内容' } })
     // 标签为 chip 输入：尾逗号与回车各提交一枚；重要性为滑块。
@@ -229,7 +240,7 @@ describe('MemoryView', () => {
       content: '要记住的内容',
       tags: ['git', '约定'],
       importance: 90,
-      type: 'preference',
+      type: 'decision',
     })
     expect(bodyOf(saveCall).id).toBeUndefined()
     await waitFor(() => {
@@ -382,7 +393,8 @@ describe('MemoryView', () => {
     // 默认顺序保持服务端返回序（重要度优先）：m1 在前。
     const defaultCards = screen.getAllByRole('button', { name: /提交信息用中文|旧决策/u })
     expect(defaultCards[0]?.textContent).toContain('提交信息用中文')
-    fireEvent.change(screen.getByRole('combobox', { name: t('memorySortLabel') }), { target: { value: 'recent' } })
+    fireEvent.click(screen.getByRole('button', { name: t('memorySortLabel') }))
+    fireEvent.click(await screen.findByRole('menuitemradio', { name: t('memorySortRecent') }))
     const recentCards = screen.getAllByRole('button', { name: /提交信息用中文|旧决策/u })
     expect(recentCards[0]?.textContent).toContain('旧决策')
   })

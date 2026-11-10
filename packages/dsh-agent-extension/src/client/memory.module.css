@@ -37,7 +37,6 @@
 
 .projectSelect {
   flex: 0 1 220px;
-  width: auto;
   min-width: 0;
 }
 
@@ -120,31 +119,18 @@
   }
 }
 
-/* Type-filter dropdown: trigger sits inside the search field, the single-choice
- * menu floats below it (same surface pattern as the shared menus). */
-.filterWrap {
-  position: relative;
-  display: inline-flex;
-  flex: none;
-}
-
-.filterWrap:focus {
-  outline: none;
-}
-
+/* Type-filter trigger: a 24px icon button inside the search field; the shared
+ * Select renders its menu on the theme-owned popup surface. */
 .filterTrigger {
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 24px;
   height: 24px;
-  padding: 0;
   border: 0;
   border-radius: var(--dsw-radius-sm);
   background: transparent;
   color: var(--dsw-alias-label-secondary);
-  cursor: pointer;
 }
 
 .filterTrigger:focus-visible {
@@ -168,66 +154,6 @@
   border-radius: 999px;
   corner-shape: round;
   background: var(--dsw-alias-state-business-primary);
-}
-
-.menuBackdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  background: transparent;
-}
-
-.filterMenu {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  z-index: 41;
-  min-width: 160px;
-  padding: 4px;
-  border: 0;
-  border-radius: var(--dsw-radius-lg);
-  background: var(--dsw-menu-surface-fill);
-  backdrop-filter: var(--dsw-menu-backdrop-filter);
-  box-shadow: var(--dsw-elevation-panel);
-}
-
-.filterItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  width: 100%;
-  padding: 7px 10px;
-  border: 0;
-  border-radius: var(--dsw-radius-md);
-  background: transparent;
-  color: var(--dsw-alias-label-primary);
-  font: inherit;
-  font-size: 14px;
-  text-align: left;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.filterItem:focus-visible {
-  outline: none;
-  background: var(--dsw-alias-interactive-bg-hover);
-}
-
-@media (hover: hover) {
-  .filterItem:hover {
-    background: var(--dsw-alias-interactive-bg-hover);
-  }
-}
-
-.filterItem[aria-checked='true'] {
-  color: var(--dsw-alias-state-business-primary);
-}
-
-.filterItemText {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* Active-filter chips shown left of the search field: one per active type or
@@ -326,23 +252,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.sortSelect {
-  height: 28px;
-  padding: 0 8px;
-  border: 0.5px solid var(--dsw-alias-border-l3);
-  border-radius: var(--dsw-radius-sm);
-  background: var(--dsw-alias-bg-layer-3);
-  color: var(--dsw-alias-label-secondary);
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.sortSelect:focus-visible {
-  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
-  outline-offset: 1px;
 }
 
 .entryGrid {
@@ -535,7 +444,20 @@
   outline-offset: 1px;
 }
 
-/* Importance slider: native range with the live value at its right edge. */
+/* Numeric settings fields: hide the native spinners so the field matches the
+ * other themed inputs; keyboard step keys still work. */
+.input::-webkit-inner-spin-button,
+.input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input[type='number'] {
+  appearance: textfield;
+}
+
+/* Importance slider: themed 4px track filled up to the live value plus a
+ * centered ring thumb; the native control keeps keyboard and a11y behavior. */
 .rangeRow {
   display: flex;
   align-items: center;
@@ -547,7 +469,62 @@
   min-width: 0;
   height: 36px;
   margin: 0;
-  accent-color: var(--dsw-alias-state-business-primary);
+  padding: 0;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.rangeInput:focus-visible {
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 2px;
+  border-radius: var(--dsw-radius-sm);
+}
+
+.rangeInput::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  corner-shape: round;
+  background: linear-gradient(
+    to right,
+    var(--dsw-alias-state-business-primary) 0 var(--range-fill, 50%),
+    var(--dsw-alias-border-l3) var(--range-fill, 50%) 100%
+  );
+}
+
+.rangeInput::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border: 2px solid var(--dsw-alias-state-business-primary);
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--dsw-alias-bg-layer-1);
+}
+
+.rangeInput::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--dsw-alias-border-l3);
+}
+
+.rangeInput::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  corner-shape: round;
+  background: var(--dsw-alias-state-business-primary);
+}
+
+.rangeInput::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--dsw-alias-state-business-primary);
+  border-radius: 50%;
+  corner-shape: round;
+  background: var(--dsw-alias-bg-layer-1);
 }
 
 .rangeValue {

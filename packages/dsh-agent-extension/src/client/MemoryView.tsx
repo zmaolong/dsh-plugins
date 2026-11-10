@@ -16,14 +16,13 @@
  * @module dsh-agent-extension/client/MemoryView
  */
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { api } from './api.ts'
 import { runAudit, type AuditEntry, type AuditResult } from './audit.ts'
-import { Badge, Button, EmptyBlock, IconButton, LoadingBlock, Spinner, columnGap } from './controls.tsx'
+import { Badge, Button, EmptyBlock, IconButton, LoadingBlock, Select, Spinner, columnGap } from './controls.tsx'
 import { DialogShell } from './dialogs.tsx'
 import { Icon } from './icons.tsx'
 import { Switch } from './Switch.tsx'
-import { useEscapeClose, useFocusRestore } from './overlay-hooks.ts'
 import { errorMessageFor, formatTime, type JsonRecord, type Translate } from './presentation.ts'
 import type { HubActions } from './store.ts'
 import panelCss from './panel.module.css'
@@ -350,7 +349,6 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const [exportBusy, setExportBusy] = useState(false)
   const [settings, setSettings] = useState<MemorySettings>(DEFAULT_SETTINGS)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [filterOpen, setFilterOpen] = useState(false)
   const [tagFilter, setTagFilter] = useState('')
   const [sort, setSort] = useState<'default' | 'recent'>('default')
   const [tagDraft, setTagDraft] = useState('')
@@ -364,14 +362,11 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   // The user's explicit scope choice wins over the auto-selected defaults.
   const userChoseRef = useRef(false)
   const detailSeq = useRef(0)
-  const filterWrapRef = useRef<HTMLDivElement | null>(null)
   // Latest local settings (kept in sync synchronously) and the last value the
   // server confirmed; a failed persist rolls the UI back to the latter.
   const settingsRef = useRef<MemorySettings>(DEFAULT_SETTINGS)
   const savedSettingsRef = useRef<MemorySettings>(DEFAULT_SETTINGS)
   const settingsTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEscapeClose(filterOpen, () => { setFilterOpen(false) })
-  useFocusRestore(filterWrapRef, filterOpen)
   // Drop a pending debounced persist when the view unmounts.
   useEffect(() => () => {
     if (settingsTimer.current !== null) clearTimeout(settingsTimer.current)
@@ -816,15 +811,17 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
         <div className={css.listHead}>
           <h2 className={css.sectionTitle}>{t('memoryListTitle')}</h2>
           <span className={css.listHeadTools}>
-            <select
-              className={css.sortSelect}
-              aria-label={t('memorySortLabel')}
+            <Select
+              label={t('memorySortLabel')}
+              size="sm"
+              align="right"
               value={sort}
-              onChange={(event) => { setSort(event.target.value === 'recent' ? 'recent' : 'default') }}
-            >
-              <option value="default">{t('memorySortDefault')}</option>
-              <option value="recent">{t('memorySortRecent')}</option>
-            </select>
+              options={[
+                { value: 'default', label: t('memorySortDefault') },
+                { value: 'recent', label: t('memorySortRecent') },
+              ]}
+              onChange={(next) => { setSort(next === 'recent' ? 'recent' : 'default') }}
+            />
             <span className={css.sectionCount}>{String(sortedEntries.length)}</span>
           </span>
         </div>
@@ -942,16 +939,13 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
         </div>
         {scope === 'project' && projects.length > 0
           ? (
-            <select
-              className={`${css.input} ${css.projectSelect}`}
-              aria-label={t('memoryProjectLabel')}
+            <Select
+              label={t('memoryProjectLabel')}
+              className={css.projectSelect}
               value={project}
-              onChange={(event) => chooseProject(event.target.value)}
-            >
-              {projects.map(item => (
-                <option key={item.key} value={item.key}>{item.displayName}</option>
-              ))}
-            </select>
+              options={projects.map(item => ({ value: item.key, label: item.displayName }))}
+              onChange={chooseProject}
+            />
           )
           : null}
         {(typeFilter !== '' || tagFilter !== '')
@@ -1018,44 +1012,21 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
               </button>
             )
             : null}
-          <div ref={filterWrapRef} className={css.filterWrap} tabIndex={-1}>
-            <button
-              type="button"
-              className={css.filterTrigger}
-              aria-expanded={filterOpen}
-              aria-label={t('memoryTypeFilterLabel')}
-              title={t('memoryTypeFilterLabel')}
-              onClick={() => { setFilterOpen(value => !value) }}
-            >
-              <Icon name="filter" size={14} />
-              {typeFilter !== '' ? <span className={css.filterDot} /> : null}
-            </button>
-            {filterOpen
-              ? (
-                <div>
-                  <div className={css.menuBackdrop} onClick={() => { setFilterOpen(false) }} />
-                  <div className={css.filterMenu} role="menu" aria-label={t('memoryTypeLabel')}>
-                    {typeOptions.map(option => (
-                      <button
-                        key={option.value === '' ? 'all' : option.value}
-                        type="button"
-                        role="menuitemradio"
-                        aria-checked={typeFilter === option.value}
-                        className={css.filterItem}
-                        onClick={() => {
-                          setTypeFilter(option.value)
-                          setFilterOpen(false)
-                        }}
-                      >
-                        <span className={css.filterItemText}>{option.label}</span>
-                        {typeFilter === option.value ? <Icon name="check" size={14} /> : null}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )
-              : null}
-          </div>
+          <Select
+            label={t('memoryTypeFilterLabel')}
+            title={t('memoryTypeFilterLabel')}
+            align="right"
+            value={typeFilter}
+            options={typeOptions}
+            onChange={(next) => { setTypeFilter(next === '' ? '' : (TYPE_VALUES.find(value => value === next) ?? '')) }}
+            triggerClassName={css.filterTrigger}
+            trigger={(
+              <>
+                <Icon name="filter" size={14} />
+                {typeFilter !== '' ? <span className={css.filterDot} /> : null}
+              </>
+            )}
+          />
         </div>
         <div className={css.actions}>
           <Button variant="primary" icon="plus" disabled={projectMissing} onClick={startCreate}>
@@ -1148,17 +1119,15 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                       </label>
                       <label className={css.field}>
                         <span className={css.fieldLabel}>{t('memoryFieldType')}</span>
-                        <select
-                          className={css.input}
-                          aria-label={t('memoryFieldType')}
+                        <Select
+                          label={t('memoryFieldType')}
                           value={form.type}
-                          onChange={(event) => {
-                            const next = TYPE_VALUES.find(value => value === event.target.value) ?? 'preference'
-                            setForm(current => ({ ...current, type: next }))
+                          options={TYPE_VALUES.map(value => ({ value, label: t(TYPE_LABEL_KEYS[value]) }))}
+                          onChange={(next) => {
+                            const type = TYPE_VALUES.find(value => value === next) ?? 'preference'
+                            setForm(current => ({ ...current, type }))
                           }}
-                        >
-                          {TYPE_VALUES.map(value => <option key={value} value={value}>{t(TYPE_LABEL_KEYS[value])}</option>)}
-                        </select>
+                        />
                       </label>
                       <label className={css.field}>
                         <span className={css.fieldLabel}>{t('memoryFieldImportance')}</span>
@@ -1171,6 +1140,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                             step={1}
                             aria-label={t('memoryFieldImportance')}
                             value={form.importance}
+                            style={{ '--range-fill': `${form.importance}%` } as CSSProperties}
                             onChange={(event) => {
                               setForm(current => ({ ...current, importance: integer(event.target.value, 0, 100, current.importance) }))
                             }}

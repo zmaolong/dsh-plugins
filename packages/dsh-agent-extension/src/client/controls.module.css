@@ -229,6 +229,101 @@
   }
 }
 
+/* Single-choice dropdown replacing the native select: the field trigger reuses
+ * the input surface (bg-layer-3 + hairline border), the floating menu reuses
+ * Menu.module.css so both themes share one popup material. */
+.select {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.selectField {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  height: 36px;
+  min-width: 0;
+  padding: 0 10px;
+  border: 0.5px solid var(--dsw-alias-border-l3);
+  border-radius: var(--dsw-radius-sm);
+  background: var(--dsw-alias-bg-layer-3);
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.selectFieldSm {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  height: 28px;
+  min-width: 0;
+  padding: 0 8px;
+  border: 0.5px solid var(--dsw-alias-border-l3);
+  border-radius: var(--dsw-radius-sm);
+  background: var(--dsw-alias-bg-layer-3);
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.selectField > svg,
+.selectFieldSm > svg {
+  flex: none;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.selectField:focus-visible,
+.selectFieldSm:focus-visible {
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 1px;
+}
+
+@media (hover: hover) {
+  .selectField:hover,
+  .selectFieldSm:hover {
+    border-color: var(--dsw-alias-border-l4);
+  }
+}
+
+.selectValue {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Custom trigger content (icon button) keeps its own look; only positioning
+ * is shared so the floating menu anchors to the trigger. */
+.selectTrigger {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.selectTrigger:focus-visible {
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 1px;
+}
+
 /* Compact search: an outlined 32px trigger (same geometry as the toolbar icon
  * buttons) that floats the input field below itself while open. */
 .search {

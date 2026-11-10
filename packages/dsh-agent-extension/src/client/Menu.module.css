@@ -58,6 +58,15 @@
   box-shadow: var(--dsw-elevation-panel);
 }
 
+/* Left-anchored select menu: matches the trigger width and never overflows the
+ * viewport on the right. */
+.menuLeft {
+  left: 0;
+  right: auto;
+  min-width: 100%;
+  max-width: min(320px, calc(100vw - 32px));
+}
+
 .item {
   display: flex;
   align-items: center;
@@ -94,6 +103,22 @@
 
 .itemDanger {
   color: var(--dsw-alias-state-error-primary);
+}
+
+/* Checked row of a single-choice menu. */
+.itemSelected {
+  color: var(--dsw-alias-state-business-primary);
+}
+
+.itemSelected > svg {
+  flex: none;
+}
+
+.itemLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .separator {

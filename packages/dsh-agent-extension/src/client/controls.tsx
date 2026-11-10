@@ -1,9 +1,9 @@
 /**
  * Basic controls of the panel: Button, IconButton, Badge, Spinner, SearchBox,
- * Avatar, and the empty/loading blocks. Pure props components styled with the
- * host theme tokens (see controls.module.css); markup and behavior follow the
- * official ui-primitives conventions (focus rings, aria labels, disabled
- * opacity) without importing the primitives package.
+ * Select, Avatar, and the empty/loading blocks. Pure props components styled
+ * with the host theme tokens (see controls.module.css); markup and behavior
+ * follow the official ui-primitives conventions (focus rings, aria labels,
+ * disabled opacity) without importing the primitives package.
  *
  * @module dsh-agent-extension/client/controls
  */
@@ -13,6 +13,7 @@ import clsx from 'clsx'
 import { Icon } from './icons.tsx'
 import { useEscapeClose, useFocusRestore } from './overlay-hooks.ts'
 import { iconSrc, type ResolvedDisplay } from './presentation.ts'
+import menuCss from './Menu.module.css'
 import css from './controls.module.css'
 
 /** Spinner: ring only, size 14 (or 20 large). */
@@ -94,6 +95,101 @@ export function Badge({ tone, children }: { tone?: BadgeTone, children: ReactNod
 /** Update-available pill. */
 export function UpdateBadge({ label }: { label: string }): ReactNode {
   return <span className={css.updateBadge}><Icon name="download" size={12} />{label}</span>
+}
+
+/** One option of a Select. */
+export interface SelectOption {
+  value: string
+  label: string
+}
+
+/**
+ * Single-choice dropdown that replaces the native `<select>`: the closed
+ * trigger is a themed field, the open menu uses the theme-owned menu material
+ * (same surface as Menu), so the popup follows the app palette in light and
+ * dark themes. Escape closes, backdrop click closes, focus returns to the
+ * trigger on close. ArrowUp/ArrowDown on the trigger open the menu.
+ * @param props.size - field geometry: md (36px, form) or sm (28px, toolbars).
+ * @param props.align - menu anchor side; a left-anchored menu matches the
+ *   trigger width (min-width: 100%).
+ * @param props.trigger - custom trigger content (e.g. an icon button); omit to
+ *   render the standard value label + chevron field.
+ */
+export function Select({ label, title, value, options, onChange, size = 'md', align = 'left', className, trigger, triggerClassName }: {
+  label: string
+  title?: string | undefined
+  value: string
+  options: ReadonlyArray<SelectOption>
+  onChange: (value: string) => void
+  size?: 'md' | 'sm'
+  align?: 'left' | 'right'
+  className?: string | undefined
+  trigger?: ReactNode
+  triggerClassName?: string | undefined
+}): ReactNode {
+  const [open, setOpen] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement | null>(null)
+  useEscapeClose(open, () => { setOpen(false) })
+  useFocusRestore(triggerRef, open)
+  const selected = options.find(option => option.value === value)
+  return (
+    <div className={clsx(css.select, className)}>
+      <button
+        type="button"
+        ref={triggerRef}
+        className={clsx(trigger === undefined
+          ? (size === 'sm' ? css.selectFieldSm : css.selectField)
+          : css.selectTrigger,
+        triggerClassName)}
+        aria-label={label}
+        title={title}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => { setOpen(current => !current) }}
+        onKeyDown={(event) => {
+          if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
+          event.preventDefault()
+          setOpen(true)
+        }}
+      >
+        {trigger ?? (
+          <>
+            <span className={css.selectValue}>{selected?.label ?? ''}</span>
+            <Icon name="chevronDown" size={14} />
+          </>
+        )}
+      </button>
+      {open
+        ? (
+          <div>
+            <div className={menuCss.backdrop} onClick={() => { setOpen(false) }} />
+            <div
+              className={clsx(menuCss.menu, align === 'left' && menuCss.menuLeft)}
+              role="menu"
+              aria-label={label}
+            >
+              {options.map(option => (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={option.value === value}
+                  className={clsx(menuCss.item, option.value === value && menuCss.itemSelected)}
+                  onClick={() => {
+                    setOpen(false)
+                    onChange(option.value)
+                  }}
+                >
+                  <span className={menuCss.itemLabel}>{option.label}</span>
+                  {option.value === value ? <Icon name="check" size={14} /> : null}
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+        : null}
+    </div>
+  )
 }
 
 /**
