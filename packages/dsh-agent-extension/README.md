@@ -1,9 +1,9 @@
 # dsh-agent-extension
 
-> **试验性预览版（`0.0.1-preview.17`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
+> **试验性预览版（`0.0.1-preview.18`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
 > npm 上只发布 `preview` dist-tag（`latest` 暂不指向本版本）。
 > 需要安装时请锁定精确版本：
-> `dsh plugin --profile web add dsh-agent-extension@0.0.1-preview.17`。
+> `dsh plugin --profile web add dsh-agent-extension@0.0.1-preview.18`。
 > 版本说明：npm 公开线为 `0.0.1-preview.N`，首个正式版定为 `0.0.1`（预览线的稳定版）；
 > 官方化工具链形态（TypeScript + JSX + CSS Modules + tsdown + vitest，对齐官方插件形态，
 > 破坏性重构、不做旧版兼容）自 `dsh-agent-plugin-hub` 时代的 `0.0.1-preview.6` 延续；
@@ -24,6 +24,17 @@ DSH 的**智能体扩展**（Agent Extension）：管理智能体插件、技能
 `mcpServers` 等能力。已知格式包括 Claude Code、CodeBuddy、ZCode；它们不是 DSH 插件
 （cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
+
+## 0.0.1-preview.18 变更（记忆 v2 · B1 注入与索引）
+
+- **刷新索引**：记忆面板工具条新增「刷新索引」按钮 → `POST /agent-plugin/api/memory/refresh-index`，
+  让当前进程内已缓存的会话索引失效，下一次装配重新渲染；条目列表不重载；
+- **指标口径重定义**：设置对话框统计区显示「注入利用率」（Σ 注入回读 / Σ 注入）与
+  「检索命中率」（Σ 检索结果被 get 打开 / Σ 检索结果）；分母为 0 时显示 `—`；
+- **默认值收口（ADR-0005）**：`indexLimitGlobal` / `indexLimitProject` 默认 20、`maxChars` 默认 3,000；
+  服务端读取旧 settings.json 时按新上限归一化（旧值 50/50/12000 实际按 20/20/3000 生效并展示）；
+- **统计数据面**：`SessionRecallStats` 新增 `searched` 与 `searchUsed`，运行时按会话累计并在轮末落盘；
+- **测试**：全量 286 个离线用例（新增刷新索引路由/指标归一化/客户端按钮用例）。
 
 ## 0.0.1-preview.17 变更（记忆子系统 v2 · B0 地基）
 

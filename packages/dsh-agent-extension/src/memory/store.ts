@@ -38,6 +38,8 @@ import { previewRoot, removePreviewEntry, writePreviewFile, type PreviewFile } f
 import {
   LIMITS,
   MEMORY_SCHEMA,
+  RECALL_MAX_CHARS,
+  RECALL_MAX_PER_LAYER,
   clampInt,
   defaultSettings,
   isMemoryStatus,
@@ -310,9 +312,9 @@ function normalizeSettings(raw: unknown): MemorySettings {
     captureEnabled: typeof value.captureEnabled === 'boolean' ? value.captureEnabled : fallback.captureEnabled,
     captureSessionEnd: typeof value.captureSessionEnd === 'boolean' ? value.captureSessionEnd : fallback.captureSessionEnd,
     injectEnabled: typeof value.injectEnabled === 'boolean' ? value.injectEnabled : fallback.injectEnabled,
-    indexLimitGlobal: clampInt(value.indexLimitGlobal, 0, LIMITS.indexEntries, fallback.indexLimitGlobal),
-    indexLimitProject: clampInt(value.indexLimitProject, 0, LIMITS.indexEntries, fallback.indexLimitProject),
-    maxChars: clampInt(value.maxChars, 1000, LIMITS.maxChars, fallback.maxChars),
+    indexLimitGlobal: clampInt(value.indexLimitGlobal, 0, RECALL_MAX_PER_LAYER, fallback.indexLimitGlobal),
+    indexLimitProject: clampInt(value.indexLimitProject, 0, RECALL_MAX_PER_LAYER, fallback.indexLimitProject),
+    maxChars: clampInt(value.maxChars, 1000, RECALL_MAX_CHARS, fallback.maxChars),
     updatedAt: text(value.updatedAt) || fallback.updatedAt,
   }
 }
@@ -322,11 +324,15 @@ function normalizeRecallRow(raw: unknown): SessionRecallStats | null {
   const value = objectOf(raw)
   const sessionId = text(value.sessionId)
   if (sessionId === '') return null
+  const searched = clampInt(value.searched, 0, 1000000, 0)
   return {
     sessionId,
     injected: clampInt(value.injected, 0, 1000000, 0),
     injectedUsed: clampInt(value.injectedUsed, 0, 1000000, 0),
     overflow: clampInt(value.overflow, 0, 1000000, 0),
+    // 旧 stats.json 没有这两个字段：按 0 读，保证向后兼容。
+    searched,
+    searchUsed: Math.min(searched, clampInt(value.searchUsed, 0, 1000000, 0)),
     updatedAt: text(value.updatedAt) || new Date().toISOString(),
   }
 }
@@ -597,24 +603,36 @@ export class MemoryStore {
   }
 
   /**
-   * 记录某个会话装配时实际使用了哪些注入条目。
+   * 记录某个会话的召回计数（整行替换，运行时传入该会话的累计值）。
    *
    * @param sessionId - 收到索引注入的会话。
    * @param injectedIds - 注入到提示词里的索引 id。
    * @param usedIds - 模型通过记忆工具实际取过的 id。
    * @param overflow - 不在注入集合里的检索命中数。
+   * @param metrics - 检索命中率口径：`searched` 为 `memory_search` 累计
+   *   返回的结果条数，`searchUsed` 为其中后来被 `memory_get` 打开的条数。
    */
-  recordRecall(sessionId: string, injectedIds: readonly string[], usedIds: readonly string[], overflow: number): void {
+  recordRecall(
+    sessionId: string,
+    injectedIds: readonly string[],
+    usedIds: readonly string[],
+    overflow: number,
+    metrics: { searched?: number, searchUsed?: number } = {},
+  ): void {
     if (sessionId === '') return
     const current = this.stats()
     const injectedSet = new Set(injectedIds)
     const hit = new Set(usedIds.filter(id => injectedSet.has(id)))
+    const searched = clampInt(metrics.searched, 0, 1000000, 0)
+    const searchUsed = Math.min(searched, clampInt(metrics.searchUsed, 0, 1000000, 0))
     const sessions = current.sessions.filter(row => row.sessionId !== sessionId)
     sessions.unshift({
       sessionId,
       injected: injectedIds.length,
       injectedUsed: hit.size,
       overflow: Math.max(0, overflow),
+      searched,
+      searchUsed,
       updatedAt: new Date().toISOString(),
     })
     this.statsValue = { ...current, sessions: sessions.slice(0, SESSION_STATS_KEEP) }

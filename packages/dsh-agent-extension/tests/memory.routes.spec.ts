@@ -2,10 +2,13 @@
  * 记忆 HTTP 路由：数据面契约、项目作用域解析与写入校验。
  */
 
+import { writeFileSync } from 'node:fs'
+import path from 'node:path'
+
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { MemoryStore } from '../src/memory/store.ts'
-import { dispatchMemoryGet, dispatchMemoryPost } from '../src/memory-routes.ts'
+import { MEMORY_POST_ROUTES, dispatchMemoryGet, dispatchMemoryPost } from '../src/memory-routes.ts'
 import { removeDirs, tempHome } from './helpers.ts'
 
 describe('记忆 API：state/list/get/save/status/delete/settings/export', () => {
@@ -100,7 +103,7 @@ describe('记忆 API：state/list/get/save/status/delete/settings/export', () =>
     }) as { settings: { captureEnabled: boolean, indexLimitGlobal: number, maxChars: number } }
     expect(settings.settings.captureEnabled).toBe(false)
     expect(settings.settings.indexLimitGlobal).toBe(20)
-    expect(settings.settings.maxChars).toBe(5000)
+    expect(settings.settings.maxChars).toBe(3000)
 
     await dispatchMemoryPost(store, '/memory/save', { scope: 'global', name: 'a', description: 'b', type: 'reference', content: 'c' })
     const exported = await dispatchMemoryPost(store, '/memory/export', { scope: 'global' }) as { filename: string, content: string }
@@ -131,5 +134,47 @@ describe('记忆 API：state/list/get/save/status/delete/settings/export', () =>
       project: 'p_0123456789abcdef',
     })) as { total: number }
     expect(list.total).toBe(1)
+  })
+
+  it('refresh-index 在 MEMORY_POST_ROUTES 中，且只调用一次 refreshRecall', async () => {
+    const store = makeStore()
+    let calls = 0
+    expect(MEMORY_POST_ROUTES).toContain('/memory/refresh-index')
+    const result = await dispatchMemoryPost(store, '/memory/refresh-index', {}, {
+      refreshRecall: () => {
+        calls += 1
+      },
+    })
+    expect(result).toEqual({ refreshed: true })
+    expect(calls).toBe(1)
+  })
+
+  it('refresh-index 未提供 hooks 时不崩', async () => {
+    const store = makeStore()
+    await expect(dispatchMemoryPost(store, '/memory/refresh-index')).resolves.toEqual({ refreshed: true })
+  })
+
+  it('旧 stats.json 缺 searched/searchUsed 时按 0 返回', async () => {
+    const home = tempHome('memory-routes-legacy-')
+    tempDirs.push(home)
+    const store = new MemoryStore({ home })
+    store.start()
+    writeFileSync(path.join(store.root, 'stats.json'), JSON.stringify({
+      schema: 2,
+      sessions: [{
+        sessionId: 's-old',
+        injected: 3,
+        injectedUsed: 1,
+        overflow: 2,
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      }],
+    }), 'utf8')
+
+    const reloaded = new MemoryStore({ home })
+    reloaded.start()
+    const state = await dispatchMemoryGet(reloaded, '/memory/state', new URLSearchParams()) as unknown as {
+      stats: { sessions: Array<Record<string, unknown>> }
+    }
+    expect(state.stats.sessions[0]).toMatchObject({ sessionId: 's-old', searched: 0, searchUsed: 0 })
   })
 })

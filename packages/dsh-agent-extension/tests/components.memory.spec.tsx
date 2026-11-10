@@ -43,8 +43,8 @@ const STATE = {
     captureRuns: 7,
     capturedEntries: 12,
     sessions: [
-      { sessionId: 's1', injected: 10, injectedUsed: 4, overflow: 1, updatedAt: '2026-11-08T10:00:00.000Z' },
-      { sessionId: 's2', injected: 10, injectedUsed: 6, overflow: 2, updatedAt: '2026-11-08T11:00:00.000Z' },
+      { sessionId: 's1', injected: 10, injectedUsed: 4, searched: 8, searchUsed: 2, overflow: 1, updatedAt: '2026-11-08T10:00:00.000Z' },
+      { sessionId: 's2', injected: 10, injectedUsed: 6, searched: 12, searchUsed: 3, overflow: 2, updatedAt: '2026-11-08T11:00:00.000Z' },
     ],
   },
 }
@@ -131,6 +131,7 @@ function installFetch(options: { state?: () => Response, list?: (url: string) =>
     if (url.includes('/memory/delete')) return okResponse({ deleted: true, id: 'm1' })
     if (url.includes('/memory/settings')) return okResponse({ settings: { ...STATE.settings, indexLimitGlobal: 120 } })
     if (url.includes('/memory/export')) return okResponse({ filename: 'memory.md', content: '# 记忆' })
+    if (url.includes('/memory/refresh-index')) return okResponse({ refreshed: true })
     return okResponse({})
   })
   vi.stubGlobal('fetch', fetchMock)
@@ -292,7 +293,11 @@ describe('MemoryView', () => {
     // 统计与设置都在对话框内：齿轮打开后可见。
     fireEvent.click(screen.getByRole('button', { name: t('memorySettingsButton') }))
     expect(await screen.findByRole('dialog', { name: t('memorySettingsTitle') })).toBeTruthy()
+    // 统计口径：Σ injectedUsed/Σ injected = 10/20 → 50%；Σ searchUsed/Σ searched = 5/20 → 25%。
+    expect(screen.getByText(t('memoryInjectionRate'))).toBeTruthy()
+    expect(screen.getByText(t('memoryRetrievalRate'))).toBeTruthy()
     expect(screen.getByText('50%')).toBeTruthy()
+    expect(screen.getByText('25%')).toBeTruthy()
     expect(screen.getByText('12')).toBeTruthy()
     // 开关即时保存：第一次请求只翻转 injectEnabled，其余保持服务端值。
     fireEvent.click(screen.getByRole('switch', { name: t('memorySettingsInject') }))
@@ -303,12 +308,13 @@ describe('MemoryView', () => {
     expect(settingsCalls[0]?.init?.method).toBe('POST')
     expect(bodyOf(settingsCalls[0])).toMatchObject({
       injectEnabled: false,
-      indexLimitGlobal: 40,
+      // 服务端旧值 40 / 8000 超出 ADR-0005 上限，客户端归一化后按 20 / 3000 保存。
+      indexLimitGlobal: 20,
       captureEnabled: true,
       captureSessionEnd: false,
-      maxChars: 8000,
+      maxChars: 3000,
     })
-    // 数字输入防抖 500ms 后自动保存，携带翻转后的完整设置。
+    // 数字输入防抖 500ms 后自动保存；输入 120 会被压到每层上限 20。
     fireEvent.change(screen.getByLabelText(t('memorySettingsIndexGlobal')), { target: { value: '120' } })
     await waitFor(() => {
       expect(calls.filter(call => call.url.includes('/memory/settings')).length).toBe(2)
@@ -316,10 +322,10 @@ describe('MemoryView', () => {
     const lastSettings = calls.filter(call => call.url.includes('/memory/settings')).at(-1)
     expect(bodyOf(lastSettings)).toMatchObject({
       injectEnabled: false,
-      indexLimitGlobal: 120,
+      indexLimitGlobal: 20,
       captureEnabled: true,
       captureSessionEnd: false,
-      maxChars: 8000,
+      maxChars: 3000,
     })
   })
 
@@ -361,6 +367,30 @@ describe('MemoryView', () => {
     const exportCall = calls.find(call => call.url.includes('/memory/export'))
     expect(exportCall?.init?.method).toBe('POST')
     expect(bodyOf(exportCall)).toEqual({ scope: 'project', project: '/repo/new' })
+  })
+
+  it('刷新索引调用 /memory/refresh-index 并提示成功，不重载列表', async () => {
+    const { calls } = installFetch()
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const toast = vi.spyOn(controller.actions, 'toast')
+    render(<MemoryView actions={controller.actions} t={t} />)
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    const listCallCount = (): number => calls.filter(call => call.url.includes('/memory/list')).length
+    const listCallsBefore = listCallCount()
+    fireEvent.click(screen.getByRole('button', { name: t('memoryRefreshIndex') }))
+    await waitFor(() => {
+      expect(calls.some(call => call.url.includes('/memory/refresh-index'))).toBe(true)
+    })
+    const refreshCall = calls.find(call => call.url.includes('/memory/refresh-index'))
+    expect(refreshCall?.url).toBe('/agent-plugin/api/memory/refresh-index')
+    expect(refreshCall?.init?.method).toBe('POST')
+    // 无请求体：全局索引重建不依赖作用域参数。
+    expect(refreshCall?.init?.body).toBeUndefined()
+    await waitFor(() => {
+      expect(toast).toHaveBeenCalledWith('success', t('memoryRefreshIndexDone'))
+    })
+    // 只刷新提示词索引，不触发列表重载。
+    expect(listCallCount()).toBe(listCallsBefore)
   })
 
   it('类型筛选激活时在搜索框左侧显示可清除的筛选 chip', async () => {

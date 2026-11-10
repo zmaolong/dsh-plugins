@@ -91,15 +91,15 @@ export interface MemorySettings {
   updatedAt: string
 }
 
-/** 默认设置：捕获与注入开启，各 50 条索引，12k 字符。 */
+/** 默认设置：捕获与注入开启，各 20 条索引、总预算 3,000 字符（ADR-0005）。 */
 export function defaultSettings(): MemorySettings {
   return {
     captureEnabled: true,
     captureSessionEnd: true,
     injectEnabled: true,
-    indexLimitGlobal: 50,
-    indexLimitProject: 50,
-    maxChars: 12000,
+    indexLimitGlobal: 20,
+    indexLimitProject: 20,
+    maxChars: 3000,
     updatedAt: new Date().toISOString(),
   }
 }
@@ -128,6 +128,19 @@ export interface SessionRecallStats {
   injectedUsed: number
   /** 检索命中但未注入的条数。 */
   overflow: number
+  /**
+   * 该会话 `memory_search` 累计返回的结果条数（重复命中按次计）。
+   *
+   * 旧 `stats.json` 没有这个字段时，store 读取时按 0 补齐；服务端写出的行
+   * 始终带数字。
+   */
+  searched: number
+  /**
+   * `searched` 中后来被 `memory_get` 打开的条数（同一 id 只计一次）。
+   *
+   * 旧 `stats.json` 没有这个字段时，store 读取时按 0 补齐。
+   */
+  searchUsed: number
   updatedAt: string
 }
 
@@ -181,6 +194,12 @@ export function emptyStats(): MemoryStats {
     recentCaptures: [],
   }
 }
+
+/** 召回索引的字符预算上限（ADR-0005）：设置只能调小，不能突破。 */
+export const RECALL_MAX_CHARS = 3000
+
+/** 每层最多注入的条目数。 */
+export const RECALL_MAX_PER_LAYER = 20
 
 /** 用户可调边界与存储硬上限。 */
 export const LIMITS = {

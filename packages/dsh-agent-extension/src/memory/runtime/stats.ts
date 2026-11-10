@@ -18,6 +18,12 @@ export interface RecallCounters {
   used: Set<string>
   /** 检索命中但不在注入集合里的 id。 */
   overflow: Set<string>
+  /** `memory_search` 返回过的 id；判定 `searchUsed` 的成员集合。 */
+  searched: Set<string>
+  /** `memory_search` 累计返回的结果条数（重复命中按次计）。 */
+  searchedCount: number
+  /** `searched` 中后来被 `memory_get` 打开的 id（同一 id 只计一次）。 */
+  searchUsed: Set<string>
 }
 
 /** 一次提示词装配样本（面板「最近注入」用）。 */
@@ -31,7 +37,7 @@ export interface InjectionSample {
  * 记录一次工具检索/读取。
  *
  * @param counters - 会话计数。
- * @param resultIds - 本次工具结果里的 id。
+ * @param resultIds - 本次工具结果里的 id（`memory_search` 用）。
  * @param usedIds - 本次真正读到的 id（`memory_get` 用）。
  */
 export function noteToolUsage(
@@ -39,8 +45,14 @@ export function noteToolUsage(
   resultIds: readonly string[],
   usedIds: readonly string[],
 ): void {
-  for (const id of usedIds) counters.used.add(id)
+  for (const id of usedIds) {
+    counters.used.add(id)
+    // 只有先被 search 返回过的 id 才计入检索命中率，且同一 id 只计一次。
+    if (counters.searched.has(id)) counters.searchUsed.add(id)
+  }
   for (const id of resultIds) {
+    counters.searched.add(id)
+    counters.searchedCount += 1
     if (counters.injected.has(id)) counters.used.add(id)
     else counters.overflow.add(id)
   }
@@ -59,9 +71,13 @@ export function flushRecall(options: {
   log: LogFn
 }): void {
   const { store, sessionId, counters, injection, log } = options
-  if (counters.injected.size > 0 || counters.overflow.size > 0) {
+  if (counters.injected.size > 0 || counters.overflow.size > 0
+    || counters.searchedCount > 0 || counters.searchUsed.size > 0) {
     try {
-      store.recordRecall(sessionId, [...counters.injected], [...counters.used], counters.overflow.size)
+      store.recordRecall(sessionId, [...counters.injected], [...counters.used], counters.overflow.size, {
+        searched: counters.searchedCount,
+        searchUsed: counters.searchUsed.size,
+      })
     } catch (error) {
       log('warn', `写命中率统计失败：${error instanceof Error ? error.message : String(error)}`)
     }

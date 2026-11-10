@@ -5414,9 +5414,110 @@ var AgentPluginHub = class {
 		this.started = false;
 	}
 };
-// src/memory/recall.ts
-/** 注入索引的字符预算上限（设置只能调小，不能突破）。 */
+// src/shared/memory-wire.ts
+/**
+* 记忆的跨端词汇：宿主半与浏览器半共用的纯类型、常量与归一化助手。
+*
+* 这里只放无运行时依赖、无 node 内置模块的声明与纯函数，浏览器构建可以直接
+* 内联；服务端专属的 schema 版本、项目身份解析与 Markdown 归一化助手留在
+* `memory/types.ts`，由它转出本模块的公开面，历史导入路径保持不变。
+*
+* @module dsh-agent-extension/shared/memory-wire
+*/
+/** 一条记忆可以记录的事实类型。 */
+const MEMORY_TYPES = [
+	"preference",
+	"decision",
+	"gotcha",
+	"project",
+	"reference"
+];
+/** 一条记忆的来源通道。 */
+const MEMORY_SOURCES = [
+	"capture",
+	"tool",
+	"user",
+	"import"
+];
+/** 默认设置：捕获与注入开启，各 20 条索引、总预算 3,000 字符（ADR-0005）。 */
+function defaultSettings() {
+	return {
+		captureEnabled: true,
+		captureSessionEnd: true,
+		injectEnabled: true,
+		indexLimitGlobal: 20,
+		indexLimitProject: 20,
+		maxChars: 3e3,
+		updatedAt: (/* @__PURE__ */ new Date()).toISOString()
+	};
+}
+/** 召回索引的字符预算上限（ADR-0005）：设置只能调小，不能突破。 */
 const RECALL_MAX_CHARS = 3e3;
+/** 用户可调边界与存储硬上限。 */
+const LIMITS = {
+	indexEntries: 200,
+	maxChars: 4e4,
+	name: 120,
+	description: 400,
+	content: 8e3,
+	tags: 8,
+	tag: 40,
+	entriesPerScope: 2e3,
+	projects: 200,
+	statsSessions: 100,
+	/** 最近捕获/注入样本上限（stats.json 的有界数组）。 */
+	statsRecent: 50
+};
+/** 值是否是一种记忆来源。 */
+function isMemorySource(value) {
+	return typeof value === "string" && MEMORY_SOURCES.includes(value);
+}
+/** 归一化来源值：缺失或未知时回退。 */
+function normalizeSource(value, fallback = "capture") {
+	return isMemorySource(value) ? value : fallback;
+}
+/** 值是否是一种记忆类型。 */
+function isMemoryType(value) {
+	return typeof value === "string" && MEMORY_TYPES.includes(value);
+}
+/** 值是否是一种记忆状态。 */
+function isMemoryStatus(value) {
+	return value === "active" || value === "stale" || value === "archived";
+}
+/** 把整数夹到 `[min, max]`；非数字回退。 */
+function clampInt(value, min, max, fallback) {
+	const numeric = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+	if (!Number.isFinite(numeric)) return fallback;
+	return Math.min(max, Math.max(min, Math.round(numeric)));
+}
+// src/memory/types.ts
+/** 去空白后的非空字符串，或空字符串。 */
+function text(value) {
+	return typeof value === "string" ? value.trim() : "";
+}
+/** 归一化标签列表：去空白、丢空项/逗号、去重、限制长度与数量。 */
+function normalizeTags(value) {
+	const raw = Array.isArray(value) ? value : typeof value === "string" ? value.split(",") : [];
+	const out = [];
+	for (const item of raw) {
+		const tag = text(item).replace(/[,\n]/gu, " ").trim();
+		if (tag === "" || out.includes(tag)) continue;
+		out.push(tag.slice(0, LIMITS.tag));
+		if (out.length >= LIMITS.tags) break;
+	}
+	return out;
+}
+/** 归一化 id 列表：去重、丢空项。 */
+function normalizeIds(value) {
+	const raw = Array.isArray(value) ? value : [];
+	const out = [];
+	for (const item of raw) {
+		const id = text(item);
+		if (id !== "" && !out.includes(id)) out.push(id);
+	}
+	return out;
+}
+// src/memory/recall.ts
 /** 索引行里描述的截断长度。 */
 const INDEX_DESCRIPTION_CHARS = 80;
 /** 全局块允许的记忆类型。 */
@@ -5652,107 +5753,6 @@ function formatCommandSummary(store, identity) {
 		`已知项目：${projects.length} 个`,
 		"用 memory_search / memory_get 取详情；管理界面在「智能体扩展 → 记忆」。"
 	].join("\n");
-}
-// src/shared/memory-wire.ts
-/**
-* 记忆的跨端词汇：宿主半与浏览器半共用的纯类型、常量与归一化助手。
-*
-* 这里只放无运行时依赖、无 node 内置模块的声明与纯函数，浏览器构建可以直接
-* 内联；服务端专属的 schema 版本、项目身份解析与 Markdown 归一化助手留在
-* `memory/types.ts`，由它转出本模块的公开面，历史导入路径保持不变。
-*
-* @module dsh-agent-extension/shared/memory-wire
-*/
-/** 一条记忆可以记录的事实类型。 */
-const MEMORY_TYPES = [
-	"preference",
-	"decision",
-	"gotcha",
-	"project",
-	"reference"
-];
-/** 一条记忆的来源通道。 */
-const MEMORY_SOURCES = [
-	"capture",
-	"tool",
-	"user",
-	"import"
-];
-/** 默认设置：捕获与注入开启，各 50 条索引，12k 字符。 */
-function defaultSettings() {
-	return {
-		captureEnabled: true,
-		captureSessionEnd: true,
-		injectEnabled: true,
-		indexLimitGlobal: 50,
-		indexLimitProject: 50,
-		maxChars: 12e3,
-		updatedAt: (/* @__PURE__ */ new Date()).toISOString()
-	};
-}
-/** 用户可调边界与存储硬上限。 */
-const LIMITS = {
-	indexEntries: 200,
-	maxChars: 4e4,
-	name: 120,
-	description: 400,
-	content: 8e3,
-	tags: 8,
-	tag: 40,
-	entriesPerScope: 2e3,
-	projects: 200,
-	statsSessions: 100,
-	/** 最近捕获/注入样本上限（stats.json 的有界数组）。 */
-	statsRecent: 50
-};
-/** 值是否是一种记忆来源。 */
-function isMemorySource(value) {
-	return typeof value === "string" && MEMORY_SOURCES.includes(value);
-}
-/** 归一化来源值：缺失或未知时回退。 */
-function normalizeSource(value, fallback = "capture") {
-	return isMemorySource(value) ? value : fallback;
-}
-/** 值是否是一种记忆类型。 */
-function isMemoryType(value) {
-	return typeof value === "string" && MEMORY_TYPES.includes(value);
-}
-/** 值是否是一种记忆状态。 */
-function isMemoryStatus(value) {
-	return value === "active" || value === "stale" || value === "archived";
-}
-/** 把整数夹到 `[min, max]`；非数字回退。 */
-function clampInt(value, min, max, fallback) {
-	const numeric = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
-	if (!Number.isFinite(numeric)) return fallback;
-	return Math.min(max, Math.max(min, Math.round(numeric)));
-}
-// src/memory/types.ts
-/** 去空白后的非空字符串，或空字符串。 */
-function text(value) {
-	return typeof value === "string" ? value.trim() : "";
-}
-/** 归一化标签列表：去空白、丢空项/逗号、去重、限制长度与数量。 */
-function normalizeTags(value) {
-	const raw = Array.isArray(value) ? value : typeof value === "string" ? value.split(",") : [];
-	const out = [];
-	for (const item of raw) {
-		const tag = text(item).replace(/[,\n]/gu, " ").trim();
-		if (tag === "" || out.includes(tag)) continue;
-		out.push(tag.slice(0, LIMITS.tag));
-		if (out.length >= LIMITS.tags) break;
-	}
-	return out;
-}
-/** 归一化 id 列表：去重、丢空项。 */
-function normalizeIds(value) {
-	const raw = Array.isArray(value) ? value : [];
-	const out = [];
-	for (const item of raw) {
-		const id = text(item);
-		if (id !== "" && !out.includes(id)) out.push(id);
-	}
-	return out;
 }
 // src/memory/capture.ts
 /**
@@ -6239,13 +6239,20 @@ function displayNameOf(identity, root) {
 * 记录一次工具检索/读取。
 *
 * @param counters - 会话计数。
-* @param resultIds - 本次工具结果里的 id。
+* @param resultIds - 本次工具结果里的 id（`memory_search` 用）。
 * @param usedIds - 本次真正读到的 id（`memory_get` 用）。
 */
 function noteToolUsage(counters, resultIds, usedIds) {
-	for (const id of usedIds) counters.used.add(id);
-	for (const id of resultIds) if (counters.injected.has(id)) counters.used.add(id);
-	else counters.overflow.add(id);
+	for (const id of usedIds) {
+		counters.used.add(id);
+		if (counters.searched.has(id)) counters.searchUsed.add(id);
+	}
+	for (const id of resultIds) {
+		counters.searched.add(id);
+		counters.searchedCount += 1;
+		if (counters.injected.has(id)) counters.used.add(id);
+		else counters.overflow.add(id);
+	}
 }
 /**
 * 把一个会话的召回计数与装配样本写入存储（best effort，失败只记日志）。
@@ -6254,8 +6261,11 @@ function noteToolUsage(counters, resultIds, usedIds) {
 */
 function flushRecall(options) {
 	const { store, sessionId, counters, injection, log } = options;
-	if (counters.injected.size > 0 || counters.overflow.size > 0) try {
-		store.recordRecall(sessionId, [...counters.injected], [...counters.used], counters.overflow.size);
+	if (counters.injected.size > 0 || counters.overflow.size > 0 || counters.searchedCount > 0 || counters.searchUsed.size > 0) try {
+		store.recordRecall(sessionId, [...counters.injected], [...counters.used], counters.overflow.size, {
+			searched: counters.searchedCount,
+			searchUsed: counters.searchUsed.size
+		});
 	} catch (error) {
 		log("warn", `写命中率统计失败：${error instanceof Error ? error.message : String(error)}`);
 	}
@@ -6425,6 +6435,9 @@ var CaptureSessions = class {
 			injected: /* @__PURE__ */ new Set(),
 			used: /* @__PURE__ */ new Set(),
 			overflow: /* @__PURE__ */ new Set(),
+			searched: /* @__PURE__ */ new Set(),
+			searchedCount: 0,
+			searchUsed: /* @__PURE__ */ new Set(),
 			project: null,
 			modelRoute: null,
 			injection: null,
@@ -7170,7 +7183,7 @@ var MemoryRuntime = class {
 	/**
 	* 清空索引缓存；不传 sessionId 时清空全部。
 	*
-	* B1 面板「刷新索引」会调用；当前只暴露方法。
+	* 面板「刷新索引」（`POST /memory/refresh-index`）经 hooks 调用。
 	*/
 	invalidateRecall(sessionId) {
 		this.recallCache.invalidate(sessionId);
@@ -7397,7 +7410,7 @@ function splitFrontmatterBlocks(source) {
 			});
 			continue;
 		}
-		const pair = /^([A-Za-z0-9_.-]+)\s*:\s*(.*)$/u.exec(line);
+		const pair = /^([^\s:][^:]*?)\s*:\s*(.*)$/u.exec(line);
 		if (pair === null) {
 			blocks.push({
 				key: null,
@@ -7918,9 +7931,9 @@ function normalizeSettings(raw) {
 		captureEnabled: typeof value.captureEnabled === "boolean" ? value.captureEnabled : fallback.captureEnabled,
 		captureSessionEnd: typeof value.captureSessionEnd === "boolean" ? value.captureSessionEnd : fallback.captureSessionEnd,
 		injectEnabled: typeof value.injectEnabled === "boolean" ? value.injectEnabled : fallback.injectEnabled,
-		indexLimitGlobal: clampInt(value.indexLimitGlobal, 0, LIMITS.indexEntries, fallback.indexLimitGlobal),
-		indexLimitProject: clampInt(value.indexLimitProject, 0, LIMITS.indexEntries, fallback.indexLimitProject),
-		maxChars: clampInt(value.maxChars, 1e3, LIMITS.maxChars, fallback.maxChars),
+		indexLimitGlobal: clampInt(value.indexLimitGlobal, 0, 20, fallback.indexLimitGlobal),
+		indexLimitProject: clampInt(value.indexLimitProject, 0, 20, fallback.indexLimitProject),
+		maxChars: clampInt(value.maxChars, 1e3, RECALL_MAX_CHARS, fallback.maxChars),
 		updatedAt: text(value.updatedAt) || fallback.updatedAt
 	};
 }
@@ -7929,11 +7942,14 @@ function normalizeRecallRow(raw) {
 	const value = objectOf(raw);
 	const sessionId = text(value.sessionId);
 	if (sessionId === "") return null;
+	const searched = clampInt(value.searched, 0, 1e6, 0);
 	return {
 		sessionId,
 		injected: clampInt(value.injected, 0, 1e6, 0),
 		injectedUsed: clampInt(value.injectedUsed, 0, 1e6, 0),
 		overflow: clampInt(value.overflow, 0, 1e6, 0),
+		searched,
+		searchUsed: Math.min(searched, clampInt(value.searchUsed, 0, 1e6, 0)),
 		updatedAt: text(value.updatedAt) || (/* @__PURE__ */ new Date()).toISOString()
 	};
 }
@@ -8168,24 +8184,30 @@ var MemoryStore = class {
 		this.writeStats();
 	}
 	/**
-	* 记录某个会话装配时实际使用了哪些注入条目。
+	* 记录某个会话的召回计数（整行替换，运行时传入该会话的累计值）。
 	*
 	* @param sessionId - 收到索引注入的会话。
 	* @param injectedIds - 注入到提示词里的索引 id。
 	* @param usedIds - 模型通过记忆工具实际取过的 id。
 	* @param overflow - 不在注入集合里的检索命中数。
+	* @param metrics - 检索命中率口径：`searched` 为 `memory_search` 累计
+	*   返回的结果条数，`searchUsed` 为其中后来被 `memory_get` 打开的条数。
 	*/
-	recordRecall(sessionId, injectedIds, usedIds, overflow) {
+	recordRecall(sessionId, injectedIds, usedIds, overflow, metrics = {}) {
 		if (sessionId === "") return;
 		const current = this.stats();
 		const injectedSet = new Set(injectedIds);
 		const hit = new Set(usedIds.filter((id) => injectedSet.has(id)));
+		const searched = clampInt(metrics.searched, 0, 1e6, 0);
+		const searchUsed = Math.min(searched, clampInt(metrics.searchUsed, 0, 1e6, 0));
 		const sessions = current.sessions.filter((row) => row.sessionId !== sessionId);
 		sessions.unshift({
 			sessionId,
 			injected: injectedIds.length,
 			injectedUsed: hit.size,
 			overflow: Math.max(0, overflow),
+			searched,
+			searchUsed,
 			updatedAt: (/* @__PURE__ */ new Date()).toISOString()
 		});
 		this.statsValue = {
@@ -8773,7 +8795,8 @@ const MEMORY_POST_ROUTES = [
 	"/memory/status",
 	"/memory/delete",
 	"/memory/settings",
-	"/memory/export"
+	"/memory/export",
+	"/memory/refresh-index"
 ];
 /** Whether `route` is one of the read routes. */
 function isMemoryGetRoute(route) {
@@ -8850,7 +8873,11 @@ async function dispatchMemoryGet(store, route, params) {
 	throw hubError(`未知接口：${route}`, "not_found");
 }
 /** Dispatch one POST /memory/* request. */
-async function dispatchMemoryPost(store, route, body = {}) {
+async function dispatchMemoryPost(store, route, body = {}, hooks = {}) {
+	if (route === "/memory/refresh-index") {
+		hooks.refreshRecall?.();
+		return { refreshed: true };
+	}
 	if (route === "/memory/save") {
 		const name = text(body.name);
 		const content = text(body.content);
@@ -8903,14 +8930,15 @@ async function dispatchMemoryPost(store, route, body = {}) {
 }
 /** Validate the settings patch accepted from the UI. */
 function parseSettingsPatch(body) {
+	const defaults = defaultSettings();
 	const patch = {};
 	for (const key of [
 		"captureEnabled",
 		"captureSessionEnd",
 		"injectEnabled"
 	]) if (typeof body[key] === "boolean") patch[key] = body[key];
-	for (const key of ["indexLimitGlobal", "indexLimitProject"]) if (body[key] !== void 0) patch[key] = clampInt(body[key], 0, LIMITS.indexEntries, 50);
-	if (body.maxChars !== void 0) patch.maxChars = clampInt(body.maxChars, 1e3, LIMITS.maxChars, 12e3);
+	for (const key of ["indexLimitGlobal", "indexLimitProject"]) if (body[key] !== void 0) patch[key] = clampInt(body[key], 0, 20, defaults[key]);
+	if (body.maxChars !== void 0) patch.maxChars = clampInt(body.maxChars, 1e3, RECALL_MAX_CHARS, defaults.maxChars);
 	return patch;
 }
 /** Decoded size cap of a data-URL icon. */
@@ -9736,8 +9764,9 @@ function serveIcon(hub, request, response) {
 * @param ctx - host cordis context.
 * @param hub - the hub instance.
 * @param memory - memory store mounted under the same prefix; omitted in tests that only exercise the store panel.
+* @param hooks - memory panel host callbacks (index refresh); omitted in tests.
 */
-function mountUiRoutes(ctx, hub, memory) {
+function mountUiRoutes(ctx, hub, memory, hooks = {}) {
 	const webServer = ctx?.get?.("webServer") ?? ctx?.webServer;
 	if (!webServer || typeof webServer.register !== "function") {
 		const status = {
@@ -9790,7 +9819,7 @@ function mountUiRoutes(ctx, hub, memory) {
 				if (isMemoryPostRoute(route) && method === "POST") {
 					sendJson(response, 200, {
 						ok: true,
-						data: await dispatchMemoryPost(memory, route, await readJsonBody(request))
+						data: await dispatchMemoryPost(memory, route, await readJsonBody(request), hooks)
 					});
 					return;
 				}
@@ -10098,6 +10127,7 @@ function apply(ctx, config = {}) {
 	if (!hub.skills?.registered) deferService(ctx, ["skills"], (scope) => {
 		if (hub.skills && !hub.skills.registered) hub.skills.register(scope);
 	}, (message) => hub.log("warn", message));
+	const memoryHooks = { refreshRecall: () => memoryRuntime?.invalidateRecall() };
 	let uiRoutes = {
 		active: false,
 		reason: "未挂载",
@@ -10105,7 +10135,7 @@ function apply(ctx, config = {}) {
 		dispose: () => {}
 	};
 	try {
-		uiRoutes = mountUiRoutes(ctx, hub, memory);
+		uiRoutes = mountUiRoutes(ctx, hub, memory, memoryHooks);
 		if (uiRoutes.active && typeof ctx.effect === "function") ctx.effect(() => () => uiRoutes.dispose(), "dsh-agent-extension: plugin-page API");
 	} catch (error) {
 		hub.uiRoutes = {
@@ -10117,7 +10147,7 @@ function apply(ctx, config = {}) {
 	}
 	if (!hub.uiRoutes.active) deferService(ctx, ["webServer"], (scope) => {
 		if (hub.uiRoutes.active) return;
-		const status = mountUiRoutes(scope, hub, memory);
+		const status = mountUiRoutes(scope, hub, memory, memoryHooks);
 		if (typeof scope?.effect === "function") scope.effect(() => () => status.dispose?.(), "dsh-agent-extension: plugin-page API");
 	}, (message) => {
 		hub.uiRoutes = {

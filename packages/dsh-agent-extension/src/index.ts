@@ -17,6 +17,7 @@ import { MemoryStore } from './memory/store.ts'
 import { mountUiRoutes, type UiRoutesStatus } from './ui-routes.ts'
 import type { HubConfig, HostContext } from './host.ts'
 import type { LogFn } from './log.ts'
+import type { MemoryRouteHooks } from './memory-routes.ts'
 
 /** Cordis 插件名，用于日志与加载器识别。 */
 export const name = 'agent-extension'
@@ -105,9 +106,13 @@ export function apply(ctx: HostContext, config: HubConfig = {}): AgentPluginHub 
     }, (message) => hub.log('warn', message))
   }
   // 插件页「智能体扩展」Tab 的 HTTP 数据面；webServer 晚到也没关系。
+  // 记忆面板的「刷新索引」通过 hooks 显式失效会话首步索引快照。
+  const memoryHooks: MemoryRouteHooks = {
+    refreshRecall: () => memoryRuntime?.invalidateRecall(),
+  }
   let uiRoutes: UiRoutesStatus = { active: false, reason: '未挂载', path: '/agent-plugin/api', dispose: () => {} }
   try {
-    uiRoutes = mountUiRoutes(ctx, hub, memory)
+    uiRoutes = mountUiRoutes(ctx, hub, memory, memoryHooks)
     if (uiRoutes.active && typeof ctx.effect === 'function') {
       ctx.effect(() => () => uiRoutes.dispose(), 'dsh-agent-extension: plugin-page API')
     }
@@ -119,7 +124,7 @@ export function apply(ctx: HostContext, config: HubConfig = {}): AgentPluginHub 
   if (!hub.uiRoutes.active) {
     deferService(ctx, ['webServer'], (scope) => {
       if (hub.uiRoutes.active) return
-      const status = mountUiRoutes(scope as HostContext, hub, memory)
+      const status = mountUiRoutes(scope as HostContext, hub, memory, memoryHooks)
       if (typeof (scope as HostContext | null)?.effect === 'function') {
         (scope as HostContext).effect(() => () => status.dispose?.(), 'dsh-agent-extension: plugin-page API')
       }

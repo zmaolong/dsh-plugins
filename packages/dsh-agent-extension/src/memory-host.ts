@@ -104,7 +104,7 @@ export class MemoryRuntime {
   /**
    * 清空索引缓存；不传 sessionId 时清空全部。
    *
-   * B1 面板「刷新索引」会调用；当前只暴露方法。
+   * 面板「刷新索引」（`POST /memory/refresh-index`）经 hooks 调用。
    */
   invalidateRecall(sessionId?: string): void {
     this.recallCache.invalidate(sessionId)

@@ -374,7 +374,7 @@ describe('记忆存储：Markdown 事实、手改、去重与生命周期', () =
     expect(stats.sessions[0]).toMatchObject({ sessionId: 's-1', injected: 2, injectedUsed: 1, overflow: 3 })
   })
 
-  it('导出为单个 Markdown 文档，默认设置 50/50 与 12k 预算', () => {
+  it('导出为单个 Markdown 文档，默认设置 20/20 与 3,000 字符预算', () => {
     const store = makeStore()
     add(store)
     const exported = store.exportMarkdown('global')
@@ -382,6 +382,6 @@ describe('记忆存储：Markdown 事实、手改、去重与生命周期', () =
     expect(exported.content).toContain('# 全局记忆')
     expect(exported.content).toContain('使用 pnpm')
     expect(exported.content).toContain('schema: 2')
-    expect(defaultSettings()).toMatchObject({ indexLimitGlobal: 50, indexLimitProject: 50, maxChars: 12000 })
+    expect(defaultSettings()).toMatchObject({ indexLimitGlobal: 20, indexLimitProject: 20, maxChars: 3000 })
   })
 })

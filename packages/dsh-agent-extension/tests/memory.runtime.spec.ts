@@ -4,7 +4,7 @@
  * 用 fake ctx / fake llm / fake store 搭最小 harness，不访问网络与真实宿主。
  */
 
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { afterEach, describe, expect, it } from 'vitest'
@@ -23,7 +23,7 @@ import type { LogFn } from '../src/log.ts'
 import { MemoryRuntime } from '../src/memory-host.ts'
 import { GET_MAX_CHARS } from '../src/memory/recall.ts'
 import { MEMORY_GUIDE } from '../src/memory/runtime/prompt.ts'
-import type { MemoryStore, SaveMemoryInput } from '../src/memory/store.ts'
+import { MemoryStore, type SaveMemoryInput } from '../src/memory/store.ts'
 import {
   defaultSettings,
   type MemoryEntry,
@@ -59,7 +59,14 @@ class FakeStore {
   readonly searchCalls: FakeSearchCall[] = []
   readonly getCalls: string[] = []
   readonly captureCalls: Array<{ entries: number, skipped: boolean }> = []
-  readonly recallCalls: Array<{ sessionId: string, injected: string[], used: string[], overflow: number }> = []
+  readonly recallCalls: Array<{
+    sessionId: string
+    injected: string[]
+    used: string[]
+    overflow: number
+    searched: number
+    searchUsed: number
+  }> = []
   readonly injectionCalls: Array<{ sessionId?: string, entries: number, chars: number, truncated?: boolean }> = []
   readonly projectTouches: ProjectIdentity[] = []
   private sequence = 0
@@ -160,8 +167,21 @@ class FakeStore {
     this.captureCalls.push({ entries, skipped })
   }
 
-  recordRecall(sessionId: string, injected: readonly string[], used: readonly string[], overflow: number): void {
-    this.recallCalls.push({ sessionId, injected: [...injected], used: [...used], overflow })
+  recordRecall(
+    sessionId: string,
+    injected: readonly string[],
+    used: readonly string[],
+    overflow: number,
+    metrics: { searched?: number, searchUsed?: number } = {},
+  ): void {
+    this.recallCalls.push({
+      sessionId,
+      injected: [...injected],
+      used: [...used],
+      overflow,
+      searched: metrics.searched ?? 0,
+      searchUsed: metrics.searchUsed ?? 0,
+    })
   }
 
   recordInjection(detail: { sessionId?: string, entries: number, chars: number, truncated?: boolean }): void {
@@ -680,5 +700,66 @@ describe('记忆运行时：工具契约', () => {
     expect(MEMORY_GUIDE).toContain('查重')
     expect(MEMORY_GUIDE).toContain('AGENTS.md')
     expect(MEMORY_GUIDE.length).toBeLessThan(800)
+  })
+})
+
+describe('记忆运行时：检索命中率口径', () => {
+  it('search 结果 id 后续 get 只计一次 searchUsed，flush 写入 store 的 stats 行', async () => {
+    const home = tempHome('memory-runtime-stats-')
+    tempDirs.push(home)
+    const store = new MemoryStore({ home })
+    store.start()
+    const alpha = store.save({
+      name: '偏好 Alpha',
+      description: '第一条偏好',
+      type: 'preference',
+      scope: 'global',
+      content: 'Alpha 正文。',
+    })
+    const beta = store.save({
+      name: '偏好 Beta',
+      description: '第二条偏好',
+      type: 'preference',
+      scope: 'global',
+      content: 'Beta 正文。',
+    })
+
+    const tools = createFakeTools()
+    const ctx = new FakeCtx({ systemPrompt: createFakeSystemPrompt(), tools, llm: createFakeLlm() })
+    const runtime = new MemoryRuntime({ ctx: ctx.host(), store, log: () => {} })
+    runtime.start()
+    runtimes.push(runtime)
+
+    const agent = makeAgent('s-stats', makeCwd())
+    const search = tools.registered.get('memory_search')
+    expect(search).toBeTruthy()
+    // 两次检索各返回 2 条：searched 按结果条数累计为 4。
+    await search?.execute({ query: '' }, { agent })
+    await search?.execute({ query: '' }, { agent })
+
+    const get = tools.registered.get('memory_get')
+    expect(get).toBeTruthy()
+    // 同一 id 读两次只计一次；另一个 id 读一次 → searchUsed = 2。
+    await get?.execute({ ids: [alpha.id] }, { agent })
+    await get?.execute({ ids: [alpha.id] }, { agent })
+    await get?.execute({ ids: [beta.id] }, { agent })
+    // 检索之后才出现、从未被 search 返回的 id 不计入 searchUsed。
+    const gamma = store.save({
+      name: '偏好 Gamma',
+      description: '后来才出现',
+      type: 'preference',
+      scope: 'global',
+      content: 'Gamma 正文。',
+    })
+    await get?.execute({ ids: [gamma.id] }, { agent })
+
+    ctx.emit('agent/turn-stopping', { agent })
+    const row = store.stats().sessions.find(item => item.sessionId === 's-stats')
+    expect(row).toMatchObject({ injected: 0, injectedUsed: 0, searched: 4, searchUsed: 2 })
+
+    const persisted = JSON.parse(readFileSync(path.join(store.root, 'stats.json'), 'utf8')) as {
+      sessions: Array<Record<string, unknown>>
+    }
+    expect(persisted.sessions[0]).toMatchObject({ sessionId: 's-stats', searched: 4, searchUsed: 2 })
   })
 })

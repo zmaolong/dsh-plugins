@@ -4,8 +4,9 @@
  * dropdown, and the action icons), the entry list as a full-width card grid
  * with tag-chip filtering and a recency sort, a wide detail dialog for
  * create / edit / save / deactivate / archive / restore / two-step delete,
- * the Markdown export, a settings dialog (capture-injection switches and
- * limits persist immediately; per-session statistics live there too), and a
+ * the Markdown export plus an index-refresh action, a settings dialog
+ * (capture-injection switches and limits persist immediately; per-session
+ * statistics live there too), and a
  * health-audit dialog (stale / duplicate / low-value findings with batch
  * archive / deactivate / delete reusing the existing endpoints).
  *
@@ -36,6 +37,7 @@ import {
   type MemoryStatus,
   type MemoryType,
 } from '../shared/memory-wire.ts'
+import { RECALL_MAX_CHARS, RECALL_MAX_PER_LAYER } from '../shared/memory-wire.ts'
 import panelCss from './panel.module.css'
 import css from './memory.module.css'
 
@@ -162,9 +164,9 @@ function normalizeSettings(raw: unknown): MemorySettings {
     captureEnabled: item.captureEnabled !== false,
     captureSessionEnd: item.captureSessionEnd !== false,
     injectEnabled: item.injectEnabled !== false,
-    indexLimitGlobal: integer(item.indexLimitGlobal, 0, 200, DEFAULT_SETTINGS.indexLimitGlobal),
-    indexLimitProject: integer(item.indexLimitProject, 0, 200, DEFAULT_SETTINGS.indexLimitProject),
-    maxChars: integer(item.maxChars, 1000, 40000, DEFAULT_SETTINGS.maxChars),
+    indexLimitGlobal: integer(item.indexLimitGlobal, 0, RECALL_MAX_PER_LAYER, DEFAULT_SETTINGS.indexLimitGlobal),
+    indexLimitProject: integer(item.indexLimitProject, 0, RECALL_MAX_PER_LAYER, DEFAULT_SETTINGS.indexLimitProject),
+    maxChars: integer(item.maxChars, 1000, RECALL_MAX_CHARS, DEFAULT_SETTINGS.maxChars),
     updatedAt: text(item.updatedAt),
   }
 }
@@ -179,6 +181,8 @@ function normalizeStats(raw: unknown): MemoryStats {
       sessionId: text(session.sessionId),
       injected: integer(session.injected, 0, Number.MAX_SAFE_INTEGER, 0),
       injectedUsed: integer(session.injectedUsed, 0, Number.MAX_SAFE_INTEGER, 0),
+      searched: integer(session.searched, 0, Number.MAX_SAFE_INTEGER, 0),
+      searchUsed: integer(session.searchUsed, 0, Number.MAX_SAFE_INTEGER, 0),
       overflow: integer(session.overflow, 0, Number.MAX_SAFE_INTEGER, 0),
       updatedAt: text(session.updatedAt),
     }
@@ -272,18 +276,26 @@ function downloadFile(filename: string, content: string): void {
   if (typeof URL.revokeObjectURL === 'function') URL.revokeObjectURL(href)
 }
 
-/** Compute the aggregate hit rate of the session stats. */
-function hitRateOf(stats: MemoryStats | null): string {
-  const sessions = stats?.sessions ?? []
-  const injected = sessions.reduce((sum, item) => sum + item.injected, 0)
-  const used = sessions.reduce((sum, item) => sum + item.injectedUsed, 0)
-  if (injected <= 0) return ''
-  return `${Math.round((used / injected) * 100)}%`
+/** 百分比展示；分母为 0（尚无会话数据）时显示破折号。 */
+function percentText(used: number, total: number): string {
+  return total <= 0 ? '—' : `${Math.round((used / total) * 100)}%`
 }
 
-/** Overflow total across sessions. */
-function overflowOf(stats: MemoryStats | null): number {
-  return (stats?.sessions ?? []).reduce((sum, item) => sum + item.overflow, 0)
+/** 汇总所有会话的注入与检索计数。 */
+function recallTotalsOf(stats: MemoryStats | null): {
+  injected: number
+  injectedUsed: number
+  searched: number
+  searchUsed: number
+} {
+  const totals = { injected: 0, injectedUsed: 0, searched: 0, searchUsed: 0 }
+  for (const session of stats?.sessions ?? []) {
+    totals.injected += session.injected
+    totals.injectedUsed += session.injectedUsed
+    totals.searched += session.searched ?? 0
+    totals.searchUsed += session.searchUsed ?? 0
+  }
+  return totals
 }
 
 /** Render the memory tab. */
@@ -315,6 +327,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [exportBusy, setExportBusy] = useState(false)
+  const [refreshIndexBusy, setRefreshIndexBusy] = useState(false)
   const [settings, setSettings] = useState<MemorySettings>(DEFAULT_SETTINGS)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [tagFilter, setTagFilter] = useState('')
@@ -611,6 +624,20 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
     }
   }
 
+  /** 重建提示词索引：只改变注入内容，本视图的条目列表不重载。 */
+  const refreshIndex = async (): Promise<void> => {
+    if (refreshIndexBusy) return
+    setRefreshIndexBusy(true)
+    try {
+      await api<JsonRecord>('/memory/refresh-index', { method: 'POST' })
+      actions.toast('success', t('memoryRefreshIndexDone'))
+    } catch (error) {
+      actions.toast('error', t('memoryRefreshIndexFailed', { message: errorMessageFor(error, t) }))
+    } finally {
+      setRefreshIndexBusy(false)
+    }
+  }
+
   /** Full-list fetch + client-side audit rules for the current scope. */
   const openAudit = async (): Promise<void> => {
     if (auditBusy || (scope === 'project' && project === '')) return
@@ -702,7 +729,9 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
 
   const projectRequired = scope === 'project' && project === ''
   const projectMissing = scope === 'project' && projects.length === 0
-  const hitRate = hitRateOf(stats)
+  const recallTotals = recallTotalsOf(stats)
+  const injectionRate = percentText(recallTotals.injectedUsed, recallTotals.injected)
+  const retrievalRate = percentText(recallTotals.searchUsed, recallTotals.searched)
   const showEditor = creating || selectedId !== null
   const typeOptions: ReadonlyArray<{ value: MemoryType | '', label: string }> = [
     { value: '', label: t('memoryTypeAll') },
@@ -1017,6 +1046,13 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
           />
           <IconButton
             icon="refresh"
+            title={t('memoryRefreshIndex')}
+            busy={refreshIndexBusy}
+            disabled={refreshIndexBusy}
+            onClick={() => { void refreshIndex() }}
+          />
+          <IconButton
+            icon="refresh"
             title={stateBusy || listBusy ? t('refreshing') : t('refresh')}
             busy={stateBusy || listBusy}
             disabled={stateBusy || listBusy}
@@ -1285,10 +1321,10 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                     className={css.input}
                     type="number"
                     min={0}
-                    max={200}
+                    max={RECALL_MAX_PER_LAYER}
                     aria-label={t('memorySettingsIndexGlobal')}
                     value={settings.indexLimitGlobal}
-                    onChange={(event) => { patchSettings({ indexLimitGlobal: integer(event.target.value, 0, 200, settingsRef.current.indexLimitGlobal) }, true) }}
+                    onChange={(event) => { patchSettings({ indexLimitGlobal: integer(event.target.value, 0, RECALL_MAX_PER_LAYER, settingsRef.current.indexLimitGlobal) }, true) }}
                   />
                 </label>
                 <label className={css.field}>
@@ -1297,10 +1333,10 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                     className={css.input}
                     type="number"
                     min={0}
-                    max={200}
+                    max={RECALL_MAX_PER_LAYER}
                     aria-label={t('memorySettingsIndexProject')}
                     value={settings.indexLimitProject}
-                    onChange={(event) => { patchSettings({ indexLimitProject: integer(event.target.value, 0, 200, settingsRef.current.indexLimitProject) }, true) }}
+                    onChange={(event) => { patchSettings({ indexLimitProject: integer(event.target.value, 0, RECALL_MAX_PER_LAYER, settingsRef.current.indexLimitProject) }, true) }}
                   />
                 </label>
                 <label className={css.field}>
@@ -1309,11 +1345,11 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                     className={css.input}
                     type="number"
                     min={1000}
-                    max={40000}
+                    max={RECALL_MAX_CHARS}
                     step={500}
                     aria-label={t('memorySettingsMaxChars')}
                     value={settings.maxChars}
-                    onChange={(event) => { patchSettings({ maxChars: integer(event.target.value, 1000, 40000, settingsRef.current.maxChars) }, true) }}
+                    onChange={(event) => { patchSettings({ maxChars: integer(event.target.value, 1000, RECALL_MAX_CHARS, settingsRef.current.maxChars) }, true) }}
                   />
                 </label>
               </div>
@@ -1329,12 +1365,12 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                   <span className={css.statValue}>{String(stats?.capturedEntries ?? 0)}</span>
                 </div>
                 <div className={css.stat}>
-                  <span className={css.statLabel}>{t('memoryStatHitRate')}</span>
-                  <span className={css.statValue}>{hitRate !== '' ? hitRate : t('memoryStatNoData')}</span>
+                  <span className={css.statLabel}>{t('memoryInjectionRate')}</span>
+                  <span className={css.statValue}>{injectionRate}</span>
                 </div>
                 <div className={css.stat}>
-                  <span className={css.statLabel}>{t('memoryStatOverflow')}</span>
-                  <span className={css.statValue}>{String(overflowOf(stats))}</span>
+                  <span className={css.statLabel}>{t('memoryRetrievalRate')}</span>
+                  <span className={css.statValue}>{retrievalRate}</span>
                 </div>
               </div>
             </DialogShell>

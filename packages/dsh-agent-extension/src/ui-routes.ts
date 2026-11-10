@@ -22,6 +22,7 @@ import { readFileSync } from 'node:fs'
 
 import { asHubError, hubError } from './hub.ts'
 import { dispatchMemoryGet, dispatchMemoryPost, isMemoryGetRoute, isMemoryPostRoute } from './memory-routes.ts'
+import type { MemoryRouteHooks } from './memory-routes.ts'
 import {
   MAX_ICON_BYTES,
   buildDescribe,
@@ -242,8 +243,14 @@ export interface UiRoutesStatus {
  * @param ctx - host cordis context.
  * @param hub - the hub instance.
  * @param memory - memory store mounted under the same prefix; omitted in tests that only exercise the store panel.
+ * @param hooks - memory panel host callbacks (index refresh); omitted in tests.
  */
-export function mountUiRoutes(ctx: unknown, hub: AgentPluginHub, memory?: MemoryStore): UiRoutesStatus {
+export function mountUiRoutes(
+  ctx: unknown,
+  hub: AgentPluginHub,
+  memory?: MemoryStore,
+  hooks: MemoryRouteHooks = {},
+): UiRoutesStatus {
   const webServer = (ctx as { get?: (name: string) => unknown } | null)?.get?.('webServer')
     ?? (ctx as { webServer?: unknown } | null)?.webServer
   if (!webServer || typeof (webServer as { register?: unknown }).register !== 'function') {
@@ -285,7 +292,7 @@ export function mountUiRoutes(ctx: unknown, hub: AgentPluginHub, memory?: Memory
         }
         if (isMemoryPostRoute(route) && method === 'POST') {
           const body = await readJsonBody(request)
-          sendJson(response, 200, { ok: true, data: await dispatchMemoryPost(memory, route, body) })
+          sendJson(response, 200, { ok: true, data: await dispatchMemoryPost(memory, route, body, hooks) })
           return
         }
         sendJson(response, 405, { ok: false, error: `不支持的请求方法：${method}`, code: 'method_not_allowed' })

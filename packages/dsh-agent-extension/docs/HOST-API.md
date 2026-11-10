@@ -591,6 +591,7 @@ lastRefreshed/display/owner/featured/plugins[]/refreshError/warnings`；
 | POST | `/memory/status` | `{scope, project?, id, status: active|stale|archived}` |
 | POST | `/memory/delete` | `{scope, project?, id}` |
 | POST | `/memory/settings` | 部分字段：`captureEnabled`/`captureSessionEnd`/`injectEnabled`/`indexLimitGlobal`/`indexLimitProject`/`maxChars` |
+| POST | `/memory/refresh-index` | 无参数 → `{refreshed:true}`：让进程内已缓存的会话索引失效，下一次装配重新渲染（不写盘、不重载列表） |
 | POST | `/memory/export` | `{scope, project?}` → `{filename, content}` |
 
 条目字段（schema v2）：`schema/id/name/description/type/scope/project/tags/importance/confidence/

@@ -13,7 +13,10 @@ import { hubError } from './hub.ts'
 import { MemoryStore } from './memory/store.ts'
 import {
   LIMITS,
+  RECALL_MAX_CHARS,
+  RECALL_MAX_PER_LAYER,
   clampInt,
+  defaultSettings,
   isMemoryStatus,
   isMemoryType,
   normalizeIds,
@@ -37,7 +40,14 @@ export const MEMORY_POST_ROUTES = [
   '/memory/delete',
   '/memory/settings',
   '/memory/export',
+  '/memory/refresh-index',
 ] as const
+
+/** 面板可调用的宿主钩子；测试与只读挂载可以省略。 */
+export interface MemoryRouteHooks {
+  /** 清空索引缓存（不传 sessionId 即清空全部，下一次装配重新渲染）。 */
+  refreshRecall?: () => void
+}
 
 /** Whether `route` is one of the read routes. */
 export function isMemoryGetRoute(route: string): boolean {
@@ -120,7 +130,16 @@ export async function dispatchMemoryGet(
 }
 
 /** Dispatch one POST /memory/* request. */
-export async function dispatchMemoryPost(store: MemoryStore, route: string, body: Record<string, unknown> = {}): Promise<unknown> {
+export async function dispatchMemoryPost(
+  store: MemoryStore,
+  route: string,
+  body: Record<string, unknown> = {},
+  hooks: MemoryRouteHooks = {},
+): Promise<unknown> {
+  if (route === '/memory/refresh-index') {
+    hooks.refreshRecall?.()
+    return { refreshed: true }
+  }
   if (route === '/memory/save') {
     const name = text(body.name)
     const content = text(body.content)
@@ -182,14 +201,15 @@ function parseSettingsPatch(body: Record<string, unknown>): Partial<{
   indexLimitProject: number
   maxChars: number
 }> {
+  const defaults = defaultSettings()
   const patch: Record<string, boolean | number> = {}
   for (const key of ['captureEnabled', 'captureSessionEnd', 'injectEnabled'] as const) {
     if (typeof body[key] === 'boolean') patch[key] = body[key]
   }
   for (const key of ['indexLimitGlobal', 'indexLimitProject'] as const) {
-    if (body[key] !== undefined) patch[key] = clampInt(body[key], 0, LIMITS.indexEntries, 50)
+    if (body[key] !== undefined) patch[key] = clampInt(body[key], 0, RECALL_MAX_PER_LAYER, defaults[key])
   }
-  if (body.maxChars !== undefined) patch.maxChars = clampInt(body.maxChars, 1000, LIMITS.maxChars, 12000)
+  if (body.maxChars !== undefined) patch.maxChars = clampInt(body.maxChars, 1000, RECALL_MAX_CHARS, defaults.maxChars)
   return patch as Partial<{
     captureEnabled: boolean
     captureSessionEnd: boolean

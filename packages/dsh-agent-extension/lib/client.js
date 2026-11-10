@@ -235,6 +235,9 @@ window.__ModuleLoader__.load({
 			memoryExporting: "导出中…",
 			memoryExportDone: "已导出 {filename}",
 			memoryExportFailed: "导出失败：{message}",
+			memoryRefreshIndex: "刷新索引",
+			memoryRefreshIndexDone: "记忆索引已刷新",
+			memoryRefreshIndexFailed: "刷新记忆索引失败：{message}",
 			memorySettingsTitle: "捕获与注入设置",
 			memorySettingsButton: "记忆设置与统计",
 			memorySettingsCapture: "自动捕获",
@@ -247,9 +250,8 @@ window.__ModuleLoader__.load({
 			memoryStatsTitle: "统计",
 			memoryStatCaptureRuns: "累计捕获次数",
 			memoryStatCapturedEntries: "已捕获条目",
-			memoryStatHitRate: "注入命中率",
-			memoryStatOverflow: "溢出合计",
-			memoryStatNoData: "暂无数据",
+			memoryInjectionRate: "注入利用率",
+			memoryRetrievalRate: "检索命中率",
 			memorySortLabel: "排序",
 			memorySortDefault: "重要度优先",
 			memorySortRecent: "最近更新",
@@ -496,6 +498,9 @@ window.__ModuleLoader__.load({
 			memoryExporting: "Exporting…",
 			memoryExportDone: "Exported {filename}",
 			memoryExportFailed: "Export failed: {message}",
+			memoryRefreshIndex: "Refresh index",
+			memoryRefreshIndexDone: "Memory index refreshed",
+			memoryRefreshIndexFailed: "Failed to refresh the memory index: {message}",
 			memorySettingsTitle: "Capture and injection",
 			memorySettingsButton: "Memory settings and stats",
 			memorySettingsCapture: "Automatic capture",
@@ -508,9 +513,8 @@ window.__ModuleLoader__.load({
 			memoryStatsTitle: "Statistics",
 			memoryStatCaptureRuns: "Capture runs",
 			memoryStatCapturedEntries: "Entries captured",
-			memoryStatHitRate: "Injection hit rate",
-			memoryStatOverflow: "Overflow total",
-			memoryStatNoData: "No data yet",
+			memoryInjectionRate: "Injection utilization",
+			memoryRetrievalRate: "Retrieval hit rate",
 			memorySortLabel: "Sort",
 			memorySortDefault: "By importance",
 			memorySortRecent: "Recently updated",
@@ -757,6 +761,9 @@ window.__ModuleLoader__.load({
 			memoryExporting: "書き出し中…",
 			memoryExportDone: "{filename} を書き出しました",
 			memoryExportFailed: "書き出しに失敗しました：{message}",
+			memoryRefreshIndex: "索引を再構築",
+			memoryRefreshIndexDone: "メモリ索引を再構築しました",
+			memoryRefreshIndexFailed: "メモリ索引の再構築に失敗しました：{message}",
 			memorySettingsTitle: "キャプチャと注入の設定",
 			memorySettingsCapture: "自動キャプチャ",
 			memorySettingsCaptureSessionEnd: "セッション終了時の補完",
@@ -769,9 +776,8 @@ window.__ModuleLoader__.load({
 			memoryStatsTitle: "統計",
 			memoryStatCaptureRuns: "キャプチャ回数",
 			memoryStatCapturedEntries: "キャプチャ済み件数",
-			memoryStatHitRate: "注入ヒット率",
-			memoryStatOverflow: "オーバーフロー合計",
-			memoryStatNoData: "データなし",
+			memoryInjectionRate: "注入利用率",
+			memoryRetrievalRate: "検索ヒット率",
 			memorySortLabel: "並び替え",
 			memorySortDefault: "重要度順",
 			memorySortRecent: "更新が新しい順",
@@ -1018,6 +1024,9 @@ window.__ModuleLoader__.load({
 			memoryExporting: "Exportando…",
 			memoryExportDone: "Se exportó {filename}",
 			memoryExportFailed: "Error al exportar: {message}",
+			memoryRefreshIndex: "Reconstruir índice",
+			memoryRefreshIndexDone: "Índice de memoria reconstruido",
+			memoryRefreshIndexFailed: "No se pudo reconstruir el índice de memoria: {message}",
 			memorySettingsTitle: "Captura e inyección",
 			memorySettingsCapture: "Captura automática",
 			memorySettingsCaptureSessionEnd: "Cierre de sesión",
@@ -1030,9 +1039,8 @@ window.__ModuleLoader__.load({
 			memoryStatsTitle: "Estadísticas",
 			memoryStatCaptureRuns: "Ejecuciones de captura",
 			memoryStatCapturedEntries: "Entradas capturadas",
-			memoryStatHitRate: "Tasa de acierto",
-			memoryStatOverflow: "Total de desbordamiento",
-			memoryStatNoData: "Sin datos",
+			memoryInjectionRate: "Utilización de inyección",
+			memoryRetrievalRate: "Tasa de acierto de búsqueda",
 			memorySortLabel: "Ordenar",
 			memorySortDefault: "Por importancia",
 			memorySortRecent: "Actualizadas recientemente",
@@ -1279,6 +1287,9 @@ window.__ModuleLoader__.load({
 			memoryExporting: "Exportation…",
 			memoryExportDone: "{filename} exporté",
 			memoryExportFailed: "Échec de l’export : {message}",
+			memoryRefreshIndex: "Reconstruire l’index",
+			memoryRefreshIndexDone: "Index mémoire reconstruit",
+			memoryRefreshIndexFailed: "Échec de la reconstruction de l’index mémoire : {message}",
 			memorySettingsTitle: "Capture et injection",
 			memorySettingsCapture: "Capture automatique",
 			memorySettingsCaptureSessionEnd: "Fin de session",
@@ -1291,9 +1302,8 @@ window.__ModuleLoader__.load({
 			memoryStatsTitle: "Statistiques",
 			memoryStatCaptureRuns: "Exécutions de capture",
 			memoryStatCapturedEntries: "Entrées capturées",
-			memoryStatHitRate: "Taux de réussite",
-			memoryStatOverflow: "Total de débordement",
-			memoryStatNoData: "Aucune donnée",
+			memoryInjectionRate: "Utilisation de l’injection",
+			memoryRetrievalRate: "Taux de réussite de la recherche",
 			memorySortLabel: "Tri",
 			memorySortDefault: "Par importance",
 			memorySortRecent: "Récemment mises à jour",
@@ -1540,6 +1550,9 @@ window.__ModuleLoader__.load({
 			memoryExporting: "Exportieren…",
 			memoryExportDone: "{filename} exportiert",
 			memoryExportFailed: "Export fehlgeschlagen: {message}",
+			memoryRefreshIndex: "Index neu aufbauen",
+			memoryRefreshIndexDone: "Speicherindex neu aufgebaut",
+			memoryRefreshIndexFailed: "Speicherindex konnte nicht neu aufgebaut werden: {message}",
 			memorySettingsTitle: "Erfassung und Injektion",
 			memorySettingsCapture: "Automatische Erfassung",
 			memorySettingsCaptureSessionEnd: "Sitzungsende-Abgleich",
@@ -1552,9 +1565,8 @@ window.__ModuleLoader__.load({
 			memoryStatsTitle: "Statistik",
 			memoryStatCaptureRuns: "Erfassungsläufe",
 			memoryStatCapturedEntries: "Erfasste Einträge",
-			memoryStatHitRate: "Trefferquote",
-			memoryStatOverflow: "Überlauf gesamt",
-			memoryStatNoData: "Keine Daten",
+			memoryInjectionRate: "Injektionsnutzung",
+			memoryRetrievalRate: "Suchtrefferquote",
 			memorySortLabel: "Sortierung",
 			memorySortDefault: "Nach Wichtigkeit",
 			memorySortRecent: "Zuletzt aktualisiert",
@@ -1801,6 +1813,9 @@ window.__ModuleLoader__.load({
 			memoryExporting: "Экспорт…",
 			memoryExportDone: "Экспортирован {filename}",
 			memoryExportFailed: "Ошибка экспорта: {message}",
+			memoryRefreshIndex: "Перестроить индекс",
+			memoryRefreshIndexDone: "Индекс памяти перестроен",
+			memoryRefreshIndexFailed: "Не удалось перестроить индекс памяти: {message}",
 			memorySettingsTitle: "Захват и внедрение",
 			memorySettingsCapture: "Автоматический захват",
 			memorySettingsCaptureSessionEnd: "Досбор по завершении сессии",
@@ -1813,9 +1828,8 @@ window.__ModuleLoader__.load({
 			memoryStatsTitle: "Статистика",
 			memoryStatCaptureRuns: "Запусков захвата",
 			memoryStatCapturedEntries: "Захвачено записей",
-			memoryStatHitRate: "Доля попаданий",
-			memoryStatOverflow: "Переполнение всего",
-			memoryStatNoData: "Нет данных",
+			memoryInjectionRate: "Использование инъекции",
+			memoryRetrievalRate: "Доля успешных поисков",
 			memorySortLabel: "Сортировка",
 			memorySortDefault: "По важности",
 			memorySortRecent: "Сначала недавние",
@@ -2062,6 +2076,9 @@ window.__ModuleLoader__.load({
 			memoryExporting: "Exportando…",
 			memoryExportDone: "{filename} exportado",
 			memoryExportFailed: "Falha na exportação: {message}",
+			memoryRefreshIndex: "Reconstruir índice",
+			memoryRefreshIndexDone: "Índice de memória reconstruído",
+			memoryRefreshIndexFailed: "Falha ao reconstruir o índice de memória: {message}",
 			memorySettingsTitle: "Captura e injeção",
 			memorySettingsCapture: "Captura automática",
 			memorySettingsCaptureSessionEnd: "Fechamento de sessão",
@@ -2074,9 +2091,8 @@ window.__ModuleLoader__.load({
 			memoryStatsTitle: "Estatísticas",
 			memoryStatCaptureRuns: "Execuções de captura",
 			memoryStatCapturedEntries: "Entradas capturadas",
-			memoryStatHitRate: "Taxa de acerto",
-			memoryStatOverflow: "Total de excedente",
-			memoryStatNoData: "Sem dados",
+			memoryInjectionRate: "Utilização da injeção",
+			memoryRetrievalRate: "Taxa de acerto da busca",
 			memorySortLabel: "Ordenação",
 			memorySortDefault: "Por importância",
 			memorySortRecent: "Atualizadas recentemente",
@@ -5826,18 +5842,20 @@ window.__ModuleLoader__.load({
 			});
 		}
 		// src/shared/memory-wire.ts
-		/** 默认设置：捕获与注入开启，各 50 条索引，12k 字符。 */
+		/** 默认设置：捕获与注入开启，各 20 条索引、总预算 3,000 字符（ADR-0005）。 */
 		function defaultSettings() {
 			return {
 				captureEnabled: true,
 				captureSessionEnd: true,
 				injectEnabled: true,
-				indexLimitGlobal: 50,
-				indexLimitProject: 50,
-				maxChars: 12e3,
+				indexLimitGlobal: 20,
+				indexLimitProject: 20,
+				maxChars: 3e3,
 				updatedAt: (/* @__PURE__ */ new Date()).toISOString()
 			};
 		}
+		/** 召回索引的字符预算上限（ADR-0005）：设置只能调小，不能突破。 */
+		const RECALL_MAX_CHARS = 3e3;
 		// \0dsh-css:E:\workspace\dsh-plugins\packages\dsh-agent-extension\src\client\memory.module.css.mjs
 		const css$2 = ".Iw3mRa_view{gap:20px}.Iw3mRa_topbar{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px 16px;display:flex}.Iw3mRa_scopeRow{flex:none;align-items:center;gap:12px;min-width:0;display:flex}.Iw3mRa_segmented{flex-wrap:wrap;align-items:center;gap:6px;display:inline-flex}.Iw3mRa_projectSelect{flex:0 220px;min-width:0}.Iw3mRa_actions{flex-wrap:wrap;align-items:center;gap:8px;margin-left:auto;display:flex}.Iw3mRa_searchWrap{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-3);min-width:200px;max-width:480px;height:36px;color:var(--dsw-alias-label-tertiary);flex:220px;align-items:center;gap:8px;padding:0 10px;display:flex}.Iw3mRa_searchWrap>svg{flex:none}.Iw3mRa_searchInput{min-width:0;height:100%;color:var(--dsw-alias-label-primary);font:inherit;background:0 0;border:0;outline:none;flex:1;padding:0;font-size:14px}.Iw3mRa_searchInput::placeholder{color:var(--dsw-alias-label-tertiary)}.Iw3mRa_searchInput::-webkit-search-decoration,.Iw3mRa_searchInput::-webkit-search-cancel-button{-webkit-appearance:none;display:none}.Iw3mRa_searchClear{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_searchClear:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.Iw3mRa_searchClear:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.Iw3mRa_filterTrigger{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);background:0 0;border:0;justify-content:center;align-items:center;display:flex}.Iw3mRa_filterTrigger:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_filterTrigger:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.Iw3mRa_filterDot{corner-shape:round;background:var(--dsw-alias-state-business-primary);border-radius:999px;width:6px;height:6px;position:absolute;top:2px;right:2px}.Iw3mRa_filterChips{flex:none;align-items:center;gap:6px;display:flex}.Iw3mRa_filterChip{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:160px;color:var(--dsw-alias-label-secondary);border-radius:999px;align-items:center;gap:2px;padding:0 4px 0 8px;font-size:12px;line-height:22px;display:inline-flex}.Iw3mRa_filterChipText{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.Iw3mRa_filterChipClear{corner-shape:round;width:18px;height:18px;color:inherit;cursor:pointer;background:0 0;border:0;border-radius:999px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_filterChipClear:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_filterChipClear:hover{background:var(--dsw-alias-border-l3);color:var(--dsw-alias-label-primary)}}.Iw3mRa_listPane{flex-direction:column;gap:8px;min-width:0;display:flex}.Iw3mRa_listHead{justify-content:space-between;align-items:baseline;gap:8px;padding:0 8px 8px;display:flex}.Iw3mRa_sectionTitle{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:16px;font-weight:500}.Iw3mRa_sectionCount{white-space:nowrap;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.Iw3mRa_listHeadTools{align-items:center;gap:8px;display:flex}.Iw3mRa_entryGrid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;display:grid}.Iw3mRa_entryCard{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-3);min-width:0;color:inherit;font:inherit;text-align:left;cursor:pointer;flex-direction:column;gap:6px;padding:14px;transition:background .12s,border-color .12s;display:flex}.Iw3mRa_entryCard:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.Iw3mRa_entryCard:hover{border-color:var(--dsw-alias-border-l4);background:var(--dsw-alias-interactive-bg-hover)}}.Iw3mRa_entryTitleRow{align-items:center;gap:6px;min-width:0;display:flex}.Iw3mRa_entryName{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px;font-weight:500}.Iw3mRa_entryImportance{corner-shape:round;background:color-mix(in srgb, var(--dsw-alias-state-warn-primary) 14%, transparent);color:var(--dsw-alias-state-warn-primary);border-radius:999px;flex:none;padding:0 6px;font-size:11px;font-weight:600;line-height:18px}.Iw3mRa_entryDesc{-webkit-line-clamp:2;overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-secondary);-webkit-box-orient:vertical;font-size:13px;display:-webkit-box;overflow:hidden}.Iw3mRa_entryMeta{flex-wrap:wrap;align-items:center;gap:6px;display:flex}.Iw3mRa_entryTime{color:var(--dsw-alias-label-tertiary);margin-left:auto;font-size:12px}.Iw3mRa_entryTag{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:120px;color:var(--dsw-alias-label-secondary);font:inherit;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;border:0;border-radius:999px;flex:none;padding:0 6px;font-size:11px;line-height:18px;overflow:hidden}.Iw3mRa_entryTag:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_entryTag:hover{background:var(--dsw-alias-border-l3);color:var(--dsw-alias-label-primary)}}.Iw3mRa_entryTagMore{color:var(--dsw-alias-label-tertiary);flex:none;font-size:11px}.Iw3mRa_editor{flex-direction:column;gap:12px;min-width:0;display:flex}.Iw3mRa_editorStatus{align-items:center;display:flex}.Iw3mRa_formGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;display:grid}@container (width<=720px){.Iw3mRa_formGrid{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_field{flex-direction:column;gap:4px;min-width:0;display:flex}.Iw3mRa_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500}.Iw3mRa_fieldHint{color:var(--dsw-alias-label-tertiary);font-size:11px}.Iw3mRa_input{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:100%;min-width:0;height:36px;color:var(--dsw-alias-label-primary);font:inherit;padding:0 10px;font-size:14px}.Iw3mRa_input:focus-visible,.Iw3mRa_textarea:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}.Iw3mRa_input::-webkit-inner-spin-button,.Iw3mRa_input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.Iw3mRa_input[type=number]{appearance:textfield}.Iw3mRa_rangeRow{align-items:center;gap:8px;display:flex}.Iw3mRa_rangeInput{-webkit-appearance:none;appearance:none;cursor:pointer;background:0 0;flex:1;min-width:0;height:36px;margin:0;padding:0}.Iw3mRa_rangeInput:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px;border-radius:var(--dsw-radius-sm)}.Iw3mRa_rangeInput::-webkit-slider-runnable-track{corner-shape:round;background:linear-gradient(to right, var(--dsw-alias-brand-primary) 0 var(--range-fill,50%), var(--dsw-alias-border-l3) var(--range-fill,50%) 100%);border-radius:999px;height:4px}.Iw3mRa_rangeInput::-webkit-slider-thumb{-webkit-appearance:none;corner-shape:round;background:var(--dsw-alias-brand-primary);border:0;border-radius:50%;width:16px;height:16px;margin-top:-6px}.Iw3mRa_rangeInput::-moz-range-track{corner-shape:round;background:var(--dsw-alias-border-l3);border-radius:999px;height:4px}.Iw3mRa_rangeInput::-moz-range-progress{corner-shape:round;background:var(--dsw-alias-brand-primary);border-radius:999px;height:4px}.Iw3mRa_rangeInput::-moz-range-thumb{corner-shape:round;background:var(--dsw-alias-brand-primary);border:0;border-radius:50%;width:16px;height:16px}.Iw3mRa_rangeValue{text-align:right;font-variant-numeric:tabular-nums;min-width:28px;color:var(--dsw-alias-label-primary);flex:none;font-size:13px}.Iw3mRa_tagBox{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);cursor:text;flex-wrap:wrap;align-items:center;gap:6px;min-height:36px;padding:4px 8px;display:flex}.Iw3mRa_tagBox:focus-within{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}.Iw3mRa_tagChip{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:160px;color:var(--dsw-alias-label-primary);border-radius:999px;align-items:center;gap:2px;padding:0 4px 0 8px;font-size:12px;line-height:22px;display:inline-flex}.Iw3mRa_tagChipText{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.Iw3mRa_tagChipRemove{corner-shape:round;width:16px;height:16px;color:var(--dsw-alias-label-tertiary);cursor:pointer;background:0 0;border:0;border-radius:999px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_tagChipRemove:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_tagChipRemove:hover{color:var(--dsw-alias-label-primary)}}.Iw3mRa_tagInput{min-width:80px;height:26px;color:var(--dsw-alias-label-primary);font:inherit;background:0 0;border:0;outline:none;flex:80px;padding:0;font-size:13px}.Iw3mRa_readonlyBox{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;min-height:36px;padding:8px 10px;display:flex}.Iw3mRa_readonlyHint{color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;font-size:13px}.Iw3mRa_textarea{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:100%;min-height:180px;color:var(--dsw-alias-label-primary);font:inherit;resize:vertical;padding:8px 10px;font-size:14px;line-height:1.5}.Iw3mRa_formActions{flex-wrap:wrap;align-items:center;gap:8px;padding-top:4px;display:flex}.Iw3mRa_formActionsRight{flex-wrap:wrap;flex:auto;justify-content:flex-end;align-items:center;gap:8px;min-width:0;display:flex}.Iw3mRa_confirmArea{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;display:flex}.Iw3mRa_confirmText{color:var(--dsw-alias-state-error-primary);overflow-wrap:anywhere;font-size:13px}.Iw3mRa_dialogPortal{z-index:40;position:fixed;inset:0}.Iw3mRa_settingList{flex-direction:column;display:flex}.Iw3mRa_settingRow{justify-content:space-between;align-items:center;gap:12px;padding:8px 0;display:flex}.Iw3mRa_settingRow+.Iw3mRa_settingRow{border-top:.5px solid var(--dsw-alias-border-l3)}.Iw3mRa_settingLabel{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px}.Iw3mRa_numberGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;display:grid}@container (width<=720px){.Iw3mRa_numberGrid{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_divider{background:var(--dsw-alias-border-l2);height:.5px}.Iw3mRa_statsTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:14px;font-weight:500}.Iw3mRa_statGrid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;display:grid}.Iw3mRa_stat{border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);flex-direction:column;gap:2px;padding:10px 12px;display:flex}.Iw3mRa_statLabel{color:var(--dsw-alias-label-secondary);font-size:12px}.Iw3mRa_statValue{color:var(--dsw-alias-label-primary);font-size:16px;font-weight:600}.Iw3mRa_auditGroups{flex-direction:column;gap:16px;display:flex}.Iw3mRa_auditGroup{flex-direction:column;gap:6px;display:flex}.Iw3mRa_auditGroupTitle{color:var(--dsw-alias-label-primary);align-items:center;gap:6px;margin:0;font-size:14px;font-weight:500;display:flex}.Iw3mRa_auditCount{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);border-radius:999px;flex:none;padding:0 6px;font-size:11px;line-height:18px}.Iw3mRa_auditHint{min-width:0;color:var(--dsw-alias-label-tertiary);font-size:12px}.Iw3mRa_auditRow{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);cursor:pointer;align-items:flex-start;gap:8px;padding:10px;display:flex}.Iw3mRa_auditCheck{width:16px;height:16px;accent-color:var(--dsw-alias-state-business-primary);flex:none;margin:2px 0 0}.Iw3mRa_auditSummary{flex-direction:column;flex:1;gap:6px;min-width:0;display:flex}.Iw3mRa_auditPair{flex-direction:column;gap:6px;display:flex}.Iw3mRa_auditPairKeep{color:var(--dsw-alias-state-business-primary);font-size:12px}.Iw3mRa_auditBar{border-top:.5px solid var(--dsw-alias-border-l2);flex-wrap:wrap;align-items:center;gap:8px;margin-top:4px;padding-top:8px;display:flex}.Iw3mRa_auditBarCount{min-width:0;color:var(--dsw-alias-label-secondary);flex:auto;font-size:13px}.Iw3mRa_errorBox{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);flex-wrap:wrap;align-items:flex-start;gap:8px;padding:10px 12px;font-size:13px;display:flex}.Iw3mRa_errorText{overflow-wrap:anywhere;white-space:pre-wrap;flex:160px;min-width:0}";
 		const tagId$2 = "dsh-agent-extension/memory.module.css";
@@ -5934,8 +5952,9 @@ window.__ModuleLoader__.load({
 		* dropdown, and the action icons), the entry list as a full-width card grid
 		* with tag-chip filtering and a recency sort, a wide detail dialog for
 		* create / edit / save / deactivate / archive / restore / two-step delete,
-		* the Markdown export, a settings dialog (capture-injection switches and
-		* limits persist immediately; per-session statistics live there too), and a
+		* the Markdown export plus an index-refresh action, a settings dialog
+		* (capture-injection switches and limits persist immediately; per-session
+		* statistics live there too), and a
 		* health-audit dialog (stale / duplicate / low-value findings with batch
 		* archive / deactivate / delete reusing the existing endpoints).
 		*
@@ -6044,9 +6063,9 @@ window.__ModuleLoader__.load({
 				captureEnabled: item.captureEnabled !== false,
 				captureSessionEnd: item.captureSessionEnd !== false,
 				injectEnabled: item.injectEnabled !== false,
-				indexLimitGlobal: integer(item.indexLimitGlobal, 0, 200, DEFAULT_SETTINGS.indexLimitGlobal),
-				indexLimitProject: integer(item.indexLimitProject, 0, 200, DEFAULT_SETTINGS.indexLimitProject),
-				maxChars: integer(item.maxChars, 1e3, 4e4, DEFAULT_SETTINGS.maxChars),
+				indexLimitGlobal: integer(item.indexLimitGlobal, 0, 20, DEFAULT_SETTINGS.indexLimitGlobal),
+				indexLimitProject: integer(item.indexLimitProject, 0, 20, DEFAULT_SETTINGS.indexLimitProject),
+				maxChars: integer(item.maxChars, 1e3, RECALL_MAX_CHARS, DEFAULT_SETTINGS.maxChars),
 				updatedAt: text(item.updatedAt)
 			};
 		}
@@ -6059,6 +6078,8 @@ window.__ModuleLoader__.load({
 					sessionId: text(session.sessionId),
 					injected: integer(session.injected, 0, Number.MAX_SAFE_INTEGER, 0),
 					injectedUsed: integer(session.injectedUsed, 0, Number.MAX_SAFE_INTEGER, 0),
+					searched: integer(session.searched, 0, Number.MAX_SAFE_INTEGER, 0),
+					searchUsed: integer(session.searchUsed, 0, Number.MAX_SAFE_INTEGER, 0),
 					overflow: integer(session.overflow, 0, Number.MAX_SAFE_INTEGER, 0),
 					updatedAt: text(session.updatedAt)
 				};
@@ -6138,17 +6159,25 @@ window.__ModuleLoader__.load({
 			anchor.remove();
 			if (typeof URL.revokeObjectURL === "function") URL.revokeObjectURL(href);
 		}
-		/** Compute the aggregate hit rate of the session stats. */
-		function hitRateOf(stats) {
-			const sessions = stats?.sessions ?? [];
-			const injected = sessions.reduce((sum, item) => sum + item.injected, 0);
-			const used = sessions.reduce((sum, item) => sum + item.injectedUsed, 0);
-			if (injected <= 0) return "";
-			return `${Math.round(used / injected * 100)}%`;
+		/** 百分比展示；分母为 0（尚无会话数据）时显示破折号。 */
+		function percentText(used, total) {
+			return total <= 0 ? "—" : `${Math.round(used / total * 100)}%`;
 		}
-		/** Overflow total across sessions. */
-		function overflowOf(stats) {
-			return (stats?.sessions ?? []).reduce((sum, item) => sum + item.overflow, 0);
+		/** 汇总所有会话的注入与检索计数。 */
+		function recallTotalsOf(stats) {
+			const totals = {
+				injected: 0,
+				injectedUsed: 0,
+				searched: 0,
+				searchUsed: 0
+			};
+			for (const session of stats?.sessions ?? []) {
+				totals.injected += session.injected;
+				totals.injectedUsed += session.injectedUsed;
+				totals.searched += session.searched ?? 0;
+				totals.searchUsed += session.searchUsed ?? 0;
+			}
+			return totals;
 		}
 		/** Render the memory tab. */
 		function MemoryView({ actions, t }) {
@@ -6179,6 +6208,7 @@ window.__ModuleLoader__.load({
 			const [deleteBusy, setDeleteBusy] = (0, react.useState)(false);
 			const [confirmDelete, setConfirmDelete] = (0, react.useState)(false);
 			const [exportBusy, setExportBusy] = (0, react.useState)(false);
+			const [refreshIndexBusy, setRefreshIndexBusy] = (0, react.useState)(false);
 			const [settings, setSettings] = (0, react.useState)(DEFAULT_SETTINGS);
 			const [settingsOpen, setSettingsOpen] = (0, react.useState)(false);
 			const [tagFilter, setTagFilter] = (0, react.useState)("");
@@ -6485,6 +6515,19 @@ window.__ModuleLoader__.load({
 					setExportBusy(false);
 				}
 			};
+			/** 重建提示词索引：只改变注入内容，本视图的条目列表不重载。 */
+			const refreshIndex = async () => {
+				if (refreshIndexBusy) return;
+				setRefreshIndexBusy(true);
+				try {
+					await api("/memory/refresh-index", { method: "POST" });
+					actions.toast("success", t("memoryRefreshIndexDone"));
+				} catch (error) {
+					actions.toast("error", t("memoryRefreshIndexFailed", { message: errorMessageFor(error, t) }));
+				} finally {
+					setRefreshIndexBusy(false);
+				}
+			};
 			/** Full-list fetch + client-side audit rules for the current scope. */
 			const openAudit = async () => {
 				if (auditBusy || scope === "project" && project === "") return;
@@ -6579,7 +6622,9 @@ window.__ModuleLoader__.load({
 			};
 			const projectRequired = scope === "project" && project === "";
 			const projectMissing = scope === "project" && projects.length === 0;
-			const hitRate = hitRateOf(stats);
+			const recallTotals = recallTotalsOf(stats);
+			const injectionRate = percentText(recallTotals.injectedUsed, recallTotals.injected);
+			const retrievalRate = percentText(recallTotals.searchUsed, recallTotals.searched);
 			const showEditor = creating || selectedId !== null;
 			const typeOptions = [{
 				value: "",
@@ -6949,6 +6994,15 @@ window.__ModuleLoader__.load({
 										disabled: auditBusy || projectRequired,
 										onClick: () => {
 											openAudit();
+										}
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(IconButton, {
+										icon: "refresh",
+										title: t("memoryRefreshIndex"),
+										busy: refreshIndexBusy,
+										disabled: refreshIndexBusy,
+										onClick: () => {
+											refreshIndex();
 										}
 									}),
 									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(IconButton, {
@@ -7343,11 +7397,11 @@ window.__ModuleLoader__.load({
 												className: memory_module_css_default.input,
 												type: "number",
 												min: 0,
-												max: 200,
+												max: 20,
 												"aria-label": t("memorySettingsIndexGlobal"),
 												value: settings.indexLimitGlobal,
 												onChange: (event) => {
-													patchSettings({ indexLimitGlobal: integer(event.target.value, 0, 200, settingsRef.current.indexLimitGlobal) }, true);
+													patchSettings({ indexLimitGlobal: integer(event.target.value, 0, 20, settingsRef.current.indexLimitGlobal) }, true);
 												}
 											})]
 										}),
@@ -7360,11 +7414,11 @@ window.__ModuleLoader__.load({
 												className: memory_module_css_default.input,
 												type: "number",
 												min: 0,
-												max: 200,
+												max: 20,
 												"aria-label": t("memorySettingsIndexProject"),
 												value: settings.indexLimitProject,
 												onChange: (event) => {
-													patchSettings({ indexLimitProject: integer(event.target.value, 0, 200, settingsRef.current.indexLimitProject) }, true);
+													patchSettings({ indexLimitProject: integer(event.target.value, 0, 20, settingsRef.current.indexLimitProject) }, true);
 												}
 											})]
 										}),
@@ -7377,12 +7431,12 @@ window.__ModuleLoader__.load({
 												className: memory_module_css_default.input,
 												type: "number",
 												min: 1e3,
-												max: 4e4,
+												max: RECALL_MAX_CHARS,
 												step: 500,
 												"aria-label": t("memorySettingsMaxChars"),
 												value: settings.maxChars,
 												onChange: (event) => {
-													patchSettings({ maxChars: integer(event.target.value, 1e3, 4e4, settingsRef.current.maxChars) }, true);
+													patchSettings({ maxChars: integer(event.target.value, 1e3, RECALL_MAX_CHARS, settingsRef.current.maxChars) }, true);
 												}
 											})]
 										})
@@ -7420,20 +7474,20 @@ window.__ModuleLoader__.load({
 											className: memory_module_css_default.stat,
 											children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 												className: memory_module_css_default.statLabel,
-												children: t("memoryStatHitRate")
+												children: t("memoryInjectionRate")
 											}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 												className: memory_module_css_default.statValue,
-												children: hitRate !== "" ? hitRate : t("memoryStatNoData")
+												children: injectionRate
 											})]
 										}),
 										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 											className: memory_module_css_default.stat,
 											children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 												className: memory_module_css_default.statLabel,
-												children: t("memoryStatOverflow")
+												children: t("memoryRetrievalRate")
 											}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 												className: memory_module_css_default.statValue,
-												children: String(overflowOf(stats))
+												children: retrievalRate
 											})]
 										})
 									]

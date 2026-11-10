@@ -9,13 +9,15 @@
  */
 
 import type { MemoryStore } from './store.ts'
-import type { MemoryEntry, MemoryMeta, MemorySettings, MemoryType, ProjectIdentity } from './types.ts'
-
-/** 注入索引的字符预算上限（设置只能调小，不能突破）。 */
-export const RECALL_MAX_CHARS = 3000
-
-/** 每层最多注入的条目数；设置值会被压到这个上限以内。 */
-export const RECALL_MAX_PER_LAYER = 20
+import {
+  RECALL_MAX_CHARS,
+  RECALL_MAX_PER_LAYER,
+  type MemoryEntry,
+  type MemoryMeta,
+  type MemorySettings,
+  type MemoryType,
+  type ProjectIdentity,
+} from './types.ts'
 
 /** 索引行里描述的截断长度。 */
 const INDEX_DESCRIPTION_CHARS = 80
