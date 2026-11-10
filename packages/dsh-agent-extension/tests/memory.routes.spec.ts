@@ -8,7 +8,8 @@ import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { MemoryStore } from '../src/memory/store.ts'
-import { MEMORY_POST_ROUTES, dispatchMemoryGet, dispatchMemoryPost } from '../src/memory-routes.ts'
+import { MEMORY_GET_ROUTES, MEMORY_POST_ROUTES, dispatchMemoryGet, dispatchMemoryPost } from '../src/memory-routes.ts'
+import type { MaintenanceStatusWire } from '../src/memory/types.ts'
 import { removeDirs, tempHome } from './helpers.ts'
 
 describe('记忆 API：state/list/get/save/status/delete/settings/export', () => {
@@ -192,6 +193,94 @@ describe('记忆 API：state/list/get/save/status/delete/settings/export', () =>
   it('refresh-index 未提供 hooks 时不崩', async () => {
     const store = makeStore()
     await expect(dispatchMemoryPost(store, '/memory/refresh-index')).resolves.toEqual({ refreshed: true })
+  })
+
+  it('maintenance GET：缺省安全降级，hook 存在时原样返回', async () => {
+    const store = makeStore()
+    expect(MEMORY_GET_ROUTES).toContain('/memory/maintenance')
+    const fallback = await dispatchMemoryGet(store, '/memory/maintenance', new URLSearchParams())
+    expect(fallback).toMatchObject({
+      due: false,
+      reason: 'unavailable',
+      writesSince: 0,
+      daysSince: -1,
+      lastRunAt: null,
+      recentRuns: [],
+    })
+
+    const payload: MaintenanceStatusWire = {
+      due: true,
+      reason: 'never',
+      writesSince: 4,
+      daysSince: -1,
+      lastRunAt: null,
+      recentRuns: [],
+    }
+    await expect(dispatchMemoryGet(store, '/memory/maintenance', new URLSearchParams(), {
+      maintenanceStatus: () => payload,
+    })).resolves.toBe(payload)
+  })
+
+  it('maintenance/run：参数校验、项目透传与 hooks 缺省降级', async () => {
+    const store = makeStore()
+    expect(MEMORY_POST_ROUTES).toContain('/memory/maintenance/run')
+    const calls: Array<{ scope?: string, project?: string }> = []
+    const hook = {
+      runMaintenance: (request: { scope?: 'global' | 'project', project?: string }) => {
+        calls.push(request)
+        return { run: { id: `mnt-${calls.length}` } }
+      },
+    }
+
+    await expect(dispatchMemoryPost(store, '/memory/maintenance/run', {}, hook))
+      .resolves.toEqual({ run: { id: 'mnt-1' } })
+    await expect(dispatchMemoryPost(store, '/memory/maintenance/run', { scope: 'project', project: 'p_1' }, hook))
+      .resolves.toEqual({ run: { id: 'mnt-2' } })
+    expect(calls).toEqual([{}, { scope: 'project', project: 'p_1' }])
+
+    await expect(dispatchMemoryPost(store, '/memory/maintenance/run', { scope: 'bogus' }, hook))
+      .rejects.toMatchObject({ code: 'bad_request' })
+    await expect(dispatchMemoryPost(store, '/memory/maintenance/run', { scope: 'global', project: 'p_1' }, hook))
+      .rejects.toMatchObject({ code: 'bad_request' })
+    await expect(dispatchMemoryPost(store, '/memory/maintenance/run', {}))
+      .rejects.toMatchObject({ code: 'internal' })
+  })
+
+  it('maintenance/undo：runId 必填、响应归一化与 hooks 缺省降级', async () => {
+    const store = makeStore()
+    expect(MEMORY_POST_ROUTES).toContain('/memory/maintenance/undo')
+    const ids: string[] = []
+    await expect(dispatchMemoryPost(store, '/memory/maintenance/undo', { runId: 'mnt-1' }, {
+      undoMaintenance: (runId: string) => {
+        ids.push(runId)
+        return { restored: 3 }
+      },
+    })).resolves.toEqual({ undone: true, restored: 3 })
+    expect(ids).toEqual(['mnt-1'])
+
+    await expect(dispatchMemoryPost(store, '/memory/maintenance/undo', {}))
+      .rejects.toMatchObject({ code: 'bad_request' })
+    await expect(dispatchMemoryPost(store, '/memory/maintenance/undo', { runId: 'mnt-1' }))
+      .rejects.toMatchObject({ code: 'internal' })
+  })
+
+  it('settings 接受维护模型字符串（trim/长度上限），非法类型忽略', async () => {
+    const store = makeStore()
+    expect(store.settings()).toMatchObject({ maintenanceProvider: '', maintenanceModel: '' })
+    const long = 'm'.repeat(200)
+    const updated = await dispatchMemoryPost(store, '/memory/settings', {
+      maintenanceProvider: '  provider-x  ',
+      maintenanceModel: long,
+    }) as { settings: { maintenanceProvider: string, maintenanceModel: string } }
+    expect(updated.settings.maintenanceProvider).toBe('provider-x')
+    expect(updated.settings.maintenanceModel).toHaveLength(120)
+
+    const ignored = await dispatchMemoryPost(store, '/memory/settings', {
+      maintenanceProvider: 42,
+      maintenanceModel: '  keep-model  ',
+    }) as { settings: { maintenanceProvider: string, maintenanceModel: string } }
+    expect(ignored.settings.maintenanceProvider).toBe('provider-x')
+    expect(ignored.settings.maintenanceModel).toBe('keep-model')
   })
 
   it('旧 stats.json 缺 searched/searchUsed 时按 0 返回', async () => {

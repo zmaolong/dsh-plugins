@@ -4,10 +4,16 @@
  * over a full list fetch (no host round-trips per rule, no model embedding).
  *
  * Similarity is character-bigram Jaccard over the concatenated
- * name + description + content, which works for CJK and Latin text alike.
+ * name + description + content, which works for CJK and Latin text alike; the
+ * pure rule lives in `shared/memory-similarity.ts` so the host-side maintenance
+ * run can reuse it. Re-exported here to keep the historical import surface.
  *
  * @module dsh-agent-extension/client/audit
  */
+
+import { DUPLICATE_THRESHOLD, similarity } from '../shared/memory-similarity.ts'
+
+export { DUPLICATE_THRESHOLD, similarity }
 
 /** Minimal entry shape the audit rules read (MemoryEntry satisfies it). */
 export interface AuditEntry {
@@ -38,42 +44,8 @@ export interface AuditResult {
   lowValue: AuditEntry[]
 }
 
-/** Bigram-Jaccard at or above this marks a suspected duplicate pair. */
-export const DUPLICATE_THRESHOLD = 0.6
-
 /** An active entry untouched for this many days with no reinforcement is low-value. */
 const LOW_VALUE_DAYS = 30
-
-/** Normalize text before bigram extraction: lowercase, drop whitespace. */
-function normalizeText(value: string): string {
-  return value.toLowerCase().replace(/\s+/gu, '')
-}
-
-/** Character bigram set of one text; short texts yield a single fallback token. */
-function bigramsOf(value: string): Set<string> {
-  const flat = normalizeText(value)
-  const grams = new Set<string>()
-  if (flat.length <= 1) {
-    if (flat !== '') grams.add(flat)
-    return grams
-  }
-  for (let index = 0; index < flat.length - 1; index += 1) {
-    grams.add(flat.slice(index, index + 2))
-  }
-  return grams
-}
-
-/** Bigram-Jaccard similarity of two texts in `[0, 1]`. */
-export function similarity(left: string, right: string): number {
-  const leftGrams = bigramsOf(left)
-  const rightGrams = bigramsOf(right)
-  if (leftGrams.size === 0 || rightGrams.size === 0) return 0
-  let shared = 0
-  for (const gram of leftGrams) {
-    if (rightGrams.has(gram)) shared += 1
-  }
-  return shared / (leftGrams.size + rightGrams.size - shared)
-}
 
 /** Full similarity text of one entry. */
 function auditTextOf(entry: AuditEntry): string {

@@ -1,9 +1,9 @@
 # dsh-agent-extension
 
-> **试验性预览版（`0.0.1-preview.19`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
+> **试验性预览版（`0.0.1-preview.20`）**：仅供内部试验，接口与能力随时可能变化，不保证兼容，暂不对外推广。
 > npm 上只发布 `preview` dist-tag（`latest` 暂不指向本版本）。
 > 需要安装时请锁定精确版本：
-> `dsh plugin --profile web add dsh-agent-extension@0.0.1-preview.19`。
+> `dsh plugin --profile web add dsh-agent-extension@0.0.1-preview.20`。
 > 版本说明：npm 公开线为 `0.0.1-preview.N`，首个正式版定为 `0.0.1`（预览线的稳定版）；
 > 官方化工具链形态（TypeScript + JSX + CSS Modules + tsdown + vitest，对齐官方插件形态，
 > 破坏性重构、不做旧版兼容）自 `dsh-agent-plugin-hub` 时代的 `0.0.1-preview.6` 延续；
@@ -24,6 +24,23 @@ DSH 的**智能体扩展**（Agent Extension）：管理智能体插件、技能
 `mcpServers` 等能力。已知格式包括 Claude Code、CodeBuddy、ZCode；它们不是 DSH 插件
 （cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
+
+## 0.0.1-preview.20 变更（记忆 v2 · B3 维护 Run）
+
+- **手动维护**：记忆面板工具条新增「优化记忆」；进入面板时若达阈值（新增/强化 ≥30 条或距上次 ≥7 天）
+  弹一次提示，用户确认后才运行。范围 = 全局 + 一个项目（当前项目优先，其次最久未维护轮转）。
+- **LLM 研判流水线**：规则预筛候选（重复对 / 首次过期 / 二次研判 / 恢复）→ 模型输出结构化计划 →
+  插件按硬规则校验执行；候选 ≤200 条、输入 ≤40k token、单 Run 动作 ≤50；模型输出支持围栏/散文容错。
+- **两阶段清理**：90 天未用且 importance<60 → `stale`；再 7 天仍未用 → 删除或恢复；`pinned`、
+  `importance ≥ 80`、被 `supersedes` 引用的条目不自动删除。
+- **备份与撤销**：执行前把受影响条目快照到 `memory/trash/<runId>/`（保留 30 天），删除也可从备份恢复；
+  维护流水写入 `memory/maintenance.json`（最近 20 次），支持整次撤销。
+- **维护模型设置**：设置对话框新增 `维护提供方 / 维护模型` 两个输入（留空继承宿主默认模型）。
+- **诊断改进**：模型端的 error/aborted finish 不再被当成「输出无法解析」，Run.error 会带失败原因、
+  provider/model 与 chunk 统计。
+- **路由**：`GET /agent-plugin/api/memory/maintenance`、`POST /memory/maintenance/run`、
+  `POST /memory/maintenance/undo`。
+- **测试**：全量 337 个离线用例（新增维护流水线 25 例、组件维护交互、路由校验）。
 
 ## 0.0.1-preview.19 变更（记忆 v2 · B2 捕获）
 
@@ -370,6 +387,7 @@ hook 命令按 Claude Code 约定执行：工作目录为插件根，stdin 传 J
 | 召回 | 会话首步注入分层索引快照（全局 `preference`/`decision`，项目 `gotcha`/`project`；每层 ≤20 条、预算 3,000 字符），`memory_search` 出摘要、`memory_get` 按需取全文（单次 ≤3 条 / 4,000 字符）；面板可显式刷新索引 |
 | 过时 | 一票 `stale`（不注入、仍可搜），归档由维护 Run 或用户在面板确认 |
 | 数据模型 | 条目 schema v2：`lastUsedAt/usedCount/confidence/pinned/mergedFrom/source`；首次加载自动迁移并备份 |
+| 维护 | 手动「优化记忆」（达阈值时提示）：LLM 研判合并/停用/恢复/删除，两阶段清理，trash 备份 30 天与整次撤销 |
 | 管理面板 | 记忆 tab：作用域切换、搜索、类型筛选、新建、开关、索引预算、统计、导出、记忆体检；详情弹窗可调元信息，「用系统应用打开」把仅正文的临时 Markdown 交给关联应用 |
 
 写入即去重：名称/描述/正文指纹相同只强化原条目，不重复新增。记忆中不含项目内容：
@@ -449,6 +467,8 @@ home 解析：配置 `home` → `DSH_AGENT_EXTENSION_HOME` → `~/.dsh/agent-ext
    ├─ stats.json         # schema 2：捕获计数、跳过原因、最近注入/捕获样本、会话注入统计
    ├─ projects.json      # 已知项目身份登记（含已见目录）
    ├─ usage.json         # 派生利用率记录（usedCount/lastUsedAt，可删除重建）
+   ├─ maintenance.json  # 维护流水（最近 20 次 Run、上次维护时间、项目轮转游标）
+   ├─ trash/<runId>/    # 维护 Run 前的条目快照（保留 30 天，供撤销/恢复）
    ├─ .backup-v1-<时间>/ # 首次迁移时的 v1 条目与旧 MEMORY.md 备份
    ├─ global/            # 一条事实一个 Markdown（frontmatter 含 schema: 2）
    └─ projects/<key>/    # 同上，按项目身份分目录

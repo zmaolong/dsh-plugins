@@ -122,6 +122,40 @@ const SAVED = {
   updatedAt: '2026-11-09T00:00:00.000Z',
 }
 
+/** 一次已完成的维护运行（合并 2 / 停用 3 / 恢复 1 / 删除 4）。 */
+const RUN_COMPLETED = {
+  id: 'run-1',
+  at: '2026-11-10T10:00:00.000Z',
+  scope: 'global',
+  project: '',
+  model: null,
+  status: 'completed',
+  counts: { candidates: 12, merges: 2, staled: 3, restored: 1, deleted: 4 },
+  actions: [],
+  error: '',
+  undone: false,
+}
+
+/** 达阈值概览：新增 32 条 / 距上次维护 3 天。 */
+const MAINTENANCE_DUE = {
+  due: true,
+  reason: '新增 32 条，距上次维护 3 天',
+  writesSince: 32,
+  daysSince: 3,
+  lastRunAt: '2026-11-01T09:00:00.000Z',
+  recentRuns: [RUN_COMPLETED],
+}
+
+/** 未达阈值概览：不弹自动提示。 */
+const MAINTENANCE_CLEAR = {
+  due: false,
+  reason: '',
+  writesSince: 5,
+  daysSince: 1,
+  lastRunAt: '2026-11-09T09:00:00.000Z',
+  recentRuns: [],
+}
+
 interface Call {
   url: string
   init: RequestInit | undefined
@@ -136,7 +170,15 @@ function failResponse(message: string, code = 'internal', status = 500): Respons
 }
 
 /** Install a fetch mock answering every memory endpoint; every call is recorded. */
-function installFetch(options: { state?: () => Response, list?: (url: string) => Response, get?: (url: string) => Response, undo?: () => Response } = {}): {
+function installFetch(options: {
+  state?: () => Response
+  list?: (url: string) => Response
+  get?: (url: string) => Response
+  undo?: () => Response
+  maintenance?: () => Response
+  run?: () => Response | Promise<Response>
+  undoRun?: () => Response
+} = {}): {
   calls: Call[]
   fetchMock: ReturnType<typeof vi.fn>
 } {
@@ -152,6 +194,9 @@ function installFetch(options: { state?: () => Response, list?: (url: string) =>
     if (url.includes('/memory/delete')) return okResponse({ deleted: true, id: 'm1' })
     if (url.includes('/memory/settings')) return okResponse({ settings: { ...STATE.settings, indexLimitGlobal: 120 } })
     if (url.includes('/memory/undo-capture')) return options.undo ? options.undo() : okResponse({ archived: ['m3'], undone: true })
+    if (url.includes('/memory/maintenance/run')) return options.run ? options.run() : okResponse({ run: RUN_COMPLETED })
+    if (url.includes('/memory/maintenance/undo')) return options.undoRun ? options.undoRun() : okResponse({ undone: true, restored: 1 })
+    if (url.includes('/memory/maintenance')) return options.maintenance ? options.maintenance() : okResponse(MAINTENANCE_CLEAR)
     if (url.includes('/memory/export')) return okResponse({ filename: 'memory.md', content: '# 记忆' })
     if (url.includes('/memory/refresh-index')) return okResponse({ refreshed: true })
     return okResponse({})
@@ -576,5 +621,244 @@ describe('MemoryView', () => {
     })
     expect(screen.getByRole('button', { name: t('memoryUndoCapture') })).toBeTruthy()
     expect(screen.queryByText(t('memoryCaptureUndone'))).toBeNull()
+  })
+
+  it('达阈值时自动弹提示：立即优化经确认后运行，结果可整次撤销', async () => {
+    let stateCalls = 0
+    const { calls } = installFetch({
+      state: () => {
+        stateCalls += 1
+        return okResponse(STATE)
+      },
+      maintenance: () => okResponse(MAINTENANCE_DUE),
+    })
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const toast = vi.spyOn(controller.actions, 'toast')
+    render(<MemoryView actions={controller.actions} t={t} />)
+    const dueDialog = await screen.findByRole('dialog', { name: t('memoryMaintenanceDueTitle') })
+    expect(within(dueDialog).getByText(t('memoryMaintenanceDueHint', { days: 3, writes: 32 }))).toBeTruthy()
+    // 「立即优化」只是切到确认视图，不会立刻发运行请求。
+    fireEvent.click(within(dueDialog).getByRole('button', { name: t('memoryMaintenanceRun') }))
+    const confirmDialog = await screen.findByRole('dialog', { name: t('memoryMaintenanceConfirmTitle') })
+    expect(within(confirmDialog).getByText(t('memoryMaintenanceConfirmHint'))).toBeTruthy()
+    expect(calls.some(call => call.url.includes('/memory/maintenance/run'))).toBe(false)
+    fireEvent.click(within(confirmDialog).getByRole('button', { name: t('memoryMaintenanceRun') }))
+    await waitFor(() => {
+      expect(calls.some(call => call.url.includes('/memory/maintenance/run'))).toBe(true)
+    })
+    const runCall = calls.find(call => call.url.includes('/memory/maintenance/run'))
+    expect(runCall?.init?.method).toBe('POST')
+    expect(bodyOf(runCall)).toEqual({})
+    const resultDialog = await screen.findByRole('dialog', { name: t('memoryMaintenanceResultTitle') })
+    expect(within(resultDialog).getByText(t('memoryMaintenanceResult', RUN_COMPLETED.counts))).toBeTruthy()
+    const stateCallsBefore = stateCalls
+    fireEvent.click(within(resultDialog).getByRole('button', { name: t('memoryMaintenanceUndo') }))
+    await waitFor(() => {
+      expect(calls.some(call => call.url.includes('/memory/maintenance/undo'))).toBe(true)
+    })
+    const undoCall = calls.find(call => call.url.includes('/memory/maintenance/undo'))
+    expect(undoCall?.init?.method).toBe('POST')
+    expect(bodyOf(undoCall)).toEqual({ runId: 'run-1' })
+    await waitFor(() => {
+      expect(toast).toHaveBeenCalledWith('success', t('memoryMaintenanceUndone'))
+    })
+    // 撤销成功后重拉 /memory/state，结果视图标记为已撤销且不再提供撤销按钮。
+    await waitFor(() => {
+      expect(stateCalls).toBeGreaterThan(stateCallsBefore)
+    })
+    expect(await within(resultDialog).findByText(t('memoryMaintenanceStatusUndone'))).toBeTruthy()
+    expect(within(resultDialog).queryByRole('button', { name: t('memoryMaintenanceUndo') })).toBeNull()
+  })
+
+  it('达阈值提示点「暂不」后，刷新与重渲染都不再自动弹', async () => {
+    const { calls } = installFetch({ maintenance: () => okResponse(MAINTENANCE_DUE) })
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const view = render(<MemoryView actions={controller.actions} t={t} />)
+    const dueDialog = await screen.findByRole('dialog', { name: t('memoryMaintenanceDueTitle') })
+    fireEvent.click(within(dueDialog).getByRole('button', { name: t('memoryMaintenanceLater') }))
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: t('memoryMaintenanceDueTitle') })).toBeNull()
+    })
+    const maintenanceCalls = (): number => calls.filter(call => call.url.endsWith('/memory/maintenance')).length
+    const before = maintenanceCalls()
+    fireEvent.click(screen.getByRole('button', { name: t('refresh') }))
+    await waitFor(() => {
+      expect(maintenanceCalls()).toBeGreaterThan(before)
+    })
+    expect(screen.queryByRole('dialog', { name: t('memoryMaintenanceDueTitle') })).toBeNull()
+    view.rerender(<MemoryView actions={controller.actions} t={t} />)
+    expect(screen.queryByRole('dialog', { name: t('memoryMaintenanceDueTitle') })).toBeNull()
+  })
+
+  it('从未维护时（daysSince = -1）提示原因不显示负数天数', async () => {
+    installFetch({
+      maintenance: () => okResponse({
+        due: true,
+        reason: 'never',
+        writesSince: 4,
+        daysSince: -1,
+        lastRunAt: null,
+        recentRuns: [],
+      }),
+    })
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    render(<MemoryView actions={controller.actions} t={t} />)
+    const dialog = await screen.findByRole('dialog', { name: t('memoryMaintenanceDueTitle') })
+    expect(within(dialog).getByText(t('memoryMaintenanceDueNeverHint', { writes: 4 }))).toBeTruthy()
+  })
+
+  it('未达阈值时工具条入口先提示，确认后才 POST 运行', async () => {
+    const { calls } = installFetch({ maintenance: () => okResponse(MAINTENANCE_CLEAR) })
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    render(<MemoryView actions={controller.actions} t={t} />)
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    fireEvent.click(screen.getByRole('button', { name: t('memoryMaintenanceButton') }))
+    const dialog = await screen.findByRole('dialog', { name: t('memoryMaintenanceConfirmTitle') })
+    expect(within(dialog).getByText(t('memoryMaintenanceNotDueHint'))).toBeTruthy()
+    expect(within(dialog).getByText(t('memoryMaintenanceConfirmHint'))).toBeTruthy()
+    expect(calls.some(call => call.url.includes('/memory/maintenance/run'))).toBe(false)
+    fireEvent.click(within(dialog).getByRole('button', { name: t('memoryMaintenanceRun') }))
+    await waitFor(() => {
+      expect(calls.some(call => call.url.includes('/memory/maintenance/run'))).toBe(true)
+    })
+    const resultDialog = await screen.findByRole('dialog', { name: t('memoryMaintenanceResultTitle') })
+    expect(within(resultDialog).getByText(t('memoryMaintenanceResult', RUN_COMPLETED.counts))).toBeTruthy()
+  })
+
+  it('运行中显示进度态并禁用运行按钮，完成后展示结果', async () => {
+    let releaseRun: (() => void) | null = null
+    installFetch({
+      maintenance: () => okResponse(MAINTENANCE_CLEAR),
+      run: () => new Promise<Response>((resolve) => {
+        releaseRun = () => { resolve(okResponse({ run: RUN_COMPLETED })) }
+      }),
+    })
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    render(<MemoryView actions={controller.actions} t={t} />)
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    fireEvent.click(screen.getByRole('button', { name: t('memoryMaintenanceButton') }))
+    const dialog = await screen.findByRole('dialog', { name: t('memoryMaintenanceConfirmTitle') })
+    fireEvent.click(within(dialog).getByRole('button', { name: t('memoryMaintenanceRun') }))
+    expect(await within(dialog).findByText(t('memoryMaintenanceRunning'))).toBeTruthy()
+    expect((within(dialog).getByRole('button', { name: t('memoryMaintenanceRun') }) as HTMLButtonElement).disabled).toBe(true)
+    releaseRun!()
+    expect(await screen.findByRole('dialog', { name: t('memoryMaintenanceResultTitle') })).toBeTruthy()
+  })
+
+  it('运行失败时提示 memoryMaintenanceFailed 并保留确认对话框', async () => {
+    installFetch({
+      maintenance: () => okResponse(MAINTENANCE_CLEAR),
+      run: () => failResponse('模型调用失败', '', 500),
+    })
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const toast = vi.spyOn(controller.actions, 'toast')
+    render(<MemoryView actions={controller.actions} t={t} />)
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    fireEvent.click(screen.getByRole('button', { name: t('memoryMaintenanceButton') }))
+    const dialog = await screen.findByRole('dialog', { name: t('memoryMaintenanceConfirmTitle') })
+    fireEvent.click(within(dialog).getByRole('button', { name: t('memoryMaintenanceRun') }))
+    await waitFor(() => {
+      expect(toast).toHaveBeenCalledWith('error', t('memoryMaintenanceFailed', { message: '模型调用失败' }))
+    })
+    expect(screen.getByRole('dialog', { name: t('memoryMaintenanceConfirmTitle') })).toBeTruthy()
+  })
+
+  it('设置对话框提供维护模型两个输入，防抖保存时随设置一起提交', async () => {
+    const { calls } = installFetch()
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    render(<MemoryView actions={controller.actions} t={t} />)
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    fireEvent.click(screen.getByRole('button', { name: t('memorySettingsButton') }))
+    const dialog = await screen.findByRole('dialog', { name: t('memorySettingsTitle') })
+    const provider = within(dialog).getByLabelText(t('memoryMaintenanceProvider')) as HTMLInputElement
+    const model = within(dialog).getByLabelText(t('memoryMaintenanceModel')) as HTMLInputElement
+    // 缺省为空：继承宿主默认模型，占位文案说明该行为。
+    expect(provider.value).toBe('')
+    expect(model.value).toBe('')
+    expect(provider.getAttribute('placeholder')).toBe(t('memoryMaintenanceModelInherit'))
+    fireEvent.change(provider, { target: { value: 'openai' } })
+    fireEvent.change(model, { target: { value: 'gpt-5' } })
+    await waitFor(() => {
+      expect(calls.filter(call => call.url.includes('/memory/settings')).length).toBeGreaterThan(0)
+    }, { timeout: 2000 })
+    const lastSettings = calls.filter(call => call.url.includes('/memory/settings')).at(-1)
+    expect(lastSettings?.init?.method).toBe('POST')
+    expect(bodyOf(lastSettings)).toMatchObject({
+      maintenanceProvider: 'openai',
+      maintenanceModel: 'gpt-5',
+    })
+  })
+
+  it('撤销失败时提示 memoryMaintenanceUndoFailed 并保留撤销按钮', async () => {
+    installFetch({
+      maintenance: () => okResponse({ ...MAINTENANCE_CLEAR, recentRuns: [RUN_COMPLETED] }),
+      undoRun: () => failResponse('维护流水不存在', 'bad_request', 400),
+    })
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const toast = vi.spyOn(controller.actions, 'toast')
+    render(<MemoryView actions={controller.actions} t={t} />)
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    fireEvent.click(screen.getByRole('button', { name: t('memoryMaintenanceButton') }))
+    const dialog = await screen.findByRole('dialog', { name: t('memoryMaintenanceConfirmTitle') })
+    fireEvent.click(within(dialog).getByRole('button', { name: t('memoryMaintenanceUndo') }))
+    await waitFor(() => {
+      expect(toast).toHaveBeenCalledWith('error', t('memoryMaintenanceUndoFailed', { message: '维护流水不存在' }))
+    })
+    expect(within(dialog).getByRole('button', { name: t('memoryMaintenanceUndo') })).toBeTruthy()
+  })
+
+  it('确认对话框展示最近 3 条运行，已完成且未撤销的可直接撤销并刷新概览', async () => {
+    let undone = false
+    const failedRun = {
+      ...RUN_COMPLETED,
+      id: 'run-2',
+      at: '2026-11-09T10:00:00.000Z',
+      status: 'failed',
+      error: '模型超时',
+      counts: { candidates: 5, merges: 0, staled: 0, restored: 0, deleted: 0 },
+    }
+    const emptyRun = {
+      ...RUN_COMPLETED,
+      id: 'run-3',
+      at: '2026-11-08T10:00:00.000Z',
+      status: 'empty',
+      counts: { candidates: 0, merges: 0, staled: 0, restored: 0, deleted: 0 },
+    }
+    const { calls } = installFetch({
+      maintenance: () => okResponse({
+        ...MAINTENANCE_CLEAR,
+        recentRuns: undone ? [{ ...RUN_COMPLETED, undone: true }] : [RUN_COMPLETED, failedRun, emptyRun],
+      }),
+      undoRun: () => {
+        undone = true
+        return okResponse({ undone: true, restored: 1 })
+      },
+    })
+    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
+    const toast = vi.spyOn(controller.actions, 'toast')
+    render(<MemoryView actions={controller.actions} t={t} />)
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    fireEvent.click(screen.getByRole('button', { name: t('memoryMaintenanceButton') }))
+    const dialog = await screen.findByRole('dialog', { name: t('memoryMaintenanceConfirmTitle') })
+    expect(within(dialog).getByText(t('memoryMaintenanceRecent'))).toBeTruthy()
+    expect(within(dialog).getByText(t('memoryMaintenanceStatusCompleted'))).toBeTruthy()
+    expect(within(dialog).getByText(t('memoryMaintenanceStatusFailed'))).toBeTruthy()
+    expect(within(dialog).getByText(t('memoryMaintenanceStatusEmpty'))).toBeTruthy()
+    const undoButtons = within(dialog).getAllByRole('button', { name: t('memoryMaintenanceUndo') })
+    expect(undoButtons).toHaveLength(1)
+    fireEvent.click(undoButtons[0]!)
+    await waitFor(() => {
+      expect(calls.some(call => call.url.includes('/memory/maintenance/undo'))).toBe(true)
+    })
+    const undoCall = calls.find(call => call.url.includes('/memory/maintenance/undo'))
+    expect(bodyOf(undoCall)).toEqual({ runId: 'run-1' })
+    await waitFor(() => {
+      expect(toast).toHaveBeenCalledWith('success', t('memoryMaintenanceUndone'))
+    })
+    // 概览重拉后该行标记已撤销，不再显示撤销按钮。
+    expect(await within(dialog).findByText(t('memoryMaintenanceStatusUndone'))).toBeTruthy()
+    await waitFor(() => {
+      expect(within(dialog).queryByRole('button', { name: t('memoryMaintenanceUndo') })).toBeNull()
+    })
   })
 })

@@ -9,7 +9,9 @@
  * statistics and the recent-capture list with its one-shot undo live there
  * too), and a
  * health-audit dialog (stale / duplicate / low-value findings with batch
- * archive / deactivate / delete reusing the existing endpoints).
+ * archive / deactivate / delete reusing the existing endpoints), and the
+ * maintenance dialog (threshold prompt, confirm / run / result, and the
+ * recent-run list with its whole-run undo).
  *
  * The view owns its local state (the hub snapshot only carries the section
  * tab) and talks to the host's `/memory/*` routes through `api()`; all copy
@@ -30,6 +32,7 @@ import type { HubActions } from './store.ts'
 import {
   defaultSettings,
   type CreatedRef,
+  type MaintenanceRun,
   type MemoryDetailRow,
   type MemoryListRow,
   type MemoryProjectWire,
@@ -60,6 +63,18 @@ export interface MemoryViewProps {
   t: Translate
 }
 
+/** 面板展示所需的维护运行字段（共享 wire 类型的子集）。 */
+type MaintenanceRunSummary = Pick<MaintenanceRun, 'id' | 'at' | 'status' | 'counts' | 'error' | 'undone'>
+
+/** `/memory/maintenance` 的阈值读数与最近运行。 */
+interface MaintenanceInfo {
+  due: boolean
+  reason: string
+  writesSince: number
+  daysSince: number
+  recentRuns: MaintenanceRunSummary[]
+}
+
 const TYPE_VALUES: readonly MemoryType[] = ['preference', 'decision', 'gotcha', 'project', 'reference']
 
 const TYPE_LABEL_KEYS: Record<MemoryType, string> = {
@@ -80,6 +95,9 @@ const DEFAULT_SETTINGS: MemorySettings = defaultSettings()
 
 /** 「最近捕获」最多展示的条数（stats.recentCaptures 顺序即最新在前）。 */
 const RECENT_CAPTURE_ROWS = 5
+
+/** 维护对话框里展示的最近运行条数。 */
+const RECENT_MAINTENANCE_ROWS = 3
 
 const EMPTY_FORM: MemoryForm = {
   name: '',
@@ -163,7 +181,7 @@ function timeOf(value: string): number {
   return Number.isFinite(time) ? time : 0
 }
 
-/** 归一化设置块。 */
+/** 归一化设置块（维护模型缺省为空串：继承宿主默认模型）。 */
 function normalizeSettings(raw: unknown): MemorySettings {
   const item = record(raw)
   return {
@@ -173,6 +191,8 @@ function normalizeSettings(raw: unknown): MemorySettings {
     indexLimitGlobal: integer(item.indexLimitGlobal, 0, RECALL_MAX_PER_LAYER, DEFAULT_SETTINGS.indexLimitGlobal),
     indexLimitProject: integer(item.indexLimitProject, 0, RECALL_MAX_PER_LAYER, DEFAULT_SETTINGS.indexLimitProject),
     maxChars: integer(item.maxChars, 1000, RECALL_MAX_CHARS, DEFAULT_SETTINGS.maxChars),
+    maintenanceProvider: text(item.maintenanceProvider),
+    maintenanceModel: text(item.maintenanceModel),
     updatedAt: text(item.updatedAt),
   }
 }
@@ -238,6 +258,61 @@ function normalizeStats(raw: unknown): MemoryStats {
     recentInjections,
     recentCaptures,
   }
+}
+
+/** 归一化一次维护运行；未知状态按「无变更」处理。 */
+function normalizeMaintenanceRun(raw: unknown): MaintenanceRunSummary {
+  const item = record(raw)
+  const counts = record(item.counts)
+  return {
+    id: text(item.id),
+    at: text(item.at),
+    status: item.status === 'completed' || item.status === 'failed' || item.status === 'empty' ? item.status : 'empty',
+    counts: {
+      candidates: integer(counts.candidates, 0, Number.MAX_SAFE_INTEGER, 0),
+      merges: integer(counts.merges, 0, Number.MAX_SAFE_INTEGER, 0),
+      staled: integer(counts.staled, 0, Number.MAX_SAFE_INTEGER, 0),
+      restored: integer(counts.restored, 0, Number.MAX_SAFE_INTEGER, 0),
+      deleted: integer(counts.deleted, 0, Number.MAX_SAFE_INTEGER, 0),
+    },
+    error: text(item.error),
+    undone: item.undone === true,
+  }
+}
+
+/** 归一化维护概览；未知/失败载荷读作「未达阈值」。 */
+function normalizeMaintenance(raw: unknown): MaintenanceInfo {
+  const item = record(raw)
+  return {
+    due: item.due === true,
+    reason: text(item.reason),
+    writesSince: integer(item.writesSince, 0, Number.MAX_SAFE_INTEGER, 0),
+    daysSince: integer(item.daysSince, -1, Number.MAX_SAFE_INTEGER, -1),
+    recentRuns: (Array.isArray(item.recentRuns) ? item.recentRuns : []).map(normalizeMaintenanceRun),
+  }
+}
+
+/** 维护状态文案 key。 */
+function maintenanceStatusKey(status: MaintenanceRunSummary['status']): string {
+  if (status === 'completed') return 'memoryMaintenanceStatusCompleted'
+  if (status === 'failed') return 'memoryMaintenanceStatusFailed'
+  return 'memoryMaintenanceStatusEmpty'
+}
+
+/** 维护状态徽章色。 */
+function maintenanceTone(run: MaintenanceRunSummary): 'success' | 'error' | 'plain' {
+  if (run.undone) return 'plain'
+  return run.status === 'completed' ? 'success' : run.status === 'failed' ? 'error' : 'plain'
+}
+
+/** 阈值原因：优先本地化的条数/天数，服务端 reason 只作兜底。 */
+function maintenanceDueText(info: MaintenanceInfo, t: Translate): string {
+  // 从未维护时服务端给 daysSince = -1（见共享 wire 注释）。
+  if (info.daysSince < 0) return t('memoryMaintenanceDueNeverHint', { writes: info.writesSince })
+  if (info.writesSince > 0 || info.daysSince > 0) {
+    return t('memoryMaintenanceDueHint', { writes: info.writesSince, days: info.daysSince })
+  }
+  return info.reason !== '' ? info.reason : t('memoryMaintenanceDueHint', { writes: 0, days: 0 })
 }
 
 /** Form values of one loaded entry. */
@@ -355,6 +430,13 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const [refreshIndexBusy, setRefreshIndexBusy] = useState(false)
   const [settings, setSettings] = useState<MemorySettings>(DEFAULT_SETTINGS)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [maintenance, setMaintenance] = useState<MaintenanceInfo | null>(null)
+  const [maintenanceOpen, setMaintenanceOpen] = useState(false)
+  const [maintenancePrompt, setMaintenancePrompt] = useState(false)
+  const [maintenanceBusy, setMaintenanceBusy] = useState(false)
+  const [maintenanceRunning, setMaintenanceRunning] = useState(false)
+  const [maintenanceUndoBusy, setMaintenanceUndoBusy] = useState(false)
+  const [maintenanceResult, setMaintenanceResult] = useState<MaintenanceRunSummary | null>(null)
   // 撤销进行中的捕获 id；本地已撤销 id 用于撤销后立即显示状态，直到重拉统计。
   const [undoBusyId, setUndoBusyId] = useState<string | null>(null)
   const [undoneCaptureIds, setUndoneCaptureIds] = useState<string[]>([])
@@ -376,6 +458,11 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const settingsRef = useRef<MemorySettings>(DEFAULT_SETTINGS)
   const savedSettingsRef = useRef<MemorySettings>(DEFAULT_SETTINGS)
   const settingsTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Maintenance dialog visibility is mirrored in a ref so the async threshold
+  // probe never stacks a due prompt on top of an open dialog.
+  const maintenanceOpenRef = useRef(false)
+  // One due prompt per mounted panel session; 「暂不」silences later refreshes.
+  const maintenancePromptedRef = useRef(false)
   // Drop a pending debounced persist when the view unmounts.
   useEffect(() => () => {
     if (settingsTimer.current !== null) clearTimeout(settingsTimer.current)
@@ -415,6 +502,31 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
     })()
     return () => { cancelled = true }
   }, [stateToken, t])
+
+  // Threshold probe: once the state loads, fetch the maintenance overview
+  // alongside the list; a due hint pops exactly once per panel session.
+  useEffect(() => {
+    if (!stateReady) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const data = await api<JsonRecord>('/memory/maintenance')
+        if (cancelled) return
+        const info = normalizeMaintenance(data)
+        setMaintenance(info)
+        if (info.due && !maintenancePromptedRef.current && !maintenanceOpenRef.current) {
+          maintenancePromptedRef.current = true
+          maintenanceOpenRef.current = true
+          setMaintenanceResult(null)
+          setMaintenancePrompt(true)
+          setMaintenanceOpen(true)
+        }
+      } catch {
+        // 探测失败不打扰面板：工具条入口仍可手动打开并显示错误。
+      }
+    })()
+    return () => { cancelled = true }
+  }, [stateReady, stateToken])
 
   // Debounced search: typing settles after 300ms, Enter applies immediately.
   useEffect(() => {
@@ -621,7 +733,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
 
   /**
    * Merge one partial settings patch into the local state and persist.
-   * Switches persist immediately; numeric fields debounce by 500 ms.
+   * Switches persist immediately; numeric and model fields debounce by 500 ms.
    */
   const patchSettings = (partial: Partial<MemorySettings>, debounce = false): void => {
     const next = { ...settingsRef.current, ...partial }
@@ -663,6 +775,68 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
       actions.toast('error', t('memoryRefreshIndexFailed', { message: errorMessageFor(error, t) }))
     } finally {
       setRefreshIndexBusy(false)
+    }
+  }
+
+  /** 关闭维护对话框；运行/撤销进行中保持打开。 */
+  const closeMaintenance = (): void => {
+    if (maintenanceRunning || maintenanceUndoBusy) return
+    maintenanceOpenRef.current = false
+    setMaintenanceOpen(false)
+    setMaintenancePrompt(false)
+    setMaintenanceResult(null)
+  }
+
+  /** 工具条入口：先取阈值概览，再打开确认对话框。 */
+  const openMaintenance = async (): Promise<void> => {
+    if (maintenanceBusy || maintenanceRunning) return
+    setMaintenanceBusy(true)
+    setMaintenancePrompt(false)
+    setMaintenanceResult(null)
+    try {
+      const data = await api<JsonRecord>('/memory/maintenance')
+      setMaintenance(normalizeMaintenance(data))
+      maintenanceOpenRef.current = true
+      setMaintenanceOpen(true)
+    } catch (error) {
+      actions.toast('error', errorMessageFor(error, t))
+    } finally {
+      setMaintenanceBusy(false)
+    }
+  }
+
+  /** 运行维护：范围由服务端决定（全局 + 最久未维护的项目）。 */
+  const runMaintenance = async (): Promise<void> => {
+    if (maintenanceRunning || maintenance === null) return
+    setMaintenanceRunning(true)
+    try {
+      const data = await api<JsonRecord>('/memory/maintenance/run', { method: 'POST', body: {} })
+      setMaintenanceResult(normalizeMaintenanceRun(data.run))
+      setStateToken(token => token + 1)
+    } catch (error) {
+      actions.toast('error', t('memoryMaintenanceFailed', { message: errorMessageFor(error, t) }))
+    } finally {
+      setMaintenanceRunning(false)
+    }
+  }
+
+  /** 撤销一次维护：本地标记撤销，随后经 stateToken 重拉概览与面板状态。 */
+  const undoMaintenance = async (runId: string): Promise<void> => {
+    if (maintenanceUndoBusy || runId === '') return
+    setMaintenanceUndoBusy(true)
+    try {
+      await api<JsonRecord>('/memory/maintenance/undo', { method: 'POST', body: { runId } })
+      setMaintenance(current => current === null ? current : {
+        ...current,
+        recentRuns: current.recentRuns.map(run => (run.id === runId ? { ...run, undone: true } : run)),
+      })
+      setMaintenanceResult(current => (current !== null && current.id === runId ? { ...current, undone: true } : current))
+      actions.toast('success', t('memoryMaintenanceUndone'))
+      setStateToken(token => token + 1)
+    } catch (error) {
+      actions.toast('error', t('memoryMaintenanceUndoFailed', { message: errorMessageFor(error, t) }))
+    } finally {
+      setMaintenanceUndoBusy(false)
     }
   }
 
@@ -827,6 +1001,122 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
       <span className={css.auditCount}>{String(count)}</span>
     </h3>
   )
+
+  const maintenanceRuns = (maintenance?.recentRuns ?? []).slice(0, RECENT_MAINTENANCE_ROWS)
+  const maintenanceTitle = maintenanceResult !== null
+    ? (maintenanceResult.status === 'failed' ? t('memoryMaintenanceConfirmTitle') : t('memoryMaintenanceResultTitle'))
+    : maintenancePrompt ? t('memoryMaintenanceDueTitle') : t('memoryMaintenanceConfirmTitle')
+
+  // Footer and body of the one maintenance dialog: result summary / due prompt /
+  // confirm view. The prompt only switches to the confirm view; running is a
+  // separate explicit step.
+  let maintenanceBody: ReactNode = null
+  let maintenanceFooter: ReactNode = null
+  if (maintenanceResult !== null) {
+    maintenanceBody = (
+      <div className={css.maintenanceStack}>
+        <div className={css.maintenanceResult}>
+          <Badge tone={maintenanceTone(maintenanceResult)}>
+            {maintenanceResult.undone
+              ? t('memoryMaintenanceStatusUndone')
+              : t(maintenanceStatusKey(maintenanceResult.status))}
+          </Badge>
+          <span className={css.maintenanceResultCounts}>{t('memoryMaintenanceResult', { ...maintenanceResult.counts })}</span>
+        </div>
+        {maintenanceResult.status === 'failed'
+          ? (
+            <div className={css.maintenanceError} role="alert">
+              {t('memoryMaintenanceFailed', { message: maintenanceResult.error !== '' ? maintenanceResult.error : t('unknownError') })}
+            </div>
+          )
+          : null}
+        {maintenanceResult.undone
+          ? <div className={css.maintenanceHint}>{t('memoryMaintenanceUndone')}</div>
+          : null}
+      </div>
+    )
+    maintenanceFooter = [
+      maintenanceResult.status === 'completed' && !maintenanceResult.undone
+        ? (
+          <Button
+            key="undo"
+            variant="ghost"
+            icon="rotateCcw"
+            disabled={maintenanceUndoBusy}
+            onClick={() => { void undoMaintenance(maintenanceResult.id) }}
+          >
+            {maintenanceUndoBusy ? <Spinner /> : null}{t('memoryMaintenanceUndo')}
+          </Button>
+        )
+        : null,
+      <Button key="close" variant="secondary" disabled={maintenanceUndoBusy} onClick={closeMaintenance}>{t('close')}</Button>,
+    ]
+  } else if (maintenancePrompt && maintenance !== null) {
+    maintenanceBody = (
+      <div className={css.maintenanceStack}>
+        <div className={css.maintenanceNotice}>{maintenanceDueText(maintenance, t)}</div>
+      </div>
+    )
+    maintenanceFooter = [
+      <Button key="later" variant="secondary" onClick={closeMaintenance}>{t('memoryMaintenanceLater')}</Button>,
+      <Button key="continue" variant="primary" icon="wand" onClick={() => { setMaintenancePrompt(false) }}>
+        {t('memoryMaintenanceRun')}
+      </Button>,
+    ]
+  } else if (maintenance !== null) {
+    maintenanceBody = (
+      <div className={css.maintenanceStack}>
+        <div className={css.maintenanceNotice}>
+          {maintenance.due ? maintenanceDueText(maintenance, t) : t('memoryMaintenanceNotDueHint')}
+        </div>
+        <div className={css.maintenanceHint}>{t('memoryMaintenanceConfirmHint')}</div>
+        {maintenanceRunning
+          ? (
+            <div className={css.maintenanceRunning} role="status">
+              <Spinner />
+              <span>{t('memoryMaintenanceRunning')}</span>
+            </div>
+          )
+          : null}
+        <div className={css.maintenanceSection}>
+          <h3 className={css.statsTitle}>{t('memoryMaintenanceRecent')}</h3>
+          {maintenanceRuns.length === 0
+            ? <span className={css.statLabel}>{t('memoryMaintenanceEmpty')}</span>
+            : (
+              <div className={css.maintenanceList}>
+                {maintenanceRuns.map(run => (
+                  <div key={run.id !== '' ? run.id : `${run.at}-${run.status}`} className={css.maintenanceRow}>
+                    {formatTime(run.at) !== '' ? <span className={css.maintenanceRowTime}>{formatTime(run.at)}</span> : null}
+                    <Badge tone={maintenanceTone(run)}>
+                      {run.undone ? t('memoryMaintenanceStatusUndone') : t(maintenanceStatusKey(run.status))}
+                    </Badge>
+                    <span className={css.maintenanceRowMain}>{t('memoryMaintenanceResult', { ...run.counts })}</span>
+                    {run.status === 'completed' && !run.undone && run.id !== ''
+                      ? (
+                        <Button
+                          variant="ghost"
+                          icon="rotateCcw"
+                          disabled={maintenanceUndoBusy}
+                          onClick={() => { void undoMaintenance(run.id) }}
+                        >
+                          {maintenanceUndoBusy ? <Spinner /> : null}{t('memoryMaintenanceUndo')}
+                        </Button>
+                      )
+                      : null}
+                  </div>
+                ))}
+              </div>
+            )}
+        </div>
+      </div>
+    )
+    maintenanceFooter = [
+      <Button key="cancel" variant="secondary" disabled={maintenanceRunning} onClick={closeMaintenance}>{t('cancel')}</Button>,
+      <Button key="run" variant="primary" icon="wand" disabled={maintenanceRunning} onClick={() => { void runMaintenance() }}>
+        {maintenanceRunning ? <Spinner /> : null}{t('memoryMaintenanceRun')}
+      </Button>,
+    ]
+  }
 
   let workspace: ReactNode = null
   if (!stateReady) {
@@ -1090,6 +1380,13 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
             onClick={() => { void openAudit() }}
           />
           <IconButton
+            icon="wand"
+            title={t('memoryMaintenanceButton')}
+            busy={maintenanceBusy}
+            disabled={maintenanceBusy || maintenanceRunning}
+            onClick={() => { void openMaintenance() }}
+          />
+          <IconButton
             icon="refresh"
             title={t('memoryRefreshIndex')}
             busy={refreshIndexBusy}
@@ -1329,6 +1626,22 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
         )
         : null}
 
+      {stateReady && maintenanceOpen
+        ? (
+          <div className={css.dialogPortal}>
+            <DialogShell
+              t={t}
+              title={maintenanceTitle}
+              wide
+              {...(maintenanceRunning || maintenanceUndoBusy ? {} : { onClose: closeMaintenance })}
+              footer={maintenanceFooter}
+            >
+              {maintenanceBody}
+            </DialogShell>
+          </div>
+        )
+        : null}
+
       {stateReady && settingsOpen
         ? (
           <div className={css.dialogPortal}>
@@ -1398,6 +1711,32 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                   />
                 </label>
               </div>
+              <div className={css.divider} />
+              <div className={css.formGrid}>
+                <label className={css.field}>
+                  <span className={css.fieldLabel}>{t('memoryMaintenanceProvider')}</span>
+                  <input
+                    className={css.input}
+                    type="text"
+                    aria-label={t('memoryMaintenanceProvider')}
+                    placeholder={t('memoryMaintenanceModelInherit')}
+                    value={settings.maintenanceProvider}
+                    onChange={(event) => { patchSettings({ maintenanceProvider: event.target.value }, true) }}
+                  />
+                </label>
+                <label className={css.field}>
+                  <span className={css.fieldLabel}>{t('memoryMaintenanceModel')}</span>
+                  <input
+                    className={css.input}
+                    type="text"
+                    aria-label={t('memoryMaintenanceModel')}
+                    placeholder={t('memoryMaintenanceModelInherit')}
+                    value={settings.maintenanceModel}
+                    onChange={(event) => { patchSettings({ maintenanceModel: event.target.value }, true) }}
+                  />
+                </label>
+              </div>
+              <span className={css.fieldHint}>{t('memoryMaintenanceModelInherit')}</span>
               <div className={css.divider} />
               <h3 className={css.statsTitle}>{t('memoryStatsTitle')}</h3>
               <div className={css.statGrid}>

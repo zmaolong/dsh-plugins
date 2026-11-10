@@ -455,6 +455,29 @@ describe('记忆存储：Markdown 事实、手改、去重与生命周期', () =
     expect(stats.sessions[0]).toMatchObject({ sessionId: 's-1', injected: 2, injectedUsed: 1, overflow: 3 })
   })
 
+  it('维护模型设置默认空串、持久化并容错旧字段', () => {
+    const store = makeStore()
+    expect(store.settings()).toMatchObject({ maintenanceProvider: '', maintenanceModel: '' })
+    store.updateSettings({ maintenanceProvider: '  provider-x  ', maintenanceModel: '  model-y  ' })
+    expect(store.settings()).toMatchObject({ maintenanceProvider: 'provider-x', maintenanceModel: 'model-y' })
+
+    const persisted = JSON.parse(readFileSync(path.join(store.root, 'settings.json'), 'utf8')) as Record<string, unknown>
+    expect(persisted).toMatchObject({ maintenanceProvider: 'provider-x', maintenanceModel: 'model-y' })
+
+    const reloaded = new MemoryStore({ home: path.dirname(store.root) })
+    expect(reloaded.settings()).toMatchObject({ maintenanceProvider: 'provider-x', maintenanceModel: 'model-y' })
+
+    // 旧文件缺字段或类型非法：按空串读取（=继承宿主默认模型）。
+    writeFileSync(path.join(store.root, 'settings.json'), JSON.stringify({
+      schema: 1,
+      captureEnabled: true,
+      maintenanceProvider: 5,
+      maintenanceModel: null,
+    }), 'utf8')
+    const legacy = new MemoryStore({ home: path.dirname(store.root) })
+    expect(legacy.settings()).toMatchObject({ maintenanceProvider: '', maintenanceModel: '' })
+  })
+
   it('导出为单个 Markdown 文档，默认设置 20/20 与 3,000 字符预算', () => {
     const store = makeStore()
     add(store)

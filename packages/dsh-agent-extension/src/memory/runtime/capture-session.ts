@@ -89,6 +89,8 @@ export class CaptureSessions {
   private readonly buffers = new Map<string, SessionBuffer>()
   private readonly projectCache = new Map<string, { identity: ProjectIdentity, at: number }>()
   private readonly projectTouches = new Map<string, number>()
+  /** 最近一次解析出的项目 key；维护 Run 的「当前项目优先」依据。 */
+  private recentProject: { key: string; at: number } | null = null
   private readonly operations = new Set<Promise<unknown>>()
   private disposed = false
 
@@ -199,8 +201,14 @@ export class CaptureSessions {
     return cached.identity
   }
 
+  /** 最近一次解析出的项目 key（维护 Run 选项目用）；没有则为空串。 */
+  recentProjectKey(): string {
+    return this.recentProject?.key ?? ''
+  }
+
   /** 登记项目（写 projects.json），5 分钟内同一项目只写一次。 */
   touchProject(identity: ProjectIdentity): void {
+    this.recentProject = { key: identity.projectKey, at: Date.now() }
     const last = this.projectTouches.get(identity.projectKey) ?? 0
     if (Date.now() - last < PROJECT_TOUCH_INTERVAL_MS) return
     this.projectTouches.set(identity.projectKey, Date.now())

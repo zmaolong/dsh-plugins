@@ -106,9 +106,18 @@ export function apply(ctx: HostContext, config: HubConfig = {}): AgentPluginHub 
     }, (message) => hub.log('warn', message))
   }
   // 插件页「智能体扩展」Tab 的 HTTP 数据面；webServer 晚到也没关系。
-  // 记忆面板的「刷新索引」通过 hooks 显式失效会话首步索引快照。
+  // 记忆面板的「刷新索引」通过 hooks 显式失效会话首步索引快照；维护 Run
+  // 的触发/撤销也经 hooks 落到同一个运行时。
+  const runtime = memoryRuntime
   const memoryHooks: MemoryRouteHooks = {
-    refreshRecall: () => memoryRuntime?.invalidateRecall(),
+    refreshRecall: () => runtime?.invalidateRecall(),
+    ...(runtime === null
+      ? {}
+      : {
+          maintenanceStatus: () => runtime.maintenanceStatus(),
+          runMaintenance: request => runtime.runMaintenance(request),
+          undoMaintenance: runId => runtime.undoMaintenance(runId),
+        }),
   }
   let uiRoutes: UiRoutesStatus = { active: false, reason: '未挂载', path: '/agent-plugin/api', dispose: () => {} }
   try {

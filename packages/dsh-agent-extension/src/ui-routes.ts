@@ -287,7 +287,7 @@ export function mountUiRoutes(
           return
         }
         if (isMemoryGetRoute(route) && method === 'GET') {
-          sendJson(response, 200, { ok: true, data: await dispatchMemoryGet(memory, route, url.searchParams) })
+          sendJson(response, 200, { ok: true, data: await dispatchMemoryGet(memory, route, url.searchParams, hooks) })
           return
         }
         if (isMemoryPostRoute(route) && method === 'POST') {

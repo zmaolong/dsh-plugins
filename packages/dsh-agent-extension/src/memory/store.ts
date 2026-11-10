@@ -316,6 +316,9 @@ function normalizeSettings(raw: unknown): MemorySettings {
     indexLimitGlobal: clampInt(value.indexLimitGlobal, 0, RECALL_MAX_PER_LAYER, fallback.indexLimitGlobal),
     indexLimitProject: clampInt(value.indexLimitProject, 0, RECALL_MAX_PER_LAYER, fallback.indexLimitProject),
     maxChars: clampInt(value.maxChars, 1000, RECALL_MAX_CHARS, fallback.maxChars),
+    // 维护模型：空串 = 继承宿主默认模型；旧 settings.json 缺字段时同样为空。
+    maintenanceProvider: text(value.maintenanceProvider).slice(0, LIMITS.maintenanceModel),
+    maintenanceModel: text(value.maintenanceModel).slice(0, LIMITS.maintenanceModel),
     updatedAt: text(value.updatedAt) || fallback.updatedAt,
   }
 }
@@ -770,6 +773,116 @@ export class MemoryStore {
     const limit = clampInt(options.limit, 1, LIMITS.entriesPerScope, LIMITS.entriesPerScope)
     const sliced = sorted.slice(0, limit)
     return options.includeContent === true ? sliced : sliced.map(toMeta)
+  }
+
+  /**
+   * 列出一个作用域的全部条目（含归档、含正文，不做排序/截断）。
+   *
+   * 维护 Run 的预筛与校验需要正文和 supersedes 全量视图。
+   *
+   * @param scope - 记忆作用域。
+   * @param project - 项目作用域的项目 key。
+   */
+  entries(scope: MemoryScope, project = ''): MemoryEntry[] {
+    return [...this.load(scope, project)]
+  }
+
+  /** 列出全局与所有已登记项目的全部条目（含归档、含正文）。 */
+  allEntries(): MemoryEntry[] {
+    const out: MemoryEntry[] = [...this.load('global', '')]
+    for (const project of this.projects()) out.push(...this.load('project', project.key))
+    return out
+  }
+
+  /**
+   * 把一个条目文件的原样内容快照到 `trashRoot` 下（保持记忆树的相对路径）。
+   *
+   * - 全局条目：`<trashRoot>/global/<id>.md`；
+   * - 项目条目：`<trashRoot>/projects/<项目目录名>/<id>.md`。
+   *
+   * 目录按需创建；原子写。条目文件不存在时返回 null。
+   *
+   * @param scope - 记忆作用域。
+   * @param project - 项目作用域的项目 key（全局忽略）。
+   * @param id - 记忆 id。
+   * @param trashRoot - 本次 Run 的 trash 根目录（`<memory>/trash/<runId>`）。
+   */
+  backupEntry(scope: MemoryScope, project: string, id: string, trashRoot: string): string | null {
+    const source = this.entryFile(scope, project, id)
+    const relative = scope === 'global'
+      ? path.join('global', `${path.basename(source)}`)
+      : path.join('projects', safeProjectKey(project), `${path.basename(source)}`)
+    const target = path.join(trashRoot, relative)
+    try {
+      const content = readFileSync(source, 'utf8')
+      writeAtomicText(target, content)
+      return target
+    } catch (error) {
+      this.log('warn', `备份记忆 ${id} 失败：${error instanceof Error ? error.message : String(error)}`)
+      return null
+    }
+  }
+
+  /**
+   * 用一份快照文件覆盖写回条目（撤销维护 Run 的最小操作）。
+   *
+   * @param scope - 记忆作用域。
+   * @param project - 项目作用域的项目 key（全局忽略）。
+   * @param id - 记忆 id（决定目标文件名）。
+   * @param snapshotFile - 快照文件路径；不存在返回 false。
+   */
+  restoreEntrySnapshot(scope: MemoryScope, project: string, id: string, snapshotFile: string): boolean {
+    try {
+      const content = readFileSync(snapshotFile, 'utf8')
+      writeAtomicText(this.entryFile(scope, project, id), content)
+      // trash 目录名是 safeProjectKey 后的形式；项目 key 非目录安全时无法
+      // 反推原名，因此整体清空缓存（撤销是低频操作）保证任何调用方重读。
+      this.cache.clear()
+      return true
+    } catch (error) {
+      this.log('warn', `从快照恢复记忆 ${id} 失败：${error instanceof Error ? error.message : String(error)}`)
+      return false
+    }
+  }
+
+  /**
+   * 撤销一次维护 Run：把该 Run 的 trash 目录内全部快照覆盖写回。
+   *
+   * 快照按记忆树相对路径存放，因此删除条目的作用域/项目从目录名还原；
+   * 文件不存在的项跳过。返回实际恢复的文件数。
+   *
+   * @param trashRoot - 本次 Run 的 trash 根目录。
+   */
+  restoreTrashRun(trashRoot: string): number {
+    let restored = 0
+    const restoreDir = (dir: string, scope: MemoryScope, project: string): void => {
+      let names: string[] = []
+      try {
+        names = readdirSync(dir, { withFileTypes: true })
+          .filter(item => item.isFile() && item.name.endsWith('.md'))
+          .map(item => item.name)
+      } catch {
+        return
+      }
+      for (const name of names) {
+        if (this.restoreEntrySnapshot(scope, project, path.basename(name, '.md'), path.join(dir, name))) {
+          restored += 1
+        }
+      }
+    }
+    restoreDir(path.join(trashRoot, 'global'), 'global', '')
+    let projectDirs: string[] = []
+    try {
+      projectDirs = readdirSync(path.join(trashRoot, 'projects'), { withFileTypes: true })
+        .filter(item => item.isDirectory())
+        .map(item => item.name)
+    } catch {
+      projectDirs = []
+    }
+    for (const projectKey of projectDirs) {
+      restoreDir(path.join(trashRoot, 'projects', projectKey), 'project', projectKey)
+    }
+    return restored
   }
 
   /**

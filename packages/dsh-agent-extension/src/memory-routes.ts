@@ -22,6 +22,7 @@ import {
   normalizeIds,
   normalizeTags,
   text,
+  type MaintenanceStatusWire,
   type MemoryGetWire,
   type MemoryListWire,
   type MemoryPreviewFileWire,
@@ -31,7 +32,13 @@ import {
 } from './memory/types.ts'
 
 /** GET routes served by the memory panel. */
-export const MEMORY_GET_ROUTES = ['/memory/state', '/memory/list', '/memory/get', '/memory/preview-file'] as const
+export const MEMORY_GET_ROUTES = [
+  '/memory/state',
+  '/memory/list',
+  '/memory/get',
+  '/memory/preview-file',
+  '/memory/maintenance',
+] as const
 
 /** POST routes served by the memory panel. */
 export const MEMORY_POST_ROUTES = [
@@ -42,12 +49,20 @@ export const MEMORY_POST_ROUTES = [
   '/memory/export',
   '/memory/refresh-index',
   '/memory/undo-capture',
+  '/memory/maintenance/run',
+  '/memory/maintenance/undo',
 ] as const
 
 /** 面板可调用的宿主钩子；测试与只读挂载可以省略。 */
 export interface MemoryRouteHooks {
   /** 清空索引缓存（不传 sessionId 即清空全部，下一次装配重新渲染）。 */
   refreshRecall?: () => void
+  /** 维护状态与 due 读数；缺省返回不可用降级值。 */
+  maintenanceStatus?: () => MaintenanceStatusWire
+  /** 手动触发一次维护 Run；缺省返回 internal 错误。 */
+  runMaintenance?: (request: { scope?: MemoryScope, project?: string }) => Promise<{ run: unknown }> | { run: unknown }
+  /** 撤销一次维护 Run；缺省返回 internal 错误。 */
+  undoMaintenance?: (runId: string) => Promise<{ restored: number }> | { restored: number }
 }
 
 /** Whether `route` is one of the read routes. */
@@ -80,7 +95,12 @@ export async function dispatchMemoryGet(
   store: MemoryStore,
   route: string,
   params: URLSearchParams,
-): Promise<MemoryStateWire | MemoryListWire | MemoryGetWire | MemoryPreviewFileWire> {
+  hooks: MemoryRouteHooks = {},
+): Promise<MemoryStateWire | MemoryListWire | MemoryGetWire | MemoryPreviewFileWire | MaintenanceStatusWire> {
+  if (route === '/memory/maintenance') {
+    if (hooks.maintenanceStatus !== undefined) return hooks.maintenanceStatus()
+    return { due: false, reason: 'unavailable', writesSince: 0, daysSince: -1, lastRunAt: null, recentRuns: [] }
+  }
   if (route === '/memory/state') {
     return {
       settings: store.settings(),
@@ -137,6 +157,33 @@ export async function dispatchMemoryPost(
   body: Record<string, unknown> = {},
   hooks: MemoryRouteHooks = {},
 ): Promise<unknown> {
+  if (route === '/memory/maintenance/run') {
+    const rawScope = body.scope
+    let scope: MemoryScope | undefined
+    if (rawScope !== undefined && rawScope !== null) {
+      if (rawScope !== 'global' && rawScope !== 'project') {
+        throw hubError('scope 只能是 global / project', 'bad_request')
+      }
+      scope = rawScope
+    }
+    const project = text(body.project)
+    if (project.length > 160) throw hubError('项目 key 过长', 'bad_request')
+    if (scope === 'global' && project !== '') {
+      throw hubError('scope=global 时不能指定 project', 'bad_request')
+    }
+    if (hooks.runMaintenance === undefined) throw hubError('维护服务未就绪', 'internal')
+    return await hooks.runMaintenance({
+      ...(scope === undefined ? {} : { scope }),
+      ...(project === '' ? {} : { project }),
+    })
+  }
+  if (route === '/memory/maintenance/undo') {
+    const runId = text(body.runId)
+    if (runId === '') throw hubError('缺少维护记录 id', 'bad_request')
+    if (hooks.undoMaintenance === undefined) throw hubError('维护服务未就绪', 'internal')
+    const result = await hooks.undoMaintenance(runId)
+    return { undone: true, restored: result.restored }
+  }
   if (route === '/memory/refresh-index') {
     hooks.refreshRecall?.()
     return { refreshed: true }
@@ -211,9 +258,11 @@ function parseSettingsPatch(body: Record<string, unknown>): Partial<{
   indexLimitGlobal: number
   indexLimitProject: number
   maxChars: number
+  maintenanceProvider: string
+  maintenanceModel: string
 }> {
   const defaults = defaultSettings()
-  const patch: Record<string, boolean | number> = {}
+  const patch: Record<string, boolean | number | string> = {}
   for (const key of ['captureEnabled', 'captureSessionEnd', 'injectEnabled'] as const) {
     if (typeof body[key] === 'boolean') patch[key] = body[key]
   }
@@ -221,6 +270,10 @@ function parseSettingsPatch(body: Record<string, unknown>): Partial<{
     if (body[key] !== undefined) patch[key] = clampInt(body[key], 0, RECALL_MAX_PER_LAYER, defaults[key])
   }
   if (body.maxChars !== undefined) patch.maxChars = clampInt(body.maxChars, 1000, RECALL_MAX_CHARS, defaults.maxChars)
+  // 维护模型：只接受字符串；空串表示继承宿主默认模型，非字符串忽略。
+  for (const key of ['maintenanceProvider', 'maintenanceModel'] as const) {
+    if (typeof body[key] === 'string') patch[key] = body[key].trim().slice(0, LIMITS.maintenanceModel)
+  }
   return patch as Partial<{
     captureEnabled: boolean
     captureSessionEnd: boolean
@@ -228,5 +281,7 @@ function parseSettingsPatch(body: Record<string, unknown>): Partial<{
     indexLimitGlobal: number
     indexLimitProject: number
     maxChars: number
+    maintenanceProvider: string
+    maintenanceModel: string
   }>
 }

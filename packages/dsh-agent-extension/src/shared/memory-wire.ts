@@ -88,6 +88,10 @@ export interface MemorySettings {
   indexLimitProject: number
   /** 注入索引的字符预算。 */
   maxChars: number
+  /** 维护 Run 使用的模型 provider；空串表示继承宿主默认模型（ADR-0006）。 */
+  maintenanceProvider: string
+  /** 维护 Run 使用的模型 id；空串表示继承宿主默认模型。 */
+  maintenanceModel: string
   updatedAt: string
 }
 
@@ -100,6 +104,8 @@ export function defaultSettings(): MemorySettings {
     indexLimitGlobal: 20,
     indexLimitProject: 20,
     maxChars: 3000,
+    maintenanceProvider: '',
+    maintenanceModel: '',
     updatedAt: new Date().toISOString(),
   }
 }
@@ -237,6 +243,8 @@ export const LIMITS = {
   statsSessions: 100,
   /** 最近捕获/注入样本上限（stats.json 的有界数组）。 */
   statsRecent: 50,
+  /** 维护模型 provider / model 设置的最大字符数。 */
+  maintenanceModel: 120,
 } as const
 
 /** 值是否是一种记忆来源。 */
@@ -324,4 +332,75 @@ export interface MemoryDetailRow extends MemoryListRow {
   originSessionId: string
   supersedes: string[]
   obsoleteVotes: number
+}
+
+/** 维护 Run 的一次执行动作：合并、停用、恢复或删除。 */
+export type MaintenanceActionKind = 'merge' | 'stale' | 'restore' | 'delete'
+
+/** 维护 Run 的一条动作流水；`ids` 是被该动作影响的记忆 id。 */
+export interface MaintenanceAction {
+  kind: MaintenanceActionKind
+  ids: string[]
+  /** 可读说明（保留在流水里，供面板展示与诊断）。 */
+  detail: string
+}
+
+/** 维护 Run 的计数（候选与各类动作的实际条数）。 */
+export interface MaintenanceCounts {
+  candidates: number
+  merges: number
+  staled: number
+  restored: number
+  deleted: number
+}
+
+/** 维护 Run 使用的模型；null 表示尚未解析出模型（如空库提前结束）。 */
+export interface MaintenanceModelRef {
+  provider: string
+  model: string
+}
+
+/** 维护 Run 的终态：completed 有动作；empty 无候选/无可执行动作；failed 出错。 */
+export type MaintenanceRunStatus = 'completed' | 'failed' | 'empty'
+
+/** 一条维护流水（`maintenance.json` 的 `runs[]` 元素）。 */
+export interface MaintenanceRun {
+  id: string
+  at: string
+  /** 本 Run 是否包含一个项目（global 表示只处理全局）。 */
+  scope: MemoryScope
+  /** 项目 key；scope 为 global 时为空串。 */
+  project: string
+  model: MaintenanceModelRef | null
+  status: MaintenanceRunStatus
+  counts: MaintenanceCounts
+  actions: MaintenanceAction[]
+  error: string
+  undone: boolean
+}
+
+/** 维护状态文件的磁盘形状（schema 1）。 */
+export interface MaintenanceState {
+  schema: 1
+  /** 最近一次**成功**维护的时间；从未成功为 null。 */
+  lastRunAt: string | null
+  /** 最近一次成功维护时的 `stats.capturedEntries` 快照。 */
+  capturedEntriesAtLastRun: number
+  /** 项目 key → 最近一次成功维护时间。 */
+  projectRuns: Record<string, string>
+  /** 最近 20 条流水，最新在前。 */
+  runs: MaintenanceRun[]
+}
+
+/** `/memory/maintenance` 的返回形状。 */
+export interface MaintenanceStatusWire {
+  due: boolean
+  /** due 原因：never / writes / days / none / unavailable。 */
+  reason: string
+  /** 上次成功维护以来的新增/强化条数。 */
+  writesSince: number
+  /** 距上次成功维护的天数；从未维护为 -1。 */
+  daysSince: number
+  lastRunAt: string | null
+  recentRuns: MaintenanceRun[]
 }

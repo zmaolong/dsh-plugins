@@ -285,7 +285,32 @@ window.__ModuleLoader__.load({
 			memoryOpenNative: "用系统应用打开",
 			memoryBodyReadOnlyHint: "正文只读；用系统应用打开阅读。",
 			memoryOpenNativeFailed: "无法用系统应用打开：{message}",
-			memoryOpenNativeUnavailable: "当前环境不支持用系统应用打开文件"
+			memoryOpenNativeUnavailable: "当前环境不支持用系统应用打开文件",
+			memoryMaintenanceButton: "优化记忆",
+			memoryMaintenanceDueTitle: "该优化记忆了",
+			memoryMaintenanceDueHint: "距上次维护 {days} 天，新增/强化 {writes} 条",
+			memoryMaintenanceDueNeverHint: "尚未维护过；新增/强化 {writes} 条",
+			memoryMaintenanceNotDueHint: "距上次维护不足阈值，仍要立即优化？",
+			memoryMaintenanceConfirmTitle: "优化记忆",
+			memoryMaintenanceConfirmHint: "将合并重复、停用过时条目并删除低价值条目；删除有备份，可整次撤销。",
+			memoryMaintenanceRun: "立即优化",
+			memoryMaintenanceRunning: "正在优化…",
+			memoryMaintenanceResultTitle: "优化完成",
+			memoryMaintenanceResult: "合并 {merges} 条，停用 {staled} 条，恢复 {restored} 条，删除 {deleted} 条",
+			memoryMaintenanceFailed: "优化失败：{message}",
+			memoryMaintenanceUndo: "撤销本次维护",
+			memoryMaintenanceUndone: "已撤销本次维护",
+			memoryMaintenanceUndoFailed: "撤销失败：{message}",
+			memoryMaintenanceRecent: "最近维护",
+			memoryMaintenanceEmpty: "暂无维护记录",
+			memoryMaintenanceStatusCompleted: "已完成",
+			memoryMaintenanceStatusFailed: "失败",
+			memoryMaintenanceStatusEmpty: "无变更",
+			memoryMaintenanceStatusUndone: "已撤销",
+			memoryMaintenanceModelInherit: "留空继承宿主默认模型",
+			memoryMaintenanceProvider: "维护模型提供方",
+			memoryMaintenanceModel: "维护模型",
+			memoryMaintenanceLater: "暂不"
 		};
 		/** English dictionary (sentence case; same key set as `zh`). */
 		const en = {
@@ -556,7 +581,32 @@ window.__ModuleLoader__.load({
 			memoryOpenNative: "Open in system app",
 			memoryBodyReadOnlyHint: "The content is read-only; open it in a system app to read.",
 			memoryOpenNativeFailed: "Could not open in a system app: {message}",
-			memoryOpenNativeUnavailable: "This environment cannot open files in a system app"
+			memoryOpenNativeUnavailable: "This environment cannot open files in a system app",
+			memoryMaintenanceButton: "Optimize memory",
+			memoryMaintenanceDueTitle: "Memory upkeep is due",
+			memoryMaintenanceDueHint: "{days} day(s) since the last upkeep; {writes} new or reinforced entries",
+			memoryMaintenanceDueNeverHint: "Never optimized before; {writes} new or reinforced entries",
+			memoryMaintenanceNotDueHint: "Below the upkeep threshold — optimize now anyway?",
+			memoryMaintenanceConfirmTitle: "Optimize memory",
+			memoryMaintenanceConfirmHint: "Merges duplicates, deactivates stale entries, and deletes low-value ones. Deletions are backed up, and the whole run can be undone.",
+			memoryMaintenanceRun: "Optimize now",
+			memoryMaintenanceRunning: "Optimizing…",
+			memoryMaintenanceResultTitle: "Optimization complete",
+			memoryMaintenanceResult: "Merged {merges}, deactivated {staled}, restored {restored}, deleted {deleted}",
+			memoryMaintenanceFailed: "Optimization failed: {message}",
+			memoryMaintenanceUndo: "Undo this run",
+			memoryMaintenanceUndone: "Run undone",
+			memoryMaintenanceUndoFailed: "Undo failed: {message}",
+			memoryMaintenanceRecent: "Recent runs",
+			memoryMaintenanceEmpty: "No maintenance runs yet",
+			memoryMaintenanceStatusCompleted: "Completed",
+			memoryMaintenanceStatusFailed: "Failed",
+			memoryMaintenanceStatusEmpty: "No changes",
+			memoryMaintenanceStatusUndone: "Undone",
+			memoryMaintenanceModelInherit: "Leave empty to inherit the host default model",
+			memoryMaintenanceProvider: "Maintenance model provider",
+			memoryMaintenanceModel: "Maintenance model",
+			memoryMaintenanceLater: "Not now"
 		};
 		/** Japanese dictionary (same key set as `zh`). */
 		const ja = {
@@ -827,7 +877,32 @@ window.__ModuleLoader__.load({
 			memoryOpenNative: "システムアプリで開く",
 			memoryBodyReadOnlyHint: "本文は読み取り専用です。システムアプリで開いて読んでください。",
 			memoryOpenNativeFailed: "システムアプリで開けませんでした：{message}",
-			memoryOpenNativeUnavailable: "この環境ではシステムアプリでファイルを開けません"
+			memoryOpenNativeUnavailable: "この環境ではシステムアプリでファイルを開けません",
+			memoryMaintenanceButton: "記憶を最適化",
+			memoryMaintenanceDueTitle: "記憶の最適化が必要です",
+			memoryMaintenanceDueHint: "前回のメンテナンスから {days} 日、新規/強化 {writes} 件",
+			memoryMaintenanceDueNeverHint: "まだメンテナンス未実施；新規/強化 {writes} 件",
+			memoryMaintenanceNotDueHint: "前回のメンテナンスから間もなく閾値未満です。今すぐ最適化しますか？",
+			memoryMaintenanceConfirmTitle: "記憶を最適化",
+			memoryMaintenanceConfirmHint: "重複の統合、古い項目の無効化、低価値項目の削除を行います。削除はバックアップされ、実行全体を取り消せます。",
+			memoryMaintenanceRun: "今すぐ最適化",
+			memoryMaintenanceRunning: "最適化中…",
+			memoryMaintenanceResultTitle: "最適化が完了しました",
+			memoryMaintenanceResult: "統合 {merges} 件、無効化 {staled} 件、復元 {restored} 件、削除 {deleted} 件",
+			memoryMaintenanceFailed: "最適化に失敗しました：{message}",
+			memoryMaintenanceUndo: "この実行を取り消す",
+			memoryMaintenanceUndone: "実行を取り消しました",
+			memoryMaintenanceUndoFailed: "取り消しに失敗しました：{message}",
+			memoryMaintenanceRecent: "最近の実行",
+			memoryMaintenanceEmpty: "実行履歴はありません",
+			memoryMaintenanceStatusCompleted: "完了",
+			memoryMaintenanceStatusFailed: "失敗",
+			memoryMaintenanceStatusEmpty: "変更なし",
+			memoryMaintenanceStatusUndone: "取り消し済み",
+			memoryMaintenanceModelInherit: "空欄でホスト既定モデルを継承",
+			memoryMaintenanceProvider: "メンテナンスモデルの提供元",
+			memoryMaintenanceModel: "メンテナンスモデル",
+			memoryMaintenanceLater: "今はしない"
 		};
 		/** Spanish dictionary (same key set as `zh`). */
 		const es = {
@@ -1098,7 +1173,32 @@ window.__ModuleLoader__.load({
 			memoryOpenNative: "Abrir en la aplicación del sistema",
 			memoryBodyReadOnlyHint: "El contenido es de solo lectura; ábralo en la aplicación del sistema para leerlo.",
 			memoryOpenNativeFailed: "No se pudo abrir en la aplicación del sistema: {message}",
-			memoryOpenNativeUnavailable: "Este entorno no puede abrir archivos en la aplicación del sistema"
+			memoryOpenNativeUnavailable: "Este entorno no puede abrir archivos en la aplicación del sistema",
+			memoryMaintenanceButton: "Optimizar memoria",
+			memoryMaintenanceDueTitle: "Toca mantener la memoria",
+			memoryMaintenanceDueHint: "{days} día(s) desde el último mantenimiento; {writes} entradas nuevas o reforzadas",
+			memoryMaintenanceDueNeverHint: "Nunca se ha optimizado; {writes} entradas nuevas o reforzadas",
+			memoryMaintenanceNotDueHint: "Por debajo del umbral de mantenimiento, ¿optimizar ahora de todos modos?",
+			memoryMaintenanceConfirmTitle: "Optimizar memoria",
+			memoryMaintenanceConfirmHint: "Combina duplicados, desactiva entradas obsoletas y elimina las de bajo valor. Las eliminaciones se respaldan y toda la ejecución se puede deshacer.",
+			memoryMaintenanceRun: "Optimizar ahora",
+			memoryMaintenanceRunning: "Optimizando…",
+			memoryMaintenanceResultTitle: "Optimización completada",
+			memoryMaintenanceResult: "Combinadas {merges}, desactivadas {staled}, restauradas {restored}, eliminadas {deleted}",
+			memoryMaintenanceFailed: "Error al optimizar: {message}",
+			memoryMaintenanceUndo: "Deshacer esta ejecución",
+			memoryMaintenanceUndone: "Ejecución deshecha",
+			memoryMaintenanceUndoFailed: "No se pudo deshacer: {message}",
+			memoryMaintenanceRecent: "Ejecuciones recientes",
+			memoryMaintenanceEmpty: "Aún no hay ejecuciones de mantenimiento",
+			memoryMaintenanceStatusCompleted: "Completada",
+			memoryMaintenanceStatusFailed: "Fallida",
+			memoryMaintenanceStatusEmpty: "Sin cambios",
+			memoryMaintenanceStatusUndone: "Deshecha",
+			memoryMaintenanceModelInherit: "Déjalo vacío para heredar el modelo predeterminado del host",
+			memoryMaintenanceProvider: "Proveedor del modelo de mantenimiento",
+			memoryMaintenanceModel: "Modelo de mantenimiento",
+			memoryMaintenanceLater: "Ahora no"
 		};
 		/** French dictionary (same key set as `zh`). */
 		const fr = {
@@ -1369,7 +1469,32 @@ window.__ModuleLoader__.load({
 			memoryOpenNative: "Ouvrir dans l’application système",
 			memoryBodyReadOnlyHint: "Le contenu est en lecture seule ; ouvrez-le dans l’application système pour le lire.",
 			memoryOpenNativeFailed: "Impossible d’ouvrir dans l’application système : {message}",
-			memoryOpenNativeUnavailable: "Cet environnement ne permet pas d’ouvrir des fichiers dans l’application système"
+			memoryOpenNativeUnavailable: "Cet environnement ne permet pas d’ouvrir des fichiers dans l’application système",
+			memoryMaintenanceButton: "Optimiser la mémoire",
+			memoryMaintenanceDueTitle: "La mémoire doit être optimisée",
+			memoryMaintenanceDueHint: "Depuis le dernier entretien : {days} jour(s), {writes} entrée(s) nouvelle(s) ou renforcée(s)",
+			memoryMaintenanceDueNeverHint: "Jamais optimisée ; {writes} entrée(s) nouvelle(s) ou renforcée(s)",
+			memoryMaintenanceNotDueHint: "Sous le seuil d’entretien — optimiser quand même maintenant ?",
+			memoryMaintenanceConfirmTitle: "Optimiser la mémoire",
+			memoryMaintenanceConfirmHint: "Fusionne les doublons, désactive les entrées obsolètes et supprime celles de faible valeur. Les suppressions sont sauvegardées et toute l’exécution peut être annulée.",
+			memoryMaintenanceRun: "Optimiser maintenant",
+			memoryMaintenanceRunning: "Optimisation…",
+			memoryMaintenanceResultTitle: "Optimisation terminée",
+			memoryMaintenanceResult: "Fusionnées {merges}, désactivées {staled}, restaurées {restored}, supprimées {deleted}",
+			memoryMaintenanceFailed: "Échec de l’optimisation : {message}",
+			memoryMaintenanceUndo: "Annuler cette exécution",
+			memoryMaintenanceUndone: "Exécution annulée",
+			memoryMaintenanceUndoFailed: "Échec de l’annulation : {message}",
+			memoryMaintenanceRecent: "Exécutions récentes",
+			memoryMaintenanceEmpty: "Aucune exécution de maintenance",
+			memoryMaintenanceStatusCompleted: "Terminée",
+			memoryMaintenanceStatusFailed: "Échouée",
+			memoryMaintenanceStatusEmpty: "Sans changement",
+			memoryMaintenanceStatusUndone: "Annulée",
+			memoryMaintenanceModelInherit: "Laisser vide pour hériter du modèle par défaut de l’hôte",
+			memoryMaintenanceProvider: "Fournisseur du modèle de maintenance",
+			memoryMaintenanceModel: "Modèle de maintenance",
+			memoryMaintenanceLater: "Pas maintenant"
 		};
 		/** German dictionary (same key set as `zh`). */
 		const de = {
@@ -1640,7 +1765,32 @@ window.__ModuleLoader__.load({
 			memoryOpenNative: "In der System-App öffnen",
 			memoryBodyReadOnlyHint: "Der Inhalt ist schreibgeschützt; öffnen Sie ihn in der System-App, um ihn zu lesen.",
 			memoryOpenNativeFailed: "In der System-App konnte nicht geöffnet werden: {message}",
-			memoryOpenNativeUnavailable: "Diese Umgebung kann Dateien nicht in einer System-App öffnen"
+			memoryOpenNativeUnavailable: "Diese Umgebung kann Dateien nicht in einer System-App öffnen",
+			memoryMaintenanceButton: "Speicher optimieren",
+			memoryMaintenanceDueTitle: "Speicheroptimierung fällig",
+			memoryMaintenanceDueHint: "Seit der letzten Wartung {days} Tag(e); {writes} neue oder bestärkte Einträge",
+			memoryMaintenanceDueNeverHint: "Noch nie optimiert; {writes} neue oder bestärkte Einträge",
+			memoryMaintenanceNotDueHint: "Unter der Wartungsschwelle — trotzdem jetzt optimieren?",
+			memoryMaintenanceConfirmTitle: "Speicher optimieren",
+			memoryMaintenanceConfirmHint: "Führt Duplikate zusammen, deaktiviert veraltete Einträge und löscht Einträge mit geringem Wert. Löschungen werden gesichert und der gesamte Lauf kann rückgängig gemacht werden.",
+			memoryMaintenanceRun: "Jetzt optimieren",
+			memoryMaintenanceRunning: "Optimierung läuft…",
+			memoryMaintenanceResultTitle: "Optimierung abgeschlossen",
+			memoryMaintenanceResult: "Zusammengeführt {merges}, deaktiviert {staled}, wiederhergestellt {restored}, gelöscht {deleted}",
+			memoryMaintenanceFailed: "Optimierung fehlgeschlagen: {message}",
+			memoryMaintenanceUndo: "Diesen Lauf rückgängig machen",
+			memoryMaintenanceUndone: "Lauf rückgängig gemacht",
+			memoryMaintenanceUndoFailed: "Rückgängig machen fehlgeschlagen: {message}",
+			memoryMaintenanceRecent: "Letzte Läufe",
+			memoryMaintenanceEmpty: "Noch keine Wartungsläufe",
+			memoryMaintenanceStatusCompleted: "Abgeschlossen",
+			memoryMaintenanceStatusFailed: "Fehlgeschlagen",
+			memoryMaintenanceStatusEmpty: "Keine Änderungen",
+			memoryMaintenanceStatusUndone: "Rückgängig gemacht",
+			memoryMaintenanceModelInherit: "Leer lassen, um das Standardmodell des Hosts zu übernehmen",
+			memoryMaintenanceProvider: "Anbieter des Wartungsmodells",
+			memoryMaintenanceModel: "Wartungsmodell",
+			memoryMaintenanceLater: "Nicht jetzt"
 		};
 		/** Russian dictionary (same key set as `zh`). */
 		const ru = {
@@ -1911,7 +2061,32 @@ window.__ModuleLoader__.load({
 			memoryOpenNative: "Открыть в системном приложении",
 			memoryBodyReadOnlyHint: "Содержимое доступно только для чтения; откройте его в системном приложении, чтобы прочитать.",
 			memoryOpenNativeFailed: "Не удалось открыть в системном приложении: {message}",
-			memoryOpenNativeUnavailable: "Эта среда не поддерживает открытие файлов в системном приложении"
+			memoryOpenNativeUnavailable: "Эта среда не поддерживает открытие файлов в системном приложении",
+			memoryMaintenanceButton: "Оптимизировать память",
+			memoryMaintenanceDueTitle: "Пора оптимизировать память",
+			memoryMaintenanceDueHint: "С последнего обслуживания прошло {days} дн.; новых или усиленных записей: {writes}",
+			memoryMaintenanceDueNeverHint: "Оптимизация ещё не выполнялась; новых или усиленных записей: {writes}",
+			memoryMaintenanceNotDueHint: "Порог обслуживания не достигнут — всё равно оптимизировать сейчас?",
+			memoryMaintenanceConfirmTitle: "Оптимизировать память",
+			memoryMaintenanceConfirmHint: "Объединяет дубликаты, отключает устаревшие записи и удаляет малополезные. Удаления сохраняются в резервной копии, весь запуск можно отменить.",
+			memoryMaintenanceRun: "Оптимизировать сейчас",
+			memoryMaintenanceRunning: "Оптимизация…",
+			memoryMaintenanceResultTitle: "Оптимизация завершена",
+			memoryMaintenanceResult: "Объединено {merges}, отключено {staled}, восстановлено {restored}, удалено {deleted}",
+			memoryMaintenanceFailed: "Ошибка оптимизации: {message}",
+			memoryMaintenanceUndo: "Отменить этот запуск",
+			memoryMaintenanceUndone: "Запуск отменён",
+			memoryMaintenanceUndoFailed: "Не удалось отменить: {message}",
+			memoryMaintenanceRecent: "Последние запуски",
+			memoryMaintenanceEmpty: "Запусков обслуживания пока нет",
+			memoryMaintenanceStatusCompleted: "Завершён",
+			memoryMaintenanceStatusFailed: "Ошибка",
+			memoryMaintenanceStatusEmpty: "Без изменений",
+			memoryMaintenanceStatusUndone: "Отменён",
+			memoryMaintenanceModelInherit: "Оставьте пустым, чтобы наследовать модель хоста по умолчанию",
+			memoryMaintenanceProvider: "Провайдер модели обслуживания",
+			memoryMaintenanceModel: "Модель обслуживания",
+			memoryMaintenanceLater: "Не сейчас"
 		};
 		/** Portuguese dictionary (same key set as `zh`). */
 		const pt = {
@@ -2182,7 +2357,32 @@ window.__ModuleLoader__.load({
 			memoryOpenNative: "Abrir no aplicativo do sistema",
 			memoryBodyReadOnlyHint: "O conteúdo é somente leitura; abra-o no aplicativo do sistema para ler.",
 			memoryOpenNativeFailed: "Não foi possível abrir no aplicativo do sistema: {message}",
-			memoryOpenNativeUnavailable: "Este ambiente não pode abrir arquivos no aplicativo do sistema"
+			memoryOpenNativeUnavailable: "Este ambiente não pode abrir arquivos no aplicativo do sistema",
+			memoryMaintenanceButton: "Otimizar memória",
+			memoryMaintenanceDueTitle: "Hora de otimizar a memória",
+			memoryMaintenanceDueHint: "Desde a última manutenção: {days} dia(s); {writes} entradas novas ou reforçadas",
+			memoryMaintenanceDueNeverHint: "Nunca otimizada; {writes} entradas novas ou reforçadas",
+			memoryMaintenanceNotDueHint: "Abaixo do limite de manutenção — otimizar agora mesmo assim?",
+			memoryMaintenanceConfirmTitle: "Otimizar memória",
+			memoryMaintenanceConfirmHint: "Combina duplicatas, desativa entradas obsoletas e exclui as de baixo valor. As exclusões são copiadas e toda a execução pode ser desfeita.",
+			memoryMaintenanceRun: "Otimizar agora",
+			memoryMaintenanceRunning: "Otimizando…",
+			memoryMaintenanceResultTitle: "Otimização concluída",
+			memoryMaintenanceResult: "Combinadas {merges}, desativadas {staled}, restauradas {restored}, excluídas {deleted}",
+			memoryMaintenanceFailed: "Falha na otimização: {message}",
+			memoryMaintenanceUndo: "Desfazer esta execução",
+			memoryMaintenanceUndone: "Execução desfeita",
+			memoryMaintenanceUndoFailed: "Falha ao desfazer: {message}",
+			memoryMaintenanceRecent: "Execuções recentes",
+			memoryMaintenanceEmpty: "Nenhuma execução de manutenção ainda",
+			memoryMaintenanceStatusCompleted: "Concluída",
+			memoryMaintenanceStatusFailed: "Falhou",
+			memoryMaintenanceStatusEmpty: "Sem alterações",
+			memoryMaintenanceStatusUndone: "Desfeita",
+			memoryMaintenanceModelInherit: "Deixe vazio para herdar o modelo padrão do host",
+			memoryMaintenanceProvider: "Provedor do modelo de manutenção",
+			memoryMaintenanceModel: "Modelo de manutenção",
+			memoryMaintenanceLater: "Agora não"
 		};
 		// src/client/api.ts
 		/** Envelope error carrying the host's stable code. */
@@ -5498,11 +5698,11 @@ window.__ModuleLoader__.load({
 				]
 			});
 		}
-		/** Normalize text before bigram extraction: lowercase, drop whitespace. */
+		/** 归一化：小写并去掉全部空白。 */
 		function normalizeText(value) {
 			return value.toLowerCase().replace(/\s+/gu, "");
 		}
-		/** Character bigram set of one text; short texts yield a single fallback token. */
+		/** 一个文本的字符 bigram 集合；单字文本退化成一个标记。 */
 		function bigramsOf(value) {
 			const flat = normalizeText(value);
 			const grams = /* @__PURE__ */ new Set();
@@ -5513,15 +5713,30 @@ window.__ModuleLoader__.load({
 			for (let index = 0; index < flat.length - 1; index += 1) grams.add(flat.slice(index, index + 2));
 			return grams;
 		}
-		/** Bigram-Jaccard similarity of two texts in `[0, 1]`. */
-		function similarity(left, right) {
-			const leftGrams = bigramsOf(left);
-			const rightGrams = bigramsOf(right);
-			if (leftGrams.size === 0 || rightGrams.size === 0) return 0;
+		/** 两个 bigram 集合的 Jaccard 相似度，落在 `[0, 1]`。 */
+		function jaccard(left, right) {
+			if (left.size === 0 || right.size === 0) return 0;
 			let shared = 0;
-			for (const gram of leftGrams) if (rightGrams.has(gram)) shared += 1;
-			return shared / (leftGrams.size + rightGrams.size - shared);
+			for (const gram of left) if (right.has(gram)) shared += 1;
+			return shared / (left.size + right.size - shared);
 		}
+		/** 两段文本的 bigram-Jaccard 相似度，落在 `[0, 1]`。 */
+		function similarity(left, right) {
+			return jaccard(bigramsOf(left), bigramsOf(right));
+		}
+		// src/client/audit.ts
+		/**
+		* Pure client-side rules of the memory health audit: stale candidates,
+		* suspected duplicate pairs, and low-value entries, computed in the browser
+		* over a full list fetch (no host round-trips per rule, no model embedding).
+		*
+		* Similarity is character-bigram Jaccard over the concatenated
+		* name + description + content, which works for CJK and Latin text alike; the
+		* pure rule lives in `shared/memory-similarity.ts` so the host-side maintenance
+		* run can reuse it. Re-exported here to keep the historical import surface.
+		*
+		* @module dsh-agent-extension/client/audit
+		*/
 		/** Full similarity text of one entry. */
 		function auditTextOf(entry) {
 			return `${entry.name} ${entry.description} ${entry.content}`;
@@ -5915,13 +6130,15 @@ window.__ModuleLoader__.load({
 				indexLimitGlobal: 20,
 				indexLimitProject: 20,
 				maxChars: 3e3,
+				maintenanceProvider: "",
+				maintenanceModel: "",
 				updatedAt: (/* @__PURE__ */ new Date()).toISOString()
 			};
 		}
 		/** 召回索引的字符预算上限（ADR-0005）：设置只能调小，不能突破。 */
 		const RECALL_MAX_CHARS = 3e3;
 		// \0dsh-css:E:\workspace\dsh-plugins\packages\dsh-agent-extension\src\client\memory.module.css.mjs
-		const css$2 = ".Iw3mRa_view{gap:20px}.Iw3mRa_topbar{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px 16px;display:flex}.Iw3mRa_scopeRow{flex:none;align-items:center;gap:12px;min-width:0;display:flex}.Iw3mRa_segmented{flex-wrap:wrap;align-items:center;gap:6px;display:inline-flex}.Iw3mRa_projectSelect{flex:0 220px;min-width:0}.Iw3mRa_actions{flex-wrap:wrap;align-items:center;gap:8px;margin-left:auto;display:flex}.Iw3mRa_searchWrap{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-3);min-width:200px;max-width:480px;height:36px;color:var(--dsw-alias-label-tertiary);flex:220px;align-items:center;gap:8px;padding:0 10px;display:flex}.Iw3mRa_searchWrap>svg{flex:none}.Iw3mRa_searchInput{min-width:0;height:100%;color:var(--dsw-alias-label-primary);font:inherit;background:0 0;border:0;outline:none;flex:1;padding:0;font-size:14px}.Iw3mRa_searchInput::placeholder{color:var(--dsw-alias-label-tertiary)}.Iw3mRa_searchInput::-webkit-search-decoration,.Iw3mRa_searchInput::-webkit-search-cancel-button{-webkit-appearance:none;display:none}.Iw3mRa_searchClear{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_searchClear:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.Iw3mRa_searchClear:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.Iw3mRa_filterTrigger{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);background:0 0;border:0;justify-content:center;align-items:center;display:flex}.Iw3mRa_filterTrigger:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_filterTrigger:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.Iw3mRa_filterDot{corner-shape:round;background:var(--dsw-alias-state-business-primary);border-radius:999px;width:6px;height:6px;position:absolute;top:2px;right:2px}.Iw3mRa_filterChips{flex:none;align-items:center;gap:6px;display:flex}.Iw3mRa_filterChip{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:160px;color:var(--dsw-alias-label-secondary);border-radius:999px;align-items:center;gap:2px;padding:0 4px 0 8px;font-size:12px;line-height:22px;display:inline-flex}.Iw3mRa_filterChipText{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.Iw3mRa_filterChipClear{corner-shape:round;width:18px;height:18px;color:inherit;cursor:pointer;background:0 0;border:0;border-radius:999px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_filterChipClear:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_filterChipClear:hover{background:var(--dsw-alias-border-l3);color:var(--dsw-alias-label-primary)}}.Iw3mRa_listPane{flex-direction:column;gap:8px;min-width:0;display:flex}.Iw3mRa_listHead{justify-content:space-between;align-items:baseline;gap:8px;padding:0 8px 8px;display:flex}.Iw3mRa_sectionTitle{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:16px;font-weight:500}.Iw3mRa_sectionCount{white-space:nowrap;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.Iw3mRa_listHeadTools{align-items:center;gap:8px;display:flex}.Iw3mRa_entryGrid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;display:grid}.Iw3mRa_entryCard{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-3);min-width:0;color:inherit;font:inherit;text-align:left;cursor:pointer;flex-direction:column;gap:6px;padding:14px;transition:background .12s,border-color .12s;display:flex}.Iw3mRa_entryCard:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.Iw3mRa_entryCard:hover{border-color:var(--dsw-alias-border-l4);background:var(--dsw-alias-interactive-bg-hover)}}.Iw3mRa_entryTitleRow{align-items:center;gap:6px;min-width:0;display:flex}.Iw3mRa_entryName{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px;font-weight:500}.Iw3mRa_entryImportance{corner-shape:round;background:color-mix(in srgb, var(--dsw-alias-state-warn-primary) 14%, transparent);color:var(--dsw-alias-state-warn-primary);border-radius:999px;flex:none;padding:0 6px;font-size:11px;font-weight:600;line-height:18px}.Iw3mRa_entryDesc{-webkit-line-clamp:2;overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-secondary);-webkit-box-orient:vertical;font-size:13px;display:-webkit-box;overflow:hidden}.Iw3mRa_entryMeta{flex-wrap:wrap;align-items:center;gap:6px;display:flex}.Iw3mRa_entryTime{color:var(--dsw-alias-label-tertiary);margin-left:auto;font-size:12px}.Iw3mRa_entryTag{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:120px;color:var(--dsw-alias-label-secondary);font:inherit;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;border:0;border-radius:999px;flex:none;padding:0 6px;font-size:11px;line-height:18px;overflow:hidden}.Iw3mRa_entryTag:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_entryTag:hover{background:var(--dsw-alias-border-l3);color:var(--dsw-alias-label-primary)}}.Iw3mRa_entryTagMore{color:var(--dsw-alias-label-tertiary);flex:none;font-size:11px}.Iw3mRa_editor{flex-direction:column;gap:12px;min-width:0;display:flex}.Iw3mRa_editorStatus{align-items:center;display:flex}.Iw3mRa_formGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;display:grid}@container (width<=720px){.Iw3mRa_formGrid{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_field{flex-direction:column;gap:4px;min-width:0;display:flex}.Iw3mRa_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500}.Iw3mRa_fieldHint{color:var(--dsw-alias-label-tertiary);font-size:11px}.Iw3mRa_input{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:100%;min-width:0;height:36px;color:var(--dsw-alias-label-primary);font:inherit;padding:0 10px;font-size:14px}.Iw3mRa_input:focus-visible,.Iw3mRa_textarea:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}.Iw3mRa_input::-webkit-inner-spin-button,.Iw3mRa_input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.Iw3mRa_input[type=number]{appearance:textfield}.Iw3mRa_rangeRow{align-items:center;gap:8px;display:flex}.Iw3mRa_rangeInput{-webkit-appearance:none;appearance:none;cursor:pointer;background:0 0;flex:1;min-width:0;height:36px;margin:0;padding:0}.Iw3mRa_rangeInput:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px;border-radius:var(--dsw-radius-sm)}.Iw3mRa_rangeInput::-webkit-slider-runnable-track{corner-shape:round;background:linear-gradient(to right, var(--dsw-alias-brand-primary) 0 var(--range-fill,50%), var(--dsw-alias-border-l3) var(--range-fill,50%) 100%);border-radius:999px;height:4px}.Iw3mRa_rangeInput::-webkit-slider-thumb{-webkit-appearance:none;corner-shape:round;background:var(--dsw-alias-brand-primary);border:0;border-radius:50%;width:16px;height:16px;margin-top:-6px}.Iw3mRa_rangeInput::-moz-range-track{corner-shape:round;background:var(--dsw-alias-border-l3);border-radius:999px;height:4px}.Iw3mRa_rangeInput::-moz-range-progress{corner-shape:round;background:var(--dsw-alias-brand-primary);border-radius:999px;height:4px}.Iw3mRa_rangeInput::-moz-range-thumb{corner-shape:round;background:var(--dsw-alias-brand-primary);border:0;border-radius:50%;width:16px;height:16px}.Iw3mRa_rangeValue{text-align:right;font-variant-numeric:tabular-nums;min-width:28px;color:var(--dsw-alias-label-primary);flex:none;font-size:13px}.Iw3mRa_tagBox{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);cursor:text;flex-wrap:wrap;align-items:center;gap:6px;min-height:36px;padding:4px 8px;display:flex}.Iw3mRa_tagBox:focus-within{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}.Iw3mRa_tagChip{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:160px;color:var(--dsw-alias-label-primary);border-radius:999px;align-items:center;gap:2px;padding:0 4px 0 8px;font-size:12px;line-height:22px;display:inline-flex}.Iw3mRa_tagChipText{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.Iw3mRa_tagChipRemove{corner-shape:round;width:16px;height:16px;color:var(--dsw-alias-label-tertiary);cursor:pointer;background:0 0;border:0;border-radius:999px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_tagChipRemove:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_tagChipRemove:hover{color:var(--dsw-alias-label-primary)}}.Iw3mRa_tagInput{min-width:80px;height:26px;color:var(--dsw-alias-label-primary);font:inherit;background:0 0;border:0;outline:none;flex:80px;padding:0;font-size:13px}.Iw3mRa_readonlyBox{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;min-height:36px;padding:8px 10px;display:flex}.Iw3mRa_readonlyHint{color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;font-size:13px}.Iw3mRa_textarea{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:100%;min-height:180px;color:var(--dsw-alias-label-primary);font:inherit;resize:vertical;padding:8px 10px;font-size:14px;line-height:1.5}.Iw3mRa_formActions{flex-wrap:wrap;align-items:center;gap:8px;padding-top:4px;display:flex}.Iw3mRa_formActionsRight{flex-wrap:wrap;flex:auto;justify-content:flex-end;align-items:center;gap:8px;min-width:0;display:flex}.Iw3mRa_confirmArea{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;display:flex}.Iw3mRa_confirmText{color:var(--dsw-alias-state-error-primary);overflow-wrap:anywhere;font-size:13px}.Iw3mRa_dialogPortal{z-index:40;position:fixed;inset:0}.Iw3mRa_settingList{flex-direction:column;display:flex}.Iw3mRa_settingRow{justify-content:space-between;align-items:center;gap:12px;padding:8px 0;display:flex}.Iw3mRa_settingRow+.Iw3mRa_settingRow{border-top:.5px solid var(--dsw-alias-border-l3)}.Iw3mRa_settingLabel{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px}.Iw3mRa_numberGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;display:grid}@container (width<=720px){.Iw3mRa_numberGrid{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_divider{background:var(--dsw-alias-border-l2);height:.5px}.Iw3mRa_statsTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:14px;font-weight:500}.Iw3mRa_statGrid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;display:grid}.Iw3mRa_stat{border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);flex-direction:column;gap:2px;padding:10px 12px;display:flex}.Iw3mRa_statLabel{color:var(--dsw-alias-label-secondary);font-size:12px}.Iw3mRa_statValue{color:var(--dsw-alias-label-primary);font-size:16px;font-weight:600}.Iw3mRa_auditGroups{flex-direction:column;gap:16px;display:flex}.Iw3mRa_auditGroup{flex-direction:column;gap:6px;display:flex}.Iw3mRa_auditGroupTitle{color:var(--dsw-alias-label-primary);align-items:center;gap:6px;margin:0;font-size:14px;font-weight:500;display:flex}.Iw3mRa_auditCount{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);border-radius:999px;flex:none;padding:0 6px;font-size:11px;line-height:18px}.Iw3mRa_auditHint{min-width:0;color:var(--dsw-alias-label-tertiary);font-size:12px}.Iw3mRa_auditRow{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);cursor:pointer;align-items:flex-start;gap:8px;padding:10px;display:flex}.Iw3mRa_auditCheck{width:16px;height:16px;accent-color:var(--dsw-alias-state-business-primary);flex:none;margin:2px 0 0}.Iw3mRa_auditSummary{flex-direction:column;flex:1;gap:6px;min-width:0;display:flex}.Iw3mRa_auditPair{flex-direction:column;gap:6px;display:flex}.Iw3mRa_auditPairKeep{color:var(--dsw-alias-state-business-primary);font-size:12px}.Iw3mRa_auditBar{border-top:.5px solid var(--dsw-alias-border-l2);flex-wrap:wrap;align-items:center;gap:8px;margin-top:4px;padding-top:8px;display:flex}.Iw3mRa_auditBarCount{min-width:0;color:var(--dsw-alias-label-secondary);flex:auto;font-size:13px}.Iw3mRa_errorBox{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);flex-wrap:wrap;align-items:flex-start;gap:8px;padding:10px 12px;font-size:13px;display:flex}.Iw3mRa_errorText{overflow-wrap:anywhere;white-space:pre-wrap;flex:160px;min-width:0}";
+		const css$2 = ".Iw3mRa_view{gap:20px}.Iw3mRa_topbar{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px 16px;display:flex}.Iw3mRa_scopeRow{flex:none;align-items:center;gap:12px;min-width:0;display:flex}.Iw3mRa_segmented{flex-wrap:wrap;align-items:center;gap:6px;display:inline-flex}.Iw3mRa_projectSelect{flex:0 220px;min-width:0}.Iw3mRa_actions{flex-wrap:wrap;align-items:center;gap:8px;margin-left:auto;display:flex}.Iw3mRa_searchWrap{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-3);min-width:200px;max-width:480px;height:36px;color:var(--dsw-alias-label-tertiary);flex:220px;align-items:center;gap:8px;padding:0 10px;display:flex}.Iw3mRa_searchWrap>svg{flex:none}.Iw3mRa_searchInput{min-width:0;height:100%;color:var(--dsw-alias-label-primary);font:inherit;background:0 0;border:0;outline:none;flex:1;padding:0;font-size:14px}.Iw3mRa_searchInput::placeholder{color:var(--dsw-alias-label-tertiary)}.Iw3mRa_searchInput::-webkit-search-decoration,.Iw3mRa_searchInput::-webkit-search-cancel-button{-webkit-appearance:none;display:none}.Iw3mRa_searchClear{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);cursor:pointer;background:0 0;border:0;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_searchClear:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.Iw3mRa_searchClear:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.Iw3mRa_filterTrigger{border-radius:var(--dsw-radius-sm);width:24px;height:24px;color:var(--dsw-alias-label-secondary);background:0 0;border:0;justify-content:center;align-items:center;display:flex}.Iw3mRa_filterTrigger:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_filterTrigger:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-primary)}}.Iw3mRa_filterDot{corner-shape:round;background:var(--dsw-alias-state-business-primary);border-radius:999px;width:6px;height:6px;position:absolute;top:2px;right:2px}.Iw3mRa_filterChips{flex:none;align-items:center;gap:6px;display:flex}.Iw3mRa_filterChip{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:160px;color:var(--dsw-alias-label-secondary);border-radius:999px;align-items:center;gap:2px;padding:0 4px 0 8px;font-size:12px;line-height:22px;display:inline-flex}.Iw3mRa_filterChipText{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.Iw3mRa_filterChipClear{corner-shape:round;width:18px;height:18px;color:inherit;cursor:pointer;background:0 0;border:0;border-radius:999px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_filterChipClear:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_filterChipClear:hover{background:var(--dsw-alias-border-l3);color:var(--dsw-alias-label-primary)}}.Iw3mRa_listPane{flex-direction:column;gap:8px;min-width:0;display:flex}.Iw3mRa_listHead{justify-content:space-between;align-items:baseline;gap:8px;padding:0 8px 8px;display:flex}.Iw3mRa_sectionTitle{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);margin:0;font-size:16px;font-weight:500}.Iw3mRa_sectionCount{white-space:nowrap;color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.Iw3mRa_listHeadTools{align-items:center;gap:8px;display:flex}.Iw3mRa_entryGrid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;display:grid}.Iw3mRa_entryCard{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-3);min-width:0;color:inherit;font:inherit;text-align:left;cursor:pointer;flex-direction:column;gap:6px;padding:14px;transition:background .12s,border-color .12s;display:flex}.Iw3mRa_entryCard:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px}@media (hover:hover){.Iw3mRa_entryCard:hover{border-color:var(--dsw-alias-border-l4);background:var(--dsw-alias-interactive-bg-hover)}}.Iw3mRa_entryTitleRow{align-items:center;gap:6px;min-width:0;display:flex}.Iw3mRa_entryName{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px;font-weight:500}.Iw3mRa_entryImportance{corner-shape:round;background:color-mix(in srgb, var(--dsw-alias-state-warn-primary) 14%, transparent);color:var(--dsw-alias-state-warn-primary);border-radius:999px;flex:none;padding:0 6px;font-size:11px;font-weight:600;line-height:18px}.Iw3mRa_entryDesc{-webkit-line-clamp:2;overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-secondary);-webkit-box-orient:vertical;font-size:13px;display:-webkit-box;overflow:hidden}.Iw3mRa_entryMeta{flex-wrap:wrap;align-items:center;gap:6px;display:flex}.Iw3mRa_entryTime{color:var(--dsw-alias-label-tertiary);margin-left:auto;font-size:12px}.Iw3mRa_entryTag{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:120px;color:var(--dsw-alias-label-secondary);font:inherit;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;border:0;border-radius:999px;flex:none;padding:0 6px;font-size:11px;line-height:18px;overflow:hidden}.Iw3mRa_entryTag:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_entryTag:hover{background:var(--dsw-alias-border-l3);color:var(--dsw-alias-label-primary)}}.Iw3mRa_entryTagMore{color:var(--dsw-alias-label-tertiary);flex:none;font-size:11px}.Iw3mRa_editor{flex-direction:column;gap:12px;min-width:0;display:flex}.Iw3mRa_editorStatus{align-items:center;display:flex}.Iw3mRa_formGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;display:grid}@container (width<=720px){.Iw3mRa_formGrid{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_field{flex-direction:column;gap:4px;min-width:0;display:flex}.Iw3mRa_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500}.Iw3mRa_fieldHint{color:var(--dsw-alias-label-tertiary);font-size:11px}.Iw3mRa_input{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:100%;min-width:0;height:36px;color:var(--dsw-alias-label-primary);font:inherit;padding:0 10px;font-size:14px}.Iw3mRa_input:focus-visible,.Iw3mRa_textarea:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}.Iw3mRa_input::-webkit-inner-spin-button,.Iw3mRa_input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.Iw3mRa_input[type=number]{appearance:textfield}.Iw3mRa_rangeRow{align-items:center;gap:8px;display:flex}.Iw3mRa_rangeInput{-webkit-appearance:none;appearance:none;cursor:pointer;background:0 0;flex:1;min-width:0;height:36px;margin:0;padding:0}.Iw3mRa_rangeInput:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:2px;border-radius:var(--dsw-radius-sm)}.Iw3mRa_rangeInput::-webkit-slider-runnable-track{corner-shape:round;background:linear-gradient(to right, var(--dsw-alias-brand-primary) 0 var(--range-fill,50%), var(--dsw-alias-border-l3) var(--range-fill,50%) 100%);border-radius:999px;height:4px}.Iw3mRa_rangeInput::-webkit-slider-thumb{-webkit-appearance:none;corner-shape:round;background:var(--dsw-alias-brand-primary);border:0;border-radius:50%;width:16px;height:16px;margin-top:-6px}.Iw3mRa_rangeInput::-moz-range-track{corner-shape:round;background:var(--dsw-alias-border-l3);border-radius:999px;height:4px}.Iw3mRa_rangeInput::-moz-range-progress{corner-shape:round;background:var(--dsw-alias-brand-primary);border-radius:999px;height:4px}.Iw3mRa_rangeInput::-moz-range-thumb{corner-shape:round;background:var(--dsw-alias-brand-primary);border:0;border-radius:50%;width:16px;height:16px}.Iw3mRa_rangeValue{text-align:right;font-variant-numeric:tabular-nums;min-width:28px;color:var(--dsw-alias-label-primary);flex:none;font-size:13px}.Iw3mRa_tagBox{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);cursor:text;flex-wrap:wrap;align-items:center;gap:6px;min-height:36px;padding:4px 8px;display:flex}.Iw3mRa_tagBox:focus-within{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}.Iw3mRa_tagChip{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);max-width:160px;color:var(--dsw-alias-label-primary);border-radius:999px;align-items:center;gap:2px;padding:0 4px 0 8px;font-size:12px;line-height:22px;display:inline-flex}.Iw3mRa_tagChipText{text-overflow:ellipsis;white-space:nowrap;min-width:0;overflow:hidden}.Iw3mRa_tagChipRemove{corner-shape:round;width:16px;height:16px;color:var(--dsw-alias-label-tertiary);cursor:pointer;background:0 0;border:0;border-radius:999px;flex:none;justify-content:center;align-items:center;padding:0;display:flex}.Iw3mRa_tagChipRemove:focus-visible{outline:var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color,var(--dsw-alias-state-business-primary));outline-offset:1px}@media (hover:hover){.Iw3mRa_tagChipRemove:hover{color:var(--dsw-alias-label-primary)}}.Iw3mRa_tagInput{min-width:80px;height:26px;color:var(--dsw-alias-label-primary);font:inherit;background:0 0;border:0;outline:none;flex:80px;padding:0;font-size:13px}.Iw3mRa_readonlyBox{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;min-height:36px;padding:8px 10px;display:flex}.Iw3mRa_readonlyHint{color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;font-size:13px}.Iw3mRa_textarea{box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);width:100%;min-height:180px;color:var(--dsw-alias-label-primary);font:inherit;resize:vertical;padding:8px 10px;font-size:14px;line-height:1.5}.Iw3mRa_formActions{flex-wrap:wrap;align-items:center;gap:8px;padding-top:4px;display:flex}.Iw3mRa_formActionsRight{flex-wrap:wrap;flex:auto;justify-content:flex-end;align-items:center;gap:8px;min-width:0;display:flex}.Iw3mRa_confirmArea{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;display:flex}.Iw3mRa_confirmText{color:var(--dsw-alias-state-error-primary);overflow-wrap:anywhere;font-size:13px}.Iw3mRa_dialogPortal{z-index:40;position:fixed;inset:0}.Iw3mRa_settingList{flex-direction:column;display:flex}.Iw3mRa_settingRow{justify-content:space-between;align-items:center;gap:12px;padding:8px 0;display:flex}.Iw3mRa_settingRow+.Iw3mRa_settingRow{border-top:.5px solid var(--dsw-alias-border-l3)}.Iw3mRa_settingLabel{overflow-wrap:anywhere;min-width:0;color:var(--dsw-alias-label-primary);font-size:14px}.Iw3mRa_numberGrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;display:grid}@container (width<=720px){.Iw3mRa_numberGrid{grid-template-columns:minmax(0,1fr)}}.Iw3mRa_divider{background:var(--dsw-alias-border-l2);height:.5px}.Iw3mRa_statsTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:14px;font-weight:500}.Iw3mRa_statGrid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;display:grid}.Iw3mRa_stat{border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-interactive-bg-hover);flex-direction:column;gap:2px;padding:10px 12px;display:flex}.Iw3mRa_statLabel{color:var(--dsw-alias-label-secondary);font-size:12px}.Iw3mRa_statValue{color:var(--dsw-alias-label-primary);font-size:16px;font-weight:600}.Iw3mRa_auditGroups{flex-direction:column;gap:16px;display:flex}.Iw3mRa_auditGroup{flex-direction:column;gap:6px;display:flex}.Iw3mRa_auditGroupTitle{color:var(--dsw-alias-label-primary);align-items:center;gap:6px;margin:0;font-size:14px;font-weight:500;display:flex}.Iw3mRa_auditCount{corner-shape:round;background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);border-radius:999px;flex:none;padding:0 6px;font-size:11px;line-height:18px}.Iw3mRa_auditHint{min-width:0;color:var(--dsw-alias-label-tertiary);font-size:12px}.Iw3mRa_auditRow{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);cursor:pointer;align-items:flex-start;gap:8px;padding:10px;display:flex}.Iw3mRa_auditCheck{width:16px;height:16px;accent-color:var(--dsw-alias-state-business-primary);flex:none;margin:2px 0 0}.Iw3mRa_auditSummary{flex-direction:column;flex:1;gap:6px;min-width:0;display:flex}.Iw3mRa_auditPair{flex-direction:column;gap:6px;display:flex}.Iw3mRa_auditPairKeep{color:var(--dsw-alias-state-business-primary);font-size:12px}.Iw3mRa_auditBar{border-top:.5px solid var(--dsw-alias-border-l2);flex-wrap:wrap;align-items:center;gap:8px;margin-top:4px;padding-top:8px;display:flex}.Iw3mRa_auditBarCount{min-width:0;color:var(--dsw-alias-label-secondary);flex:auto;font-size:13px}.Iw3mRa_errorBox{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);flex-wrap:wrap;align-items:flex-start;gap:8px;padding:10px 12px;font-size:13px;display:flex}.Iw3mRa_errorText{overflow-wrap:anywhere;white-space:pre-wrap;flex:160px;min-width:0}.Iw3mRa_maintenanceStack{flex-direction:column;gap:12px;min-width:0;display:flex}.Iw3mRa_maintenanceNotice{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-primary);overflow-wrap:anywhere;padding:10px 12px;font-size:13px;line-height:1.5}.Iw3mRa_maintenanceHint{color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;font-size:12px}.Iw3mRa_maintenanceRunning{color:var(--dsw-alias-label-secondary);align-items:center;gap:8px;font-size:13px;display:flex}.Iw3mRa_maintenanceSection{border-top:.5px solid var(--dsw-alias-border-l2);flex-direction:column;gap:6px;min-width:0;padding-top:8px;display:flex}.Iw3mRa_maintenanceResult{flex-wrap:wrap;align-items:center;gap:8px;min-width:0;display:flex}.Iw3mRa_maintenanceResultCounts{min-width:0;color:var(--dsw-alias-label-primary);overflow-wrap:anywhere;font-size:13px}.Iw3mRa_maintenanceError{border:.5px solid color-mix(in srgb, var(--dsw-alias-state-error-primary) 35%, transparent);border-radius:var(--dsw-radius-sm);background:color-mix(in srgb, var(--dsw-alias-state-error-primary) 10%, transparent);color:var(--dsw-alias-state-error-primary);overflow-wrap:anywhere;white-space:pre-wrap;padding:10px 12px;font-size:13px}.Iw3mRa_maintenanceList{flex-direction:column;gap:6px;display:flex}.Iw3mRa_maintenanceRow{border:.5px solid var(--dsw-alias-border-l3);border-radius:var(--dsw-radius-sm);background:var(--dsw-alias-bg-layer-3);flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;display:flex}.Iw3mRa_maintenanceRowTime{color:var(--dsw-alias-label-tertiary);flex:none;font-size:12px}.Iw3mRa_maintenanceRowMain{min-width:0;color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;flex:auto;font-size:12px}";
 		const tagId$2 = "dsh-agent-extension/memory.module.css";
 		if (typeof document !== "undefined" && document.querySelector("style[data-plugin-css=" + JSON.stringify(tagId$2) + "]") === null) {
 			const tag = document.createElement("style");
@@ -5978,6 +6195,18 @@ window.__ModuleLoader__.load({
 			"listHead": "Iw3mRa_listHead",
 			"listHeadTools": "Iw3mRa_listHeadTools",
 			"listPane": "Iw3mRa_listPane",
+			"maintenanceError": "Iw3mRa_maintenanceError",
+			"maintenanceHint": "Iw3mRa_maintenanceHint",
+			"maintenanceList": "Iw3mRa_maintenanceList",
+			"maintenanceNotice": "Iw3mRa_maintenanceNotice",
+			"maintenanceResult": "Iw3mRa_maintenanceResult",
+			"maintenanceResultCounts": "Iw3mRa_maintenanceResultCounts",
+			"maintenanceRow": "Iw3mRa_maintenanceRow",
+			"maintenanceRowMain": "Iw3mRa_maintenanceRowMain",
+			"maintenanceRowTime": "Iw3mRa_maintenanceRowTime",
+			"maintenanceRunning": "Iw3mRa_maintenanceRunning",
+			"maintenanceSection": "Iw3mRa_maintenanceSection",
+			"maintenanceStack": "Iw3mRa_maintenanceStack",
 			"numberGrid": "Iw3mRa_numberGrid",
 			"projectSelect": "Iw3mRa_projectSelect",
 			"rangeInput": "Iw3mRa_rangeInput",
@@ -6021,7 +6250,9 @@ window.__ModuleLoader__.load({
 		* statistics and the recent-capture list with its one-shot undo live there
 		* too), and a
 		* health-audit dialog (stale / duplicate / low-value findings with batch
-		* archive / deactivate / delete reusing the existing endpoints).
+		* archive / deactivate / delete reusing the existing endpoints), and the
+		* maintenance dialog (threshold prompt, confirm / run / result, and the
+		* recent-run list with its whole-run undo).
 		*
 		* The view owns its local state (the hub snapshot only carries the section
 		* tab) and talks to the host's `/memory/*` routes through `api()`; all copy
@@ -6051,6 +6282,8 @@ window.__ModuleLoader__.load({
 		const DEFAULT_SETTINGS = defaultSettings();
 		/** 「最近捕获」最多展示的条数（stats.recentCaptures 顺序即最新在前）。 */
 		const RECENT_CAPTURE_ROWS = 5;
+		/** 维护对话框里展示的最近运行条数。 */
+		const RECENT_MAINTENANCE_ROWS = 3;
 		const EMPTY_FORM = {
 			name: "",
 			description: "",
@@ -6123,7 +6356,7 @@ window.__ModuleLoader__.load({
 			const time = Date.parse(value);
 			return Number.isFinite(time) ? time : 0;
 		}
-		/** 归一化设置块。 */
+		/** 归一化设置块（维护模型缺省为空串：继承宿主默认模型）。 */
 		function normalizeSettings(raw) {
 			const item = record(raw);
 			return {
@@ -6133,6 +6366,8 @@ window.__ModuleLoader__.load({
 				indexLimitGlobal: integer(item.indexLimitGlobal, 0, 20, DEFAULT_SETTINGS.indexLimitGlobal),
 				indexLimitProject: integer(item.indexLimitProject, 0, 20, DEFAULT_SETTINGS.indexLimitProject),
 				maxChars: integer(item.maxChars, 1e3, RECALL_MAX_CHARS, DEFAULT_SETTINGS.maxChars),
+				maintenanceProvider: text(item.maintenanceProvider),
+				maintenanceModel: text(item.maintenanceModel),
 				updatedAt: text(item.updatedAt)
 			};
 		}
@@ -6188,6 +6423,59 @@ window.__ModuleLoader__.load({
 				recentInjections,
 				recentCaptures
 			};
+		}
+		/** 归一化一次维护运行；未知状态按「无变更」处理。 */
+		function normalizeMaintenanceRun(raw) {
+			const item = record(raw);
+			const counts = record(item.counts);
+			return {
+				id: text(item.id),
+				at: text(item.at),
+				status: item.status === "completed" || item.status === "failed" || item.status === "empty" ? item.status : "empty",
+				counts: {
+					candidates: integer(counts.candidates, 0, Number.MAX_SAFE_INTEGER, 0),
+					merges: integer(counts.merges, 0, Number.MAX_SAFE_INTEGER, 0),
+					staled: integer(counts.staled, 0, Number.MAX_SAFE_INTEGER, 0),
+					restored: integer(counts.restored, 0, Number.MAX_SAFE_INTEGER, 0),
+					deleted: integer(counts.deleted, 0, Number.MAX_SAFE_INTEGER, 0)
+				},
+				error: text(item.error),
+				undone: item.undone === true
+			};
+		}
+		/** 归一化维护概览；未知/失败载荷读作「未达阈值」。 */
+		function normalizeMaintenance(raw) {
+			const item = record(raw);
+			return {
+				due: item.due === true,
+				reason: text(item.reason),
+				writesSince: integer(item.writesSince, 0, Number.MAX_SAFE_INTEGER, 0),
+				daysSince: integer(item.daysSince, -1, Number.MAX_SAFE_INTEGER, -1),
+				recentRuns: (Array.isArray(item.recentRuns) ? item.recentRuns : []).map(normalizeMaintenanceRun)
+			};
+		}
+		/** 维护状态文案 key。 */
+		function maintenanceStatusKey(status) {
+			if (status === "completed") return "memoryMaintenanceStatusCompleted";
+			if (status === "failed") return "memoryMaintenanceStatusFailed";
+			return "memoryMaintenanceStatusEmpty";
+		}
+		/** 维护状态徽章色。 */
+		function maintenanceTone(run) {
+			if (run.undone) return "plain";
+			return run.status === "completed" ? "success" : run.status === "failed" ? "error" : "plain";
+		}
+		/** 阈值原因：优先本地化的条数/天数，服务端 reason 只作兜底。 */
+		function maintenanceDueText(info, t) {
+			if (info.daysSince < 0) return t("memoryMaintenanceDueNeverHint", { writes: info.writesSince });
+			if (info.writesSince > 0 || info.daysSince > 0) return t("memoryMaintenanceDueHint", {
+				writes: info.writesSince,
+				days: info.daysSince
+			});
+			return info.reason !== "" ? info.reason : t("memoryMaintenanceDueHint", {
+				writes: 0,
+				days: 0
+			});
 		}
 		/** Form values of one loaded entry. */
 		function formOf(entry) {
@@ -6292,6 +6580,13 @@ window.__ModuleLoader__.load({
 			const [refreshIndexBusy, setRefreshIndexBusy] = (0, react.useState)(false);
 			const [settings, setSettings] = (0, react.useState)(DEFAULT_SETTINGS);
 			const [settingsOpen, setSettingsOpen] = (0, react.useState)(false);
+			const [maintenance, setMaintenance] = (0, react.useState)(null);
+			const [maintenanceOpen, setMaintenanceOpen] = (0, react.useState)(false);
+			const [maintenancePrompt, setMaintenancePrompt] = (0, react.useState)(false);
+			const [maintenanceBusy, setMaintenanceBusy] = (0, react.useState)(false);
+			const [maintenanceRunning, setMaintenanceRunning] = (0, react.useState)(false);
+			const [maintenanceUndoBusy, setMaintenanceUndoBusy] = (0, react.useState)(false);
+			const [maintenanceResult, setMaintenanceResult] = (0, react.useState)(null);
 			const [undoBusyId, setUndoBusyId] = (0, react.useState)(null);
 			const [undoneCaptureIds, setUndoneCaptureIds] = (0, react.useState)([]);
 			const [tagFilter, setTagFilter] = (0, react.useState)("");
@@ -6308,6 +6603,8 @@ window.__ModuleLoader__.load({
 			const settingsRef = (0, react.useRef)(DEFAULT_SETTINGS);
 			const savedSettingsRef = (0, react.useRef)(DEFAULT_SETTINGS);
 			const settingsTimer = (0, react.useRef)(null);
+			const maintenanceOpenRef = (0, react.useRef)(false);
+			const maintenancePromptedRef = (0, react.useRef)(false);
 			(0, react.useEffect)(() => () => {
 				if (settingsTimer.current !== null) clearTimeout(settingsTimer.current);
 			}, []);
@@ -6342,6 +6639,28 @@ window.__ModuleLoader__.load({
 					cancelled = true;
 				};
 			}, [stateToken, t]);
+			(0, react.useEffect)(() => {
+				if (!stateReady) return;
+				let cancelled = false;
+				(async () => {
+					try {
+						const data = await api("/memory/maintenance");
+						if (cancelled) return;
+						const info = normalizeMaintenance(data);
+						setMaintenance(info);
+						if (info.due && !maintenancePromptedRef.current && !maintenanceOpenRef.current) {
+							maintenancePromptedRef.current = true;
+							maintenanceOpenRef.current = true;
+							setMaintenanceResult(null);
+							setMaintenancePrompt(true);
+							setMaintenanceOpen(true);
+						}
+					} catch {}
+				})();
+				return () => {
+					cancelled = true;
+				};
+			}, [stateReady, stateToken]);
 			(0, react.useEffect)(() => {
 				if (query === appliedQuery) return;
 				const timer = setTimeout(() => {
@@ -6564,7 +6883,7 @@ window.__ModuleLoader__.load({
 			};
 			/**
 			* Merge one partial settings patch into the local state and persist.
-			* Switches persist immediately; numeric fields debounce by 500 ms.
+			* Switches persist immediately; numeric and model fields debounce by 500 ms.
 			*/
 			const patchSettings = (partial, debounce = false) => {
 				const next = {
@@ -6609,6 +6928,76 @@ window.__ModuleLoader__.load({
 					actions.toast("error", t("memoryRefreshIndexFailed", { message: errorMessageFor(error, t) }));
 				} finally {
 					setRefreshIndexBusy(false);
+				}
+			};
+			/** 关闭维护对话框；运行/撤销进行中保持打开。 */
+			const closeMaintenance = () => {
+				if (maintenanceRunning || maintenanceUndoBusy) return;
+				maintenanceOpenRef.current = false;
+				setMaintenanceOpen(false);
+				setMaintenancePrompt(false);
+				setMaintenanceResult(null);
+			};
+			/** 工具条入口：先取阈值概览，再打开确认对话框。 */
+			const openMaintenance = async () => {
+				if (maintenanceBusy || maintenanceRunning) return;
+				setMaintenanceBusy(true);
+				setMaintenancePrompt(false);
+				setMaintenanceResult(null);
+				try {
+					const data = await api("/memory/maintenance");
+					setMaintenance(normalizeMaintenance(data));
+					maintenanceOpenRef.current = true;
+					setMaintenanceOpen(true);
+				} catch (error) {
+					actions.toast("error", errorMessageFor(error, t));
+				} finally {
+					setMaintenanceBusy(false);
+				}
+			};
+			/** 运行维护：范围由服务端决定（全局 + 最久未维护的项目）。 */
+			const runMaintenance = async () => {
+				if (maintenanceRunning || maintenance === null) return;
+				setMaintenanceRunning(true);
+				try {
+					const data = await api("/memory/maintenance/run", {
+						method: "POST",
+						body: {}
+					});
+					setMaintenanceResult(normalizeMaintenanceRun(data.run));
+					setStateToken((token) => token + 1);
+				} catch (error) {
+					actions.toast("error", t("memoryMaintenanceFailed", { message: errorMessageFor(error, t) }));
+				} finally {
+					setMaintenanceRunning(false);
+				}
+			};
+			/** 撤销一次维护：本地标记撤销，随后经 stateToken 重拉概览与面板状态。 */
+			const undoMaintenance = async (runId) => {
+				if (maintenanceUndoBusy || runId === "") return;
+				setMaintenanceUndoBusy(true);
+				try {
+					await api("/memory/maintenance/undo", {
+						method: "POST",
+						body: { runId }
+					});
+					setMaintenance((current) => current === null ? current : {
+						...current,
+						recentRuns: current.recentRuns.map((run) => run.id === runId ? {
+							...run,
+							undone: true
+						} : run)
+					});
+					setMaintenanceResult((current) => current !== null && current.id === runId ? {
+						...current,
+						undone: true
+					} : current);
+					actions.toast("success", t("memoryMaintenanceUndone"));
+					setStateToken((token) => token + 1);
+				} catch (error) {
+					actions.toast("error", t("memoryMaintenanceUndoFailed", { message: errorMessageFor(error, t) }));
+				} finally {
+					setMaintenanceUndoBusy(false);
 				}
 			};
 			/** 撤销一次捕获：归档该次写入，随后重拉 /memory/state 刷新统计。 */
@@ -6785,6 +7174,141 @@ window.__ModuleLoader__.load({
 					children: String(count)
 				})]
 			});
+			const maintenanceRuns = (maintenance?.recentRuns ?? []).slice(0, RECENT_MAINTENANCE_ROWS);
+			const maintenanceTitle = maintenanceResult !== null ? maintenanceResult.status === "failed" ? t("memoryMaintenanceConfirmTitle") : t("memoryMaintenanceResultTitle") : maintenancePrompt ? t("memoryMaintenanceDueTitle") : t("memoryMaintenanceConfirmTitle");
+			let maintenanceBody = null;
+			let maintenanceFooter = null;
+			if (maintenanceResult !== null) {
+				maintenanceBody = /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+					className: memory_module_css_default.maintenanceStack,
+					children: [
+						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							className: memory_module_css_default.maintenanceResult,
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
+								tone: maintenanceTone(maintenanceResult),
+								children: maintenanceResult.undone ? t("memoryMaintenanceStatusUndone") : t(maintenanceStatusKey(maintenanceResult.status))
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								className: memory_module_css_default.maintenanceResultCounts,
+								children: t("memoryMaintenanceResult", { ...maintenanceResult.counts })
+							})]
+						}),
+						maintenanceResult.status === "failed" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+							className: memory_module_css_default.maintenanceError,
+							role: "alert",
+							children: t("memoryMaintenanceFailed", { message: maintenanceResult.error !== "" ? maintenanceResult.error : t("unknownError") })
+						}) : null,
+						maintenanceResult.undone ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+							className: memory_module_css_default.maintenanceHint,
+							children: t("memoryMaintenanceUndone")
+						}) : null
+					]
+				});
+				maintenanceFooter = [maintenanceResult.status === "completed" && !maintenanceResult.undone ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Button, {
+					variant: "ghost",
+					icon: "rotateCcw",
+					disabled: maintenanceUndoBusy,
+					onClick: () => {
+						undoMaintenance(maintenanceResult.id);
+					},
+					children: [maintenanceUndoBusy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Spinner, {}) : null, t("memoryMaintenanceUndo")]
+				}, "undo") : null, /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+					variant: "secondary",
+					disabled: maintenanceUndoBusy,
+					onClick: closeMaintenance,
+					children: t("close")
+				}, "close")];
+			} else if (maintenancePrompt && maintenance !== null) {
+				maintenanceBody = /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+					className: memory_module_css_default.maintenanceStack,
+					children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: memory_module_css_default.maintenanceNotice,
+						children: maintenanceDueText(maintenance, t)
+					})
+				});
+				maintenanceFooter = [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+					variant: "secondary",
+					onClick: closeMaintenance,
+					children: t("memoryMaintenanceLater")
+				}, "later"), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+					variant: "primary",
+					icon: "wand",
+					onClick: () => {
+						setMaintenancePrompt(false);
+					},
+					children: t("memoryMaintenanceRun")
+				}, "continue")];
+			} else if (maintenance !== null) {
+				maintenanceBody = /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+					className: memory_module_css_default.maintenanceStack,
+					children: [
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+							className: memory_module_css_default.maintenanceNotice,
+							children: maintenance.due ? maintenanceDueText(maintenance, t) : t("memoryMaintenanceNotDueHint")
+						}),
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+							className: memory_module_css_default.maintenanceHint,
+							children: t("memoryMaintenanceConfirmHint")
+						}),
+						maintenanceRunning ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							className: memory_module_css_default.maintenanceRunning,
+							role: "status",
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Spinner, {}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t("memoryMaintenanceRunning") })]
+						}) : null,
+						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							className: memory_module_css_default.maintenanceSection,
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", {
+								className: memory_module_css_default.statsTitle,
+								children: t("memoryMaintenanceRecent")
+							}), maintenanceRuns.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								className: memory_module_css_default.statLabel,
+								children: t("memoryMaintenanceEmpty")
+							}) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+								className: memory_module_css_default.maintenanceList,
+								children: maintenanceRuns.map((run) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+									className: memory_module_css_default.maintenanceRow,
+									children: [
+										formatTime(run.at) !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.maintenanceRowTime,
+											children: formatTime(run.at)
+										}) : null,
+										/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
+											tone: maintenanceTone(run),
+											children: run.undone ? t("memoryMaintenanceStatusUndone") : t(maintenanceStatusKey(run.status))
+										}),
+										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.maintenanceRowMain,
+											children: t("memoryMaintenanceResult", { ...run.counts })
+										}),
+										run.status === "completed" && !run.undone && run.id !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Button, {
+											variant: "ghost",
+											icon: "rotateCcw",
+											disabled: maintenanceUndoBusy,
+											onClick: () => {
+												undoMaintenance(run.id);
+											},
+											children: [maintenanceUndoBusy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Spinner, {}) : null, t("memoryMaintenanceUndo")]
+										}) : null
+									]
+								}, run.id !== "" ? run.id : `${run.at}-${run.status}`))
+							})]
+						})
+					]
+				});
+				maintenanceFooter = [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+					variant: "secondary",
+					disabled: maintenanceRunning,
+					onClick: closeMaintenance,
+					children: t("cancel")
+				}, "cancel"), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Button, {
+					variant: "primary",
+					icon: "wand",
+					disabled: maintenanceRunning,
+					onClick: () => {
+						runMaintenance();
+					},
+					children: [maintenanceRunning ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Spinner, {}) : null, t("memoryMaintenanceRun")]
+				}, "run")];
+			}
 			let workspace = null;
 			if (!stateReady) workspace = stateError !== "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: memory_module_css_default.errorBox,
@@ -7096,6 +7620,15 @@ window.__ModuleLoader__.load({
 										disabled: auditBusy || projectRequired,
 										onClick: () => {
 											openAudit();
+										}
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(IconButton, {
+										icon: "wand",
+										title: t("memoryMaintenanceButton"),
+										busy: maintenanceBusy,
+										disabled: maintenanceBusy || maintenanceRunning,
+										onClick: () => {
+											openMaintenance();
 										}
 									}),
 									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(IconButton, {
@@ -7434,6 +7967,17 @@ window.__ModuleLoader__.load({
 							]
 						})
 					}) : null,
+					stateReady && maintenanceOpen ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: memory_module_css_default.dialogPortal,
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(DialogShell, {
+							t,
+							title: maintenanceTitle,
+							wide: true,
+							...maintenanceRunning || maintenanceUndoBusy ? {} : { onClose: closeMaintenance },
+							footer: maintenanceFooter,
+							children: maintenanceBody
+						})
+					}) : null,
 					stateReady && settingsOpen ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: memory_module_css_default.dialogPortal,
 						children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(DialogShell, {
@@ -7543,6 +8087,45 @@ window.__ModuleLoader__.load({
 											})]
 										})
 									]
+								}),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", { className: memory_module_css_default.divider }),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+									className: memory_module_css_default.formGrid,
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+										className: memory_module_css_default.field,
+										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.fieldLabel,
+											children: t("memoryMaintenanceProvider")
+										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+											className: memory_module_css_default.input,
+											type: "text",
+											"aria-label": t("memoryMaintenanceProvider"),
+											placeholder: t("memoryMaintenanceModelInherit"),
+											value: settings.maintenanceProvider,
+											onChange: (event) => {
+												patchSettings({ maintenanceProvider: event.target.value }, true);
+											}
+										})]
+									}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+										className: memory_module_css_default.field,
+										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.fieldLabel,
+											children: t("memoryMaintenanceModel")
+										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+											className: memory_module_css_default.input,
+											type: "text",
+											"aria-label": t("memoryMaintenanceModel"),
+											placeholder: t("memoryMaintenanceModelInherit"),
+											value: settings.maintenanceModel,
+											onChange: (event) => {
+												patchSettings({ maintenanceModel: event.target.value }, true);
+											}
+										})]
+									})]
+								}),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+									className: memory_module_css_default.fieldHint,
+									children: t("memoryMaintenanceModelInherit")
 								}),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", { className: memory_module_css_default.divider }),
 								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", {

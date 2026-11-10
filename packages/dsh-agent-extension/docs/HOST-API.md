@@ -587,10 +587,13 @@ lastRefreshed/display/owner/featured/plugins[]/refreshError/warnings`；
 | GET | `/memory/list` | 查询参数 `scope=global|project`、`project`、`query`、`type`、`includeArchived=0|1`、`content=1`（附带正文） |
 | GET | `/memory/get` | 查询参数 `scope`、`project`、`id` |
 | GET | `/memory/preview-file` | 查询参数 `scope`、`project`、`id` → `{path, name, empty}`：按条目生成只含正文的临时 Markdown（剥掉 frontmatter），供「用系统应用打开」交给本机关联应用 |
+| GET | `/memory/maintenance` | `{due, reason, writesSince, daysSince, lastRunAt, recentRuns[]}`；`due` 阈值 = 新增/强化 ≥30 条或距上次 ≥7 天 |
+| POST | `/memory/maintenance/run` | `{scope?, project?}`（空 = 全局 + 最久未维护项目轮转）→ `{run}`；LLM 研判后按硬规则执行合并/停用/恢复/删除 |
+| POST | `/memory/maintenance/undo` | `{runId}` → `{undone:true, restored}`：从 `memory/trash/<runId>/` 恢复该次 Run 的快照并标记已撤销 |
 | POST | `/memory/save` | `{scope, project?, id?, name, description, type, content, tags?, importance?, supersedes?, source?, confidence?, pinned?, mergedFrom?}`；同指纹只强化 |
 | POST | `/memory/status` | `{scope, project?, id, status: active|stale|archived}` |
 | POST | `/memory/delete` | `{scope, project?, id}` |
-| POST | `/memory/settings` | 部分字段：`captureEnabled`/`captureSessionEnd`/`injectEnabled`/`indexLimitGlobal`/`indexLimitProject`/`maxChars` |
+| POST | `/memory/settings` | 部分字段：`captureEnabled`/`captureSessionEnd`/`injectEnabled`/`indexLimitGlobal`/`indexLimitProject`/`maxChars`/`maintenanceProvider`/`maintenanceModel`（后两者空串 = 继承宿主默认模型） |
 | POST | `/memory/refresh-index` | 无参数 → `{refreshed:true}`：让进程内已缓存的会话索引失效，下一次装配重新渲染（不写盘、不重载列表） |
 | POST | `/memory/undo-capture` | `{id}` → `{archived:string[], undone:true}`：撤销一次自动捕获新增的条目（归档而非删除；样本不存在/缺 id 返回 bad_request） |
 | POST | `/memory/export` | `{scope, project?}` → `{filename, content}` |
@@ -617,3 +620,8 @@ originSessionId/createdAt/updatedAt`，正文另存。类型为
 利用率记录：`<home>/memory/usage.json`（`schema: 1`，`entries[id] = {usedCount, lastUsedAt}`）。
 `memory_search` / `memory_get` 命中只更新内存并在轮末/会话结束/30 秒兜底时批量落盘；它是派生数据，
 可删除重建，不写回记忆 Markdown。
+
+维护数据：`<home>/memory/maintenance.json`（`schema: 1`：`lastRunAt`、`capturedEntriesAtLastRun`、
+`projectRuns`、最近 20 次 `runs[]`）与 `<home>/memory/trash/<runId>/`（执行前条目快照，保留 30 天）。
+维护 Run 由 `memory/maintenance` 路由手动触发；模型选择优先用 settings 的
+`maintenanceProvider`/`maintenanceModel`，为空时继承宿主 `agentDefaultModel`。
