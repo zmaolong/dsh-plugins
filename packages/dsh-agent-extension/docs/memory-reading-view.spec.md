@@ -2,6 +2,8 @@
 
 > ⚠️ **已废弃（preview.16）**：本规格的「宿主右侧栏参数页签 + 预览页签」方案已在真机试用后撤回，现行方案为「面板内详情弹窗 + 系统应用打开」，见 [ADR-0004](../../../docs/adr/0004-memory-detail-in-panel-native-open.md)。本文件仅保留作历史实施记录，请勿照此继续实施。
 >
+> 补充（2026-11-10）：[ADR-0008](../../../docs/adr/0008-host-ui-primitives-channel.md) 重新引入**面板内正文只读预览**（宿主 `MarkdownText`），系统应用打开保留；本节内容仍是历史记录，正文预览的实施以 ADR-0008 与 B4 批次为准。
+>
 > 实施级规格：下一上下文照此实施，不依赖历史会话。
 > 基线版本：`dsh-agent-extension@0.0.1-preview.13`；宿主基线 DSH `0.2.2-rc.1`（commit `fcc0ad4`，本机副本 `.reference/deepseek-harness/`）。
 > 决策依据：[`docs/adr/0003-memory-reading-view.md`](../../../docs/adr/0003-memory-reading-view.md)；术语见 [`GLOSSARY.md`](../../../GLOSSARY.md)。

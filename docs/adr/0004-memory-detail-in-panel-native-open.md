@@ -1,6 +1,6 @@
 # 0004 记忆详情撤回侧栏双窗格：面板内弹窗 + 系统应用打开
 
-- 状态：已采纳，取代 [ADR-0003](0003-memory-reading-view.md)
+- 状态：已采纳，取代 [ADR-0003](0003-memory-reading-view.md)；第 2 条「正文不在弹窗内展示」部分被 [ADR-0008](0008-host-ui-primitives-channel.md) 取代（面板内新增正文只读预览，系统应用打开保留）
 - 日期：2026-11-10
 - 背景：preview.14/15 按 ADR-0003 把记忆阅读面做成宿主右侧栏双窗格（「记忆详情」参数页签 + 宿主原生预览页签）。真机使用后确认交互不可接受：宿主布局中主面板与右侧栏互斥（`RightbarRoot` 仅当 `activePanelId === null` 时可见，主面板激活时 `sidebarRight.mounted === undefined`，侧栏命令直接抛错），因此点开任何一条记忆都必然退出「智能体扩展」主面板；返回还要再切一次面板，且列表的筛选/滚动状态随之重置。一次阅读动作付出一次面板往返，对以阅读为主的记忆不可接受。规格见 [`packages/dsh-agent-extension/docs/memory-reading-view.spec.md`](../../packages/dsh-agent-extension/docs/memory-reading-view.spec.md)。
 
