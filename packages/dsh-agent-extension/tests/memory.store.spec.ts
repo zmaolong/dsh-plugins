@@ -297,6 +297,64 @@ describe('记忆存储：Markdown 事实、手改、去重与生命周期', () =
     expect(store.search('global', '', { query: '', limit: 50 })).toHaveLength(12)
   })
 
+  it('相似吸收：模型写入与既有条目极相似时转为强化而非新增；大改写与短文本不吸收', () => {
+    const store = makeStore()
+    const existing = add(store, {
+      name: '提交信息必须使用中文',
+      description: '仓库约定：git commit 的提交信息统一使用中文书写',
+      content: '所有 git commit 的提交信息必须使用中文，不要混用英文或拼音，这是仓库级硬性约定。',
+    })
+    expect(existing.tier).toBe('short')
+    // 同源提炼的微小措辞差异：指纹不同但 bigram 极相似 → 吸收为强化。
+    const nearIdentical = store.save({
+      name: '提交信息必须使用中文',
+      description: '仓库约定：git commit 的提交信息统一使用中文书写',
+      content: '所有 git commit 的提交信息必须使用中文，不要混用英文或拼音，这是仓库级硬性约定!',
+      scope: 'global',
+      type: 'decision',
+    })
+    expect(nearIdentical.id).toBe(existing.id)
+    expect(nearIdentical.reinforcement).toBe(1)
+    expect(nearIdentical.tier).toBe('long')
+    expect(store.list('global')).toHaveLength(1)
+
+    // 大幅改写的跨会话重复：相似度不到吸收阈值，交给维护流水线收尾。
+    const rephrased = store.save({
+      name: '提交信息要用中文',
+      description: '本仓库的 git 提交信息统一使用中文，不要混用英文或拼音的仓库级约定',
+      content: 'git commit 的提交信息一律使用中文书写，不要混用英文或拼音，这是仓库级的硬性约定。',
+      scope: 'global',
+      type: 'decision',
+    })
+    expect(rephrased.id).not.toBe(existing.id)
+    expect(store.list('global')).toHaveLength(2)
+
+    // 短模板文本（「条目 1」vs「条目 2」）bigram 虚高，不做吸收。
+    add(store, { name: '条目一', description: '描述甲', content: '内容甲的说明' })
+    const second = store.save({
+      name: '条目二',
+      description: '描述乙',
+      content: '内容乙的说明',
+      scope: 'global',
+      type: 'decision',
+    })
+    expect(second.id).not.toBe(existing.id)
+    expect(store.list('global')).toHaveLength(4)
+
+    // 用户显式写入（tier=long）不做吸收：即使与既有条目相似也保留。
+    const userSave = store.save({
+      name: '提交信息必须使用中文（补充）',
+      description: '仓库约定：git commit 的提交信息统一使用中文书写',
+      content: '所有 git commit 的提交信息必须使用中文，不要混用英文或拼音，这是仓库级硬性约定。包含 CHANGELOG。',
+      scope: 'global',
+      type: 'decision',
+      source: 'user',
+    })
+    expect(userSave.id).not.toBe(existing.id)
+    expect(userSave.tier).toBe('long')
+    expect(store.list('global')).toHaveLength(5)
+  })
+
   it('统计数据面 v2：skipReasons 与最近样本有界、落盘并可容错重读', () => {
     const store = makeStore()
     store.recordCapture(2, false, { sessionId: 's-1' })

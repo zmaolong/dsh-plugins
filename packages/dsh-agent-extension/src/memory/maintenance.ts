@@ -65,6 +65,9 @@ export const MAINTENANCE_STALE_DAYS = 90
 /** 二次研判：stale 且再 7 天仍未使用。 */
 export const MAINTENANCE_SECOND_STAGE_DAYS = 7
 
+/** 短期条目观察期默认天数：闲置超过该值未被消费即进延迟评审。 */
+export const PROBATION_DAYS_DEFAULT = 7
+
 /** trash 快照保留天数。 */
 export const MAINTENANCE_TRASH_DAYS = 30
 
@@ -87,7 +90,7 @@ export const MAINTENANCE_PURPOSE = 'memory-maintenance'
 const DAY_MS = 24 * 60 * 60 * 1000
 
 /** 预筛候选的类别。 */
-export type MaintenanceCandidateKind = 'duplicate' | 'first-stale' | 'second-stale' | 'restore'
+export type MaintenanceCandidateKind = 'duplicate' | 'first-stale' | 'probation' | 'second-stale' | 'restore'
 
 /** 一条预筛候选；`kind` 是主类别（同一条目可能同时命中多个规则）。 */
 export interface MaintenanceCandidate {
@@ -128,6 +131,8 @@ export interface MaintenancePrescreenInput {
   now?: number
   /** 候选上限；缺省 200。 */
   limit?: number
+  /** 短期条目的观察期天数；缺省 `PROBATION_DAYS_DEFAULT`（7 天）。 */
+  observationDays?: number
   /** 全库条目（用于跨项目的 supersedes 引用检查）；缺省等于 `entries`。 */
   allEntries?: readonly MemoryEntry[]
 }
@@ -337,10 +342,23 @@ export function prescreenMaintenance(input: MaintenancePrescreenInput): Maintena
   const firstStale: MaintenanceCandidate[] = []
   const secondStale: MaintenanceCandidate[] = []
   const restores: MaintenanceCandidate[] = []
+  const observationDays = clampInt(input.observationDays, 1, 365, PROBATION_DAYS_DEFAULT)
   for (const entry of live) {
     if (entry.pinned) continue
     const used = usedCountOf(usage, entry.id)
     const age = ageDays(entry.updatedAt, now)
+    // 观察期满（延迟评审）：短期条目闲置超过观察期、从未被消费 → 候选置
+    // stale。闲置以最近一次使用或更新为准；这解决预筛对新鲜库失明的问题。
+    if (entry.status === 'active' && entry.tier === 'short') {
+      const lastActive = [entry.lastUsedAt ?? '', entry.updatedAt]
+        .map(value => timeOf(value) ?? 0)
+        .reduce((left, right) => Math.max(left, right), 0)
+      const idleDays = lastActive === 0 ? -1 : (now - lastActive) / DAY_MS
+      if (idleDays >= observationDays) {
+        firstStale.push({ kind: 'probation', entry })
+        continue
+      }
+    }
     if (entry.status === 'active'
       && used === 0
       && age >= MAINTENANCE_STALE_DAYS
@@ -392,6 +410,7 @@ export const MAINTENANCE_SYSTEM_PROMPT = `You are the memory maintainer of DeepS
 Candidate kinds:
 - duplicate: entries in the same scope/project with high similarity. Merge them; keepId must be one of the candidates and mergeIds the other candidate ids.
 - first-stale: active, never used for 90+ days, importance < 60. Confirm stale unless clearly still valuable.
+- probation: a short-term entry whose observation period elapsed without a single read or reinforcement. Confirm stale unless it is obviously still valuable; these are new captures that proved unused.
 - second-stale: already stale and unused for 7+ days. Delete when obsolete, or restore when still useful.
 - restore: stale but used recently. Restore when still useful.
 
@@ -993,7 +1012,8 @@ export function pruneMaintenanceTrash(trashRoot: string, now: number, log: LogFn
 }
 
 /**
- * 维护 due 计算：新增/强化累计 ≥30 条，或距上次成功维护 ≥7 天，或从未运行。
+ * 维护 due 计算：新增/强化累计达到写入阈值（默认 30），或距上次成功维护
+ * 达到天数阈值（默认 7 天），或从未运行。
  *
  * `daysSince` 在从未维护时为 -1；`writesSince` 不会为负（统计被重置时按 0）。
  */
@@ -1001,15 +1021,19 @@ export function computeMaintenanceDue(input: {
   lastRunAt: string | null
   capturedEntries: number
   capturedEntriesAtLastRun: number
+  writeThreshold?: number
+  dayThreshold?: number
   now?: number
 }): MaintenanceDueInfo {
   const now = typeof input.now === 'number' && Number.isFinite(input.now) ? input.now : Date.now()
+  const writeThreshold = clampInt(input.writeThreshold, 5, 1000, MAINTENANCE_DUE_WRITES)
+  const dayThreshold = clampInt(input.dayThreshold, 1, 365, MAINTENANCE_DUE_DAYS)
   const writesSince = Math.max(0, Math.round(input.capturedEntries) - Math.round(input.capturedEntriesAtLastRun))
   const last = input.lastRunAt === null ? null : timeOf(input.lastRunAt)
   const daysSince = last === null ? -1 : Math.max(0, Math.floor((now - last) / DAY_MS))
   if (last === null) return { due: true, reason: 'never', writesSince, daysSince }
-  if (writesSince >= MAINTENANCE_DUE_WRITES) return { due: true, reason: 'writes', writesSince, daysSince }
-  if (daysSince >= MAINTENANCE_DUE_DAYS) return { due: true, reason: 'days', writesSince, daysSince }
+  if (writesSince >= writeThreshold) return { due: true, reason: 'writes', writesSince, daysSince }
+  if (daysSince >= dayThreshold) return { due: true, reason: 'days', writesSince, daysSince }
   return { due: false, reason: 'none', writesSince, daysSince }
 }
 

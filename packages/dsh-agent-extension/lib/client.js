@@ -251,6 +251,10 @@ window.__ModuleLoader__.load({
 			memorySettingsIndexGlobal: "全局索引条数",
 			memorySettingsIndexProject: "项目索引条数",
 			memorySettingsMaxChars: "总字符预算",
+			memorySettingsAutoMaintenance: "维护达标后自动执行",
+			memorySettingsObservationDays: "短期观察期（天）",
+			memorySettingsAutoThreshold: "自动维护写入阈值",
+			memorySettingsAutoHint: "达到写入阈值或时间间隔时，会话结束后自动执行一次维护；手动「优化记忆」仍可用。",
 			memoryTypeFilterLabel: "按类型筛选",
 			memoryStatsTitle: "统计",
 			memoryStatCaptureRuns: "累计捕获次数",
@@ -292,7 +296,6 @@ window.__ModuleLoader__.load({
 			memoryOpenNativeFailed: "无法用系统应用打开：{message}",
 			memoryOpenNativeUnavailable: "当前环境不支持用系统应用打开文件",
 			memoryMaintenanceButton: "优化记忆",
-			memoryMaintenanceDueTitle: "该优化记忆了",
 			memoryMaintenanceDueHint: "距上次维护 {days} 天，新增/强化 {writes} 条",
 			memoryMaintenanceDueNeverHint: "尚未维护过；新增/强化 {writes} 条",
 			memoryMaintenanceNotDueHint: "距上次维护不足阈值，仍要立即优化？",
@@ -315,7 +318,6 @@ window.__ModuleLoader__.load({
 			memoryMaintenanceModelInherit: "留空继承宿主默认模型",
 			memoryMaintenanceProvider: "维护模型提供方",
 			memoryMaintenanceModel: "维护模型",
-			memoryMaintenanceLater: "暂不",
 			memoryDiagnosisButton: "诊断",
 			memoryDiagnosisTitle: "记忆诊断",
 			memoryDiagnosisEmpty: "暂无记录",
@@ -571,6 +573,10 @@ window.__ModuleLoader__.load({
 			memorySettingsIndexGlobal: "Global index size",
 			memorySettingsIndexProject: "Project index size",
 			memorySettingsMaxChars: "Total character budget",
+			memorySettingsAutoMaintenance: "Auto-run maintenance when due",
+			memorySettingsObservationDays: "Short-term observation (days)",
+			memorySettingsAutoThreshold: "Auto-maintenance write threshold",
+			memorySettingsAutoHint: "When the write threshold or interval is reached, one maintenance run runs after the session ends; manual \"Optimize\" stays available.",
 			memoryTypeFilterLabel: "Filter by type",
 			memoryStatsTitle: "Statistics",
 			memoryStatCaptureRuns: "Capture runs",
@@ -612,7 +618,6 @@ window.__ModuleLoader__.load({
 			memoryOpenNativeFailed: "Could not open in a system app: {message}",
 			memoryOpenNativeUnavailable: "This environment cannot open files in a system app",
 			memoryMaintenanceButton: "Optimize memory",
-			memoryMaintenanceDueTitle: "Memory upkeep is due",
 			memoryMaintenanceDueHint: "{days} day(s) since the last upkeep; {writes} new or reinforced entries",
 			memoryMaintenanceDueNeverHint: "Never optimized before; {writes} new or reinforced entries",
 			memoryMaintenanceNotDueHint: "Below the upkeep threshold — optimize now anyway?",
@@ -635,7 +640,6 @@ window.__ModuleLoader__.load({
 			memoryMaintenanceModelInherit: "Leave empty to inherit the host default model",
 			memoryMaintenanceProvider: "Maintenance model provider",
 			memoryMaintenanceModel: "Maintenance model",
-			memoryMaintenanceLater: "Not now",
 			memoryDiagnosisButton: "Diagnostics",
 			memoryDiagnosisTitle: "Memory diagnostics",
 			memoryDiagnosisEmpty: "No records yet",
@@ -890,6 +894,10 @@ window.__ModuleLoader__.load({
 			memorySettingsIndexGlobal: "グローバル索引件数",
 			memorySettingsIndexProject: "プロジェクト索引件数",
 			memorySettingsMaxChars: "合計文字数予算",
+			memorySettingsAutoMaintenance: "しきい値到達時に自動実行",
+			memorySettingsObservationDays: "短期の観察期間（日）",
+			memorySettingsAutoThreshold: "自動メンテナンスの書き込みしきい値",
+			memorySettingsAutoHint: "書き込みしきい値または期間に達すると、セッション終了後にメンテナンスを自動実行します。手動の「メモリ最適化」も利用できます。",
 			memorySettingsButton: "メモリ設定と統計",
 			memoryTypeFilterLabel: "タイプで絞り込み",
 			memoryStatsTitle: "統計",
@@ -932,7 +940,6 @@ window.__ModuleLoader__.load({
 			memoryOpenNativeFailed: "システムアプリで開けませんでした：{message}",
 			memoryOpenNativeUnavailable: "この環境ではシステムアプリでファイルを開けません",
 			memoryMaintenanceButton: "記憶を最適化",
-			memoryMaintenanceDueTitle: "記憶の最適化が必要です",
 			memoryMaintenanceDueHint: "前回のメンテナンスから {days} 日、新規/強化 {writes} 件",
 			memoryMaintenanceDueNeverHint: "まだメンテナンス未実施；新規/強化 {writes} 件",
 			memoryMaintenanceNotDueHint: "前回のメンテナンスから間もなく閾値未満です。今すぐ最適化しますか？",
@@ -955,7 +962,6 @@ window.__ModuleLoader__.load({
 			memoryMaintenanceModelInherit: "空欄でホスト既定モデルを継承",
 			memoryMaintenanceProvider: "メンテナンスモデルの提供元",
 			memoryMaintenanceModel: "メンテナンスモデル",
-			memoryMaintenanceLater: "今はしない",
 			memoryDiagnosisButton: "診断",
 			memoryDiagnosisTitle: "メモリ診断",
 			memoryDiagnosisEmpty: "記録はありません",
@@ -1210,6 +1216,10 @@ window.__ModuleLoader__.load({
 			memorySettingsIndexGlobal: "Tamaño del índice global",
 			memorySettingsIndexProject: "Tamaño del índice del proyecto",
 			memorySettingsMaxChars: "Presupuesto de caracteres",
+			memorySettingsAutoMaintenance: "Ejecutar mantenimiento automáticamente",
+			memorySettingsObservationDays: "Observación de corto plazo (días)",
+			memorySettingsAutoThreshold: "Umbral de escritura para mantenimiento automático",
+			memorySettingsAutoHint: "Al alcanzar el umbral de escritura o el intervalo, se ejecuta un mantenimiento al finalizar la sesión; el botón manual «Optimizar» sigue disponible.",
 			memorySettingsButton: "Ajustes y estadísticas de memoria",
 			memoryTypeFilterLabel: "Filtrar por tipo",
 			memoryStatsTitle: "Estadísticas",
@@ -1252,7 +1262,6 @@ window.__ModuleLoader__.load({
 			memoryOpenNativeFailed: "No se pudo abrir en la aplicación del sistema: {message}",
 			memoryOpenNativeUnavailable: "Este entorno no puede abrir archivos en la aplicación del sistema",
 			memoryMaintenanceButton: "Optimizar memoria",
-			memoryMaintenanceDueTitle: "Toca mantener la memoria",
 			memoryMaintenanceDueHint: "{days} día(s) desde el último mantenimiento; {writes} entradas nuevas o reforzadas",
 			memoryMaintenanceDueNeverHint: "Nunca se ha optimizado; {writes} entradas nuevas o reforzadas",
 			memoryMaintenanceNotDueHint: "Por debajo del umbral de mantenimiento, ¿optimizar ahora de todos modos?",
@@ -1275,7 +1284,6 @@ window.__ModuleLoader__.load({
 			memoryMaintenanceModelInherit: "Déjalo vacío para heredar el modelo predeterminado del host",
 			memoryMaintenanceProvider: "Proveedor del modelo de mantenimiento",
 			memoryMaintenanceModel: "Modelo de mantenimiento",
-			memoryMaintenanceLater: "Ahora no",
 			memoryDiagnosisButton: "Diagnóstico",
 			memoryDiagnosisTitle: "Diagnóstico de memoria",
 			memoryDiagnosisEmpty: "Aún no hay registros",
@@ -1530,6 +1538,10 @@ window.__ModuleLoader__.load({
 			memorySettingsIndexGlobal: "Taille de l’index global",
 			memorySettingsIndexProject: "Taille de l’index du projet",
 			memorySettingsMaxChars: "Budget de caractères",
+			memorySettingsAutoMaintenance: "Exécuter automatiquement la maintenance",
+			memorySettingsObservationDays: "Observation court terme (jours)",
+			memorySettingsAutoThreshold: "Seuil d’écriture pour la maintenance auto",
+			memorySettingsAutoHint: "Lorsque le seuil d’écriture ou l’intervalle est atteint, une maintenance s’exécute à la fin de la session ; le bouton manuel « Optimiser » reste disponible.",
 			memorySettingsButton: "Réglages et statistiques de mémoire",
 			memoryTypeFilterLabel: "Filtrer par type",
 			memoryStatsTitle: "Statistiques",
@@ -1572,7 +1584,6 @@ window.__ModuleLoader__.load({
 			memoryOpenNativeFailed: "Impossible d’ouvrir dans l’application système : {message}",
 			memoryOpenNativeUnavailable: "Cet environnement ne permet pas d’ouvrir des fichiers dans l’application système",
 			memoryMaintenanceButton: "Optimiser la mémoire",
-			memoryMaintenanceDueTitle: "La mémoire doit être optimisée",
 			memoryMaintenanceDueHint: "Depuis le dernier entretien : {days} jour(s), {writes} entrée(s) nouvelle(s) ou renforcée(s)",
 			memoryMaintenanceDueNeverHint: "Jamais optimisée ; {writes} entrée(s) nouvelle(s) ou renforcée(s)",
 			memoryMaintenanceNotDueHint: "Sous le seuil d’entretien — optimiser quand même maintenant ?",
@@ -1595,7 +1606,6 @@ window.__ModuleLoader__.load({
 			memoryMaintenanceModelInherit: "Laisser vide pour hériter du modèle par défaut de l’hôte",
 			memoryMaintenanceProvider: "Fournisseur du modèle de maintenance",
 			memoryMaintenanceModel: "Modèle de maintenance",
-			memoryMaintenanceLater: "Pas maintenant",
 			memoryDiagnosisButton: "Diagnostic",
 			memoryDiagnosisTitle: "Diagnostic de la mémoire",
 			memoryDiagnosisEmpty: "Aucun enregistrement",
@@ -1850,6 +1860,10 @@ window.__ModuleLoader__.load({
 			memorySettingsIndexGlobal: "Globaler Indexumfang",
 			memorySettingsIndexProject: "Projekt-Indexumfang",
 			memorySettingsMaxChars: "Zeichenbudget gesamt",
+			memorySettingsAutoMaintenance: "Wartung bei Erreichen automatisch ausführen",
+			memorySettingsObservationDays: "Kurzfrist-Beobachtung (Tage)",
+			memorySettingsAutoThreshold: "Schreibschwelle für automatische Wartung",
+			memorySettingsAutoHint: "Wird die Schreibschwelle oder das Intervall erreicht, läuft nach Sitzungsende eine Wartung; die manuelle „Optimieren“-Schaltfläche bleibt verfügbar.",
 			memorySettingsButton: "Speichereinstellungen und Statistik",
 			memoryTypeFilterLabel: "Nach Typ filtern",
 			memoryStatsTitle: "Statistik",
@@ -1892,7 +1906,6 @@ window.__ModuleLoader__.load({
 			memoryOpenNativeFailed: "In der System-App konnte nicht geöffnet werden: {message}",
 			memoryOpenNativeUnavailable: "Diese Umgebung kann Dateien nicht in einer System-App öffnen",
 			memoryMaintenanceButton: "Speicher optimieren",
-			memoryMaintenanceDueTitle: "Speicheroptimierung fällig",
 			memoryMaintenanceDueHint: "Seit der letzten Wartung {days} Tag(e); {writes} neue oder bestärkte Einträge",
 			memoryMaintenanceDueNeverHint: "Noch nie optimiert; {writes} neue oder bestärkte Einträge",
 			memoryMaintenanceNotDueHint: "Unter der Wartungsschwelle — trotzdem jetzt optimieren?",
@@ -1915,7 +1928,6 @@ window.__ModuleLoader__.load({
 			memoryMaintenanceModelInherit: "Leer lassen, um das Standardmodell des Hosts zu übernehmen",
 			memoryMaintenanceProvider: "Anbieter des Wartungsmodells",
 			memoryMaintenanceModel: "Wartungsmodell",
-			memoryMaintenanceLater: "Nicht jetzt",
 			memoryDiagnosisButton: "Diagnose",
 			memoryDiagnosisTitle: "Gedächtnisdiagnose",
 			memoryDiagnosisEmpty: "Noch keine Einträge",
@@ -2170,6 +2182,10 @@ window.__ModuleLoader__.load({
 			memorySettingsIndexGlobal: "Размер глобального индекса",
 			memorySettingsIndexProject: "Размер индекса проекта",
 			memorySettingsMaxChars: "Общий лимит символов",
+			memorySettingsAutoMaintenance: "Запускать обслуживание автоматически",
+			memorySettingsObservationDays: "Наблюдение краткосрочных (дней)",
+			memorySettingsAutoThreshold: "Порог записей для автообслуживания",
+			memorySettingsAutoHint: "При достижении порога записей или интервала обслуживание запускается в конце сессии; ручная кнопка «Оптимизировать» остаётся доступной.",
 			memorySettingsButton: "Настройки и статистика памяти",
 			memoryTypeFilterLabel: "Фильтр по типу",
 			memoryStatsTitle: "Статистика",
@@ -2212,7 +2228,6 @@ window.__ModuleLoader__.load({
 			memoryOpenNativeFailed: "Не удалось открыть в системном приложении: {message}",
 			memoryOpenNativeUnavailable: "Эта среда не поддерживает открытие файлов в системном приложении",
 			memoryMaintenanceButton: "Оптимизировать память",
-			memoryMaintenanceDueTitle: "Пора оптимизировать память",
 			memoryMaintenanceDueHint: "С последнего обслуживания прошло {days} дн.; новых или усиленных записей: {writes}",
 			memoryMaintenanceDueNeverHint: "Оптимизация ещё не выполнялась; новых или усиленных записей: {writes}",
 			memoryMaintenanceNotDueHint: "Порог обслуживания не достигнут — всё равно оптимизировать сейчас?",
@@ -2235,7 +2250,6 @@ window.__ModuleLoader__.load({
 			memoryMaintenanceModelInherit: "Оставьте пустым, чтобы наследовать модель хоста по умолчанию",
 			memoryMaintenanceProvider: "Провайдер модели обслуживания",
 			memoryMaintenanceModel: "Модель обслуживания",
-			memoryMaintenanceLater: "Не сейчас",
 			memoryDiagnosisButton: "Диагностика",
 			memoryDiagnosisTitle: "Диагностика памяти",
 			memoryDiagnosisEmpty: "Записей пока нет",
@@ -2490,6 +2504,10 @@ window.__ModuleLoader__.load({
 			memorySettingsIndexGlobal: "Tamanho do índice global",
 			memorySettingsIndexProject: "Tamanho do índice do projeto",
 			memorySettingsMaxChars: "Orçamento de caracteres",
+			memorySettingsAutoMaintenance: "Executar manutenção automaticamente",
+			memorySettingsObservationDays: "Observação de curto prazo (dias)",
+			memorySettingsAutoThreshold: "Limiar de escrita para manutenção automática",
+			memorySettingsAutoHint: "Ao atingir o limiar de escrita ou o intervalo, uma manutenção é executada ao fim da sessão; o botão manual \"Otimizar\" continua disponível.",
 			memorySettingsButton: "Configurações e estatísticas de memória",
 			memoryTypeFilterLabel: "Filtrar por tipo",
 			memoryStatsTitle: "Estatísticas",
@@ -2532,7 +2550,6 @@ window.__ModuleLoader__.load({
 			memoryOpenNativeFailed: "Não foi possível abrir no aplicativo do sistema: {message}",
 			memoryOpenNativeUnavailable: "Este ambiente não pode abrir arquivos no aplicativo do sistema",
 			memoryMaintenanceButton: "Otimizar memória",
-			memoryMaintenanceDueTitle: "Hora de otimizar a memória",
 			memoryMaintenanceDueHint: "Desde a última manutenção: {days} dia(s); {writes} entradas novas ou reforçadas",
 			memoryMaintenanceDueNeverHint: "Nunca otimizada; {writes} entradas novas ou reforçadas",
 			memoryMaintenanceNotDueHint: "Abaixo do limite de manutenção — otimizar agora mesmo assim?",
@@ -2555,7 +2572,6 @@ window.__ModuleLoader__.load({
 			memoryMaintenanceModelInherit: "Deixe vazio para herdar o modelo padrão do host",
 			memoryMaintenanceProvider: "Provedor do modelo de manutenção",
 			memoryMaintenanceModel: "Modelo de manutenção",
-			memoryMaintenanceLater: "Agora não",
 			memoryDiagnosisButton: "Diagnóstico",
 			memoryDiagnosisTitle: "Diagnóstico de memória",
 			memoryDiagnosisEmpty: "Nenhum registro ainda",
@@ -6428,6 +6444,9 @@ window.__ModuleLoader__.load({
 				maxChars: 3e3,
 				maintenanceProvider: "",
 				maintenanceModel: "",
+				observationDays: 7,
+				autoMaintenance: true,
+				autoMaintenanceThreshold: 30,
 				updatedAt: (/* @__PURE__ */ new Date()).toISOString()
 			};
 		}
@@ -6683,6 +6702,9 @@ window.__ModuleLoader__.load({
 				maxChars: integer(item.maxChars, 1e3, RECALL_MAX_CHARS, DEFAULT_SETTINGS.maxChars),
 				maintenanceProvider: text(item.maintenanceProvider),
 				maintenanceModel: text(item.maintenanceModel),
+				observationDays: integer(item.observationDays, 1, 365, DEFAULT_SETTINGS.observationDays),
+				autoMaintenance: item.autoMaintenance !== false,
+				autoMaintenanceThreshold: integer(item.autoMaintenanceThreshold, 5, 1e3, DEFAULT_SETTINGS.autoMaintenanceThreshold),
 				updatedAt: text(item.updatedAt)
 			};
 		}
@@ -6909,7 +6931,6 @@ window.__ModuleLoader__.load({
 			const [settingsOpen, setSettingsOpen] = (0, react.useState)(false);
 			const [maintenance, setMaintenance] = (0, react.useState)(null);
 			const [maintenanceOpen, setMaintenanceOpen] = (0, react.useState)(false);
-			const [maintenancePrompt, setMaintenancePrompt] = (0, react.useState)(false);
 			const [maintenanceBusy, setMaintenanceBusy] = (0, react.useState)(false);
 			const [maintenanceRunning, setMaintenanceRunning] = (0, react.useState)(false);
 			const [maintenanceUndoBusy, setMaintenanceUndoBusy] = (0, react.useState)(false);
@@ -6939,7 +6960,6 @@ window.__ModuleLoader__.load({
 			const savedSettingsRef = (0, react.useRef)(DEFAULT_SETTINGS);
 			const settingsTimer = (0, react.useRef)(null);
 			const maintenanceOpenRef = (0, react.useRef)(false);
-			const maintenancePromptedRef = (0, react.useRef)(false);
 			(0, react.useEffect)(() => () => {
 				if (settingsTimer.current !== null) clearTimeout(settingsTimer.current);
 			}, []);
@@ -6981,15 +7001,7 @@ window.__ModuleLoader__.load({
 					try {
 						const data = await api("/memory/maintenance");
 						if (cancelled) return;
-						const info = normalizeMaintenance(data);
-						setMaintenance(info);
-						if (info.due && !maintenancePromptedRef.current && !maintenanceOpenRef.current) {
-							maintenancePromptedRef.current = true;
-							maintenanceOpenRef.current = true;
-							setMaintenanceResult(null);
-							setMaintenancePrompt(true);
-							setMaintenanceOpen(true);
-						}
+						setMaintenance(normalizeMaintenance(data));
 					} catch {}
 				})();
 				return () => {
@@ -7295,14 +7307,12 @@ window.__ModuleLoader__.load({
 				if (maintenanceRunning || maintenanceUndoBusy) return;
 				maintenanceOpenRef.current = false;
 				setMaintenanceOpen(false);
-				setMaintenancePrompt(false);
 				setMaintenanceResult(null);
 			};
 			/** 工具条入口：先取阈值概览，再打开确认对话框。 */
 			const openMaintenance = async () => {
 				if (maintenanceBusy || maintenanceRunning) return;
 				setMaintenanceBusy(true);
-				setMaintenancePrompt(false);
 				setMaintenanceResult(null);
 				try {
 					const data = await api("/memory/maintenance");
@@ -7731,7 +7741,7 @@ window.__ModuleLoader__.load({
 				})]
 			});
 			const maintenanceRuns = (maintenance?.recentRuns ?? []).slice(0, RECENT_MAINTENANCE_ROWS);
-			const maintenanceTitle = maintenanceResult !== null ? maintenanceResult.status === "failed" ? t("memoryMaintenanceConfirmTitle") : t("memoryMaintenanceResultTitle") : maintenancePrompt ? t("memoryMaintenanceDueTitle") : t("memoryMaintenanceConfirmTitle");
+			const maintenanceTitle = maintenanceResult !== null && maintenanceResult.status !== "failed" ? t("memoryMaintenanceResultTitle") : t("memoryMaintenanceConfirmTitle");
 			let maintenanceBody = null;
 			let maintenanceFooter = null;
 			if (maintenanceResult !== null) {
@@ -7773,26 +7783,6 @@ window.__ModuleLoader__.load({
 					onClick: closeMaintenance,
 					children: t("close")
 				}, "close")];
-			} else if (maintenancePrompt && maintenance !== null) {
-				maintenanceBody = /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-					className: memory_module_css_default.maintenanceStack,
-					children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-						className: memory_module_css_default.maintenanceNotice,
-						children: maintenanceDueText(maintenance, t)
-					})
-				});
-				maintenanceFooter = [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
-					variant: "secondary",
-					onClick: closeMaintenance,
-					children: t("memoryMaintenanceLater")
-				}, "later"), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
-					variant: "primary",
-					icon: "wand",
-					onClick: () => {
-						setMaintenancePrompt(false);
-					},
-					children: t("memoryMaintenanceRun")
-				}, "continue")];
 			} else if (maintenance !== null) {
 				maintenanceBody = /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: memory_module_css_default.maintenanceStack,
@@ -8720,6 +8710,60 @@ window.__ModuleLoader__.load({
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 								className: memory_module_css_default.fieldHint,
 								children: t("memoryMaintenanceModelInherit")
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", { className: memory_module_css_default.divider }),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: memory_module_css_default.settingRow,
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+									className: memory_module_css_default.settingLabel,
+									children: t("memorySettingsAutoMaintenance")
+								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Switch, {
+									checked: settings.autoMaintenance,
+									label: t("memorySettingsAutoMaintenance"),
+									onChange: (next) => {
+										patchSettings({ autoMaintenance: next });
+									}
+								})]
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+								className: memory_module_css_default.numberGrid,
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+									className: memory_module_css_default.field,
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										className: memory_module_css_default.fieldLabel,
+										children: t("memorySettingsObservationDays")
+									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+										className: memory_module_css_default.input,
+										type: "number",
+										min: 1,
+										max: 365,
+										"aria-label": t("memorySettingsObservationDays"),
+										value: settings.observationDays,
+										onChange: (event) => {
+											patchSettings({ observationDays: integer(event.target.value, 1, 365, settingsRef.current.observationDays) }, true);
+										}
+									})]
+								}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+									className: memory_module_css_default.field,
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										className: memory_module_css_default.fieldLabel,
+										children: t("memorySettingsAutoThreshold")
+									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+										className: memory_module_css_default.input,
+										type: "number",
+										min: 5,
+										max: 1e3,
+										"aria-label": t("memorySettingsAutoThreshold"),
+										value: settings.autoMaintenanceThreshold,
+										onChange: (event) => {
+											patchSettings({ autoMaintenanceThreshold: integer(event.target.value, 5, 1e3, settingsRef.current.autoMaintenanceThreshold) }, true);
+										}
+									})]
+								})]
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								className: memory_module_css_default.fieldHint,
+								children: t("memorySettingsAutoHint")
 							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", { className: memory_module_css_default.divider }),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", {

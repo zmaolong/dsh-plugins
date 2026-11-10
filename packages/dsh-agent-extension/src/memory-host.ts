@@ -127,6 +127,8 @@ export class MemoryRuntime {
       llm: () => this.llm(),
       // 与召回统计同一批时机落盘 usage（turn-stopping / disposed / dispose）。
       flushUsage: () => this.usage?.flush(),
+      // 会话末补漏完成后检查维护 due：达标且开关开启时后台自动跑一次。
+      afterCapture: () => { void this.autoMaintainIfNeeded() },
     })
   }
 
@@ -214,6 +216,7 @@ export class MemoryRuntime {
         lastRunAt: state.lastRunAt,
         capturedEntries: stats.capturedEntries,
         capturedEntriesAtLastRun: state.capturedEntriesAtLastRun,
+        writeThreshold: this.store.settings().autoMaintenanceThreshold,
       })
       return {
         due: due.due,
@@ -264,6 +267,24 @@ export class MemoryRuntime {
     log.markUndone(id)
     this.log('info', `维护 Run ${id} 已撤销：恢复 ${restored} 个文件`)
     return { restored }
+  }
+
+  /**
+   * 会话末补漏后的自动维护检查：开关开启且 due 达标时后台跑一次 Run。
+   *
+   * 失败只记日志（含维护互斥冲突——手动 Run 进行中时自动跳过）。
+   */
+  private async autoMaintainIfNeeded(): Promise<void> {
+    if (this.disposed || this.maintenanceTask !== null) return
+    const settings = this.store.settings()
+    if (!settings.autoMaintenance) return
+    if (!this.maintenanceStatus().due) return
+    try {
+      await this.runMaintenance({})
+      this.log('info', '维护达到阈值，已自动执行一次维护 Run')
+    } catch (error) {
+      this.log('warn', `自动维护执行失败：${error instanceof Error ? error.message : String(error)}`)
+    }
   }
 
   /** 解析工作目录的项目身份（写路径，登记项目）。 */
@@ -485,6 +506,7 @@ export class MemoryRuntime {
       now,
       limit: MAINTENANCE_MAX_CANDIDATES,
       allEntries: store.allEntries(),
+      observationDays: store.settings().observationDays,
     })
     const runId = newMaintenanceRunId(now)
     const counts = {

@@ -77,6 +77,8 @@ export interface CaptureSessionsOptions {
   llm: () => LlmService | null
   /** 批量落盘派生的使用记录（与召回统计同一批时机；可省略）。 */
   flushUsage?: () => void
+  /** 每个提炼任务完成后调用（此刻捕获统计刚更新；自动维护检查挂在这里）。 */
+  afterCapture?: () => void
 }
 
 /** 会话缓冲、项目身份与提炼队列。 */
@@ -85,6 +87,7 @@ export class CaptureSessions {
   private readonly log: LogFn
   private readonly getLlm: () => LlmService | null
   private readonly flushUsage: () => void
+  private readonly afterCapture: (() => void) | null
   private readonly abort = new AbortController()
   private readonly buffers = new Map<string, SessionBuffer>()
   private readonly projectCache = new Map<string, { identity: ProjectIdentity, at: number }>()
@@ -99,6 +102,7 @@ export class CaptureSessions {
     this.log = options.log
     this.getLlm = options.llm
     this.flushUsage = options.flushUsage ?? (() => {})
+    this.afterCapture = options.afterCapture ?? null
   }
 
   // ---------------------------------------------------------------------------
@@ -380,7 +384,10 @@ export class CaptureSessions {
         if (pending !== null && !this.disposed) this.enqueueExtraction(buffer, pending)
       })
     this.operations.add(task)
-    void task.finally(() => this.operations.delete(task))
+    void task.finally(() => {
+      this.operations.delete(task)
+      this.afterCapture?.()
+    })
   }
 
   /** 一次提炼请求：拼输入、收集文本、解析并写入。 */

@@ -11,6 +11,7 @@ import {
   hasForceSignal,
   parseExtraction,
   wordCount,
+  type TurnDigest,
   type TurnEvent,
 } from '../src/memory/capture.ts'
 
@@ -50,7 +51,7 @@ describe('自动捕获：闸门、摘要与提炼', () => {
     expect(digest.userWordCount).toBeGreaterThan(8)
   })
 
-  it('闸门规则：关闭/子代理/已捕获/空轮/过短轮/强制信号', () => {
+  it('闸门规则：关闭/子代理/已捕获/空轮/过短轮/强制信号/模型已直接写入', () => {
     const digest = digestOf([human(1, '改按钮')], 's-1', 1)
     expect(gateCapture(digest, { subagent: false, enabled: false, capturedThroughThisTurn: false, force: false }).capture).toBe(false)
     expect(gateCapture(digest, { subagent: true, enabled: true, capturedThroughThisTurn: false, force: false }).capture).toBe(false)
@@ -60,6 +61,22 @@ describe('自动捕获：闸门、摘要与提炼', () => {
     expect(gateCapture(digestOf([], 's-1', 1), { subagent: false, enabled: true, capturedThroughThisTurn: false, force: false }).reason).toBe('empty')
     const longHuman = digestOf([human(1, '这个仓库统一使用 pnpm 管理依赖，禁止 npm 与 yarn，请写进约定里')], 's-1', 1)
     expect(gateCapture(longHuman, { subagent: false, enabled: true, capturedThroughThisTurn: false, force: false }).capture).toBe(true)
+    // 本轮无真人输入、模型已直接调过 memory_save：跳过补漏（防双重写）。
+    const modelSaved: TurnDigest = {
+      sessionId: 's-1',
+      turn: 2,
+      userTexts: [],
+      assistantTexts: ['已保存记忆'],
+      toolNames: ['memory_save'],
+      filesTouched: [],
+      userWordCount: 0,
+      hadToolCalls: true,
+      hadError: false,
+    }
+    expect(gateCapture(modelSaved, { subagent: false, enabled: true, capturedThroughThisTurn: false, force: false })).toMatchObject({ capture: false, reason: 'model-saved-directly' })
+    // 有真人输入时不跳过（用户的显式诉求优先）。
+    const humanPlusSave: TurnDigest = { ...modelSaved, userTexts: ['这个也记一下'], userWordCount: 5 }
+    expect(gateCapture(humanPlusSave, { subagent: false, enabled: true, capturedThroughThisTurn: false, force: false }).capture).toBe(true)
   })
 
   it('强制信号覆盖“记住/以后都/never use”等显式请求', () => {

@@ -226,6 +226,19 @@ describe('prescreenMaintenance（规则预筛）', () => {
     expect(result.candidates.some(candidate => candidate.entry.id === 'pinned')).toBe(false)
   })
 
+  it('延迟评审：short 条目闲置超观察期进候选（probation），被消费/长期条目不进', () => {
+    const entries = [
+      makeEntry({ id: 'expired', name: '观察期满', tier: 'short', updatedAt: daysAgo(8) }),
+      makeEntry({ id: 'recent', name: '刚写入', tier: 'short', updatedAt: daysAgo(6.9) }),
+      // 30 天前写入但 2 天前被消费过：闲置从最近使用起算，不算期满。
+      makeEntry({ id: 'used-late', name: '近期用过', tier: 'short', updatedAt: daysAgo(30), lastUsedAt: daysAgo(2) }),
+      makeEntry({ id: 'long-idle', name: '长期闲置', tier: 'long', importance: 10, updatedAt: daysAgo(8) }),
+    ]
+    const result = prescreenMaintenance({ entries, now: NOW, observationDays: 7 })
+    expect(result.firstStale.map(candidate => candidate.entry.id)).toEqual(['expired'])
+    expect(result.firstStale[0]?.kind).toBe('probation')
+  })
+
   it('候选总数 ≤200 且按四类均衡截断', () => {
     const entries: MemoryEntry[] = []
     for (let index = 0; index < 120; index += 1) {

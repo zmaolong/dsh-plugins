@@ -274,16 +274,21 @@ function parseSettingsPatch(body: Record<string, unknown>): Partial<{
   maxChars: number
   maintenanceProvider: string
   maintenanceModel: string
+  observationDays: number
+  autoMaintenance: boolean
+  autoMaintenanceThreshold: number
 }> {
   const defaults = defaultSettings()
   const patch: Record<string, boolean | number | string> = {}
-  for (const key of ['captureEnabled', 'captureSessionEnd', 'injectEnabled'] as const) {
+  for (const key of ['captureEnabled', 'captureSessionEnd', 'injectEnabled', 'autoMaintenance'] as const) {
     if (typeof body[key] === 'boolean') patch[key] = body[key]
   }
   for (const key of ['indexLimitGlobal', 'indexLimitProject'] as const) {
     if (body[key] !== undefined) patch[key] = clampInt(body[key], 0, RECALL_MAX_PER_LAYER, defaults[key])
   }
   if (body.maxChars !== undefined) patch.maxChars = clampInt(body.maxChars, 1000, RECALL_MAX_CHARS, defaults.maxChars)
+  if (body.observationDays !== undefined) patch.observationDays = clampInt(body.observationDays, 1, 365, defaults.observationDays)
+  if (body.autoMaintenanceThreshold !== undefined) patch.autoMaintenanceThreshold = clampInt(body.autoMaintenanceThreshold, 5, 1000, defaults.autoMaintenanceThreshold)
   // 维护模型：只接受字符串；空串表示继承宿主默认模型，非字符串忽略。
   for (const key of ['maintenanceProvider', 'maintenanceModel'] as const) {
     if (typeof body[key] === 'string') patch[key] = body[key].trim().slice(0, LIMITS.maintenanceModel)
@@ -297,5 +302,8 @@ function parseSettingsPatch(body: Record<string, unknown>): Partial<{
     maxChars: number
     maintenanceProvider: string
     maintenanceModel: string
+    observationDays: number
+    autoMaintenance: boolean
+    autoMaintenanceThreshold: number
   }>
 }

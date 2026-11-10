@@ -83,3 +83,18 @@
 - **ADR-0009**：`docs/adr/0009-memory-tier-lifecycle.md`。
 - **测试**：356 用例全绿（新增：写入定级、注入只放长期+升级闭环、迁移到 v3 补 long、fake store `promoted` 记账、tier 路由双向+校验、组件徽章+切换）；`/memory/save` 面板保存断言 source=user+tier=long。
 - 待办：真机 zdebug 回归后 bump `0.0.1-preview.22` 提交。
+
+### 2026-11-11：B6 真机回归通过并交付（preview.22，commit d5f640f）
+
+- zdebug 真机：迁移自动执行（89 条全部 schema v3，新备份 `.backup-v2-*` 单次生成，按来源版本命名）；详情弹窗「长期/短期」徽章与升降级按钮双向切换正常；卡片「短期」徽章渲染正确（琥珀 warn tone）；`POST /memory/tier` curl 三场景（降级/恢复/非法值 bad_request）全过；宿主 err.log 干净。
+
+### 2026-11-11：B7 写入闸门与维护自动化实施完成
+
+- **相似吸收**（`src/memory/store.ts` + `src/shared/memory-similarity.ts`）：`save` 对 `tier=short` 的写入在指纹未命中时做 bigram 比对（`CAPTURE_SIMILARITY_THRESHOLD = 0.75`），命中转强化（reinforcement+1 + 升级 + 日志）；`SIMILARITY_MIN_CHARS = 40` 长度门槛防短模板误伤（并发测试真实暴露后修复）；用户显式写入（long）不吸收。
+- **提炼 prompt**（`src/memory/capture.ts`）：no-op 优先 +「未来 agent 会因此做得更好吗」+ 显式负面清单 +「existing 已覆盖则跳过，不要改写再写一遍」。
+- **闸门增强**：`gateCapture` 加 `model-saved-directly`——本轮无真人 prose 且模型已调过 `memory_save` → skip。
+- **延迟评审**（`src/memory/maintenance.ts`）：预筛新增 `probation` 候选（挂 firstStale 配额，处置同 first-stale）——short 条目闲置 `observationDays`（settings，默认 7）未被消费即候选；闲置按 `max(lastUsedAt, updatedAt)` 起算。
+- **维护自动触发**：`computeMaintenanceDue` 支持设置覆盖阈值；`CaptureSessions.afterCapture` 回调（提炼任务完成后）→ `MemoryRuntime.autoMaintainIfNeeded`（autoMaintenance 开关 + due + maintenanceTask 互斥三重门）后台自动跑；面板 due 不再自动弹窗（删 `maintenancePrompt` 死代码分支与 `memoryMaintenanceDueTitle/Later` 两 key），维护弹窗改为纯手动入口并显示 due 读数。
+- **设置面**：`observationDays`/`autoMaintenance`/`autoMaintenanceThreshold` 三设置项（wire + store 归一化 + 路由校验 + 设置弹窗 UI + 八语言 4 新 key）。
+- **测试**：357 用例全绿（新增：相似吸收正反/短模板/用户写入、闸门 model-saved-directly、延迟评审 probation、due 不自动弹窗改写）。
+- 待办：真机验证设置面后 bump `0.0.1-preview.23` 提交。

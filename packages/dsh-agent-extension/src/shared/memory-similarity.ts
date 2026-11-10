@@ -11,6 +11,20 @@
 /** 客户端体检认定「疑似重复」的相似度阈值。 */
 export const DUPLICATE_THRESHOLD = 0.6
 
+/**
+ * 写入相似吸收阈值：模型/提炼的新写入与既有条目相似度达到该值时不新建，
+ * 转为对既有条目的强化。比体检的疑似重复（0.6）更保守，只吞极相似候选。
+ */
+export const CAPTURE_SIMILARITY_THRESHOLD = 0.75
+
+/** 相似度比对要求的最短归一化长度；更短的文本 bigram 重合率虚高、不可信。 */
+export const SIMILARITY_MIN_CHARS = 40
+
+/** 文本归一化后是否够长、可参与相似度判定（防「记忆 1」vs「记忆 2」式误吸收）。 */
+export function longEnoughForSimilarity(value: string): boolean {
+  return normalizeText(value).length >= SIMILARITY_MIN_CHARS
+}
+
 /** 归一化：小写并去掉全部空白。 */
 function normalizeText(value: string): string {
   return value.toLowerCase().replace(/\s+/gu, '')

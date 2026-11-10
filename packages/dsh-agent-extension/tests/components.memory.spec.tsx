@@ -816,7 +816,7 @@ describe('MemoryView', () => {
     expect(screen.queryByText(t('memoryCaptureUndone'))).toBeNull()
   })
 
-  it('达阈值时自动弹提示：立即优化经确认后运行，结果可整次撤销', async () => {
+  it('维护 due 不再自动弹窗（自动后台执行）；手动打开仍走确认运行与整次撤销', async () => {
     let stateCalls = 0
     const { calls } = installFetch({
       state: () => {
@@ -828,12 +828,18 @@ describe('MemoryView', () => {
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
     const toast = vi.spyOn(controller.actions, 'toast')
     render(<MemoryView actions={controller.actions} t={t} />)
-    const dueDialog = await screen.findByRole('dialog', { name: t('memoryMaintenanceDueTitle') })
-    expect(within(dueDialog).getByText(t('memoryMaintenanceDueHint', { days: 3, writes: 32 }))).toBeTruthy()
-    // 「立即优化」只是切到确认视图，不会立刻发运行请求。
-    fireEvent.click(within(dueDialog).getByRole('button', { name: t('memoryMaintenanceRun') }))
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    // due 时面板不自动打断：等探针落地后仍无弹窗。
+    await waitFor(() => {
+      expect(calls.some(call => call.url.endsWith('/memory/maintenance'))).toBe(true)
+    })
+    expect(screen.queryByRole('dialog', { name: t('memoryMaintenanceDueTitle') })).toBeNull()
+    // 手动打开：确认视图内显示 due 原因 → 确认运行 → 结果 → 整次撤销。
+    fireEvent.click(screen.getByRole('button', { name: t('memoryMaintenanceButton') }))
     const confirmDialog = await screen.findByRole('dialog', { name: t('memoryMaintenanceConfirmTitle') })
+    expect(within(confirmDialog).getByText(t('memoryMaintenanceDueHint', { days: 3, writes: 32 }))).toBeTruthy()
     expect(within(confirmDialog).getByText(t('memoryMaintenanceConfirmHint'))).toBeTruthy()
+    // 确认视图不会立刻发运行请求。
     expect(calls.some(call => call.url.includes('/memory/maintenance/run'))).toBe(false)
     fireEvent.click(within(confirmDialog).getByRole('button', { name: t('memoryMaintenanceRun') }))
     await waitFor(() => {
@@ -863,27 +869,7 @@ describe('MemoryView', () => {
     expect(within(resultDialog).queryByRole('button', { name: t('memoryMaintenanceUndo') })).toBeNull()
   })
 
-  it('达阈值提示点「暂不」后，刷新与重渲染都不再自动弹', async () => {
-    const { calls } = installFetch({ maintenance: () => okResponse(MAINTENANCE_DUE) })
-    const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
-    const view = render(<MemoryView actions={controller.actions} t={t} />)
-    const dueDialog = await screen.findByRole('dialog', { name: t('memoryMaintenanceDueTitle') })
-    fireEvent.click(within(dueDialog).getByRole('button', { name: t('memoryMaintenanceLater') }))
-    await waitFor(() => {
-      expect(screen.queryByRole('dialog', { name: t('memoryMaintenanceDueTitle') })).toBeNull()
-    })
-    const maintenanceCalls = (): number => calls.filter(call => call.url.endsWith('/memory/maintenance')).length
-    const before = maintenanceCalls()
-    fireEvent.click(screen.getByRole('button', { name: t('refresh') }))
-    await waitFor(() => {
-      expect(maintenanceCalls()).toBeGreaterThan(before)
-    })
-    expect(screen.queryByRole('dialog', { name: t('memoryMaintenanceDueTitle') })).toBeNull()
-    view.rerender(<MemoryView actions={controller.actions} t={t} />)
-    expect(screen.queryByRole('dialog', { name: t('memoryMaintenanceDueTitle') })).toBeNull()
-  })
-
-  it('从未维护时（daysSince = -1）提示原因不显示负数天数', async () => {
+  it('从未维护时（daysSince = -1）提示原因不显示负数天数（手动打开）', async () => {
     installFetch({
       maintenance: () => okResponse({
         due: true,
@@ -896,7 +882,9 @@ describe('MemoryView', () => {
     })
     const controller = createHubController({ translate: t, getLocaleId: () => 'zh' })
     render(<MemoryView actions={controller.actions} t={t} />)
-    const dialog = await screen.findByRole('dialog', { name: t('memoryMaintenanceDueTitle') })
+    await screen.findByRole('button', { name: /提交信息用中文/u })
+    fireEvent.click(screen.getByRole('button', { name: t('memoryMaintenanceButton') }))
+    const dialog = await screen.findByRole('dialog', { name: t('memoryMaintenanceConfirmTitle') })
     expect(within(dialog).getByText(t('memoryMaintenanceDueNeverHint', { writes: 4 }))).toBeTruthy()
   })
 

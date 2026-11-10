@@ -26,6 +26,7 @@ import path from 'node:path'
 
 import { parseFrontmatter } from '../frontmatter.ts'
 import type { LogFn } from '../log.ts'
+import { CAPTURE_SIMILARITY_THRESHOLD, longEnoughForSimilarity, similarity } from '../shared/memory-similarity.ts'
 import {
   MEMORY_INDEX_FILE,
   migrateMemoryTree,
@@ -337,6 +338,9 @@ function normalizeSettings(raw: unknown): MemorySettings {
     // 维护模型：空串 = 继承宿主默认模型；旧 settings.json 缺字段时同样为空。
     maintenanceProvider: text(value.maintenanceProvider).slice(0, LIMITS.maintenanceModel),
     maintenanceModel: text(value.maintenanceModel).slice(0, LIMITS.maintenanceModel),
+    observationDays: clampInt(value.observationDays, 1, 365, fallback.observationDays),
+    autoMaintenance: typeof value.autoMaintenance === 'boolean' ? value.autoMaintenance : fallback.autoMaintenance,
+    autoMaintenanceThreshold: clampInt(value.autoMaintenanceThreshold, 5, 1000, fallback.autoMaintenanceThreshold),
     updatedAt: text(value.updatedAt) || fallback.updatedAt,
   }
 }
@@ -1072,7 +1076,31 @@ export class MemoryStore {
     }
 
     const fingerprint = fingerprintOf(name, description, content)
-    const duplicate = entries.find(entry => entry.status !== 'archived' && fingerprintOf(entry.name, entry.description, entry.content) === fingerprint)
+    let duplicate = entries.find(entry => entry.status !== 'archived' && fingerprintOf(entry.name, entry.description, entry.content) === fingerprint)
+    // 相似吸收：模型/提炼写入的措辞与既有条目几乎不可能逐字相同，指纹查重
+    // 防不住同义重复；对短期写入用 bigram 相似度兜一道——与存活条目高度
+    // 相似时不新建，转为对既有条目的一次强化（同义重复即再次确认）。
+    // 用户显式写入（tier=long）代表人的直接判断，不做吸收；过短文本的
+    // bigram 相似度虚高（模板化条目名会互相误伤），同样不参与比对。
+    if (duplicate === undefined && tier === 'short') {
+      const candidateText = `${name}\n${description}\n${content}`
+      if (longEnoughForSimilarity(candidateText)) {
+        let bestScore = 0
+        for (const entry of entries) {
+          if (entry.status === 'archived') continue
+          const entryText = `${entry.name}\n${entry.description}\n${entry.content}`
+          if (!longEnoughForSimilarity(entryText)) continue
+          const score = similarity(candidateText, entryText)
+          if (score >= CAPTURE_SIMILARITY_THRESHOLD && score > bestScore) {
+            bestScore = score
+            duplicate = entry
+          }
+        }
+        if (duplicate !== undefined) {
+          this.log('info', `记忆候选与 ${duplicate.id} 相似度 ${(bestScore * 100).toFixed(0)}%，已转为强化而非新增`)
+        }
+      }
+    }
     if (duplicate !== undefined) {
       // 强化路径也要处理 supersedes：只对尚未记录的新 id 记一次票，保持幂等。
       const addedSupersedes = (supersedesInput ?? []).filter(id => !duplicate.supersedes.includes(id))
@@ -1082,7 +1110,7 @@ export class MemoryStore {
         importance: Math.max(duplicate.importance, importance),
         tags: [...new Set([...duplicate.tags, ...tags])].slice(0, LIMITS.tags),
         reinforcement: duplicate.reinforcement + 1,
-        // 事实被再次确认即视为使用证明：短期条目升级为长期。
+        // 事实被再次确认（指纹重复或相似吸收）即使用证明：短期条目升级为长期。
         tier: duplicate.tier === 'short' ? 'long' : duplicate.tier,
         supersedes: addedSupersedes.length === 0 ? duplicate.supersedes : [...duplicate.supersedes, ...addedSupersedes],
         ...(confidenceProvided ? { confidence } : {}),

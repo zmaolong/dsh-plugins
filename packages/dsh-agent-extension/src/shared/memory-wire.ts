@@ -104,6 +104,12 @@ export interface MemorySettings {
   maintenanceProvider: string
   /** 维护 Run 使用的模型 id；空串表示继承宿主默认模型。 */
   maintenanceModel: string
+  /** 短期条目的观察期天数：闲置超过该值未被消费即进维护候选。 */
+  observationDays: number
+  /** 维护达到阈值时是否自动后台执行维护 Run。 */
+  autoMaintenance: boolean
+  /** 自动维护的写入量阈值：距上次维护新增/强化达到该条数即触发。 */
+  autoMaintenanceThreshold: number
   updatedAt: string
 }
 
@@ -118,6 +124,9 @@ export function defaultSettings(): MemorySettings {
     maxChars: 3000,
     maintenanceProvider: '',
     maintenanceModel: '',
+    observationDays: 7,
+    autoMaintenance: true,
+    autoMaintenanceThreshold: 30,
     updatedAt: new Date().toISOString(),
   }
 }

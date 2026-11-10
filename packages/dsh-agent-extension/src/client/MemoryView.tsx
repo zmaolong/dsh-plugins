@@ -206,6 +206,9 @@ function normalizeSettings(raw: unknown): MemorySettings {
     maxChars: integer(item.maxChars, 1000, RECALL_MAX_CHARS, DEFAULT_SETTINGS.maxChars),
     maintenanceProvider: text(item.maintenanceProvider),
     maintenanceModel: text(item.maintenanceModel),
+    observationDays: integer(item.observationDays, 1, 365, DEFAULT_SETTINGS.observationDays),
+    autoMaintenance: item.autoMaintenance !== false,
+    autoMaintenanceThreshold: integer(item.autoMaintenanceThreshold, 5, 1000, DEFAULT_SETTINGS.autoMaintenanceThreshold),
     updatedAt: text(item.updatedAt),
   }
 }
@@ -461,7 +464,6 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [maintenance, setMaintenance] = useState<MaintenanceInfo | null>(null)
   const [maintenanceOpen, setMaintenanceOpen] = useState(false)
-  const [maintenancePrompt, setMaintenancePrompt] = useState(false)
   const [maintenanceBusy, setMaintenanceBusy] = useState(false)
   const [maintenanceRunning, setMaintenanceRunning] = useState(false)
   const [maintenanceUndoBusy, setMaintenanceUndoBusy] = useState(false)
@@ -499,8 +501,6 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   // Maintenance dialog visibility is mirrored in a ref so the async threshold
   // probe never stacks a due prompt on top of an open dialog.
   const maintenanceOpenRef = useRef(false)
-  // One due prompt per mounted panel session; 「暂不」silences later refreshes.
-  const maintenancePromptedRef = useRef(false)
   // Drop a pending debounced persist when the view unmounts.
   useEffect(() => () => {
     if (settingsTimer.current !== null) clearTimeout(settingsTimer.current)
@@ -542,7 +542,9 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   }, [stateToken, t])
 
   // Threshold probe: once the state loads, fetch the maintenance overview
-  // alongside the list; a due hint pops exactly once per panel session.
+  // alongside the list. Due maintenance runs automatically after sessions
+  // (memory-host autoMaintainIfNeeded), so the panel only reflects the state
+  // instead of interrupting with a prompt.
   useEffect(() => {
     if (!stateReady) return
     let cancelled = false
@@ -550,15 +552,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
       try {
         const data = await api<JsonRecord>('/memory/maintenance')
         if (cancelled) return
-        const info = normalizeMaintenance(data)
-        setMaintenance(info)
-        if (info.due && !maintenancePromptedRef.current && !maintenanceOpenRef.current) {
-          maintenancePromptedRef.current = true
-          maintenanceOpenRef.current = true
-          setMaintenanceResult(null)
-          setMaintenancePrompt(true)
-          setMaintenanceOpen(true)
-        }
+        setMaintenance(normalizeMaintenance(data))
       } catch {
         // 探测失败不打扰面板：工具条入口仍可手动打开并显示错误。
       }
@@ -841,7 +835,6 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
     if (maintenanceRunning || maintenanceUndoBusy) return
     maintenanceOpenRef.current = false
     setMaintenanceOpen(false)
-    setMaintenancePrompt(false)
     setMaintenanceResult(null)
   }
 
@@ -849,7 +842,6 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const openMaintenance = async (): Promise<void> => {
     if (maintenanceBusy || maintenanceRunning) return
     setMaintenanceBusy(true)
-    setMaintenancePrompt(false)
     setMaintenanceResult(null)
     try {
       const data = await api<JsonRecord>('/memory/maintenance')
@@ -1232,13 +1224,13 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   )
 
   const maintenanceRuns = (maintenance?.recentRuns ?? []).slice(0, RECENT_MAINTENANCE_ROWS)
-  const maintenanceTitle = maintenanceResult !== null
-    ? (maintenanceResult.status === 'failed' ? t('memoryMaintenanceConfirmTitle') : t('memoryMaintenanceResultTitle'))
-    : maintenancePrompt ? t('memoryMaintenanceDueTitle') : t('memoryMaintenanceConfirmTitle')
+  const maintenanceTitle = maintenanceResult !== null && maintenanceResult.status !== 'failed'
+    ? t('memoryMaintenanceResultTitle')
+    : t('memoryMaintenanceConfirmTitle')
 
-  // Footer and body of the one maintenance dialog: result summary / due prompt /
-  // confirm view. The prompt only switches to the confirm view; running is a
-  // separate explicit step.
+  // Footer and body of the one maintenance dialog: result summary or the
+  // confirm view (with the current due readout). Due maintenance runs
+  // automatically after sessions; the dialog is the manual entry only.
   let maintenanceBody: ReactNode = null
   let maintenanceFooter: ReactNode = null
   if (maintenanceResult !== null) {
@@ -1279,18 +1271,6 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
         )
         : null,
       <Button key="close" variant="secondary" disabled={maintenanceUndoBusy} onClick={closeMaintenance}>{t('close')}</Button>,
-    ]
-  } else if (maintenancePrompt && maintenance !== null) {
-    maintenanceBody = (
-      <div className={css.maintenanceStack}>
-        <div className={css.maintenanceNotice}>{maintenanceDueText(maintenance, t)}</div>
-      </div>
-    )
-    maintenanceFooter = [
-      <Button key="later" variant="secondary" onClick={closeMaintenance}>{t('memoryMaintenanceLater')}</Button>,
-      <Button key="continue" variant="primary" icon="wand" onClick={() => { setMaintenancePrompt(false) }}>
-        {t('memoryMaintenanceRun')}
-      </Button>,
     ]
   } else if (maintenance !== null) {
     maintenanceBody = (
@@ -2010,6 +1990,42 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                 </label>
               </div>
               <span className={css.fieldHint}>{t('memoryMaintenanceModelInherit')}</span>
+              <div className={css.divider} />
+              <div className={css.settingRow}>
+                <span className={css.settingLabel}>{t('memorySettingsAutoMaintenance')}</span>
+                <Switch
+                  checked={settings.autoMaintenance}
+                  label={t('memorySettingsAutoMaintenance')}
+                  onChange={(next) => { patchSettings({ autoMaintenance: next }) }}
+                />
+              </div>
+              <div className={css.numberGrid}>
+                <label className={css.field}>
+                  <span className={css.fieldLabel}>{t('memorySettingsObservationDays')}</span>
+                  <input
+                    className={css.input}
+                    type="number"
+                    min={1}
+                    max={365}
+                    aria-label={t('memorySettingsObservationDays')}
+                    value={settings.observationDays}
+                    onChange={(event) => { patchSettings({ observationDays: integer(event.target.value, 1, 365, settingsRef.current.observationDays) }, true) }}
+                  />
+                </label>
+                <label className={css.field}>
+                  <span className={css.fieldLabel}>{t('memorySettingsAutoThreshold')}</span>
+                  <input
+                    className={css.input}
+                    type="number"
+                    min={5}
+                    max={1000}
+                    aria-label={t('memorySettingsAutoThreshold')}
+                    value={settings.autoMaintenanceThreshold}
+                    onChange={(event) => { patchSettings({ autoMaintenanceThreshold: integer(event.target.value, 5, 1000, settingsRef.current.autoMaintenanceThreshold) }, true) }}
+                  />
+                </label>
+              </div>
+              <span className={css.fieldHint}>{t('memorySettingsAutoHint')}</span>
               <div className={css.divider} />
               <h3 className={css.statsTitle}>{t('memoryStatsTitle')}</h3>
               <div className={css.statGrid}>
