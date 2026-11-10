@@ -3,7 +3,7 @@
 > 自包含实施规划：新上下文可直接按本文实施，不需要历史会话。
 > 决策依据：[ADR-0005](../../../docs/adr/0005-memory-recall-v2.md)（召回与注入）、[ADR-0006](../../../docs/adr/0006-memory-capture-and-maintenance.md)（捕获与维护）、[ADR-0007](../../../docs/adr/0007-memory-schema-v2.md)（数据模型与迁移）、[ADR-0008](../../../docs/adr/0008-host-ui-primitives-channel.md)（官方 UI 通道）；术语见 [`GLOSSARY.md`](../../../GLOSSARY.md)。
 > 基线：`0.0.1-preview.16`。
-> 进度：B0 已完成（preview.17，commit 482df23）；B1 已完成（preview.18，commit 51aff6c）；B2 已完成（preview.19，commit d9cc6d8）；B3 已完成（preview.20，commit 7501752）；B4 已完成（preview.21）。
+> 进度：B0–B4 已完成（preview.17–preview.21）；B5 已完成：正式版 `0.0.1` 发布（2026-11-10）。
 
 ## 目标与边界
 

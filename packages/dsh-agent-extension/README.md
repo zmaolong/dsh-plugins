@@ -1,11 +1,10 @@
 # dsh-agent-extension
 
-> **试验性预览版（`0.0.1-preview.21`）**：仅供内部试验，接口与能力可能变化，不保证兼容，暂不对外推广。
-> npm 上只发布 `preview` dist-tag（`latest` 暂不指向本版本）。
-> 需要安装时请锁定精确版本：
-> `dsh plugin --profile web add dsh-agent-extension@0.0.1-preview.21`。
-> 版本说明：npm 公开线为 `0.0.1-preview.N`，首个正式版定为 `0.0.1`（预览线的稳定版）；
-> 官方化工具链形态（TypeScript + JSX + CSS Modules + tsdown + vitest，对齐官方插件形态，
+> **正式版（`0.0.1`）**：记忆子系统 v2（B0–B5）已完成并收敛。npm `latest` dist-tag 指向本版本；
+> 预览线为 `0.0.1-preview.N`（与正式版同核心）。
+> 需要安装时：
+> `dsh plugin --profile web add dsh-agent-extension@0.0.1`。
+> 版本说明：官方化工具链形态（TypeScript + JSX + CSS Modules + tsdown + vitest，对齐官方插件形态，
 > 破坏性重构、不做旧版兼容）自 `dsh-agent-plugin-hub` 时代的 `0.0.1-preview.6` 延续；
 > 更名为 `dsh-agent-extension` 后从 `0.0.1-preview.0` 重新起线，不继承旧版本号与旧数据
 > （新数据目录 `~/.dsh/agent-extension`）。
@@ -24,6 +23,19 @@ DSH 的**智能体扩展**（Agent Extension）：管理智能体插件、技能
 `mcpServers` 等能力。已知格式包括 Claude Code、CodeBuddy、ZCode；它们不是 DSH 插件
 （cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
+
+## 0.0.1 正式版变更（记忆子系统 v2 完成）
+
+B0–B4 五批预览的收敛版本（决策见 [`docs/adr/0005`](../../docs/adr/0005-memory-recall-v2.md) ~
+[`docs/adr/0008`](../../docs/adr/0008-host-ui-primitives-channel.md)，规划见 [`docs/memory-roadmap.md`](docs/memory-roadmap.md)）：
+
+- **数据**：条目 schema v2 + 自动迁移与备份；Markdown 仍是唯一真源，派生索引/利用率/维护流水可重建。
+- **召回**：会话首步分层索引快照（全局 preference/decision、项目 gotcha/project；每层 ≤20、预算 3,000），
+  宿主按内容去重、压缩后自动重注入；`memory_search` 摘要 + `memory_get` 按需读全文（≤3 条 / 4,000 字）。
+- **捕获**：模型主动写入（先查重、仅显式要求或稳定事实）+ 会话末一次补漏；捕获可撤销；利用率采样落盘。
+- **维护**：手动「优化记忆」（达阈值提示）；LLM 研判合并/停用/恢复/删除，两阶段清理、trash 30 天与整次撤销。
+- **面板**：诊断对话框、宿主 `MarkdownText` 正文只读预览、归档默认隐藏、id 复制、焦点陷阱等修复。
+- **验证**：全量 348 个离线用例；zdebug 真机浏览器双主题实测 console error = 0；维护 Run 在隔离库端到端验证。
 
 ## 0.0.1-preview.21 变更（记忆 v2 · B4 诊断与阅读面）
 

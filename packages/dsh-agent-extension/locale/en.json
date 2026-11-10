@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Agent Extension",
-    "description": "Manage agent extensions in DSH — plugin marketplaces, install/update/rollback, per-item capability toggles, and built-in cross-session memory (global + project scopes, automatic capture, on-demand recall)."
+    "description": "Manage agent extensions in DSH — plugin marketplaces, install/update/rollback, per-item capability toggles, and built-in cross-session memory v2 (global + project scopes, model-written facts with session-end fallback capture, layered recall index, maintenance runs)."
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "dsh-agent-extension",
-  "version": "0.0.1-preview.21",
-  "description": "Agent Extension (智能体扩展) for DSH: manage agent plugins, skills, MCP and more — plus built-in cross-session memory with global and project scopes, automatic capture and on-demand recall.",
+  "version": "0.0.1",
+  "description": "Agent Extension (智能体扩展) for DSH: manage agent plugins, skills, MCP and more — plus built-in cross-session memory v2 with global and project scopes, model-written facts with session-end capture, layered recall and maintenance runs.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -56,7 +56,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "tag": "preview"
+    "tag": "latest"
   },
   "keywords": [
     "dsh-plugin",
@@ -89,8 +89,8 @@
         "zh-cn": "智能体扩展"
       },
       "description": {
-        "en": "Manage agent extensions in DSH — plugin marketplaces, install/update/rollback, per-item capability toggles, and built-in cross-session memory (global + project scopes, automatic capture, on-demand recall).",
-        "zh-cn": "在 DSH 里管理智能体扩展：插件市场与逐项启停，并内置跨会话记忆（全局 + 项目双作用域、自动捕获、按需召回）。"
+        "en": "Manage agent extensions in DSH — plugin marketplaces, install/update/rollback, per-item capability toggles, and built-in cross-session memory v2 (global + project scopes, model-written facts with session-end fallback capture, layered recall index, maintenance runs).",
+        "zh-cn": "在 DSH 里管理智能体扩展：插件市场与逐项启停，并内置跨会话记忆 v2（全局 + 项目双作用域、模型主动写入与会话末补漏、分层索引召回、维护整理）。"
       },
       "category": "tool",
       "keywords": [
