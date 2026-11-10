@@ -1,6 +1,6 @@
 /**
- * Main panel of the store: hosts the section header (plugins / memory /
- * skills), the three plugin views (store / manage / detail), keeps the store
+ * Main panel of the store: hosts the section header (memory / skills /
+ * plugins), the three plugin views (store / manage / detail), keeps the store
  * list's scroll position across view switches, and renders the migration /
  * API banners. The memory tab renders its own self-contained view; skills is
  * still a placeholder.
@@ -28,12 +28,12 @@ export interface PanelProps {
   t: Translate
 }
 
-/** Section tabs: plugin features now, memory and skills as placeholders. */
+/** Section tabs, in display order: memory first, then skills, then plugins. */
 function sectionTabs(t: Translate): ReadonlyArray<TabItem<SectionTab>> {
   return [
-    { value: 'plugins', label: t('tabPlugins') },
     { value: 'memory', label: t('tabMemory') },
     { value: 'skills', label: t('tabSkills') },
+    { value: 'plugins', label: t('tabPlugins') },
   ]
 }
 

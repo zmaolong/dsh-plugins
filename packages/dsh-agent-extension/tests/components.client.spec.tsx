@@ -259,6 +259,12 @@ describe('Panel', () => {
       snapshot: { markets: [], items: [], installed: [] },
     })
     render(<Panel useHub={useHub} actions={controller.actions} t={t} />)
+    // 分区顺序固定为「记忆 / 技能 / 插件」，默认落点仍是插件。
+    expect(screen.getAllByRole('tab').slice(0, 3).map(tab => tab.textContent)).toEqual([
+      t('tabMemory'),
+      t('tabSkills'),
+      t('tabPlugins'),
+    ])
     const plugins = screen.getByRole('tab', { name: t('tabPlugins') })
     expect(plugins.getAttribute('aria-selected')).toBe('true')
     expect(screen.getByRole('tab', { name: t('tabMemory') })).toBeTruthy()
