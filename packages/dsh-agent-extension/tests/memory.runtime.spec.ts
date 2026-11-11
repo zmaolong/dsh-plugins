@@ -846,6 +846,86 @@ describe('记忆运行时：使用记录采集', () => {
     expect(second.entries[alpha.id]?.usedCount).toBe(4)
   })
 
+  it('assistant 文本引用暴露过的记忆 id 时回写 usage；未暴露的同形 id 不误计', async () => {
+    const home = tempHome('memory-runtime-cited-')
+    tempDirs.push(home)
+    const store = new MemoryStore({ home })
+    store.start()
+    const alpha = store.save({
+      name: '偏好 Alpha',
+      description: '引用回写样本',
+      type: 'preference',
+      scope: 'global',
+      content: 'Alpha 正文。',
+    })
+    const beta = store.save({
+      name: '偏好 Beta',
+      description: '未暴露样本',
+      type: 'preference',
+      scope: 'global',
+      content: 'Beta 正文。',
+    })
+
+    const tools = createFakeTools()
+    const ctx = new FakeCtx({ systemPrompt: createFakeSystemPrompt(), tools, llm: createFakeLlm() })
+    const runtime = new MemoryRuntime({ ctx: ctx.host(), store, log: () => {} })
+    runtime.start()
+    runtimes.push(runtime)
+
+    const agent = makeAgent('s-cited', makeCwd())
+    // search 暴露 alpha（进会话缓冲的已知 id 集合）；beta 与一个随机 UUID 从未暴露。
+    await tools.registered.get('memory_search')?.execute({ query: 'Alpha' }, { agent })
+    emitTurn(ctx, agent, 1, ['看下偏好'], `依据记忆 ${alpha.id} 的约定继续。参考 ${beta.id} 与 0f8aadce-1234-4abc-9def-567890abcdef。`)
+    ctx.emit('agent/turn-stopping', { agent })
+
+    const usageFile = path.join(store.root, 'usage.json')
+    const raw = JSON.parse(readFileSync(usageFile, 'utf8')) as UsageFileShape
+    // search 命中即计一次（既有语义），assistant 文本引用是第二个消费证据。
+    expect(raw.entries[alpha.id]?.usedCount).toBe(2)
+    expect(raw.entries[beta.id]).toBeUndefined()
+    expect(Object.keys(raw.entries)).toHaveLength(1)
+  })
+
+  it('引用回写按轮增量扫描：同一轮只计一次，跨轮引用累加，无引用轮不计', async () => {
+    const home = tempHome('memory-runtime-cited-turns-')
+    tempDirs.push(home)
+    const store = new MemoryStore({ home })
+    store.start()
+    const alpha = store.save({
+      name: '偏好 Alpha',
+      description: '轮次增量样本',
+      type: 'preference',
+      scope: 'global',
+      content: 'Alpha 正文。',
+    })
+
+    const tools = createFakeTools()
+    const ctx = new FakeCtx({ systemPrompt: createFakeSystemPrompt(), tools, llm: createFakeLlm() })
+    const runtime = new MemoryRuntime({ ctx: ctx.host(), store, log: () => {} })
+    runtime.start()
+    runtimes.push(runtime)
+
+    const agent = makeAgent('s-cited-turns', makeCwd())
+    await tools.registered.get('memory_search')?.execute({ query: '' }, { agent })
+
+    emitTurn(ctx, agent, 1, ['q1'], `turn1 ${alpha.id} ${alpha.id}`)
+    ctx.emit('agent/turn-stopping', { agent })
+    const usageFile = path.join(store.root, 'usage.json')
+    let raw = JSON.parse(readFileSync(usageFile, 'utf8')) as UsageFileShape
+    // search 命中 1 次 + 本轮文本引用（同轮去重）1 次。
+    expect(raw.entries[alpha.id]?.usedCount).toBe(2)
+
+    emitTurn(ctx, agent, 2, ['q2'], `turn2 再次依据 ${alpha.id}`)
+    ctx.emit('agent/turn-stopping', { agent })
+    raw = JSON.parse(readFileSync(usageFile, 'utf8')) as UsageFileShape
+    expect(raw.entries[alpha.id]?.usedCount).toBe(3)
+
+    emitTurn(ctx, agent, 3, ['q3'], 'turn3 不引用任何记忆 id。')
+    ctx.emit('agent/turn-stopping', { agent })
+    raw = JSON.parse(readFileSync(usageFile, 'utf8')) as UsageFileShape
+    expect(raw.entries[alpha.id]?.usedCount).toBe(3)
+  })
+
   it('30 秒定时器兜底 flush usage；dispose 时清理定时器', async () => {
     vi.useFakeTimers()
     const home = tempHome('memory-runtime-usage-timer-')

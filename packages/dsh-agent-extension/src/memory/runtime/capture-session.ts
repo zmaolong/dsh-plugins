@@ -26,7 +26,7 @@ import {
 import { resolveProject } from '../identity.ts'
 import type { MemoryStore } from '../store.ts'
 import { text, type CreatedRef, type MemoryScope, type ProjectIdentity } from '../types.ts'
-import { flushRecall, noteToolUsage as countToolUsage, recordCaptureAttempt, type InjectionSample, type RecallCounters } from './stats.ts'
+import { flushRecall, noteToolUsage as countToolUsage, recordCaptureAttempt, citedMemoryIds, type InjectionSample, type RecallCounters } from './stats.ts'
 
 /** 每个会话缓冲的事件数上限；只影响记忆提炼输入。 */
 const EVENT_BUFFER_LIMIT = 400
@@ -58,6 +58,8 @@ export interface SessionBuffer extends RecallCounters {
   subagent: boolean
   currentTurn: number
   lastCapturedTurn: number
+  /** 引用回写已扫到的轮次；轮末增量扫描 assistant 文本用。 */
+  lastCitedTurn: number
   events: BufferedEvent[]
   project: ProjectIdentity | null
   modelRoute: ModelRoute | null
@@ -77,6 +79,8 @@ export interface CaptureSessionsOptions {
   llm: () => LlmService | null
   /** 批量落盘派生的使用记录（与召回统计同一批时机；可省略）。 */
   flushUsage?: () => void
+  /** 记录一批消费命中（assistant 文本引用回写；可省略）。 */
+  touchUsage?: (ids: readonly string[]) => void
   /** 每个提炼任务完成后调用（此刻捕获统计刚更新；自动维护检查挂在这里）。 */
   afterCapture?: () => void
 }
@@ -87,6 +91,7 @@ export class CaptureSessions {
   private readonly log: LogFn
   private readonly getLlm: () => LlmService | null
   private readonly flushUsage: () => void
+  private readonly touchUsage: (ids: readonly string[]) => void
   private readonly afterCapture: (() => void) | null
   private readonly abort = new AbortController()
   private readonly buffers = new Map<string, SessionBuffer>()
@@ -102,6 +107,7 @@ export class CaptureSessions {
     this.log = options.log
     this.getLlm = options.llm
     this.flushUsage = options.flushUsage ?? (() => {})
+    this.touchUsage = options.touchUsage ?? (() => {})
     this.afterCapture = options.afterCapture ?? null
   }
 
@@ -144,11 +150,34 @@ export class CaptureSessions {
     buffer.modelRoute = this.modelRouteOf(agent) ?? buffer.modelRoute
     this.ensureProject(buffer)
     this.flushRecall(buffer)
+    this.flushCitedUsage(buffer)
     this.flushUsage()
   }
 
-  /** 会话销毁：批量补漏提炼一次，然后释放缓冲。 */
-  onAgentDisposed(payload: unknown): void {
+  /**
+   * 轮末引用回写：assistant 文本引用的本会话已知记忆 id 计一次消费。
+   *
+   * B10 注入抬头「依赖时引用 id」规约的承接（codex citation 闭环）：模型
+   * 不经 `memory_get`、直接在回复中依据注入索引行动时，消费信号只有这条
+   * 通路能捕捉。只认「本会话暴露过的 id」（注入索引 ∪ 工具结果），正文里
+   * 偶然出现的同形字符串不会误计；按轮增量扫描（游标推进到当前轮，重复
+   * 轮不重复计）。
+   */
+  private flushCitedUsage(buffer: SessionBuffer): void {
+    if (buffer.currentTurn <= buffer.lastCitedTurn) return
+    const digest = this.digestForTurns(buffer, buffer.currentTurn, buffer.lastCitedTurn + 1)
+    buffer.lastCitedTurn = buffer.currentTurn
+    const text = digest === null ? '' : digest.assistantTexts.join('\n')
+    if (text === '') return
+    const known = new Set([...buffer.injected, ...buffer.searched])
+    if (known.size === 0) return
+    const cited = citedMemoryIds(text).filter(id => known.has(id))
+    if (cited.length === 0) return
+    this.touchUsage(cited)
+    for (const id of cited) buffer.used.add(id)
+  }
+
+  /** 会话销毁：批量补漏提炼一次，然后释放缓冲。 */  onAgentDisposed(payload: unknown): void {
     if (this.disposed) return
     const record = payload !== null && typeof payload === 'object' ? payload as Record<string, unknown> : {}
     const agent = record.agent as AgentLike | undefined
@@ -239,6 +268,7 @@ export class CaptureSessions {
       subagent: session.header?.origin === 'subagent',
       currentTurn: 0,
       lastCapturedTurn: 0,
+      lastCitedTurn: 0,
       events: [],
       injected: new Set(),
       used: new Set(),

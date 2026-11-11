@@ -127,6 +127,8 @@ export class MemoryRuntime {
       llm: () => this.llm(),
       // 与召回统计同一批时机落盘 usage（turn-stopping / disposed / dispose）。
       flushUsage: () => this.usage?.flush(),
+      // assistant 文本引用回写与工具命中共用同一条 usage 通道。
+      touchUsage: ids => this.usage?.touch(ids),
       // 会话末补漏完成后检查维护 due：达标且开关开启时后台自动跑一次。
       afterCapture: () => { void this.autoMaintainIfNeeded() },
     })

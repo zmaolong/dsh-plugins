@@ -60,6 +60,25 @@ export function noteToolUsage(
 }
 
 /**
+ * 从 assistant 文本中提取被引用的记忆 id。
+ *
+ * B10 注入抬头立了「依赖时引用 id」的规约，这里是它的承接（codex citation
+ * 闭环）：正文里出现 `m-<时间戳>-<hex>` 短格式或迁移条目的 UUID 形式即算
+ * 引用候选。只提取候选、不判定真伪——命中是否计数由调用方与「本会话暴露
+ * 给模型的 id 集合」取交集决定，防止正文里偶然出现的同形字符串误计。
+ *
+ * @param text - assistant 文本（多条直接拼接）。
+ */
+export function citedMemoryIds(text: string): string[] {
+  const found = new Set<string>()
+  for (const match of text.matchAll(/\bm-[0-9a-z]{4,12}-[0-9a-f]{6}\b/giu)) found.add(match[0])
+  for (const match of text.matchAll(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/giu)) {
+    found.add(match[0])
+  }
+  return [...found]
+}
+
+/**
  * 把一个会话的召回计数与装配样本写入存储（best effort，失败只记日志）。
  *
  * @param options - 存储、会话 id、计数、可选装配样本与日志。

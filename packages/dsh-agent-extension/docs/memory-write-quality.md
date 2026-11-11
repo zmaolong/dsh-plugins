@@ -213,3 +213,24 @@ codex/OpenViking），选定两项零 schema 变更的改进落地：
 - **后续候选**（survey §9.3 递补）：P0-2 消费闭环补环（assistant 文本引用回写 usage +
   新条目短 id，涉及 id 格式与存量迁移，单独成批）；P1 轮级轻量召回注入、冲突显式化
   （changes/ends）、导入桥。
+
+### 2026-11-12：B13 消费闭环补环——assistant 文本引用回写 usage（preview.29）
+
+survey §9.3 P0-2 的消费侧闭环（codex citation 闭环对位）。B10 注入抬头立了「依赖时引用 id」
+的规约，但模型不经 `memory_get`、直接依据注入索引行动时，消费信号无通路捕捉——引用规约
+一直是空文。本轮补上承接（**短 id 降引用成本**仍为独立候选，不阻塞闭环）：
+
+- **轮末引用回写**（`src/memory/runtime/capture-session.ts` `flushCitedUsage` + `stats.ts`
+  `citedMemoryIds`）：`onTurnStopping` 时按轮增量提取 assistant 文本（复用提炼的
+  `digestOf` 通道），正则收集记忆 id 候选（`m-<时间戳>-<hex>` 短格式与迁移条目 UUID 形式），
+  与「本会话暴露过的 id 集合」（注入索引 injected ∪ 工具结果 searched）取交集后
+  `usage.touch` 计数——正文里偶然出现的同形字符串不会误计；游标 `lastCitedTurn` 保证
+  重复轮不重复计，跨轮引用按轮累加（反复依赖即反复确认，与强化语义一致）。
+- **接线**：`CaptureSessionsOptions.touchUsage`（可省略）由 memory-host 传入，与工具命中
+  共用同一条 usage 通道（`usage.touch` 同调用去重）；`buffer.used` 同步登记。
+- **既有语义不动**：search 命中即计一次消费是 B10 之前的设计，维持——引用回写是额外的
+  消费证据通路，两者可叠加。
+- **验证**：374 用例全绿（新增 2：暴露交集过滤 + 轮增量扫描/同轮去重/无引用轮不计）。
+  纯服务端，免真机。
+- **后续候选**：P0-2 剩余的短 id（新条目 id 缩短降引用成本，涉及 id 生成与引用解析一致性，
+  单独成批）；P1 轮级轻量召回注入、冲突显式化（changes/ends）、导入桥。

@@ -7626,6 +7626,22 @@ function noteToolUsage(counters, resultIds, usedIds) {
 	}
 }
 /**
+* 从 assistant 文本中提取被引用的记忆 id。
+*
+* B10 注入抬头立了「依赖时引用 id」的规约，这里是它的承接（codex citation
+* 闭环）：正文里出现 `m-<时间戳>-<hex>` 短格式或迁移条目的 UUID 形式即算
+* 引用候选。只提取候选、不判定真伪——命中是否计数由调用方与「本会话暴露
+* 给模型的 id 集合」取交集决定，防止正文里偶然出现的同形字符串误计。
+*
+* @param text - assistant 文本（多条直接拼接）。
+*/
+function citedMemoryIds(text) {
+	const found = /* @__PURE__ */ new Set();
+	for (const match of text.matchAll(/\bm-[0-9a-z]{4,12}-[0-9a-f]{6}\b/giu)) found.add(match[0]);
+	for (const match of text.matchAll(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/giu)) found.add(match[0]);
+	return [...found];
+}
+/**
 * 把一个会话的召回计数与装配样本写入存储（best effort，失败只记日志）。
 *
 * @param options - 存储、会话 id、计数、可选装配样本与日志。
@@ -7685,6 +7701,7 @@ var CaptureSessions = class {
 	log;
 	getLlm;
 	flushUsage;
+	touchUsage;
 	afterCapture;
 	abort = new AbortController();
 	buffers = /* @__PURE__ */ new Map();
@@ -7699,6 +7716,7 @@ var CaptureSessions = class {
 		this.log = options.log;
 		this.getLlm = options.llm;
 		this.flushUsage = options.flushUsage ?? (() => {});
+		this.touchUsage = options.touchUsage ?? (() => {});
 		this.afterCapture = options.afterCapture ?? null;
 	}
 	/** 缓冲一条会话事件；首个事件顺带解析（并登记）项目身份。 */
@@ -7734,10 +7752,32 @@ var CaptureSessions = class {
 		buffer.modelRoute = this.modelRouteOf(agent) ?? buffer.modelRoute;
 		this.ensureProject(buffer);
 		this.flushRecall(buffer);
+		this.flushCitedUsage(buffer);
 		this.flushUsage();
 	}
-	/** 会话销毁：批量补漏提炼一次，然后释放缓冲。 */
-	onAgentDisposed(payload) {
+	/**
+	* 轮末引用回写：assistant 文本引用的本会话已知记忆 id 计一次消费。
+	*
+	* B10 注入抬头「依赖时引用 id」规约的承接（codex citation 闭环）：模型
+	* 不经 `memory_get`、直接在回复中依据注入索引行动时，消费信号只有这条
+	* 通路能捕捉。只认「本会话暴露过的 id」（注入索引 ∪ 工具结果），正文里
+	* 偶然出现的同形字符串不会误计；按轮增量扫描（游标推进到当前轮，重复
+	* 轮不重复计）。
+	*/
+	flushCitedUsage(buffer) {
+		if (buffer.currentTurn <= buffer.lastCitedTurn) return;
+		const digest = this.digestForTurns(buffer, buffer.currentTurn, buffer.lastCitedTurn + 1);
+		buffer.lastCitedTurn = buffer.currentTurn;
+		const text = digest === null ? "" : digest.assistantTexts.join("\n");
+		if (text === "") return;
+		const known = /* @__PURE__ */ new Set([...buffer.injected, ...buffer.searched]);
+		if (known.size === 0) return;
+		const cited = citedMemoryIds(text).filter((id) => known.has(id));
+		if (cited.length === 0) return;
+		this.touchUsage(cited);
+		for (const id of cited) buffer.used.add(id);
+	}
+	/** 会话销毁：批量补漏提炼一次，然后释放缓冲。 */ onAgentDisposed(payload) {
 		if (this.disposed) return;
 		const agent = (payload !== null && typeof payload === "object" ? payload : {}).agent;
 		const sessionId = this.sessionIdOf(agent);
@@ -7819,6 +7859,7 @@ var CaptureSessions = class {
 			subagent: session.header?.origin === "subagent",
 			currentTurn: 0,
 			lastCapturedTurn: 0,
+			lastCitedTurn: 0,
 			events: [],
 			injected: /* @__PURE__ */ new Set(),
 			used: /* @__PURE__ */ new Set(),
@@ -8774,6 +8815,7 @@ var MemoryRuntime = class {
 			log: options.log,
 			llm: () => this.llm(),
 			flushUsage: () => this.usage?.flush(),
+			touchUsage: (ids) => this.usage?.touch(ids),
 			afterCapture: () => {
 				this.autoMaintainIfNeeded();
 			}
