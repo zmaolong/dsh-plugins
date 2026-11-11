@@ -328,9 +328,9 @@ local-first 跨编码代理记忆系统，铁律：**Markdown vault 是唯一事
 
 | 优先级 | 建议 | 来源项目 | 状态 |
 |---|---|---|---|
-| P0 | 写入路径 secrets 确定性拦截（高置信正则 + 整条拒绝） | hindsight memory-defense、agentcairn redact-first、claude-mem redaction | 候选 |
+| P0 | 写入路径 secrets 确定性拦截（高置信正则 + 整条拒绝） | hindsight memory-defense、agentcairn redact-first、claude-mem redaction | ✅ B12（preview.28） |
 | P0 | 消费闭环补最后一环：assistant 文本引用回写 usage + 新条目短 id | codex citation 闭环 | 候选 |
-| P0 | 注入排序纳入时间衰减（importance × recency 半衰期） | OpenViking hotness、hindsight recency boost | 候选（与「hotness stale 判定」共用实现） |
+| P0 | 注入排序纳入时间衰减（importance × recency 半衰期） | OpenViking hotness、hindsight recency boost | ✅ B12（preview.28）；hotness stale 判定仍候选 |
 | P1 | 轮级轻量召回注入（≥12 字门槛、k≤5、已注入冷却、fail-open） | agentcairn auto-recall、OpenViking RecallLedger | 候选（宿主 `agent.inject()` 需真机验证） |
 | P1 | 冲突处理显式化（changes/ends 语义 + 时间由代码比） | hindsight consolidation | 候选 |
 | P1 | 外部记忆导入桥（plan/apply 分离、幂等） | agentcairn native_memory、codex external_agent_import | roadmap 候选②提前 |

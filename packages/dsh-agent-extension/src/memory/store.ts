@@ -36,6 +36,7 @@ import {
   type ParsedMemoryDocument,
 } from './migrate.ts'
 import { previewRoot, removePreviewEntry, writePreviewFile, type PreviewFile } from './preview.ts'
+import { assertNoSecrets } from './secrets.ts'
 import {
   LIMITS,
   MEMORY_SCHEMA,
@@ -1060,6 +1061,10 @@ export class MemoryStore {
     const mergedFrom = normalizeIds(input.mergedFrom)
     const mergedProvided = input.mergedFrom !== undefined
     const now = new Date().toISOString()
+
+    // 写入闸门：所有路径（工具/提炼/面板/命令/维护合并）共用同一确定性
+    // secrets 检查，命中整条拒绝（不含归档重写/迁移等既有数据路径）。
+    assertNoSecrets(`${name}\n${description}\n${content}\n${tags.join('\n')}`)
 
     const existingById = input.id === undefined ? undefined : entries.find(entry => entry.id === input.id)
     if (existingById !== undefined) {

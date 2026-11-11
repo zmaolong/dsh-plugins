@@ -4,8 +4,9 @@
  * 注入分两层：全局块只放 preference / decision，项目块只放 gotcha / project；
  * 只注入已证明价值的长期条目（短期条目靠检索命中升级），每层默认最多 20 条、
  * 总预算 3,000 字符，全局在前、项目在后；预算按每层配置条数比例公平分配
- * （保底 + 用不完回流），层内按 importance、消费次数与最近消费时间排序
- * （消费数据来自 usage 派生账，缺记录时退回条目自身的 usedCount）。
+ * （保底 + 用不完回流），层内按 importance × recency 半衰期（30 天）的加权
+ * 分排序、钉住条目豁免衰减，次要键为消费次数（消费数据来自 usage 派生账，
+ * 缺记录时退回条目自身的 usedCount）。
  * 详情留在 `memory_get` 后面，按需读取。
  *
  * @module dsh-agent-extension/memory/recall
@@ -25,6 +26,9 @@ import {
 
 /** 索引行里描述的截断长度。 */
 const INDEX_DESCRIPTION_CHARS = 80
+
+/** 注入排序的 recency 半衰期（天）：importance × 0.5^(ageDays/30)。 */
+const RECENCY_HALF_LIFE_DAYS = 30
 
 /** 全局块允许的记忆类型。 */
 const GLOBAL_TYPES: readonly MemoryType[] = ['preference', 'decision']
@@ -119,19 +123,30 @@ function layerEntries(
       pool.set(entry.id, entry)
     }
   }
-  // 排序：重要度优先，其次消费次数与最近消费时间（usage 派生账优先于条目
-  // 自身的 usedCount——后者只在维护批次同步），最后退回更新时间。
+  // 排序：importance × recency 半衰期衰减（OpenViking hotness / hindsight
+  // recency boost 思路）优先——importance 是写入时预测，需按「多新」修正：
+  // 同重要度下新近条目先曝光，低重要度但极新的条目也能越过陈旧高重要度条目。
+  // 「最近活跃」取消费时间（usage 派生账优先，缺记录退回条目自身 lastUsedAt）
+  // 与更新时间的较大者；钉住条目代表用户的显式意图，豁免衰减。分数在排序前
+  // 一次性算好（comparator 内取 Date.now() 会破坏一致性）。次要键依次为消费
+  // 次数与更新时间。
   const usedCount = (entry: MemoryMeta): number => usage[entry.id]?.usedCount ?? entry.usedCount
-  const lastUsedAt = (entry: MemoryMeta): string => usage[entry.id]?.lastUsedAt ?? ''
-  const sorted = [...pool.values()].sort(
-    (left, right) => right.importance - left.importance
-      || usedCount(right) - usedCount(left)
-      || lastUsedAt(right).localeCompare(lastUsedAt(left))
-      || right.updatedAt.localeCompare(left.updatedAt),
+  const scored = [...pool.values()].map((entry) => {
+    const used = usage[entry.id]?.lastUsedAt ?? entry.lastUsedAt ?? ''
+    const stamp = used > entry.updatedAt ? used : entry.updatedAt
+    const parsed = Date.parse(stamp)
+    const ageDays = Number.isFinite(parsed) ? Math.max(0, (Date.now() - parsed) / 86400000) : 0
+    const score = entry.pinned ? entry.importance : entry.importance * Math.pow(0.5, ageDays / RECENCY_HALF_LIFE_DAYS)
+    return { entry, score }
+  })
+  scored.sort(
+    (left, right) => right.score - left.score
+      || usedCount(right.entry) - usedCount(left.entry)
+      || right.entry.updatedAt.localeCompare(left.entry.updatedAt),
   )
   return {
-    entries: sorted.slice(0, limit),
-    truncated: sorted.length > limit,
+    entries: scored.map(item => item.entry).slice(0, limit),
+    truncated: scored.length > limit,
   }
 }
 

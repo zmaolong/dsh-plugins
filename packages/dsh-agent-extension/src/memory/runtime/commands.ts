@@ -37,17 +37,22 @@ function commandRemember(input: { rawInput?: unknown, agent?: AgentLike }, optio
   const project = options.projectForAgent(input.agent)
   const scope: MemoryScope = requestedGlobal || project === null ? 'global' : 'project'
   const name = body.length > LIMITS.name ? `${body.slice(0, LIMITS.name - 1)}…` : body
-  const entry = options.store.save({
-    name,
-    description: body.slice(0, LIMITS.description),
-    type: 'preference',
-    scope,
-    project: scope === 'project' ? project?.projectKey ?? '' : '',
-    content: body.slice(0, LIMITS.content),
-    importance: 70,
-    originSessionId: input.agent?.session?.id ?? '',
-    source: 'user',
-  })
+  let entry
+  try {
+    entry = options.store.save({
+      name,
+      description: body.slice(0, LIMITS.description),
+      type: 'preference',
+      scope,
+      project: scope === 'project' ? project?.projectKey ?? '' : '',
+      content: body.slice(0, LIMITS.content),
+      importance: 70,
+      originSessionId: input.agent?.session?.id ?? '',
+      source: 'user',
+    })
+  } catch (error) {
+    return { kind: 'error', text: error instanceof Error ? error.message : String(error) }
+  }
   if (scope === 'project' && project !== null) options.touchProject(project)
   const target = scope === 'global' ? '全局' : `项目（${project?.displayName ?? ''}）`
   return {

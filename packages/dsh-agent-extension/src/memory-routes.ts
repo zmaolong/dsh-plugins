@@ -223,21 +223,27 @@ export async function dispatchMemoryPost(
     if (content === '') throw hubError('记忆内容不能为空', 'bad_request')
     const scope = scopeOf(body.scope, 'project')
     const project = projectOf(store, body.project, scope)
-    const entry = store.save({
-      ...(text(body.id) === '' ? {} : { id: text(body.id) }),
-      name: name.slice(0, LIMITS.name),
-      description: text(body.description).slice(0, LIMITS.description),
-      type: isMemoryType(body.type) ? body.type : 'reference',
-      scope,
-      project,
-      content: content.slice(0, LIMITS.content),
-      tags: normalizeTags(body.tags),
-      importance: clampInt(body.importance, 0, 100, 50),
-      supersedes: normalizeIds(body.supersedes),
-      originSessionId: text(body.originSessionId),
-      // 面板保存 = 用户显式途径：定级长期（覆盖既有把面板保存当 capture 的缺陷）。
-      source: 'user',
-    })
+    let entry
+    try {
+      entry = store.save({
+        ...(text(body.id) === '' ? {} : { id: text(body.id) }),
+        name: name.slice(0, LIMITS.name),
+        description: text(body.description).slice(0, LIMITS.description),
+        type: isMemoryType(body.type) ? body.type : 'reference',
+        scope,
+        project,
+        content: content.slice(0, LIMITS.content),
+        tags: normalizeTags(body.tags),
+        importance: clampInt(body.importance, 0, 100, 50),
+        supersedes: normalizeIds(body.supersedes),
+        originSessionId: text(body.originSessionId),
+        // 面板保存 = 用户显式途径：定级长期（覆盖既有把面板保存当 capture 的缺陷）。
+        source: 'user',
+      })
+    } catch (error) {
+      // 写入闸门拒绝（如 secrets 拦截）按客户端可纠正的请求返回。
+      throw hubError(error instanceof Error ? error.message : String(error), 'bad_request')
+    }
     return { entry }
   }
   if (route === '/memory/status') {

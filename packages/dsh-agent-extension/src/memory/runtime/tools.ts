@@ -198,19 +198,24 @@ export function createMemoryTools(options: MemoryToolOptions): ToolDefinitionLik
       const scope: MemoryScope = scopeValue
       const description = text(record.description).slice(0, LIMITS.description)
         || content.replace(/\s+/gu, ' ').slice(0, LIMITS.description)
-      const entry = store.save({
-        name: name.slice(0, LIMITS.name),
-        description,
-        type: asMemoryType(record.type) ?? 'reference',
-        scope,
-        project: scope === 'project' ? project?.projectKey ?? '' : '',
-        content: content.slice(0, LIMITS.content),
-        tags: normalizeTags(record.tags),
-        importance: clampInt(record.importance, 0, 100, 50),
-        supersedes: normalizeIds(record.supersedes),
-        originSessionId: exec.agent?.session?.id ?? '',
-        source: 'tool',
-      })
+      let entry
+      try {
+        entry = store.save({
+          name: name.slice(0, LIMITS.name),
+          description,
+          type: asMemoryType(record.type) ?? 'reference',
+          scope,
+          project: scope === 'project' ? project?.projectKey ?? '' : '',
+          content: content.slice(0, LIMITS.content),
+          tags: normalizeTags(record.tags),
+          importance: clampInt(record.importance, 0, 100, 50),
+          supersedes: normalizeIds(record.supersedes),
+          originSessionId: exec.agent?.session?.id ?? '',
+          source: 'tool',
+        })
+      } catch (error) {
+        return `未保存：${error instanceof Error ? error.message : String(error)}`
+      }
       if (scope === 'project' && project !== null) options.touchProject(project)
       const verb = entry.reinforcement > 0 ? '已强化已有记忆' : '已保存记忆'
       return `${verb} ${entry.id}（${entry.type}，${entry.scope}）。`

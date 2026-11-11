@@ -106,6 +106,14 @@ describe('记忆 API：state/list/get/save/status/delete/settings/export', () =>
     await expect(dispatchMemoryPost(store, '/memory/save', { name: '', content: '' })).rejects.toMatchObject({ code: 'bad_request' })
     await expect(dispatchMemoryPost(store, '/memory/status', { scope: 'global', id: 'x', status: 'bogus' })).rejects.toMatchObject({ code: 'bad_request' })
     await expect(dispatchMemoryGet(store, '/memory/get', new URLSearchParams({ scope: 'global', id: 'missing' }))).rejects.toMatchObject({ code: 'not_found' })
+
+    // 写入闸门（secrets 拦截）：面板保存含密钥按 bad_request 返回，文件不落盘。
+    await expect(dispatchMemoryPost(store, '/memory/save', {
+      scope: 'global',
+      name: '部署配置',
+      content: '直连 postgres://admin:Sup3rSecret@db.internal:5432/app。',
+    })).rejects.toMatchObject({ code: 'bad_request', message: expect.stringContaining('敏感凭据') })
+    expect(store.countEntries('global')).toBe(0)
   })
 
   it('tier 切换：面板保存定级长期，tier 路由双向切换与参数校验', async () => {

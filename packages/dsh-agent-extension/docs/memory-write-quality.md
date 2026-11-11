@@ -183,3 +183,33 @@ codex/OpenViking），选定两项零 schema 变更的改进落地：
 - **验证**：365 用例全绿（新增 2：层间公平分配、单层回归）。纯服务端，免真机。
 - **上轮候选复核**：两档升档渲染（预算剩余时给 top 条目更多细节）在真实库无剩余预算，
   不成立，撤销；ACT-R 强化日期史（schema v4）与 hotness stale 判定仍列为后续候选。
+
+### 2026-11-12：B12 写入 secrets 拦截 + 注入 recency 半衰期（preview.28）
+
+定时优化轮从 survey §9.3 优先级总表落地两项 P0（均零 schema 变更）：
+
+- **写入路径 secrets 确定性拦截**（`src/memory/secrets.ts` + `store.save()` 入口单点接线，
+  来源：hindsight memory-defense、agentcairn redact-first、claude-mem redaction、codex 写入闸门）：
+  十类高置信窄匹配正则（私钥块、sk-/gh?_/AKIA/xox/AIza/JWT、连接串内嵌凭据、Bearer 头、
+  键值对 24+ 字符密钥赋值）命中即**整条拒绝**，不做自动改写（改写可能损坏事实，交回写入方
+  改成占位说明）。单点放 `save()` 开头覆盖全部五条写入路径（工具/提炼/面板/命令/维护合并），
+  归档重写与迁移等既有数据路径不拦。调用方适配：`memory_save` 工具 catch 后返回「未保存：…」
+  让模型可改写重试；面板 `/memory/save` 转 bad_request；`/remember` 命令转 error outcome；
+  维护合并与提炼已有 catch 兜底。错误信息只报类别不回显命中内容。宁漏勿误：只收高置信模式
+  （随机密钥串/私钥块/内嵌凭据），语义级「该不该记」仍由提炼 prompt 负面清单承担。
+- **注入排序纳入 recency 半衰期**（`src/memory/recall.ts` `layerEntries`，来源：OpenViking
+  hotness、hindsight recency boost）：层内排序键从「importance → usedCount → lastUsedAt →
+  updatedAt」改为「importance × 0.5^(ageDays/30) → usedCount → updatedAt」——importance 是
+  写入时预测，需按「多新」修正（B10 排序键的本质缺陷：一个 90 重要度 100 天前的条目永远压住
+  今天写入的 60 重要度条目）。活跃时间取消费时间（usage 派生账优先）与更新时间的较大者；
+  钉住条目豁免衰减（用户显式意图）；分数在排序前一次性算好（comparator 内取 Date.now()
+  破坏一致性）。
+- **真实库模拟**（B11 方法论）：全局 5 + 项目 6/46 候选均在配额内，新旧排序注入集合零差异、
+  全渲染冒烟正常——衰减在当前库不引起扰动，只在候选超配额时让新近条目替换陈旧条目；机制
+  正确性由单测保证（3 用例：衰减修正 importance、钉住豁免、消费刷新活跃时间 + usedCount
+  次级键）。
+- **验证**：372 用例全绿（新增 7：secrets 模式覆盖/误伤放行、save 整条拒绝 + 更新路径、
+  错误信息不回显、工具层 catch、面板 4xx、recency 3 用例）。纯服务端，免真机。
+- **后续候选**（survey §9.3 递补）：P0-2 消费闭环补环（assistant 文本引用回写 usage +
+  新条目短 id，涉及 id 格式与存量迁移，单独成批）；P1 轮级轻量召回注入、冲突显式化
+  （changes/ends）、导入桥。

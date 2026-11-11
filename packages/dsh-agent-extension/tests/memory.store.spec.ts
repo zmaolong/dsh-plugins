@@ -3,12 +3,13 @@
  * 标签/取代语义、类型下推、并发写串行、统计面 v2 与导出。
  */
 
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { existsSync, readFileSync, utimesSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 
 import { MemoryStore } from '../src/memory/store.ts'
 import { renderRecallContext } from '../src/memory/recall.ts'
+import { assertNoSecrets, findSecretMatch } from '../src/memory/secrets.ts'
 import { defaultSettings } from '../src/memory/types.ts'
 import { removeDirs, tempHome } from './helpers.ts'
 
@@ -648,12 +649,12 @@ describe('记忆存储：Markdown 事实、手改、去重与生命周期', () =
     const before = renderRecallContext({ store, identity: null, settings: store.settings() })
     expect(before.ids.indexOf(fresh.id)).toBeLessThan(before.ids.indexOf(used.id))
 
-    // 带 usage 快照：消费次数参与排序，被消费过的排前。
+    // 带 usage 快照：lastUsedAt 进入 recency 分数，刚被消费的条目越过新写入条目。
     const after = renderRecallContext({
       store,
       identity: null,
       settings: store.settings(),
-      usage: { [used.id]: { usedCount: 3, lastUsedAt: used.createdAt } },
+      usage: { [used.id]: { usedCount: 3, lastUsedAt: new Date().toISOString() } },
     })
     expect(after.ids.indexOf(used.id)).toBeLessThan(after.ids.indexOf(fresh.id))
     expect(after.text).toContain('only when you actually rely on it')
@@ -765,5 +766,164 @@ describe('记忆存储：Markdown 事实、手改、去重与生命周期', () =
     const raw = JSON.parse(readFileSync(path.join(store.root, 'projects.json'), 'utf8'))
     expect(raw.projects).toHaveLength(1)
     expect(raw.projects[0].entryCount).toBe(2)
+  })
+})
+
+describe('写入闸门：secrets 确定性拦截（高置信窄匹配 + 整条拒绝）', () => {
+  let tempDirs: string[] = []
+
+  afterEach(() => {
+    removeDirs(...tempDirs)
+    tempDirs = []
+    vi.useRealTimers()
+  })
+
+  function makeStore(): MemoryStore {
+    const home = tempHome('memory-secrets-')
+    tempDirs.push(home)
+    const store = new MemoryStore({ home })
+    store.start()
+    return store
+  }
+
+  it('findSecretMatch 覆盖十类高置信模式，并放行普通文本与占位示例', () => {
+    expect(findSecretMatch('-----BEGIN RSA PRIVATE KEY-----\nMIIEpA')).toBe('私钥块')
+    expect(findSecretMatch('key 是 sk-proj-AbCdEfGhIjKlMnOpQrStUvWxYz0123456789')).toBe('API 密钥（sk-…）')
+    expect(findSecretMatch('github 令牌 ghp_AbCdEfGhIjKlMnOpQrStUvWx')).toBe('GitHub token（gh?_…）')
+    expect(findSecretMatch('AWS AKIAIOSFODNN7EXAMPLE')).toBe('AWS Access Key')
+    expect(findSecretMatch('slack xoxb-123456789012-abcdef')).toBe('Slack token（xox…）')
+    expect(findSecretMatch('google AIzaSyA1234567890abcdefghijklmnopqrstuv')).toBe('Google API key')
+    expect(findSecretMatch('eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkifQ.SflKxwRJSMeKKF2QT4fwpM')).toBe('JWT')
+    expect(findSecretMatch('postgres://admin:p4ssw0rd@db.example.com:5432/app')).toBe('连接串内嵌凭据')
+    expect(findSecretMatch('Authorization: Bearer AbCdEfGhIjKlMnOpQrStUvWx')).toBe('Bearer 凭据')
+    expect(findSecretMatch('api_key = vQf7x9Kp2mR5tW8zA1bC3dE5fG7hI9jK')).toBe('键值对形式的密钥')
+    // 放行：普通叙述、短值、占位符、无凭据的连接串。
+    expect(findSecretMatch('部署时用 DATABASE_URL 环境变量注入连接串，不要硬编码。')).toBeNull()
+    expect(findSecretMatch('api_key = your-api-key-here')).toBeNull()
+    expect(findSecretMatch('password 由密码管理器管理')).toBeNull()
+    expect(findSecretMatch('postgres://db.example.com:5432/app（凭据走环境变量）')).toBeNull()
+    expect(findSecretMatch('sk 仓库的 skill 目录结构说明')).toBeNull()
+  })
+
+  it('save 对含密钥的写入整条拒绝：抛错且文件不落盘，更新路径同样拦截', () => {
+    const store = makeStore()
+    expect(() => store.save({
+      name: '部署配置',
+      description: '生产库连接方式',
+      type: 'project',
+      scope: 'global',
+      content: '直连 postgres://admin:Sup3rSecret@db.internal:5432/app 即可。',
+      source: 'tool',
+    })).toThrow(/敏感凭据/u)
+    expect(store.countEntries('global')).toBe(0)
+
+    // 指向既有条目的更新（含强化）同样拒绝。
+    const clean = store.save({ name: '干净条目', description: 'x', content: 'y', type: 'reference', scope: 'global', source: 'user' })
+    expect(() => store.save({
+      id: clean.id,
+      name: '干净条目',
+      description: 'x',
+      content: 'token = AbCdEfGhIjKlMnOpQrStUvWxYz012345',
+      type: 'reference',
+      scope: 'global',
+      source: 'user',
+    })).toThrow(/敏感凭据/u)
+  })
+
+  it('assertNoSecrets 的错误信息含类别与替换指引，不回显命中内容', () => {
+    try {
+      assertNoSecrets('token: ghp_AbCdEfGhIjKlMnOpQrStUvWx')
+      expect.unreachable()
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      expect(message).toContain('GitHub token')
+      expect(message).toContain('占位说明')
+      expect(message).not.toContain('ghp_AbCdEfGhIjKlMnOpQrStUvWx')
+    }
+  })
+})
+
+describe('注入排序：importance × recency 半衰期（30 天）', () => {
+  let tempDirs: string[] = []
+
+  afterEach(() => {
+    removeDirs(...tempDirs)
+    tempDirs = []
+    vi.useRealTimers()
+  })
+
+  function makeStore(): MemoryStore {
+    const home = tempHome('memory-recency-')
+    tempDirs.push(home)
+    const store = new MemoryStore({ home })
+    store.start()
+    return store
+  }
+
+  function add(store: MemoryStore, overrides: Partial<Parameters<MemoryStore['save']>[0]> = {}) {
+    return store.save({
+      name: '偏好条目',
+      description: '描述文本',
+      type: 'preference',
+      scope: 'global',
+      content: '正文。',
+      source: 'user',
+      ...overrides,
+    })
+  }
+
+  it('衰减修正 importance：低重要度的新条目越过陈旧的高重要度条目', () => {
+    const store = makeStore()
+    const base = Date.now()
+    vi.useFakeTimers()
+    vi.setSystemTime(base - 100 * 86400000)
+    const old = add(store, { name: '陈旧高权重', importance: 90 })
+    vi.setSystemTime(base)
+    const fresh = add(store, { name: '新近低权重', importance: 60 })
+    const snapshot = renderRecallContext({ store, identity: null, settings: store.settings() })
+    // 90 × 0.5^(100/30) ≈ 8.9 < 60，新条目排前。
+    expect(snapshot.ids.indexOf(fresh.id)).toBeLessThan(snapshot.ids.indexOf(old.id))
+  })
+
+  it('钉住条目豁免衰减：旧钉住条目排在同量级新条目之前', () => {
+    const store = makeStore()
+    const base = Date.now()
+    vi.useFakeTimers()
+    vi.setSystemTime(base - 100 * 86400000)
+    const pinned = add(store, { name: '钉住旧条目', importance: 40, pinned: true })
+    vi.setSystemTime(base)
+    const fresh = add(store, { name: '普通新条目', importance: 39 })
+    const snapshot = renderRecallContext({ store, identity: null, settings: store.settings() })
+    expect(snapshot.ids.indexOf(pinned.id)).toBeLessThan(snapshot.ids.indexOf(fresh.id))
+  })
+
+  it('消费刷新活跃时间：usage 快照的 lastUsedAt 进入 recency 分数，消费多的条目在同等分数下排前', () => {
+    const store = makeStore()
+    const base = Date.now()
+    vi.useFakeTimers()
+    vi.setSystemTime(base - 100 * 86400000)
+    const consumed = add(store, { name: '很久前写入但刚被消费', importance: 50 })
+    const untouched = add(store, { name: '稍新但从未消费', importance: 50 })
+    vi.setSystemTime(base)
+    const now = new Date().toISOString()
+    const snapshot = renderRecallContext({
+      store,
+      identity: null,
+      settings: store.settings(),
+      usage: { [consumed.id]: { usedCount: 2, lastUsedAt: now } },
+    })
+    // 刚被消费的条目活跃时间抬到当前，越过 updatedAt 更新的未消费条目。
+    expect(snapshot.ids.indexOf(consumed.id)).toBeLessThan(snapshot.ids.indexOf(untouched.id))
+
+    // recency 分数相同时（同活跃时间），消费次数作为次要键决定先后。
+    const first = add(store, { name: '消费一次', importance: 50 })
+    const second = add(store, { name: '消费三次', importance: 50 })
+    const tied = renderRecallContext({
+      store,
+      identity: null,
+      settings: store.settings(),
+      usage: { [first.id]: { usedCount: 1, lastUsedAt: now }, [second.id]: { usedCount: 3, lastUsedAt: now } },
+    })
+    expect(tied.ids.indexOf(second.id)).toBeLessThan(tied.ids.indexOf(first.id))
   })
 })

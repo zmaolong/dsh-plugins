@@ -745,6 +745,24 @@ describe('记忆运行时：工具契约', () => {
     expect(store.entryById('m-old')?.status).toBe('stale')
   })
 
+  it('memory_save 命中写入闸门（secrets 拦截）返回「未保存」错误文本，让模型可改写重试', async () => {
+    const { tools, store } = createHarness()
+    const save = tools.registered.get('memory_save')
+    const agent = makeAgent('s-secret', makeCwd())
+    // secrets 检查在真 MemoryStore.save 内部；FakeStore 用抛错模拟闸门拒绝，
+    // 本用例验证的是工具层的错误承接（store 侧拦截已在 memory.store.spec 覆盖）。
+    const reject = vi.spyOn(store, 'save').mockImplementation(() => {
+      throw new Error('内容疑似包含敏感凭据（GitHub token（gh?_…）），未写入。')
+    })
+    const result = String(await save?.execute(
+      { name: '部署配置', description: 'x', scope: 'global', content: 'token = ghp_AbCdEfGhIjKlMnOpQrStUvWx' },
+      { agent },
+    ))
+    expect(result).toContain('未保存：')
+    expect(result).toContain('敏感凭据')
+    reject.mockRestore()
+  })
+
   it('严格模式契约固化在工具描述与使用指南里', () => {
     const { tools, systemPrompt } = createHarness()
     const guide = systemPrompt.sections.find(item => item.name === 'agent-extension:memory-guide')

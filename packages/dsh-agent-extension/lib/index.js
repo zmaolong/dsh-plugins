@@ -6849,6 +6849,8 @@ var MaintenanceLog = class {
 // src/memory/recall.ts
 /** 索引行里描述的截断长度。 */
 const INDEX_DESCRIPTION_CHARS = 80;
+/** 注入排序的 recency 半衰期（天）：importance × 0.5^(ageDays/30)。 */
+const RECENCY_HALF_LIFE_DAYS = 30;
 /** 全局块允许的记忆类型。 */
 const GLOBAL_TYPES = ["preference", "decision"];
 /** 项目块允许的记忆类型。 */
@@ -6905,11 +6907,20 @@ function layerEntries(store, scope, project, types, limit, usage) {
 		}
 	}
 	const usedCount = (entry) => usage[entry.id]?.usedCount ?? entry.usedCount;
-	const lastUsedAt = (entry) => usage[entry.id]?.lastUsedAt ?? "";
-	const sorted = [...pool.values()].sort((left, right) => right.importance - left.importance || usedCount(right) - usedCount(left) || lastUsedAt(right).localeCompare(lastUsedAt(left)) || right.updatedAt.localeCompare(left.updatedAt));
+	const scored = [...pool.values()].map((entry) => {
+		const used = usage[entry.id]?.lastUsedAt ?? entry.lastUsedAt ?? "";
+		const stamp = used > entry.updatedAt ? used : entry.updatedAt;
+		const parsed = Date.parse(stamp);
+		const ageDays = Number.isFinite(parsed) ? Math.max(0, (Date.now() - parsed) / 864e5) : 0;
+		return {
+			entry,
+			score: entry.pinned ? entry.importance : entry.importance * Math.pow(.5, ageDays / RECENCY_HALF_LIFE_DAYS)
+		};
+	});
+	scored.sort((left, right) => right.score - left.score || usedCount(right.entry) - usedCount(left.entry) || right.entry.updatedAt.localeCompare(left.entry.updatedAt));
 	return {
-		entries: sorted.slice(0, limit),
-		truncated: sorted.length > limit
+		entries: scored.map((item) => item.entry).slice(0, limit),
+		truncated: scored.length > limit
 	};
 }
 /** 渲染一条注入索引行：`id · 类型 · 名称 · 80 字描述 · 重要性`。 */
@@ -8097,17 +8108,25 @@ function commandRemember(input, options) {
 	const project = options.projectForAgent(input.agent);
 	const scope = requestedGlobal || project === null ? "global" : "project";
 	const name = body.length > LIMITS.name ? `${body.slice(0, LIMITS.name - 1)}…` : body;
-	const entry = options.store.save({
-		name,
-		description: body.slice(0, LIMITS.description),
-		type: "preference",
-		scope,
-		project: scope === "project" ? project?.projectKey ?? "" : "",
-		content: body.slice(0, LIMITS.content),
-		importance: 70,
-		originSessionId: input.agent?.session?.id ?? "",
-		source: "user"
-	});
+	let entry;
+	try {
+		entry = options.store.save({
+			name,
+			description: body.slice(0, LIMITS.description),
+			type: "preference",
+			scope,
+			project: scope === "project" ? project?.projectKey ?? "" : "",
+			content: body.slice(0, LIMITS.content),
+			importance: 70,
+			originSessionId: input.agent?.session?.id ?? "",
+			source: "user"
+		});
+	} catch (error) {
+		return {
+			kind: "error",
+			text: error instanceof Error ? error.message : String(error)
+		};
+	}
 	if (scope === "project" && project !== null) options.touchProject(project);
 	const target = scope === "global" ? "全局" : `项目（${project?.displayName ?? ""}）`;
 	return {
@@ -8467,19 +8486,24 @@ function createMemoryTools(options) {
 				if (scopeValue === "project" && project === null) return "未保存：当前会话没有项目身份（工作目录不在 git 仓库内），请改用 scope=global。";
 				const scope = scopeValue;
 				const description = text(record.description).slice(0, LIMITS.description) || content.replace(/\s+/gu, " ").slice(0, LIMITS.description);
-				const entry = store.save({
-					name: name.slice(0, LIMITS.name),
-					description,
-					type: asMemoryType(record.type) ?? "reference",
-					scope,
-					project: scope === "project" ? project?.projectKey ?? "" : "",
-					content: content.slice(0, LIMITS.content),
-					tags: normalizeTags(record.tags),
-					importance: clampInt(record.importance, 0, 100, 50),
-					supersedes: normalizeIds(record.supersedes),
-					originSessionId: exec.agent?.session?.id ?? "",
-					source: "tool"
-				});
+				let entry;
+				try {
+					entry = store.save({
+						name: name.slice(0, LIMITS.name),
+						description,
+						type: asMemoryType(record.type) ?? "reference",
+						scope,
+						project: scope === "project" ? project?.projectKey ?? "" : "",
+						content: content.slice(0, LIMITS.content),
+						tags: normalizeTags(record.tags),
+						importance: clampInt(record.importance, 0, 100, 50),
+						supersedes: normalizeIds(record.supersedes),
+						originSessionId: exec.agent?.session?.id ?? "",
+						source: "tool"
+					});
+				} catch (error) {
+					return `未保存：${error instanceof Error ? error.message : String(error)}`;
+				}
 				if (scope === "project" && project !== null) options.touchProject(project);
 				return `${entry.reinforcement > 0 ? "已强化已有记忆" : "已保存记忆"} ${entry.id}（${entry.type}，${entry.scope}）。`;
 			}
@@ -9419,6 +9443,75 @@ function removePreviewDir(dir) {
 		});
 	} catch {}
 }
+// src/memory/secrets.ts
+/**
+* 高置信 secrets 模式清单（顺序即错误信息里的展示顺序，无语义差异）。
+*
+* 匹配全部在单行内完成（正则不含换行），字段拼接时用换行分隔避免跨字段
+* 拼出假命中。
+*/
+const SECRET_PATTERNS = [
+	{
+		label: "私钥块",
+		pattern: /-----BEGIN [A-Z ]*PRIVATE KEY(?: BLOCK)?-----/u
+	},
+	{
+		label: "API 密钥（sk-…）",
+		pattern: /\bsk-(?:proj-|ant-|svcacct-)?[A-Za-z0-9_-]{20,}\b/u
+	},
+	{
+		label: "GitHub token（gh?_…）",
+		pattern: /\bgh[pousr]_[A-Za-z0-9]{20,}\b/u
+	},
+	{
+		label: "AWS Access Key",
+		pattern: /\bAKIA[0-9A-Z]{16}\b/u
+	},
+	{
+		label: "Slack token（xox…）",
+		pattern: /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/u
+	},
+	{
+		label: "Google API key",
+		pattern: /\bAIza[0-9A-Za-z_-]{35}\b/u
+	},
+	{
+		label: "JWT",
+		pattern: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/u
+	},
+	{
+		label: "连接串内嵌凭据",
+		pattern: /\b(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis|rediss|amqps?|mssql|smtp|ftp):\/\/[^\s:@/]+:[^\s@/]{4,}@/u
+	},
+	{
+		label: "Bearer 凭据",
+		pattern: /\bBearer\s+[A-Za-z0-9._~+/=-]{20,}\b/iu
+	},
+	{
+		label: "键值对形式的密钥",
+		pattern: /\b(?:api[_-]?key|apikey|access[_-]?token|auth[_-]?token|secret(?:[_-]?(?:key|token))?|client[_-]?secret|token|password|passwd|pwd)\b\s*[:=]\s*["']?[A-Za-z0-9+/_=.-]{24,}["']?/iu
+	}
+];
+/**
+* 扫描一段文本，返回第一个命中的模式类别名；无命中返回 null。
+*
+* 只报类别不回显命中内容：错误信息会进入会话上下文与日志。
+*
+* @param value - 待检查文本（name/description/content/tags 拼接后传入）。
+*/
+function findSecretMatch(value) {
+	for (const { label, pattern } of SECRET_PATTERNS) if (pattern.test(value)) return label;
+	return null;
+}
+/**
+* 供 `save` 入口使用的校验：命中即抛错（整条拒绝，不做改写）。
+*
+* @param value - name/description/content/tags 等全部写入字段按换行拼接。
+*/
+function assertNoSecrets(value) {
+	const label = findSecretMatch(value);
+	if (label !== null) throw new Error(`内容疑似包含敏感凭据（${label}），未写入。记忆会被注入到后续会话，请把密钥替换为占位说明（如「密钥见密码管理器」）后重试`);
+}
 // src/memory/store.ts
 /**
 * 基于文件系统的记忆存储。
@@ -10259,6 +10352,7 @@ var MemoryStore = class {
 		const mergedFrom = normalizeIds(input.mergedFrom);
 		const mergedProvided = input.mergedFrom !== void 0;
 		const now = (/* @__PURE__ */ new Date()).toISOString();
+		assertNoSecrets(`${name}\n${description}\n${content}\n${tags.join("\n")}`);
 		const existingById = input.id === void 0 ? void 0 : entries.find((entry) => entry.id === input.id);
 		if (existingById !== void 0) {
 			const updated = {
@@ -10933,20 +11027,26 @@ async function dispatchMemoryPost(store, route, body = {}, hooks = {}) {
 		if (content === "") throw hubError("记忆内容不能为空", "bad_request");
 		const scope = scopeOf(body.scope, "project");
 		const project = projectOf(store, body.project, scope);
-		return { entry: store.save({
-			...text(body.id) === "" ? {} : { id: text(body.id) },
-			name: name.slice(0, LIMITS.name),
-			description: text(body.description).slice(0, LIMITS.description),
-			type: isMemoryType(body.type) ? body.type : "reference",
-			scope,
-			project,
-			content: content.slice(0, LIMITS.content),
-			tags: normalizeTags(body.tags),
-			importance: clampInt(body.importance, 0, 100, 50),
-			supersedes: normalizeIds(body.supersedes),
-			originSessionId: text(body.originSessionId),
-			source: "user"
-		}) };
+		let entry;
+		try {
+			entry = store.save({
+				...text(body.id) === "" ? {} : { id: text(body.id) },
+				name: name.slice(0, LIMITS.name),
+				description: text(body.description).slice(0, LIMITS.description),
+				type: isMemoryType(body.type) ? body.type : "reference",
+				scope,
+				project,
+				content: content.slice(0, LIMITS.content),
+				tags: normalizeTags(body.tags),
+				importance: clampInt(body.importance, 0, 100, 50),
+				supersedes: normalizeIds(body.supersedes),
+				originSessionId: text(body.originSessionId),
+				source: "user"
+			});
+		} catch (error) {
+			throw hubError(error instanceof Error ? error.message : String(error), "bad_request");
+		}
+		return { entry };
 	}
 	if (route === "/memory/status") {
 		const scope = scopeOf(body.scope, "global");
