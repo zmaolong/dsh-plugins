@@ -231,6 +231,62 @@ describe('记忆存储：Markdown 事实、手改、去重与生命周期', () =
     expect(store.list('global', '', { includeArchived: true }).some(item => item.id === newEntry.id)).toBe(true)
   })
 
+  it('跨作用域取代：项目条目推翻全局偏好（回退全局查找、写回目标位置）', () => {
+    const store = makeStore()
+    const globalPref = add(store, { name: '全局用 npm', description: '旧的全局约定', content: '全局统一 npm。' })
+    store.save({
+      name: '本项目用 pnpm',
+      description: '本项目改用 pnpm，推翻全局 npm 约定',
+      type: 'project',
+      scope: 'project',
+      project: 'demo-key',
+      content: '本项目统一 pnpm。',
+      supersedes: [globalPref.id],
+    })
+    const stale = store.get('global', '', globalPref.id)
+    expect(stale?.status).toBe('stale')
+    expect(stale?.obsoleteVotes).toBe(1)
+    // 票记在被取代条目的 obsoleteVotes 上，被取代条目的 supersedes 字段不变。
+    expect(stale?.supersedes).toEqual([])
+  })
+
+  it('取代目标不存在（幻觉 id）：丢弃该票并记警告，不抛错', () => {
+    const home = tempHome('memory-store-')
+    tempDirs.push(home)
+    const warnings: string[] = []
+    const store = new MemoryStore({
+      home,
+      log: (level, message) => {
+        if (level === 'warn') warnings.push(message)
+      },
+    })
+    store.start()
+    const saved = store.save({
+      name: '新事实',
+      description: '描述',
+      type: 'project',
+      scope: 'project',
+      project: 'demo-key',
+      content: '正文。',
+      supersedes: ['m-hallucinated-id'],
+    })
+    expect(saved.supersedes).toEqual(['m-hallucinated-id'])
+    expect(warnings.some(message => message.includes('取代目标不存在'))).toBe(true)
+    expect(store.list('project', 'demo-key')).toHaveLength(1)
+  })
+
+  it('检索排序 stale 沉底：同等命中下 active 先于 stale（含空查询索引）', () => {
+    const store = makeStore()
+    const activeEntry = add(store, { name: 'pnpm 约定', description: '包管理器约定', content: '统一 pnpm。', importance: 50 })
+    const staleEntry = add(store, { name: 'pnpm 历史', description: '包管理器旧约定', content: '曾经用 npm，统一 pnpm。', importance: 90 })
+    store.forget('global', '', staleEntry.id)
+    const results = store.search('global', '', { query: 'pnpm', includeArchived: false, limit: 10 })
+    expect(results.map(row => row.id)).toEqual([activeEntry.id, staleEntry.id])
+    // 空查询的排名索引同样活着的先于过时的：stale 重要度更高也要沉底。
+    const index = store.search('global', '', { query: '', includeArchived: false, limit: 10 })
+    expect(index.map(row => row.id)).toEqual([activeEntry.id, staleEntry.id])
+  })
+
   it('未知 frontmatter 字段在后续写入时原样保留（含嵌套结构）', () => {
     const store = makeStore()
     const entry = add(store)

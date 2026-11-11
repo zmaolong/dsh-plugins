@@ -88,3 +88,21 @@
   保证渲染确定性，不依赖 Date.now()）。prompt 文案改动必须显式更新本文件。
 - **验证**：383 用例全绿（新增 9）；check/build 通过。纯服务端，免真机。
 - 文档：write-quality 记录撤销短 id 候选；本文件建立。
+
+### 2026-11-12：B15 冲突显式化（preview.31）
+
+- **supersedes 跨作用域回退（实际缺陷修复，`src/memory/store.ts` `applySupersedes`）**：
+  旧实现只在「新条目的同 scope+project」里找取代目标——项目事实推翻全局偏好时票被静默
+  丢弃。改为同作用域优先、找不到回退全局查找；写回按目标自身位置。仍找不到（模型幻觉
+  id）记 `取代目标不存在` 警告并丢弃该票——冲突裁决由代码执行且不静默（hindsight
+  「时间比较由代码做」的插件对位；计票即转 stale 由代码完成，模型从不直接删）。
+- **检索排序 stale 沉底**（`compareEntries` + `score()` 插入 `statusRank`，来源 agentcairn
+  SUPERSEDES ×0.5 validity penalty 的离散化对位）：同等命中/同重要度下 active 先于 stale；
+  命中数/词频分仍是主键（降权不反转主相关性）。空查询排名索引同样生效。原计划
+  「obsoleteVotes>0 的 active 条目降权」在现模型下不存在——计票即转 stale、注入已排除
+  active 之外条目，故降权落位在检索排序。
+- **changes/ends 语义进 prompt**（fixture 同步更新）：提炼系统指令加 Conflict rule 段
+  （矛盾事实必须列 supersedes、取代标记历史而非删除、不得仅为相关就列 id）；
+  `memory_save` 工具描述补「矛盾时传 supersedes，不许矛盾事实并存」。
+- **验证**：386 用例全绿（新增 3：跨作用域取代、幻觉 id 警告丢弃、stale 沉底含空查询）；
+  check/build 通过。纯服务端，免真机。

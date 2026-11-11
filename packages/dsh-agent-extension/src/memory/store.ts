@@ -1384,12 +1384,20 @@ export class MemoryStore {
 
   /**
    * 标记被取代的条目为 stale；已 stale/archived 的不重复计票（幂等）。
+   *
+   * 冲突裁决由代码执行（hindsight「时间比较由代码做」的对位）：目标通常与
+   * 新条目同作用域，但「项目事实推翻全局偏好」合法——同作用域找不到时回退
+   * 全局查找，写回按目标自身位置。仍找不到（模型幻觉 id）记警告并丢弃该票，
+   * 绝不静默吞掉。
    */
   private applySupersedes(scope: MemoryScope, project: string, ids: readonly string[], sourceId: string): void {
     for (const id of ids) {
       if (id === sourceId) continue
-      const entry = this.get(scope, project, id)
-      if (entry === undefined) continue
+      const entry = this.get(scope, project, id) ?? this.get('global', '', id)
+      if (entry === undefined) {
+        this.log('warn', `取代目标不存在，已丢弃该票：${id}`)
+        continue
+      }
       if (entry.status === 'archived') continue
       // 已由别的条目计过票：不重复累加，避免反复 save 把条目误归档。
       if (entry.status === 'stale' && entry.obsoleteVotes > 0) continue
@@ -1399,7 +1407,7 @@ export class MemoryStore {
         obsoleteVotes: entry.obsoleteVotes + 1,
         updatedAt: new Date().toISOString(),
       }
-      this.writeEntry(scope, project, updated)
+      this.writeEntry(entry.scope, entry.project, updated)
     }
   }
 
@@ -1488,6 +1496,7 @@ export class MemoryStore {
     return scored
       .sort((left, right) => right.matchedCount - left.matchedCount
         || right.raw - left.raw
+        || statusRank(right.entry) - statusRank(left.entry)
         || right.entry.importance - left.entry.importance
         || right.entry.updatedAt.localeCompare(left.entry.updatedAt))
       .map(item => item.entry)
@@ -1534,9 +1543,20 @@ export class MemoryStore {
   }
 }
 
-/** 文本检索之外的排序：重要度优先，其次更新时间。 */
+/**
+ * 文本检索之外的排序：活着的先于过时的（agentcairn validity penalty 的
+ * 离散化对位——被取代转 stale 的旧事实在同等条件下沉底），重要度优先，
+ * 其次更新时间。
+ */
 function compareEntries(left: MemoryEntry, right: MemoryEntry): number {
-  return right.importance - left.importance || right.updatedAt.localeCompare(left.updatedAt)
+  return statusRank(right) - statusRank(left)
+    || right.importance - left.importance
+    || right.updatedAt.localeCompare(left.updatedAt)
+}
+
+/** 状态权重：active 为 1、其余为 0。 */
+function statusRank(entry: MemoryEntry): number {
+  return entry.status === 'active' ? 1 : 0
 }
 
 /** 把一个条目投影成列表元数据（正文不进入列表载荷）。 */

@@ -236,6 +236,8 @@ Scopes: global = a stable user preference or working convention that applies in 
 Output STRICT JSON: an array of 0-3 objects with exactly these fields:
 name (<=60 chars), description (one sentence, <=120 chars), type, scope, importance (0-100), tags (<=5 short strings), content (Markdown, <=400 chars), supersedes (array of existing memory ids this fact contradicts, else []).
 
+Conflict rule: if the new fact contradicts an existing memory (the old statement no longer holds), you MUST list that memory's id in supersedes — never save a contradictory fact side by side with the old one. Superseding marks the old fact historical (ends) instead of deleting it; do not list ids merely because they are related.
+
 Write every text field in the language of the conversation. Return [] when nothing is durable. Output no prose outside the JSON array.`
 
 /** Existing memory candidate offered to the extractor for supersede detection. */

@@ -7256,6 +7256,8 @@ Scopes: global = a stable user preference or working convention that applies in 
 Output STRICT JSON: an array of 0-3 objects with exactly these fields:
 name (<=60 chars), description (one sentence, <=120 chars), type, scope, importance (0-100), tags (<=5 short strings), content (Markdown, <=400 chars), supersedes (array of existing memory ids this fact contradicts, else []).
 
+Conflict rule: if the new fact contradicts an existing memory (the old statement no longer holds), you MUST list that memory's id in supersedes — never save a contradictory fact side by side with the old one. Superseding marks the old fact historical (ends) instead of deleting it; do not list ids merely because they are related.
+
 Write every text field in the language of the conversation. Return [] when nothing is durable. Output no prose outside the JSON array.`;
 /** Build the model-request messages of one extraction run. */
 function buildExtractionMessages(input) {
@@ -8471,7 +8473,7 @@ function createMemoryTools(options) {
 		},
 		{
 			name: "memory_save",
-			description: "Persist one durable fact (stable preference, decision, gotcha, project fact or reference) so later sessions can recall it. First run memory_search to check for duplicates; save only when the user explicitly asks to remember something, or when such a stable fact emerges and no existing memory already covers it. `scope` is required: global = a cross-project user preference or working convention; project = anything tied to this repository. New memories start as short-term (not injected into the session index); they are promoted to long-term (and injected) once actually read via memory_get or re-confirmed by another save. The Markdown body is capped at 8000 characters; longer input is truncated.",
+			description: "Persist one durable fact (stable preference, decision, gotcha, project fact or reference) so later sessions can recall it. First run memory_search to check for duplicates; save only when the user explicitly asks to remember something, or when such a stable fact emerges and no existing memory already covers it. `scope` is required: global = a cross-project user preference or working convention; project = anything tied to this repository. New memories start as short-term (not injected into the session index); they are promoted to long-term (and injected) once actually read via memory_get or re-confirmed by another save. When the new fact contradicts an existing memory, pass that memory's id in `supersedes` so the old fact is marked outdated (it stops being injected); never leave contradictory facts side by side. The Markdown body is capped at 8000 characters; longer input is truncated.",
 			parameters: {
 				type: "object",
 				properties: {
@@ -10704,12 +10706,20 @@ var MemoryStore = class {
 	}
 	/**
 	* 标记被取代的条目为 stale；已 stale/archived 的不重复计票（幂等）。
+	*
+	* 冲突裁决由代码执行（hindsight「时间比较由代码做」的对位）：目标通常与
+	* 新条目同作用域，但「项目事实推翻全局偏好」合法——同作用域找不到时回退
+	* 全局查找，写回按目标自身位置。仍找不到（模型幻觉 id）记警告并丢弃该票，
+	* 绝不静默吞掉。
 	*/
 	applySupersedes(scope, project, ids, sourceId) {
 		for (const id of ids) {
 			if (id === sourceId) continue;
-			const entry = this.get(scope, project, id);
-			if (entry === void 0) continue;
+			const entry = this.get(scope, project, id) ?? this.get("global", "", id);
+			if (entry === void 0) {
+				this.log("warn", `取代目标不存在，已丢弃该票：${id}`);
+				continue;
+			}
 			if (entry.status === "archived") continue;
 			if (entry.status === "stale" && entry.obsoleteVotes > 0) continue;
 			const updated = {
@@ -10718,7 +10728,7 @@ var MemoryStore = class {
 				obsoleteVotes: entry.obsoleteVotes + 1,
 				updatedAt: (/* @__PURE__ */ new Date()).toISOString()
 			};
-			this.writeEntry(scope, project, updated);
+			this.writeEntry(entry.scope, entry.project, updated);
 		}
 	}
 	/** 执行一次 v1 → v2 迁移（幂等；无 v1 文件时不做任何事）。 */
@@ -10813,7 +10823,7 @@ var MemoryStore = class {
 				raw: rawScores.get(entry.id) ?? 0
 			});
 		}
-		return scored.sort((left, right) => right.matchedCount - left.matchedCount || right.raw - left.raw || right.entry.importance - left.entry.importance || right.entry.updatedAt.localeCompare(left.entry.updatedAt)).map((item) => item.entry);
+		return scored.sort((left, right) => right.matchedCount - left.matchedCount || right.raw - left.raw || statusRank(right.entry) - statusRank(left.entry) || right.entry.importance - left.entry.importance || right.entry.updatedAt.localeCompare(left.entry.updatedAt)).map((item) => item.entry);
 	}
 	writeSettings() {
 		try {
@@ -10856,9 +10866,17 @@ var MemoryStore = class {
 		}
 	}
 };
-/** 文本检索之外的排序：重要度优先，其次更新时间。 */
+/**
+* 文本检索之外的排序：活着的先于过时的（agentcairn validity penalty 的
+* 离散化对位——被取代转 stale 的旧事实在同等条件下沉底），重要度优先，
+* 其次更新时间。
+*/
 function compareEntries(left, right) {
-	return right.importance - left.importance || right.updatedAt.localeCompare(left.updatedAt);
+	return statusRank(right) - statusRank(left) || right.importance - left.importance || right.updatedAt.localeCompare(left.updatedAt);
+}
+/** 状态权重：active 为 1、其余为 0。 */
+function statusRank(entry) {
+	return entry.status === "active" ? 1 : 0;
 }
 /** 把一个条目投影成列表元数据（正文不进入列表载荷）。 */
 function toMeta(entry) {
