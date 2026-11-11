@@ -232,5 +232,7 @@ survey §9.3 P0-2 的消费侧闭环（codex citation 闭环对位）。B10 注�
   消费证据通路，两者可叠加。
 - **验证**：374 用例全绿（新增 2：暴露交集过滤 + 轮增量扫描/同轮去重/无引用轮不计）。
   纯服务端，免真机。
-- **后续候选**：P0-2 剩余的短 id（新条目 id 缩短降引用成本，涉及 id 生成与引用解析一致性，
-  单独成批）；P1 轮级轻量召回注入、冲突显式化（changes/ends）、导入桥。
+- **后续候选**：P0-2 剩余的短 id——**已撤销**（2026-11-12 复核：`newEntryId()` 自
+  preview.5 起就是 `m-<base36 时间戳>-<6位hex>` 短格式，survey「id 为 randomUUID」的记载
+  已过时，B13 引用正则亦兼容两种格式，无剩余工作量）；P1 轮级轻量召回注入、冲突显式化
+  （changes/ends）、导入桥移交第三阶段（[`memory-production-hardening.md`](./memory-production-hardening.md)）。
