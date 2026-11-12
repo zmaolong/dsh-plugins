@@ -246,6 +246,12 @@ export interface AgentLike {
   session?: SessionLike
   ctx?: unknown
   options?: { provider?: string, model?: string }
+  /**
+   * Queue model-facing context for the next pre-step without waking the
+   * driver（宿主 `agent.inject(message: UserMessage)` 的结构面）。可选成员：
+   * 插件做存在性探测，缺失即降级（fail-open）。
+   */
+  inject?: (message: unknown) => void
 }
 
 /** One auxiliary model request (`ctx.llm.stream`). */

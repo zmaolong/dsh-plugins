@@ -23,7 +23,8 @@ import type { LogFn } from '../src/log.ts'
 import { MemoryRuntime } from '../src/memory-host.ts'
 import { GET_MAX_CHARS } from '../src/memory/recall.ts'
 import { MEMORY_GUIDE } from '../src/memory/runtime/prompt.ts'
-import { MemoryStore, type SaveMemoryInput } from '../src/memory/store.ts'
+import { buildRecallTurnMessage, RECALL_TURN_MAX_CHARS, renderRecallTurn, selectRecallTurnEntries } from '../src/memory/runtime/recall-turn.ts'
+import { MemoryStore, queryTerms, type SaveMemoryInput } from '../src/memory/store.ts'
 import {
   defaultSettings,
   type CreatedRef,
@@ -95,7 +96,9 @@ class FakeStore {
 
   search(scope: 'global' | 'project' | 'all', project: string, options: FakeSearchOptions = {}): MemoryMeta[] {
     this.searchCalls.push({ scope, project, options })
-    const query = (options.query ?? '').toLowerCase()
+    // 分词语义与真实 store 对齐（CJK 滑动 bigram + 任一命中），否则轮级召回
+    // 这类依赖长 prompt 检索的路径在 fake 里永远空手而归。
+    const terms = queryTerms(options.query ?? '')
     const limit = options.limit ?? 10
     const pool = this.entries.filter((entry) => {
       if (scope === 'global' && entry.scope !== 'global') return false
@@ -103,9 +106,9 @@ class FakeStore {
       if (scope === 'all' && entry.scope === 'project' && entry.project !== project) return false
       if (options.includeArchived !== true && entry.status === 'archived') return false
       if (options.type !== undefined && entry.type !== options.type) return false
-      if (query === '') return true
+      if (terms.length === 0) return true
       const haystack = `${entry.name}\n${entry.description}\n${entry.content}\n${entry.tags.join(' ')}`.toLowerCase()
-      return haystack.includes(query)
+      return terms.some(term => haystack.includes(term))
     })
     const sorted = [...pool].sort(
       (left, right) => right.importance - left.importance || right.updatedAt.localeCompare(left.updatedAt),
@@ -1063,5 +1066,160 @@ describe('记忆运行时：最近检索样本', () => {
     }
     expect(persisted.recentRetrievals[0]).toMatchObject({ sessionId: 's-retrieval', query: '检索样本', results: 12 })
     expect(persisted.recentRetrievals[0]?.ids).toHaveLength(10)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// 轮级轻量召回（B16）
+// ---------------------------------------------------------------------------
+
+describe('记忆运行时：轮级召回', () => {
+  /** 造一个带 inject 探针的 agent。 */
+  function agentWithInject(sessionId: string, cwd: string): {
+    agent: ReturnType<typeof makeAgent>
+    injectCalls: Array<{ id?: string, role?: string, content?: Array<{ text?: string }>, source?: { kind?: string } }>
+  } {
+    const injectCalls: Array<{ id?: string, role?: string, content?: Array<{ text?: string }>, source?: { kind?: string } }> = []
+    const base = makeAgent(sessionId, cwd)
+    const agent = { ...base, inject: (message: unknown) => { injectCalls.push(message as typeof injectCalls[number]) } }
+    return { agent: agent as unknown as ReturnType<typeof makeAgent>, injectCalls }
+  }
+
+  /** 等待延迟注入宏任务跑完（setTimeout 0 + 一点余量）。 */
+  async function recallSettled(): Promise<void> {
+    await new Promise(resolve => setTimeout(resolve, 10))
+  }
+
+  it('首步快照渲染后的真人 prompt 命中检索时经 agent.inject 呈现；同 id 会话内冷却', async () => {
+    const { ctx, store, systemPrompt } = createHarness()
+    const cwd = makeCwd()
+    // reference 类型不进首步快照（全局层只放 preference/decision），保证
+    // 轮级召回排除集合里没有它，能干净验证召回与冷却。
+    store.seed(makeEntry({ id: 'm-recall-1', type: 'reference', name: '部署约定', description: '部署走 green 渠道', content: 'deploy 用 green。' }))
+    const { agent, injectCalls } = agentWithInject('s-recall', cwd)
+
+    // 真实宿主顺序：agent/created 先注册 agent 引用，首轮事件即可用。
+    ctx.emit('agent/created', { agent, source: 'fresh' })
+
+    // 首条 prompt：快照尚未渲染（真实宿主顺序同此）→ 不召回。
+    emitTurn(ctx, agent, 1, ['第一条消息只是打招呼，请介绍一下你自己'], 'ok')
+    await recallSettled()
+    expect(injectCalls).toHaveLength(0)
+
+    // 首步装配渲染快照（buffer.injection 就绪）。
+    renderRecall(systemPrompt, agent)
+
+    // 第二轮命中 → 经 inject 排队一条 UserMessage 形状的消息（延迟到
+    // inbox 发布周期之外注入——真机实测同步 inject 会撞 append 重入守卫）。
+    emitTurn(ctx, agent, 2, ['现在切换话题：说说部署约定，部署该走哪条渠道'], 'ok')
+    await recallSettled()
+    expect(injectCalls).toHaveLength(1)
+    const message = injectCalls[0]
+    expect(message?.role).toBe('user')
+    expect(message?.source?.kind).toBe('agent-extension:memory-recall')
+    expect(message?.content?.[0]?.text).toContain('部署约定')
+    expect(message?.content?.[0]?.text).toContain('m-recall-1')
+    expect(message?.content?.[0]?.text).toContain('historical data')
+
+    // 冷却：同一 id 不重复呈现。
+    emitTurn(ctx, agent, 3, ['再详细讲一遍部署约定和部署渠道的选择'], 'ok')
+    await recallSettled()
+    expect(injectCalls).toHaveLength(1)
+  })
+
+  it('agent/status 进入 running 时补射延迟注入；同一会话只挂一个宏任务', async () => {
+    const { ctx, store, systemPrompt } = createHarness()
+    const cwd = makeCwd()
+    store.seed(makeEntry({ id: 'm-recall-5', type: 'reference', name: '部署约定', description: '部署走 green 渠道', content: 'deploy 用 green。' }))
+    const { agent, injectCalls } = agentWithInject('s-status', cwd)
+    ctx.emit('agent/created', { agent, source: 'fresh' })
+    emitTurn(ctx, agent, 1, ['第一条消息只是打招呼，请介绍一下你自己'], 'ok')
+    renderRecall(systemPrompt, agent)
+    // 真实顺序：user/message 先入 inbox（暂存召回），宿主随后发 status running
+    //（此时合并到同一个宏任务），注入发生在发布周期之外。
+    ctx.emit('session/event', agent.session, {
+      type: 'user/message',
+      seq: 900,
+      data: { source: { kind: 'user' }, content: [{ type: 'text', text: '现在说说部署约定走哪条渠道' }] },
+    })
+    ctx.emit('agent/status', { agent, status: 'running' })
+    await recallSettled()
+    expect(injectCalls).toHaveLength(1)
+    expect(injectCalls[0]?.content?.[0]?.text).toContain('m-recall-5')
+  })
+
+  it('turnRecall 关闭时不召回', async () => {
+    const { ctx, store, systemPrompt } = createHarness()
+    store.setSettings({ turnRecall: false })
+    const cwd = makeCwd()
+    store.seed(makeEntry({ id: 'm-recall-2', type: 'reference', name: '构建约定', description: '构建先 check', content: 'check 再 build。' }))
+    const { agent, injectCalls } = agentWithInject('s-off', cwd)
+    emitTurn(ctx, agent, 1, ['第一条消息只是打招呼，请介绍一下你自己'], 'ok')
+    renderRecall(systemPrompt, agent)
+    emitTurn(ctx, agent, 2, ['现在说说构建约定，构建顺序是什么'], 'ok')
+    await recallSettled()
+    expect(injectCalls).toHaveLength(0)
+  })
+
+  it('过短 prompt 与注入总开关关闭时都不召回', async () => {
+    const { ctx, store, systemPrompt } = createHarness()
+    store.setSettings({ injectEnabled: false })
+    const cwd = makeCwd()
+    store.seed(makeEntry({ id: 'm-recall-3', type: 'reference', name: '命名约定', description: '文件名用 kebab-case', content: 'kebab-case 命名。' }))
+    const { agent, injectCalls } = agentWithInject('s-gate', cwd)
+    emitTurn(ctx, agent, 1, ['第一条消息只是打招呼，请介绍一下你自己'], 'ok')
+    renderRecall(systemPrompt, agent)
+    emitTurn(ctx, agent, 2, ['命名约定'], 'ok')
+    await recallSettled()
+    expect(injectCalls).toHaveLength(0)
+  })
+
+  it('宿主未暴露 inject 时降级且每会话只提示一次', async () => {
+    const { ctx, store, systemPrompt, logs } = createHarness()
+    const cwd = makeCwd()
+    store.seed(makeEntry({ id: 'm-recall-4', type: 'reference', name: '测试约定', description: '提交前 vitest 全绿', content: 'vitest run。' }))
+    const agent = makeAgent('s-noinject', cwd)
+    emitTurn(ctx, agent, 1, ['第一条消息只是打招呼，请介绍一下你自己'], 'ok')
+    renderRecall(systemPrompt, agent)
+    emitTurn(ctx, agent, 2, ['现在谈谈测试约定，提交前要跑什么'], 'ok')
+    await recallSettled()
+    emitTurn(ctx, agent, 3, ['再说说测试约定的具体要求'], 'ok')
+    await recallSettled()
+    const warnings = logs.filter(line => line.startsWith('info:轮级召回不可用'))
+    expect(warnings).toHaveLength(1)
+  })
+
+  it('渲染行描述截到 120 字、总长不超预算；inject 消息载荷形状稳定', () => {
+    const entries = [
+      makeEntry({ id: 'm-a', type: 'reference', name: '条目A', description: '第一', importance: 60 }),
+      makeEntry({
+        id: 'm-b',
+        type: 'reference',
+        name: '条目B',
+        description: '长'.repeat(300),
+        importance: 50,
+      }),
+    ]
+    const rendered = renderRecallTurn(entries)
+    expect(rendered).toContain('m-a')
+    expect(rendered).toContain('m-b')
+    expect(rendered.length).toBeLessThanOrEqual(RECALL_TURN_MAX_CHARS)
+    // 描述按码点截到 120（含省略号），300 个「长」不会原样进渲染结果。
+    expect(rendered).not.toContain('长'.repeat(130))
+    const message = buildRecallTurnMessage(rendered)
+    expect(message.role).toBe('user')
+    expect(typeof message.id).toBe('string')
+    expect((message.source as { kind: string }).kind).toBe('agent-extension:memory-recall')
+  })
+
+  it('selectRecallTurnEntries：短 prompt 返回空、stale 排除、冷却集合排除', () => {
+    const { store } = createHarness()
+    store.seed(makeEntry({ id: 'm-s-1', type: 'reference', name: '部署约定', description: '部署走 green 渠道', content: '' }))
+    store.seed(makeEntry({ id: 'm-s-2', type: 'reference', name: '部署历史', description: '旧的部署方式', content: '', status: 'stale' }))
+    expect(selectRecallTurnEntries(store as never, '短', '', new Set())).toEqual([])
+    const picked = selectRecallTurnEntries(store as never, '说说部署约定该走哪条渠道', '', new Set())
+    expect(picked.map(entry => entry.id)).toEqual(['m-s-1'])
+    const cooled = selectRecallTurnEntries(store as never, '说说部署约定该走哪条渠道', '', new Set(['m-s-1']))
+    expect(cooled).toEqual([])
   })
 })

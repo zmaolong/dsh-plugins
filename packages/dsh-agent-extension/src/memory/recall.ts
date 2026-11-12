@@ -92,7 +92,7 @@ export interface GetResultOptions {
 }
 
 /** 把任意文本压成一行并按字符数截断（按码点，避免拆坏表情）。 */
-function clipLine(value: string, max: number): string {
+export function clipLine(value: string, max: number): string {
   const single = value.replace(/\s+/gu, ' ').trim()
   const chars = [...single]
   if (chars.length <= max) return single

@@ -106,3 +106,70 @@
   `memory_save` 工具描述补「矛盾时传 supersedes，不许矛盾事实并存」。
 - **验证**：386 用例全绿（新增 3：跨作用域取代、幻觉 id 警告丢弃、stale 沉底含空查询）；
   check/build 通过。纯服务端，免真机。
+
+### 2026-11-12：B16 轮级轻量召回注入实施完成（真机验证进行中）
+
+- **挂点与契约**（`src/host.ts` AgentLike + `.reference` 宿主源码核实）：`agent.inject(message: UserMessage)`
+  ——排队模型可见上下文到下一 pre-step、不唤醒 driver；pre-step 已领取则顺延到下一 step
+  边界，空闲时挂起至下次唤醒。`AgentLike` 加可选 `inject?: (message: unknown) => void`，
+  存在性探测缺失即降级（fail-open，每会话只提示一次）。消息载荷
+  `{ id, role: 'user', content: [{type:'text',text}], source: { kind: 'agent-extension:memory-recall' } }`
+  （source.kind 为 merge-extensible 自由槽位）。
+- **召回模块**（`src/memory/runtime/recall-turn.ts`）：门槛 agentcairn 直抄——真人 prompt
+  ≥12 字符、k≤3、命中须 active、会话内冷却（注入快照 ∪ 工具结果 ∪ 已召回 id 不再呈现）、
+  输出 ≤1,200 字符（超预算整行丢弃）；抬头带信任边界声明；首步快照未渲染过不召回（防同轮
+  重复——快照覆盖会话开头）。检索查询单向复用 store 覆盖排序（recall 不调 LLM 原则）。
+- **接线**（`capture-session.ts` + `memory-host.ts`）：`user/message`（真人）触发；
+  `agent/created` 新监听尽早捕获 agent 引用（首轮 turn-stopping 尚未跑过）；`RecallCounters`
+  加 `recalled` 集合并入 B13 引用回写的暴露集合（轮级召回呈现过的 id 被引用也计消费）。
+  注入关闭/开关关闭/子代理/无 inject/任何异常一律静默降级。
+- **设置面**：`turnRecall`（默认开）+ 八语言（`memorySettingsTurnRecall/Hint`）；设置弹窗
+  注入开关下新增一行 Switch + 提示。
+- **测试基建**：FakeStore.search 对齐真实分词语义（`queryTerms` bigram + 任一命中）——
+  fake 保真度缺口，长 prompt 检索路径此前在 fake 里永远空手而归。
+- **验证（离线）**：392 用例全绿（新增 6：happy path + 冷却、开关关闭、过短 prompt 与注入
+  关闭、无 inject 降级每会话一次、渲染截断与消息形状、select 门槛）；check/build 通过。
+- **真机验证（zdebug，结论）**：
+  - **发现真实宿主契约约束并修复**：在 `user/message` 事件监听里同步调
+    `agent.inject` 抛 `session append cannot reenter while another append is being
+    published`——宿主禁止在 inbox append 发布期间重入 append。修复：prompt 先暂存
+    （`pendingRecall`），宏任务（setTimeout 0，合并调度）+ `agent/status` 进入 running
+    的新监听补射，注入发生在发布周期之外；`reenter` 类失败保留暂存等下次触发重试。
+  - **修复后真机复验通过**：hub.log 连续两条 `轮级召回已注入 2 条`，且两次注入的
+    id 集合不同（首次 pair 冷却生效；第二次来自失败轮重试的新一次呈现）；
+    `agent.inject` 探测存在、检索命中、渲染、消费账本全链路正常。
+  - 设置弹窗「轮级召回」开关渲染正确（默认开）；`POST /memory/settings` 双向 PATCH
+    落盘验证通过；console error = 0；宿主 err.log 干净。
+
+### 2026-11-12：B17 外部记忆导入桥实施完成（真机验证与 B16 同批）
+
+- **解析器**（`src/memory/import.ts`）：双形态——frontmatter 文档连排（支持 `metadata.type`
+  嵌套，自带轻量头解析器：通用 frontmatter 解析器会跳过嵌套结构）与朴素 Markdown 按
+  二级标题分条（首个标题前的前言不作为条目）；无结构整段兜底成单条；类型映射
+  user/feedback→preference、project→project、reference→reference、未知→reference。
+  解析器首版两处缺陷由测试当场暴露修复：H2 正则对多行段落失效（`$` 无 m 标志）、
+  frontmatter 连排共享分隔行的游标推进错误。
+- **plan/apply 分离**：`planImport` 只判定（create/reinforce/conflict：指纹一致→强化、
+  同名不同内容→冲突照建并提示、否则新建），不落盘；`applyImport` 服务端复算同一计划后
+  逐条 `store.save`（`source: import`、`tier: long`——用户显式迁移内容直接长驻；计划文档
+  原写 source=user，实施取更诚实的 import 通道）。幂等：同指纹由 save 转强化，重复 apply
+  不产生重复条目；单条失败不阻断（failed 计数）。
+- **路由**（`memory-routes.ts`）：`POST /memory/import/plan` 与 `/memory/import/apply`；
+  来源 200,000 字符上限、条数 200 上限（超出 dropped 计数）；apply 成功后失效索引缓存
+  （新 long 条目进入下一次装配）。HOST-API.md §8 路由表同步补齐（含 B6/B7 缺口的
+  `/memory/tier` 与 settings 新字段）。
+- **面板 UI**（`MemoryView.tsx`）：工具条 export 旁新增「导入外部记忆」IconButton（新增
+  `upload` 图标）；弹窗三段流——粘贴/选文件（.md/.txt）→ 解析预览（动作徽章 + 条目名 +
+  原因，50 条截断显示）→ 确认导入（结果统计 + 列表刷新）；目标作用域随当前 tab
+  （global/project）。16 个 locale key × 八语言。导入常量放 `shared/memory-wire.ts`
+  （客户端不可经由依赖 node 内置的 import.ts 拿常量——purity 门禁真实拦截一次）。
+- **验证（离线）**：400 用例全绿（新增 8：解析三形态、计划三判定、apply 幂等与 tier/source
+  落库、项目作用域冲突照建、路由往返与校验）；check/build 通过。
+- **真机验证（zdebug，结论）**：面板「导入外部记忆」按钮与弹窗三段流（粘贴 → 解析预览 →
+  确认导入）全通；解析预览正确展示「新建/强化/冲突」动作徽章，**批内同名不同内容**
+  （首版缺陷，预览当场暴露）修复后显示「与本次导入的前一条同名」；确认导入后
+  `新建 1 条 · 强化 0 条 · 冲突 1 条 · 失败 0 条`，磁盘与 API 双向核对条目
+  （`source: import`、`tier: long`、metadata.type user→preference 映射正确）；
+  测试条目已通过 API 清理。console error = 0。
+- **版本合并说明**：B16 与 B17 在同一宿主会话内实施与真机验证（B17 复用 B16 的重启
+  窗口），合并为一个 preview 交付（`0.0.1-preview.32`，单 commit）。

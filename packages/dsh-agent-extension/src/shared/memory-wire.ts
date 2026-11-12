@@ -35,6 +35,12 @@ export type ProjectIdentitySource = 'git-remote' | 'git-common' | 'path'
 /** 一条记忆的来源通道。 */
 export const MEMORY_SOURCES = ['capture', 'tool', 'user', 'import'] as const
 
+/** 单次导入的条数上限（服务端计划截断与客户端提示共用）。 */
+export const IMPORT_MAX_ITEMS = 200
+
+/** 单次导入文本的字符上限（防一次性把超大文件灌进计划）。 */
+export const IMPORT_SOURCE_MAX_CHARS = 200_000
+
 /** 一种记忆来源。 */
 export type MemorySource = (typeof MEMORY_SOURCES)[number]
 
@@ -94,6 +100,8 @@ export interface MemorySettings {
   captureSessionEnd: boolean
   /** 是否把记忆索引注入提示词。 */
   injectEnabled: boolean
+  /** 轮级轻量召回：真人 prompt 触发检索并经宿主 agent.inject 排队呈现。 */
+  turnRecall: boolean
   /** 全局作用域注入的索引条数。 */
   indexLimitGlobal: number
   /** 项目作用域注入的索引条数。 */
@@ -119,6 +127,7 @@ export function defaultSettings(): MemorySettings {
     captureEnabled: true,
     captureSessionEnd: true,
     injectEnabled: true,
+    turnRecall: true,
     indexLimitGlobal: 20,
     indexLimitProject: 20,
     maxChars: 3000,

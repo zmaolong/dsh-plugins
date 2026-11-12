@@ -333,6 +333,7 @@ function normalizeSettings(raw: unknown): MemorySettings {
     captureEnabled: typeof value.captureEnabled === 'boolean' ? value.captureEnabled : fallback.captureEnabled,
     captureSessionEnd: typeof value.captureSessionEnd === 'boolean' ? value.captureSessionEnd : fallback.captureSessionEnd,
     injectEnabled: typeof value.injectEnabled === 'boolean' ? value.injectEnabled : fallback.injectEnabled,
+    turnRecall: typeof value.turnRecall === 'boolean' ? value.turnRecall : fallback.turnRecall,
     indexLimitGlobal: clampInt(value.indexLimitGlobal, 0, RECALL_MAX_PER_LAYER, fallback.indexLimitGlobal),
     indexLimitProject: clampInt(value.indexLimitProject, 0, RECALL_MAX_PER_LAYER, fallback.indexLimitProject),
     maxChars: clampInt(value.maxChars, 1000, RECALL_MAX_CHARS, fallback.maxChars),

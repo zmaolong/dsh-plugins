@@ -255,6 +255,24 @@ window.__ModuleLoader__.load({
 			memorySettingsObservationDays: "短期观察期（天）",
 			memorySettingsAutoThreshold: "自动维护写入阈值",
 			memorySettingsAutoHint: "达到写入阈值或时间间隔时，会话结束后自动执行一次维护；手动「优化记忆」仍可用。",
+			memorySettingsTurnRecall: "轮级召回",
+			memorySettingsTurnRecallHint: "每条用户消息触发一次轻量检索，命中的记忆经宿主注入下一轮上下文；同一条目会话内只呈现一次。",
+			memoryImportButton: "导入外部记忆",
+			memoryImportTitle: "导入外部记忆",
+			memoryImportHint: "粘贴或选择外部 agent 的记忆导出（frontmatter 文档或按二级标题分条的 Markdown）。解析预览不落盘，确认后才写入；同指纹条目转为强化，不会重复。",
+			memoryImportSourcePlaceholder: "在此粘贴要导入的记忆文本（Markdown）…",
+			memoryImportFileLabel: "或选择文件（.md / .txt）",
+			memoryImportPlan: "解析预览",
+			memoryImportApply: "确认导入",
+			memoryImportDone: "导入完成，列表已刷新",
+			memoryImportFailed: "导入失败：{message}",
+			memoryImportEmpty: "没有解析出任何记忆条目：请确认内容含 frontmatter 文档或二级标题分条。",
+			memoryImportResult: "新建 {created} 条 · 强化 {reinforced} 条 · 冲突 {conflicts} 条 · 失败 {failed} 条",
+			memoryImportActionCreate: "新建",
+			memoryImportActionReinforce: "强化",
+			memoryImportActionConflict: "冲突",
+			memoryImportMore: "还有 {count} 条未展示",
+			memoryImportDropped: "超出单次 200 条上限，{count} 条未纳入",
 			memoryTypeFilterLabel: "按类型筛选",
 			memoryStatsTitle: "统计",
 			memoryStatCaptureRuns: "累计捕获次数",
@@ -582,6 +600,24 @@ window.__ModuleLoader__.load({
 			memorySettingsObservationDays: "Short-term observation (days)",
 			memorySettingsAutoThreshold: "Auto-maintenance write threshold",
 			memorySettingsAutoHint: "When the write threshold or interval is reached, one maintenance run runs after the session ends; manual \"Optimize\" stays available.",
+			memorySettingsTurnRecall: "Per-turn recall",
+			memorySettingsTurnRecallHint: "Each user message triggers a lightweight search; matched memories are injected into the next turn via the host. Each entry shows at most once per session.",
+			memoryImportButton: "Import external memories",
+			memoryImportTitle: "Import external memories",
+			memoryImportHint: "Paste or pick a memory export from another agent (frontmatter documents or Markdown split by H2 headings). The preview writes nothing; importing only happens after you confirm. Same-fingerprint entries become reinforcement instead of duplicates.",
+			memoryImportSourcePlaceholder: "Paste the memory text (Markdown) to import…",
+			memoryImportFileLabel: "Or pick a file (.md / .txt)",
+			memoryImportPlan: "Preview plan",
+			memoryImportApply: "Import now",
+			memoryImportDone: "Import finished; the list has been refreshed",
+			memoryImportFailed: "Import failed: {message}",
+			memoryImportEmpty: "No entries parsed: make sure the content has frontmatter documents or H2 headings.",
+			memoryImportResult: "{created} created · {reinforced} reinforced · {conflicts} conflicts · {failed} failed",
+			memoryImportActionCreate: "Create",
+			memoryImportActionReinforce: "Reinforce",
+			memoryImportActionConflict: "Conflict",
+			memoryImportMore: "{count} more not shown",
+			memoryImportDropped: "Over the 200-entry limit; {count} entries skipped",
 			memoryTypeFilterLabel: "Filter by type",
 			memoryStatsTitle: "Statistics",
 			memoryStatCaptureRuns: "Capture runs",
@@ -908,6 +944,24 @@ window.__ModuleLoader__.load({
 			memorySettingsObservationDays: "短期の観察期間（日）",
 			memorySettingsAutoThreshold: "自動メンテナンスの書き込みしきい値",
 			memorySettingsAutoHint: "書き込みしきい値または期間に達すると、セッション終了後にメンテナンスを自動実行します。手動の「メモリ最適化」も利用できます。",
+			memorySettingsTurnRecall: "ターン毎リコール",
+			memorySettingsTurnRecallHint: "ユーザーメッセージごとに軽量検索を実行し、一致した記憶をホスト経由で次ターンに注入します。各エントリはセッション中一度だけ表示されます。",
+			memoryImportButton: "外部メモリを取り込む",
+			memoryImportTitle: "外部メモリの取り込み",
+			memoryImportHint: "他のエージェントのメモリ書き出し（frontmatter 文書、または見出し2で分割した Markdown）を貼り付けるかファイルで選択します。プレビューは書き込まず、確定後にのみ保存されます。同一フィンガープリントの項目は強化に変換され、重複しません。",
+			memoryImportSourcePlaceholder: "取り込むメモリ本文（Markdown）を貼り付け…",
+			memoryImportFileLabel: "またはファイルを選択（.md / .txt）",
+			memoryImportPlan: "プレビュー",
+			memoryImportApply: "取り込む",
+			memoryImportDone: "取り込み完了。一覧を更新しました",
+			memoryImportFailed: "取り込み失敗：{message}",
+			memoryImportEmpty: "解析できた項目がありません：frontmatter 文書か見出し2の分割を確認してください。",
+			memoryImportResult: "新規 {created} 件 · 強化 {reinforced} 件 · 競合 {conflicts} 件 · 失敗 {failed} 件",
+			memoryImportActionCreate: "新規",
+			memoryImportActionReinforce: "強化",
+			memoryImportActionConflict: "競合",
+			memoryImportMore: "他 {count} 件は未表示",
+			memoryImportDropped: "上限200件を超えたため {count} 件を除外しました",
 			memorySettingsButton: "メモリ設定と統計",
 			memoryTypeFilterLabel: "タイプで絞り込み",
 			memoryStatsTitle: "統計",
@@ -1235,6 +1289,24 @@ window.__ModuleLoader__.load({
 			memorySettingsObservationDays: "Observación de corto plazo (días)",
 			memorySettingsAutoThreshold: "Umbral de escritura para mantenimiento automático",
 			memorySettingsAutoHint: "Al alcanzar el umbral de escritura o el intervalo, se ejecuta un mantenimiento al finalizar la sesión; el botón manual «Optimizar» sigue disponible.",
+			memorySettingsTurnRecall: "Recall por turno",
+			memorySettingsTurnRecallHint: "Cada mensaje del usuario lanza una búsqueda ligera; las memorias coincidentes se inyectan en el siguiente turno vía el host. Cada entrada aparece como máximo una vez por sesión.",
+			memoryImportButton: "Importar memorias externas",
+			memoryImportTitle: "Importar memorias externas",
+			memoryImportHint: "Pega o elige una exportación de memoria de otro agente (documentos con frontmatter o Markdown dividido por encabezados H2). La vista previa no escribe nada; la importación ocurre solo tras confirmar. Las entradas con la misma huella se convierten en refuerzo, no duplicados.",
+			memoryImportSourcePlaceholder: "Pega el texto de memoria (Markdown) a importar…",
+			memoryImportFileLabel: "O elige un archivo (.md / .txt)",
+			memoryImportPlan: "Vista previa",
+			memoryImportApply: "Importar",
+			memoryImportDone: "Importación terminada; la lista se ha actualizado",
+			memoryImportFailed: "Error al importar: {message}",
+			memoryImportEmpty: "No se analizó ninguna entrada: confirma que el contenido tenga frontmatter o encabezados H2.",
+			memoryImportResult: "{created} creadas · {reinforced} reforzadas · {conflicts} conflictos · {failed} fallidas",
+			memoryImportActionCreate: "Crear",
+			memoryImportActionReinforce: "Reforzar",
+			memoryImportActionConflict: "Conflicto",
+			memoryImportMore: "{count} más sin mostrar",
+			memoryImportDropped: "Se superó el límite de 200; {count} entradas omitidas",
 			memorySettingsButton: "Ajustes y estadísticas de memoria",
 			memoryTypeFilterLabel: "Filtrar por tipo",
 			memoryStatsTitle: "Estadísticas",
@@ -1562,6 +1634,24 @@ window.__ModuleLoader__.load({
 			memorySettingsObservationDays: "Observation court terme (jours)",
 			memorySettingsAutoThreshold: "Seuil d’écriture pour la maintenance auto",
 			memorySettingsAutoHint: "Lorsque le seuil d’écriture ou l’intervalle est atteint, une maintenance s’exécute à la fin de la session ; le bouton manuel « Optimiser » reste disponible.",
+			memorySettingsTurnRecall: "Rappel par tour",
+			memorySettingsTurnRecallHint: "Chaque message utilisateur déclenche une recherche légère ; les mémoires correspondantes sont injectées au tour suivant via l’hôte. Chaque entrée apparaît au plus une fois par session.",
+			memoryImportButton: "Importer des mémoires externes",
+			memoryImportTitle: "Importer des mémoires externes",
+			memoryImportHint: "Collez ou choisissez un export de mémoire d’un autre agent (documents frontmatter ou Markdown découpé par titres H2). L’aperçu n’écrit rien ; l’import n’a lieu qu’après confirmation. Les entrées de même empreinte deviennent des renforcements, pas des doublons.",
+			memoryImportSourcePlaceholder: "Collez le texte de mémoire (Markdown) à importer…",
+			memoryImportFileLabel: "Ou choisissez un fichier (.md / .txt)",
+			memoryImportPlan: "Aperçu",
+			memoryImportApply: "Importer",
+			memoryImportDone: "Import terminé ; la liste a été actualisée",
+			memoryImportFailed: "Échec de l’import : {message}",
+			memoryImportEmpty: "Aucune entrée analysée : vérifiez que le contenu contient des documents frontmatter ou des titres H2.",
+			memoryImportResult: "{created} créées · {reinforced} renforcées · {conflicts} conflits · {failed} échecs",
+			memoryImportActionCreate: "Créer",
+			memoryImportActionReinforce: "Renforcer",
+			memoryImportActionConflict: "Conflit",
+			memoryImportMore: "{count} autres non affichées",
+			memoryImportDropped: "Limite de 200 dépassée ; {count} entrées ignorées",
 			memorySettingsButton: "Réglages et statistiques de mémoire",
 			memoryTypeFilterLabel: "Filtrer par type",
 			memoryStatsTitle: "Statistiques",
@@ -1889,6 +1979,24 @@ window.__ModuleLoader__.load({
 			memorySettingsObservationDays: "Kurzfrist-Beobachtung (Tage)",
 			memorySettingsAutoThreshold: "Schreibschwelle für automatische Wartung",
 			memorySettingsAutoHint: "Wird die Schreibschwelle oder das Intervall erreicht, läuft nach Sitzungsende eine Wartung; die manuelle „Optimieren“-Schaltfläche bleibt verfügbar.",
+			memorySettingsTurnRecall: "Ruf pro Runde",
+			memorySettingsTurnRecallHint: "Jede Benutzernachricht löst eine leichte Suche aus; getroffene Erinnerungen werden über den Host in die nächste Runde injiziert. Jeder Eintrag erscheint höchstens einmal pro Sitzung.",
+			memoryImportButton: "Externe Erinnerungen importieren",
+			memoryImportTitle: "Externe Erinnerungen importieren",
+			memoryImportHint: "Fügen Sie einen Speicher-Export eines anderen Agents ein oder wählen Sie eine Datei (Frontmatter-Dokumente oder Markdown mit H2-Überschriften). Die Vorschau schreibt nichts; der Import erfolgt erst nach Bestätigung. Einträge mit gleichem Fingerabdruck werden zu Verstärkungen statt Duplikaten.",
+			memoryImportSourcePlaceholder: "Zu importierenden Speichertext (Markdown) einfügen…",
+			memoryImportFileLabel: "Oder Datei wählen (.md / .txt)",
+			memoryImportPlan: "Vorschau",
+			memoryImportApply: "Importieren",
+			memoryImportDone: "Import abgeschlossen; die Liste wurde aktualisiert",
+			memoryImportFailed: "Import fehlgeschlagen: {message}",
+			memoryImportEmpty: "Keine Einträge erkannt: Der Inhalt muss Frontmatter-Dokumente oder H2-Überschriften enthalten.",
+			memoryImportResult: "{created} neu · {reinforced} verstärkt · {conflicts} Konflikte · {failed} fehlgeschlagen",
+			memoryImportActionCreate: "Neu",
+			memoryImportActionReinforce: "Verstärken",
+			memoryImportActionConflict: "Konflikt",
+			memoryImportMore: "{count} weitere nicht angezeigt",
+			memoryImportDropped: "Limit von 200 überschritten; {count} Einträge übersprungen",
 			memorySettingsButton: "Speichereinstellungen und Statistik",
 			memoryTypeFilterLabel: "Nach Typ filtern",
 			memoryStatsTitle: "Statistik",
@@ -2216,6 +2324,24 @@ window.__ModuleLoader__.load({
 			memorySettingsObservationDays: "Наблюдение краткосрочных (дней)",
 			memorySettingsAutoThreshold: "Порог записей для автообслуживания",
 			memorySettingsAutoHint: "При достижении порога записей или интервала обслуживание запускается в конце сессии; ручная кнопка «Оптимизировать» остаётся доступной.",
+			memorySettingsTurnRecall: "Напоминание по ходу",
+			memorySettingsTurnRecallHint: "Каждое сообщение пользователя запускает лёгкий поиск; найденные воспоминания попадают в следующий ход через хост. Каждая запись показывается не более одного раза за сессию.",
+			memoryImportButton: "Импорт внешних воспоминаний",
+			memoryImportTitle: "Импорт внешних воспоминаний",
+			memoryImportHint: "Вставьте или выберите экспорт памяти другого агента (документы с frontmatter или Markdown с заголовками H2). Предпросмотр ничего не пишет; запись происходит только после подтверждения. Записи с тем же отпечатком становятся усилением, а не дубликатами.",
+			memoryImportSourcePlaceholder: "Вставьте текст памяти (Markdown) для импорта…",
+			memoryImportFileLabel: "Или выберите файл (.md / .txt)",
+			memoryImportPlan: "Предпросмотр",
+			memoryImportApply: "Импортировать",
+			memoryImportDone: "Импорт завершён; список обновлён",
+			memoryImportFailed: "Ошибка импорта: {message}",
+			memoryImportEmpty: "Не распознано ни одной записи: убедитесь, что содержимое содержит frontmatter-документы или заголовки H2.",
+			memoryImportResult: "создано {created} · усилено {reinforced} · конфликтов {conflicts} · ошибок {failed}",
+			memoryImportActionCreate: "Создать",
+			memoryImportActionReinforce: "Усилить",
+			memoryImportActionConflict: "Конфликт",
+			memoryImportMore: "Ещё {count} не показано",
+			memoryImportDropped: "Превышен лимит 200; {count} записей пропущено",
 			memorySettingsButton: "Настройки и статистика памяти",
 			memoryTypeFilterLabel: "Фильтр по типу",
 			memoryStatsTitle: "Статистика",
@@ -2543,6 +2669,24 @@ window.__ModuleLoader__.load({
 			memorySettingsObservationDays: "Observação de curto prazo (dias)",
 			memorySettingsAutoThreshold: "Limiar de escrita para manutenção automática",
 			memorySettingsAutoHint: "Ao atingir o limiar de escrita ou o intervalo, uma manutenção é executada ao fim da sessão; o botão manual \"Otimizar\" continua disponível.",
+			memorySettingsTurnRecall: "Recall por turno",
+			memorySettingsTurnRecallHint: "Cada mensagem do usuário dispara uma busca leve; memórias correspondentes são injetadas no próximo turno via host. Cada entrada aparece no máximo uma vez por sessão.",
+			memoryImportButton: "Importar memórias externas",
+			memoryImportTitle: "Importar memórias externas",
+			memoryImportHint: "Cole ou escolha um export de memória de outro agente (documentos com frontmatter ou Markdown dividido por títulos H2). A pré-visualização não grava nada; a importação só acontece após confirmação. Entradas com a mesma impressão viram reforço, não duplicatas.",
+			memoryImportSourcePlaceholder: "Cole o texto de memória (Markdown) a importar…",
+			memoryImportFileLabel: "Ou escolha um arquivo (.md / .txt)",
+			memoryImportPlan: "Pré-visualizar",
+			memoryImportApply: "Importar",
+			memoryImportDone: "Importação concluída; a lista foi atualizada",
+			memoryImportFailed: "Falha na importação: {message}",
+			memoryImportEmpty: "Nenhuma entrada reconhecida: confira se o conteúdo tem documentos frontmatter ou títulos H2.",
+			memoryImportResult: "{created} criadas · {reinforced} reforçadas · {conflicts} conflitos · {failed} falhas",
+			memoryImportActionCreate: "Criar",
+			memoryImportActionReinforce: "Reforçar",
+			memoryImportActionConflict: "Conflito",
+			memoryImportMore: "Mais {count} não exibidas",
+			memoryImportDropped: "Limite de 200 excedido; {count} entradas ignoradas",
 			memorySettingsButton: "Configurações e estatísticas de memória",
 			memoryTypeFilterLabel: "Filtrar por tipo",
 			memoryStatsTitle: "Estatísticas",
@@ -3703,6 +3847,11 @@ window.__ModuleLoader__.load({
 				"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4",
 				"M7 10l5 5 5-5",
 				"M12 15V3"
+			],
+			upload: [
+				"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4",
+				"M17 8l-5-5-5 5",
+				"M12 3v12"
 			],
 			arrowUpRight: ["M7 7h10v10", "M7 17 17 7"],
 			search: [{ circle: [
@@ -6484,12 +6633,15 @@ window.__ModuleLoader__.load({
 			return cached;
 		}
 		// src/shared/memory-wire.ts
+		/** 单次导入文本的字符上限（防一次性把超大文件灌进计划）。 */
+		const IMPORT_SOURCE_MAX_CHARS = 2e5;
 		/** 默认设置：捕获与注入开启，各 20 条索引、总预算 3,000 字符（ADR-0005）。 */
 		function defaultSettings() {
 			return {
 				captureEnabled: true,
 				captureSessionEnd: true,
 				injectEnabled: true,
+				turnRecall: true,
 				indexLimitGlobal: 20,
 				indexLimitProject: 20,
 				maxChars: 3e3,
@@ -6690,6 +6842,38 @@ window.__ModuleLoader__.load({
 			if (!Number.isFinite(parsed)) return fallback;
 			return Math.min(max, Math.max(min, Math.round(parsed)));
 		}
+		/** Normalize one import plan item from the API payload. */
+		function normalizeImportPlanItem(value, index) {
+			const item = record(value);
+			const action = item.action === "reinforce" || item.action === "conflict" ? item.action : "create";
+			return {
+				index: typeof item.index === "number" ? item.index : index,
+				name: text(item.name, ""),
+				type: text(item.type, "reference"),
+				action,
+				reason: text(item.reason, "")
+			};
+		}
+		/** Normalize the import plan payload. */
+		function normalizeImportPlan(raw) {
+			const data = record(raw);
+			return {
+				items: (Array.isArray(data.items) ? data.items : []).map(normalizeImportPlanItem),
+				dropped: typeof data.dropped === "number" ? data.dropped : 0
+			};
+		}
+		/** Normalize the import result payload. */
+		function normalizeImportResult(raw) {
+			const data = record(raw);
+			const count = (value) => typeof value === "number" && Number.isFinite(value) ? value : 0;
+			return {
+				created: count(data.created),
+				reinforced: count(data.reinforced),
+				conflicts: count(data.conflicts),
+				failed: count(data.failed),
+				dropped: count(data.dropped)
+			};
+		}
 		/** Normalize one list row. */
 		function normalizeSummary(raw) {
 			const item = record(raw);
@@ -6749,6 +6933,7 @@ window.__ModuleLoader__.load({
 				captureEnabled: item.captureEnabled !== false,
 				captureSessionEnd: item.captureSessionEnd !== false,
 				injectEnabled: item.injectEnabled !== false,
+				turnRecall: item.turnRecall !== false,
 				indexLimitGlobal: integer(item.indexLimitGlobal, 0, 20, DEFAULT_SETTINGS.indexLimitGlobal),
 				indexLimitProject: integer(item.indexLimitProject, 0, 20, DEFAULT_SETTINGS.indexLimitProject),
 				maxChars: integer(item.maxChars, 1e3, RECALL_MAX_CHARS, DEFAULT_SETTINGS.maxChars),
@@ -6993,6 +7178,11 @@ window.__ModuleLoader__.load({
 			const [sort, setSort] = (0, react.useState)("default");
 			const [tagDraft, setTagDraft] = (0, react.useState)("");
 			const [auditOpen, setAuditOpen] = (0, react.useState)(false);
+			const [importOpen, setImportOpen] = (0, react.useState)(false);
+			const [importSource, setImportSource] = (0, react.useState)("");
+			const [importPlan, setImportPlan] = (0, react.useState)(null);
+			const [importResult, setImportResult] = (0, react.useState)(null);
+			const [importBusy, setImportBusy] = (0, react.useState)(false);
 			const [auditBusy, setAuditBusy] = (0, react.useState)(false);
 			const [auditResult, setAuditResult] = (0, react.useState)(null);
 			const [auditSelected, setAuditSelected] = (0, react.useState)([]);
@@ -7340,6 +7530,72 @@ window.__ModuleLoader__.load({
 					actions.toast("error", t("memoryExportFailed", { message: errorMessageFor(error, t) }));
 				} finally {
 					setExportBusy(false);
+				}
+			};
+			/** 打开导入弹窗（重置上一次的解析与结果）。 */
+			const openImport = () => {
+				setImportSource("");
+				setImportPlan(null);
+				setImportResult(null);
+				setImportOpen(true);
+			};
+			/** 读取用户选择的外部记忆文件（.md/.txt）填进来源框。 */
+			const onImportFile = async (file) => {
+				if (file === void 0) return;
+				try {
+					const content = await file.text();
+					setImportSource(content.slice(0, IMPORT_SOURCE_MAX_CHARS));
+					setImportPlan(null);
+					setImportResult(null);
+				} catch (error) {
+					actions.toast("error", t("memoryImportFailed", { message: errorMessageFor(error, t) }));
+				}
+			};
+			/** 解析预览：只算计划不落盘。 */
+			const runImportPlan = async () => {
+				if (importBusy || importSource.trim() === "") return;
+				setImportBusy(true);
+				try {
+					const body = {
+						source: importSource,
+						scope
+					};
+					if (scope === "project") body.project = project;
+					const data = await api("/memory/import/plan", {
+						method: "POST",
+						body
+					});
+					setImportResult(null);
+					setImportPlan(normalizeImportPlan(data.plan));
+				} catch (error) {
+					actions.toast("error", t("memoryImportFailed", { message: errorMessageFor(error, t) }));
+				} finally {
+					setImportBusy(false);
+				}
+			};
+			/** 确认导入：服务端复算计划后逐条写入（幂等）。 */
+			const runImportApply = async () => {
+				if (importBusy || importPlan === null || importPlan.items.length === 0) return;
+				setImportBusy(true);
+				try {
+					const body = {
+						source: importSource,
+						scope
+					};
+					if (scope === "project") body.project = project;
+					const data = await api("/memory/import/apply", {
+						method: "POST",
+						body
+					});
+					setImportResult(normalizeImportResult(data.result));
+					setImportPlan(null);
+					setListToken((token) => token + 1);
+					setStateToken((token) => token + 1);
+					actions.toast("success", t("memoryImportDone"));
+				} catch (error) {
+					actions.toast("error", t("memoryImportFailed", { message: errorMessageFor(error, t) }));
+				} finally {
+					setImportBusy(false);
 				}
 			};
 			/** 重建提示词索引：只改变注入内容，本视图的条目列表不重载。 */
@@ -8210,6 +8466,11 @@ window.__ModuleLoader__.load({
 										}
 									}),
 									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(IconButton, {
+										icon: "upload",
+										title: t("memoryImportButton"),
+										onClick: openImport
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(IconButton, {
 										icon: "settings",
 										title: t("memorySettingsButton"),
 										onClick: () => {
@@ -8670,8 +8931,25 @@ window.__ModuleLoader__.load({
 												patchSettings({ injectEnabled: next });
 											}
 										})]
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+										className: memory_module_css_default.settingRow,
+										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.settingLabel,
+											children: t("memorySettingsTurnRecall")
+										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Switch, {
+											checked: settings.turnRecall,
+											label: t("memorySettingsTurnRecall"),
+											onChange: (next) => {
+												patchSettings({ turnRecall: next });
+											}
+										})]
 									})
 								]
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								className: memory_module_css_default.fieldHint,
+								children: t("memorySettingsTurnRecallHint")
 							}),
 							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 								className: memory_module_css_default.numberGrid,
@@ -9028,6 +9306,121 @@ window.__ModuleLoader__.load({
 								] })]
 							})
 						]
+					}) }) : null,
+					stateReady && importOpen ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PanelDialogLayer, { children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(DialogShell, {
+						t,
+						title: t("memoryImportTitle"),
+						wide: true,
+						onClose: () => {
+							setImportOpen(false);
+						},
+						footer: [
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+								variant: "secondary",
+								disabled: importBusy,
+								onClick: () => {
+									setImportOpen(false);
+								},
+								children: t("cancel")
+							}, "cancel"),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Button, {
+								variant: "secondary",
+								disabled: importBusy || importSource.trim() === "",
+								onClick: () => {
+									runImportPlan();
+								},
+								children: [importBusy ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Spinner, {}) : null, t("memoryImportPlan")]
+							}, "plan"),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Button, {
+								variant: "primary",
+								disabled: importBusy || importPlan === null || importPlan.items.length === 0,
+								onClick: () => {
+									runImportApply();
+								},
+								children: t("memoryImportApply")
+							}, "apply")
+						],
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+							className: memory_module_css_default.maintenanceStack,
+							children: [
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+									className: memory_module_css_default.fieldHint,
+									children: t("memoryImportHint")
+								}),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("textarea", {
+									className: memory_module_css_default.textarea,
+									rows: 8,
+									value: importSource,
+									placeholder: t("memoryImportSourcePlaceholder"),
+									"aria-label": t("memoryImportSourcePlaceholder"),
+									onChange: (event) => {
+										setImportSource(event.target.value.slice(0, IMPORT_SOURCE_MAX_CHARS));
+										setImportPlan(null);
+										setImportResult(null);
+									}
+								}),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("label", {
+									className: memory_module_css_default.field,
+									children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+										className: memory_module_css_default.fieldLabel,
+										children: t("memoryImportFileLabel")
+									}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("input", {
+										className: memory_module_css_default.input,
+										type: "file",
+										accept: ".md,.markdown,.txt,text/markdown,text/plain",
+										"aria-label": t("memoryImportFileLabel"),
+										onChange: (event) => {
+											onImportFile(event.target.files?.[0]);
+										}
+									})]
+								}),
+								importPlan !== null && importPlan.items.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+									className: memory_module_css_default.maintenanceNotice,
+									children: t("memoryImportEmpty")
+								}) : null,
+								importPlan !== null && importPlan.items.length > 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+									className: memory_module_css_default.auditGroups,
+									children: [
+										importPlan.items.slice(0, 50).map((item) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+											className: memory_module_css_default.auditPair,
+											children: [
+												/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Badge, {
+													tone: item.action === "reinforce" ? "success" : item.action === "conflict" ? "warn" : "plain",
+													children: t(item.action === "reinforce" ? "memoryImportActionReinforce" : item.action === "conflict" ? "memoryImportActionConflict" : "memoryImportActionCreate")
+												}),
+												/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+													className: memory_module_css_default.auditPairKeep,
+													title: item.name,
+													children: item.name
+												}),
+												/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+													className: memory_module_css_default.maintenanceHint,
+													title: item.reason,
+													children: item.reason
+												})
+											]
+										}, `${item.index}-${item.name}`)),
+										importPlan.items.length > 50 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+											className: memory_module_css_default.maintenanceHint,
+											children: t("memoryImportMore", { count: importPlan.items.length - 50 })
+										}) : null,
+										importPlan.dropped > 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+											className: memory_module_css_default.maintenanceHint,
+											children: t("memoryImportDropped", { count: importPlan.dropped })
+										}) : null
+									]
+								}) : null,
+								importResult !== null ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+									className: memory_module_css_default.maintenanceNotice,
+									children: t("memoryImportResult", {
+										created: importResult.created,
+										reinforced: importResult.reinforced,
+										conflicts: importResult.conflicts,
+										failed: importResult.failed
+									})
+								}) : null
+							]
+						})
 					}) }) : null,
 					stateReady && diagnosisOpen ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PanelDialogLayer, { children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(DialogShell, {
 						t,

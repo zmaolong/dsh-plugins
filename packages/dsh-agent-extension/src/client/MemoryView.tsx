@@ -48,6 +48,7 @@ import {
   type RecentRetrieval,
 } from '../shared/memory-wire.ts'
 import { RECALL_MAX_CHARS, RECALL_MAX_PER_LAYER } from '../shared/memory-wire.ts'
+import { IMPORT_SOURCE_MAX_CHARS } from '../shared/memory-wire.ts'
 import panelCss from './panel.module.css'
 import css from './memory.module.css'
 
@@ -139,6 +140,66 @@ function integer(value: unknown, min: number, max: number, fallback: number): nu
   return Math.min(max, Math.max(min, Math.round(parsed)))
 }
 
+/** 导入计划条目的视图形状（服务端 ImportPlanItem 的投影）。 */
+interface ImportPlanItemView {
+  index: number
+  name: string
+  type: string
+  action: 'create' | 'reinforce' | 'conflict'
+  reason: string
+}
+
+/** 导入计划视图。 */
+interface ImportPlanView {
+  items: ImportPlanItemView[]
+  dropped: number
+}
+
+/** 导入结果视图。 */
+interface ImportResultView {
+  created: number
+  reinforced: number
+  conflicts: number
+  failed: number
+  dropped: number
+}
+
+/** Normalize one import plan item from the API payload. */
+function normalizeImportPlanItem(value: unknown, index: number): ImportPlanItemView {
+  const item = record(value)
+  const action = item.action === 'reinforce' || item.action === 'conflict' ? item.action : 'create'
+  return {
+    index: typeof item.index === 'number' ? item.index : index,
+    name: text(item.name, ''),
+    type: text(item.type, 'reference'),
+    action,
+    reason: text(item.reason, ''),
+  }
+}
+
+/** Normalize the import plan payload. */
+function normalizeImportPlan(raw: unknown): ImportPlanView {
+  const data = record(raw)
+  const items = Array.isArray(data.items) ? data.items : []
+  return {
+    items: items.map(normalizeImportPlanItem),
+    dropped: typeof data.dropped === 'number' ? data.dropped : 0,
+  }
+}
+
+/** Normalize the import result payload. */
+function normalizeImportResult(raw: unknown): ImportResultView {
+  const data = record(raw)
+  const count = (value: unknown): number => typeof value === 'number' && Number.isFinite(value) ? value : 0
+  return {
+    created: count(data.created),
+    reinforced: count(data.reinforced),
+    conflicts: count(data.conflicts),
+    failed: count(data.failed),
+    dropped: count(data.dropped),
+  }
+}
+
 /** Normalize one list row. */
 function normalizeSummary(raw: unknown): MemoryListRow {
   const item = record(raw)
@@ -202,6 +263,7 @@ function normalizeSettings(raw: unknown): MemorySettings {
     captureEnabled: item.captureEnabled !== false,
     captureSessionEnd: item.captureSessionEnd !== false,
     injectEnabled: item.injectEnabled !== false,
+    turnRecall: item.turnRecall !== false,
     indexLimitGlobal: integer(item.indexLimitGlobal, 0, RECALL_MAX_PER_LAYER, DEFAULT_SETTINGS.indexLimitGlobal),
     indexLimitProject: integer(item.indexLimitProject, 0, RECALL_MAX_PER_LAYER, DEFAULT_SETTINGS.indexLimitProject),
     maxChars: integer(item.maxChars, 1000, RECALL_MAX_CHARS, DEFAULT_SETTINGS.maxChars),
@@ -476,6 +538,11 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
   const [sort, setSort] = useState<'default' | 'recent'>('default')
   const [tagDraft, setTagDraft] = useState('')
   const [auditOpen, setAuditOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
+  const [importSource, setImportSource] = useState('')
+  const [importPlan, setImportPlan] = useState<ImportPlanView | null>(null)
+  const [importResult, setImportResult] = useState<ImportResultView | null>(null)
+  const [importBusy, setImportBusy] = useState(false)
   const [auditBusy, setAuditBusy] = useState(false)
   const [auditResult, setAuditResult] = useState<AuditResult | null>(null)
   const [auditSelected, setAuditSelected] = useState<string[]>([])
@@ -815,6 +882,64 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
       actions.toast('error', t('memoryExportFailed', { message: errorMessageFor(error, t) }))
     } finally {
       setExportBusy(false)
+    }
+  }
+
+  /** 打开导入弹窗（重置上一次的解析与结果）。 */
+  const openImport = (): void => {
+    setImportSource('')
+    setImportPlan(null)
+    setImportResult(null)
+    setImportOpen(true)
+  }
+
+  /** 读取用户选择的外部记忆文件（.md/.txt）填进来源框。 */
+  const onImportFile = async (file: File | undefined): Promise<void> => {
+    if (file === undefined) return
+    try {
+      const content = await file.text()
+      setImportSource(content.slice(0, IMPORT_SOURCE_MAX_CHARS))
+      setImportPlan(null)
+      setImportResult(null)
+    } catch (error) {
+      actions.toast('error', t('memoryImportFailed', { message: errorMessageFor(error, t) }))
+    }
+  }
+
+  /** 解析预览：只算计划不落盘。 */
+  const runImportPlan = async (): Promise<void> => {
+    if (importBusy || importSource.trim() === '') return
+    setImportBusy(true)
+    try {
+      const body: Record<string, unknown> = { source: importSource, scope }
+      if (scope === 'project') body.project = project
+      const data = await api<JsonRecord>('/memory/import/plan', { method: 'POST', body })
+      setImportResult(null)
+      setImportPlan(normalizeImportPlan(data.plan))
+    } catch (error) {
+      actions.toast('error', t('memoryImportFailed', { message: errorMessageFor(error, t) }))
+    } finally {
+      setImportBusy(false)
+    }
+  }
+
+  /** 确认导入：服务端复算计划后逐条写入（幂等）。 */
+  const runImportApply = async (): Promise<void> => {
+    if (importBusy || importPlan === null || importPlan.items.length === 0) return
+    setImportBusy(true)
+    try {
+      const body: Record<string, unknown> = { source: importSource, scope }
+      if (scope === 'project') body.project = project
+      const data = await api<JsonRecord>('/memory/import/apply', { method: 'POST', body })
+      setImportResult(normalizeImportResult(data.result))
+      setImportPlan(null)
+      setListToken(token => token + 1)
+      setStateToken(token => token + 1)
+      actions.toast('success', t('memoryImportDone'))
+    } catch (error) {
+      actions.toast('error', t('memoryImportFailed', { message: errorMessageFor(error, t) }))
+    } finally {
+      setImportBusy(false)
     }
   }
 
@@ -1590,6 +1715,7 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
             disabled={exportBusy || projectRequired}
             onClick={() => { void exportMarkdown() }}
           />
+          <IconButton icon="upload" title={t('memoryImportButton')} onClick={openImport} />
           <IconButton icon="settings" title={t('memorySettingsButton')} onClick={() => { setSettingsOpen(true) }} />
           <IconButton
             icon="info"
@@ -1932,7 +2058,16 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                     onChange={(next) => { patchSettings({ injectEnabled: next }) }}
                   />
                 </div>
+                <div className={css.settingRow}>
+                  <span className={css.settingLabel}>{t('memorySettingsTurnRecall')}</span>
+                  <Switch
+                    checked={settings.turnRecall}
+                    label={t('memorySettingsTurnRecall')}
+                    onChange={(next) => { patchSettings({ turnRecall: next }) }}
+                  />
+                </div>
               </div>
+              <span className={css.fieldHint}>{t('memorySettingsTurnRecallHint')}</span>
               <div className={css.numberGrid}>
                 <label className={css.field}>
                   <span className={css.fieldLabel}>{t('memorySettingsIndexGlobal')}</span>
@@ -2177,6 +2312,104 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                       </Button>
                     </>
                   )}
+              </div>
+            </DialogShell>
+          </PanelDialogLayer>
+        )
+        : null}
+
+      {stateReady && importOpen
+        ? (
+          <PanelDialogLayer>
+            <DialogShell
+              t={t}
+              title={t('memoryImportTitle')}
+              wide
+              onClose={() => { setImportOpen(false) }}
+              footer={[
+                <Button key="cancel" variant="secondary" disabled={importBusy} onClick={() => { setImportOpen(false) }}>
+                  {t('cancel')}
+                </Button>,
+                <Button
+                  key="plan"
+                  variant="secondary"
+                  disabled={importBusy || importSource.trim() === ''}
+                  onClick={() => { void runImportPlan() }}
+                >
+                  {importBusy ? <Spinner /> : null}{t('memoryImportPlan')}
+                </Button>,
+                <Button
+                  key="apply"
+                  variant="primary"
+                  disabled={importBusy || importPlan === null || importPlan.items.length === 0}
+                  onClick={() => { void runImportApply() }}
+                >
+                  {t('memoryImportApply')}
+                </Button>,
+              ]}
+            >
+              <div className={css.maintenanceStack}>
+                <div className={css.fieldHint}>{t('memoryImportHint')}</div>
+                <textarea
+                  className={css.textarea}
+                  rows={8}
+                  value={importSource}
+                  placeholder={t('memoryImportSourcePlaceholder')}
+                  aria-label={t('memoryImportSourcePlaceholder')}
+                  onChange={(event) => {
+                    setImportSource(event.target.value.slice(0, IMPORT_SOURCE_MAX_CHARS))
+                    setImportPlan(null)
+                    setImportResult(null)
+                  }}
+                />
+                <label className={css.field}>
+                  <span className={css.fieldLabel}>{t('memoryImportFileLabel')}</span>
+                  <input
+                    className={css.input}
+                    type="file"
+                    accept=".md,.markdown,.txt,text/markdown,text/plain"
+                    aria-label={t('memoryImportFileLabel')}
+                    onChange={(event) => { void onImportFile(event.target.files?.[0]) }}
+                  />
+                </label>
+                {importPlan !== null && importPlan.items.length === 0
+                  ? <div className={css.maintenanceNotice}>{t('memoryImportEmpty')}</div>
+                  : null}
+                {importPlan !== null && importPlan.items.length > 0
+                  ? (
+                    <div className={css.auditGroups}>
+                      {importPlan.items.slice(0, 50).map(item => (
+                        <div key={`${item.index}-${item.name}`} className={css.auditPair}>
+                          <Badge tone={item.action === 'reinforce' ? 'success' : item.action === 'conflict' ? 'warn' : 'plain'}>
+                            {t(item.action === 'reinforce'
+                              ? 'memoryImportActionReinforce'
+                              : item.action === 'conflict' ? 'memoryImportActionConflict' : 'memoryImportActionCreate')}
+                          </Badge>
+                          <span className={css.auditPairKeep} title={item.name}>{item.name}</span>
+                          <span className={css.maintenanceHint} title={item.reason}>{item.reason}</span>
+                        </div>
+                      ))}
+                      {importPlan.items.length > 50
+                        ? <div className={css.maintenanceHint}>{t('memoryImportMore', { count: importPlan.items.length - 50 })}</div>
+                        : null}
+                      {importPlan.dropped > 0
+                        ? <div className={css.maintenanceHint}>{t('memoryImportDropped', { count: importPlan.dropped })}</div>
+                        : null}
+                    </div>
+                  )
+                  : null}
+                {importResult !== null
+                  ? (
+                    <div className={css.maintenanceNotice}>
+                      {t('memoryImportResult', {
+                        created: importResult.created,
+                        reinforced: importResult.reinforced,
+                        conflicts: importResult.conflicts,
+                        failed: importResult.failed,
+                      })}
+                    </div>
+                  )
+                  : null}
               </div>
             </DialogShell>
           </PanelDialogLayer>

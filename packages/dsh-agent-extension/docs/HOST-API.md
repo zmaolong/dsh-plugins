@@ -590,13 +590,16 @@ lastRefreshed/display/owner/featured/plugins[]/refreshError/warnings`；
 | GET | `/memory/maintenance` | `{due, reason, writesSince, daysSince, lastRunAt, recentRuns[]}`；`due` 阈值 = 新增/强化 ≥30 条或距上次 ≥7 天 |
 | POST | `/memory/maintenance/run` | `{scope?, project?}`（空 = 全局 + 最久未维护项目轮转）→ `{run}`；LLM 研判后按硬规则执行合并/停用/恢复/删除 |
 | POST | `/memory/maintenance/undo` | `{runId}` → `{undone:true, restored}`：从 `memory/trash/<runId>/` 恢复该次 Run 的快照并标记已撤销 |
-| POST | `/memory/save` | `{scope, project?, id?, name, description, type, content, tags?, importance?, supersedes?, source?, confidence?, pinned?, mergedFrom?}`；同指纹只强化 |
+| POST | `/memory/save` | `{scope, project?, id?, name, description, type, content, tags?, importance?, supersedes?, source?, confidence?, pinned?, mergedFrom?}`；同指纹只强化；supersedes 目标同作用域找不到时回退全局，幻觉 id 丢票记警告 |
 | POST | `/memory/status` | `{scope, project?, id, status: active|stale|archived}` |
+| POST | `/memory/tier` | `{scope, project?, id, tier: short|long}` → `{entry}` |
 | POST | `/memory/delete` | `{scope, project?, id}` |
-| POST | `/memory/settings` | 部分字段：`captureEnabled`/`captureSessionEnd`/`injectEnabled`/`indexLimitGlobal`/`indexLimitProject`/`maxChars`/`maintenanceProvider`/`maintenanceModel`（后两者空串 = 继承宿主默认模型） |
+| POST | `/memory/settings` | 部分字段：`captureEnabled`/`captureSessionEnd`/`injectEnabled`/`turnRecall`/`indexLimitGlobal`/`indexLimitProject`/`maxChars`/`maintenanceProvider`/`maintenanceModel`（后两者空串 = 继承宿主默认模型）/`observationDays`/`autoMaintenance`/`autoMaintenanceThreshold` |
 | POST | `/memory/refresh-index` | 无参数 → `{refreshed:true}`：让进程内已缓存的会话索引失效，下一次装配重新渲染（不写盘、不重载列表） |
 | POST | `/memory/undo-capture` | `{id}` → `{archived:string[], undone:true}`：撤销一次自动捕获新增的条目（归档而非删除；样本不存在/缺 id 返回 bad_request） |
 | POST | `/memory/export` | `{scope, project?}` → `{filename, content}` |
+| POST | `/memory/import/plan` | `{source, scope, project?}` → `{plan: {items[{index,name,description,type,action: create\|reinforce\|conflict,existingId?,reason}], dropped}, scope, project}`：解析外部记忆并判定，不落盘 |
+| POST | `/memory/import/apply` | `{source, scope, project?}` → `{result: {created, reinforced, conflicts, failed, dropped, ids[]}, scope, project}`：复算计划后逐条写入（`source: import`、`tier: long`）；同指纹转强化，幂等；成功后失效索引缓存 |
 
 条目字段（schema v2）：`schema/id/name/description/type/scope/project/tags/importance/confidence/
 status/reinforcement/obsoleteVotes/pinned/usedCount/lastUsedAt/supersedes/mergedFrom/source/

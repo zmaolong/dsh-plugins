@@ -18,7 +18,9 @@ import {
   EXTRACTION_TEMPERATURE,
   buildExtractionMessages,
   digestOf,
+  isHumanMessage,
   parseExtraction,
+  textOfUserEvent,
   type ExistingMemory,
   type TurnDigest,
   type TurnEvent,
@@ -26,6 +28,7 @@ import {
 import { resolveProject } from '../identity.ts'
 import type { MemoryStore } from '../store.ts'
 import { text, type CreatedRef, type MemoryScope, type ProjectIdentity } from '../types.ts'
+import { buildRecallTurnMessage, renderRecallTurn, selectRecallTurnEntries } from './recall-turn.ts'
 import { flushRecall, noteToolUsage as countToolUsage, recordCaptureAttempt, citedMemoryIds, type InjectionSample, type RecallCounters } from './stats.ts'
 
 /** 每个会话缓冲的事件数上限；只影响记忆提炼输入。 */
@@ -60,6 +63,14 @@ export interface SessionBuffer extends RecallCounters {
   lastCapturedTurn: number
   /** 引用回写已扫到的轮次；轮末增量扫描 assistant 文本用。 */
   lastCitedTurn: number
+  /** 轮级召回已呈现过的 id（会话内冷却账本）。 */
+  recalled: Set<string>
+  /** 宿主缺 agent.inject 的提示只发一次。 */
+  recallUnavailableWarned: boolean
+  /** 待注入的轮级召回 prompt；在 inbox 发布周期之外（宏任务/status 触发）注入。 */
+  pendingRecall: string | null
+  /** 延迟注入的定时器；同一会话只挂一个。 */
+  recallTimer: ReturnType<typeof setTimeout> | null
   events: BufferedEvent[]
   project: ProjectIdentity | null
   modelRoute: ModelRoute | null
@@ -133,6 +144,105 @@ export class CaptureSessions {
     }
     buffer.lastTouchedAt = Date.now()
     this.ensureProject(buffer)
+    // 轮级轻量召回：真人 prompt 先暂存，注入延迟到 inbox 发布周期之外——
+    // 宿主禁止在 append 发布期间重入 append（真机实测：同步 inject 抛
+    // "session append cannot reenter while another append is being published"）。
+    if (event.type === 'user/message' && isHumanMessage(event.data)) {
+      const prompt = textOfUserEvent(event.data)
+      if (prompt !== '') {
+        buffer.pendingRecall = prompt
+        this.scheduleRecallInject(buffer)
+      }
+    }
+  }
+
+  /**
+   * 宿主 `agent/status` 事件（idle ⇄ running）：driver 被唤醒进入 running
+   * 时补射一次延迟注入——此时 user/message 的发布已结束，inject 能被本轮
+   * 最近的 step 边界认领。status 事件本身也可能在发布周期内发出，所以
+   * 这里同样走宏任务，不在监听器里同步 inject。
+   */
+  onAgentStatus(payload: unknown): void {
+    if (this.disposed) return
+    const record = payload !== null && typeof payload === 'object' ? payload as Record<string, unknown> : {}
+    if (record.status !== 'running') return
+    const agent = record.agent as AgentLike | undefined
+    if (agent?.session === undefined) return
+    const buffer = this.buffers.get(this.sessionIdOf({ session: agent.session }))
+    if (buffer === undefined || buffer.pendingRecall === null) return
+    buffer.agent = agent
+    this.scheduleRecallInject(buffer)
+  }
+
+  /** 合并调度一次延迟注入；同一会话同一时刻只挂一个宏任务。 */
+  private scheduleRecallInject(buffer: SessionBuffer): void {
+    if (this.disposed || buffer.recallTimer !== null) return
+    buffer.recallTimer = setTimeout(() => {
+      buffer.recallTimer = null
+      this.attemptRecallInject(buffer)
+    }, 0)
+    buffer.recallTimer.unref?.()
+  }
+
+  /**
+   * 真正的轮级召回注入：设置开启、非子代理、首步快照已渲染过（防同轮重复）
+   * 且宿主 agent 暴露 inject 时，对暂存的 prompt 做一次检索并把命中记忆
+   * 经 agent.inject 排队到下一 step 边界呈现。
+   *
+   * 重入冲突（`cannot reenter`）保留暂存等下一次触发重试；其它异常清掉
+   * 暂存只记日志。检索/渲染/注入任何异常都不会影响主对话（fail-open）。
+   */
+  private attemptRecallInject(buffer: SessionBuffer): void {
+    if (this.disposed || buffer.pendingRecall === null) return
+    const prompt = buffer.pendingRecall
+    const settings = this.store.settings()
+    if (!settings.turnRecall || !settings.injectEnabled) {
+      buffer.pendingRecall = null
+      return
+    }
+    if (buffer.subagent || buffer.injection === null) {
+      buffer.pendingRecall = null
+      return
+    }
+    const agent = buffer.agent
+    const inject = agent?.inject
+    if (typeof inject !== 'function') {
+      buffer.pendingRecall = null
+      if (!buffer.recallUnavailableWarned) {
+        buffer.recallUnavailableWarned = true
+        this.log('info', '轮级召回不可用：宿主 agent 未暴露 inject，本会话跳过（每会话只提示一次）')
+      }
+      return
+    }
+    try {
+      const exclude = new Set<string>([...buffer.injected, ...buffer.searched, ...buffer.recalled])
+      const entries = selectRecallTurnEntries(this.store, prompt, buffer.project?.projectKey ?? '', exclude)
+      const rendered = renderRecallTurn(entries)
+      // 没命中也清暂存：同一 prompt 不反复检索（下一条用户消息会覆盖暂存）。
+      buffer.pendingRecall = null
+      if (rendered === '') return
+      inject.call(agent, buildRecallTurnMessage(rendered))
+      for (const entry of entries) buffer.recalled.add(entry.id)
+      this.log('info', `轮级召回已注入 ${entries.length} 条（${entries.map(entry => entry.id).join(', ')}）`)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      if (message.includes('reenter')) {
+        // 仍在发布周期内（status 事件同步触发等场景）：保留暂存，等下一次
+        // status→running 或宏任务重试。
+        return
+      }
+      buffer.pendingRecall = null
+      this.log('warn', `轮级召回注入失败：${message}`)
+    }
+  }
+
+  /** agent 注册（`agent/created`）：尽早捕获 agent 引用，首轮事件即可用。 */
+  onAgentCreated(payload: unknown): void {
+    if (this.disposed) return
+    const record = payload !== null && typeof payload === 'object' ? payload as Record<string, unknown> : {}
+    const agent = record.agent as AgentLike | undefined
+    if (agent?.session === undefined) return
+    this.bufferForSession(agent.session).agent = agent
   }
 
   /**
@@ -169,7 +279,7 @@ export class CaptureSessions {
     buffer.lastCitedTurn = buffer.currentTurn
     const text = digest === null ? '' : digest.assistantTexts.join('\n')
     if (text === '') return
-    const known = new Set([...buffer.injected, ...buffer.searched])
+    const known = new Set([...buffer.injected, ...buffer.searched, ...buffer.recalled])
     if (known.size === 0) return
     const cited = citedMemoryIds(text).filter(id => known.has(id))
     if (cited.length === 0) return
@@ -269,6 +379,10 @@ export class CaptureSessions {
       currentTurn: 0,
       lastCapturedTurn: 0,
       lastCitedTurn: 0,
+      recalled: new Set(),
+      recallUnavailableWarned: false,
+      pendingRecall: null,
+      recallTimer: null,
       events: [],
       injected: new Set(),
       used: new Set(),
@@ -328,7 +442,13 @@ export class CaptureSessions {
     if (this.disposed) return
     this.disposed = true
     this.abort.abort()
-    for (const buffer of this.buffers.values()) this.flushRecall(buffer)
+    for (const buffer of this.buffers.values()) {
+      if (buffer.recallTimer !== null) {
+        clearTimeout(buffer.recallTimer)
+        buffer.recallTimer = null
+      }
+      this.flushRecall(buffer)
+    }
     this.flushUsage()
     this.buffers.clear()
     await Promise.allSettled([...this.operations])

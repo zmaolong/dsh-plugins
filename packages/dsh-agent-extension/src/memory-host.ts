@@ -312,6 +312,12 @@ export class MemoryRuntime {
     this.listen('session/event', (...args) => {
       this.sessions.onSessionEvent(args[0] as SessionLike, args[1] as SessionEventLike)
     })
+    this.listen('agent/created', (...args) => {
+      this.sessions.onAgentCreated(args[0])
+    })
+    this.listen('agent/status', (...args) => {
+      this.sessions.onAgentStatus(args[0])
+    })
     this.listen('agent/turn-stopping', (...args) => {
       this.sessions.onTurnStopping(args[0])
     })

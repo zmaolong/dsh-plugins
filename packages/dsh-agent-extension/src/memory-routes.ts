@@ -10,6 +10,7 @@
  */
 
 import { hubError } from './hub.ts'
+import { applyImport, IMPORT_SOURCE_MAX_CHARS, planImport } from './memory/import.ts'
 import { MemoryStore } from './memory/store.ts'
 import {
   LIMITS,
@@ -54,6 +55,8 @@ export const MEMORY_POST_ROUTES = [
   '/memory/undo-capture',
   '/memory/maintenance/run',
   '/memory/maintenance/undo',
+  '/memory/import/plan',
+  '/memory/import/apply',
 ] as const
 
 /** 面板可调用的宿主钩子；测试与只读挂载可以省略。 */
@@ -282,6 +285,20 @@ export async function dispatchMemoryPost(
     const project = projectOf(store, body.project, scope)
     return store.exportMarkdown(scope, project)
   }
+  if (route === '/memory/import/plan' || route === '/memory/import/apply') {
+    const source = typeof body.source === 'string' ? body.source : ''
+    if (source.trim() === '') throw hubError('导入内容不能为空', 'bad_request')
+    if (source.length > IMPORT_SOURCE_MAX_CHARS) throw hubError('导入内容过长（上限 200,000 字符）', 'bad_request')
+    const scope = scopeOf(body.scope, 'global')
+    const project = projectOf(store, body.project, scope)
+    if (route === '/memory/import/plan') {
+      return { plan: planImport(store, source, scope, project), scope, project }
+    }
+    const result = applyImport(store, source, scope, project)
+    // 导入直写 long 条目，索引快照缓存需要失效让新内容进入下一次装配。
+    hooks.refreshRecall?.()
+    return { result, scope, project }
+  }
   throw hubError(`未知接口：${route}`, 'not_found')
 }
 
@@ -290,6 +307,7 @@ function parseSettingsPatch(body: Record<string, unknown>): Partial<{
   captureEnabled: boolean
   captureSessionEnd: boolean
   injectEnabled: boolean
+  turnRecall: boolean
   indexLimitGlobal: number
   indexLimitProject: number
   maxChars: number
@@ -301,7 +319,7 @@ function parseSettingsPatch(body: Record<string, unknown>): Partial<{
 }> {
   const defaults = defaultSettings()
   const patch: Record<string, boolean | number | string> = {}
-  for (const key of ['captureEnabled', 'captureSessionEnd', 'injectEnabled', 'autoMaintenance'] as const) {
+  for (const key of ['captureEnabled', 'captureSessionEnd', 'injectEnabled', 'turnRecall', 'autoMaintenance'] as const) {
     if (typeof body[key] === 'boolean') patch[key] = body[key]
   }
   for (const key of ['indexLimitGlobal', 'indexLimitProject'] as const) {
@@ -318,6 +336,7 @@ function parseSettingsPatch(body: Record<string, unknown>): Partial<{
     captureEnabled: boolean
     captureSessionEnd: boolean
     injectEnabled: boolean
+    turnRecall: boolean
     indexLimitGlobal: number
     indexLimitProject: number
     maxChars: number
