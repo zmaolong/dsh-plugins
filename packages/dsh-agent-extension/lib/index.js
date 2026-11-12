@@ -7723,10 +7723,11 @@ function citedMemoryIds(text) {
 */
 function flushRecall(options) {
 	const { store, sessionId, counters, injection, log } = options;
-	if (counters.injected.size > 0 || counters.overflow.size > 0 || counters.searchedCount > 0 || counters.searchUsed.size > 0) try {
+	if (counters.injected.size > 0 || counters.overflow.size > 0 || counters.searchedCount > 0 || counters.searchUsed.size > 0 || counters.recalled.size > 0) try {
 		store.recordRecall(sessionId, [...counters.injected], [...counters.used], counters.overflow.size, {
 			searched: counters.searchedCount,
-			searchUsed: counters.searchUsed.size
+			searchUsed: counters.searchUsed.size,
+			recalled: counters.recalled.size
 		});
 	} catch (error) {
 		log("warn", `写命中率统计失败：${error instanceof Error ? error.message : String(error)}`);
@@ -9962,6 +9963,7 @@ function normalizeRecallRow(raw) {
 		overflow: clampInt(value.overflow, 0, 1e6, 0),
 		searched,
 		searchUsed: Math.min(searched, clampInt(value.searchUsed, 0, 1e6, 0)),
+		recalled: clampInt(value.recalled, 0, 1e6, 0),
 		updatedAt: text(value.updatedAt) || (/* @__PURE__ */ new Date()).toISOString()
 	};
 }
@@ -10301,7 +10303,8 @@ var MemoryStore = class {
 	* @param usedIds - 模型通过记忆工具实际取过的 id。
 	* @param overflow - 不在注入集合里的检索命中数。
 	* @param metrics - 检索命中率口径：`searched` 为 `memory_search` 累计
-	*   返回的结果条数，`searchUsed` 为其中后来被 `memory_get` 打开的条数。
+	*   返回的结果条数，`searchUsed` 为其中后来被 `memory_get` 打开的条数；
+	*   `recalled` 为轮级召回呈现过的去重条数（B18）。
 	*/
 	recordRecall(sessionId, injectedIds, usedIds, overflow, metrics = {}) {
 		if (sessionId === "") return;
@@ -10310,6 +10313,7 @@ var MemoryStore = class {
 		const hit = new Set(usedIds.filter((id) => injectedSet.has(id)));
 		const searched = clampInt(metrics.searched, 0, 1e6, 0);
 		const searchUsed = Math.min(searched, clampInt(metrics.searchUsed, 0, 1e6, 0));
+		const recalled = clampInt(metrics.recalled, 0, 1e6, 0);
 		const sessions = current.sessions.filter((row) => row.sessionId !== sessionId);
 		sessions.unshift({
 			sessionId,
@@ -10318,6 +10322,7 @@ var MemoryStore = class {
 			overflow: Math.max(0, overflow),
 			searched,
 			searchUsed,
+			recalled,
 			updatedAt: (/* @__PURE__ */ new Date()).toISOString()
 		});
 		this.statsValue = {

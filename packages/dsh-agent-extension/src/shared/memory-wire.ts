@@ -171,6 +171,8 @@ export interface SessionRecallStats {
    * 始终带数字。
    */
   searched: number
+  /** 该会话轮级召回呈现过的去重条数；旧 stats.json 按 0 补齐（B18）。 */
+  recalled: number
   /**
    * `searched` 中后来被 `memory_get` 打开的条数（同一 id 只计一次）。
    *

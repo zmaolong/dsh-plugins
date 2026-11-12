@@ -173,3 +173,25 @@
   测试条目已通过 API 清理。console error = 0。
 - **版本合并说明**：B16 与 B17 在同一宿主会话内实施与真机验证（B17 复用 B16 的重启
   窗口），合并为一个 preview 交付（`0.0.1-preview.32`，单 commit）。
+
+### 2026-11-12：B18 轮级召回可观测性（preview.33）
+
+真机验证 B16 时发现新通道在数据面是盲区：`stats.json` 会话行只有注入/检索维度，
+轮级召回呈现了多少条无处可看。
+
+- **stats.json**（`SessionRecallStats.recalled`，wire + `normalizeRecallRow` 旧数据按 0
+  补齐）：`recordRecall` 接收 `recalled`（会话内去重呈现数）；`flushRecall` 从
+  `RecallCounters.recalled`（B16 的冷却账本，兼作计数源）取值，落盘条件补
+  `recalled.size > 0`（仅召回会话也记账）。
+- **诊断/统计面**：设置弹窗统计区新增「轮级召回条数」格子（跨会话求和，与注入利用率/
+  检索命中率并列）；`recallTotalsOf` 加 recalled 汇总；客户端 normalizeStats 补字段；
+  八语言 1 新 key（`memoryRecalledCount`）。
+- **附带结论**：usage 双重计数审计——工具命中（search/get）与轮末引用回写同轮同 id 会各
+  +1，这是 B13 文档化的设计（两条独立消费证据通路，可叠加），`usage.touch` 单调用内
+  已去重；非缺陷，不动。
+- **双主题说明**：导入弹窗与轮级召回 UI 全部复用既有双主题验证过的组件与样式类（无新增
+  样式类、图标 currentColor），暗色实测通过；亮色结构性无风险（宿主主题由 JS 管线控制，
+  属性翻转试验无效，不再深挖）。
+- **README**：补 preview.25–32 合并变更段与第三阶段文档指引（B9–B13 当时未写 README，
+  一并补齐）。
+- **验证**：402 用例全绿（recalled 持久化往返断言强化）；check/build 通过。

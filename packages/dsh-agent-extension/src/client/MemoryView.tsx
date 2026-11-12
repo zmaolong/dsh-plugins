@@ -289,6 +289,7 @@ function normalizeStats(raw: unknown): MemoryStats {
       searched: integer(session.searched, 0, Number.MAX_SAFE_INTEGER, 0),
       searchUsed: integer(session.searchUsed, 0, Number.MAX_SAFE_INTEGER, 0),
       overflow: integer(session.overflow, 0, Number.MAX_SAFE_INTEGER, 0),
+      recalled: integer(session.recalled, 0, Number.MAX_SAFE_INTEGER, 0),
       updatedAt: text(session.updatedAt),
     }
   })
@@ -473,13 +474,15 @@ function recallTotalsOf(stats: MemoryStats | null): {
   injectedUsed: number
   searched: number
   searchUsed: number
+  recalled: number
 } {
-  const totals = { injected: 0, injectedUsed: 0, searched: 0, searchUsed: 0 }
+  const totals = { injected: 0, injectedUsed: 0, searched: 0, searchUsed: 0, recalled: 0 }
   for (const session of stats?.sessions ?? []) {
     totals.injected += session.injected
     totals.injectedUsed += session.injectedUsed
     totals.searched += session.searched ?? 0
     totals.searchUsed += session.searchUsed ?? 0
+    totals.recalled += session.recalled ?? 0
   }
   return totals
 }
@@ -2187,6 +2190,10 @@ export function MemoryView({ actions, t }: MemoryViewProps): ReactNode {
                 <div className={css.stat}>
                   <span className={css.statLabel}>{t('memoryRetrievalRate')}</span>
                   <span className={css.statValue}>{retrievalRate}</span>
+                </div>
+                <div className={css.stat}>
+                  <span className={css.statLabel}>{t('memoryRecalledCount')}</span>
+                  <span className={css.statValue}>{String(recallTotals.recalled)}</span>
                 </div>
               </div>
               <div className={css.divider} />

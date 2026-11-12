@@ -25,6 +25,8 @@ export interface RecallCounters {
   searchedCount: number
   /** `searched` 中后来被 `memory_get` 打开的 id（同一 id 只计一次）。 */
   searchUsed: Set<string>
+  /** 轮级召回呈现过的 id（会话内冷却账本，兼作可观测性计数源，B16/B18）。 */
+  recalled: Set<string>
 }
 
 /** 一次提示词装配样本（面板「最近注入」用）。 */
@@ -92,11 +94,14 @@ export function flushRecall(options: {
 }): void {
   const { store, sessionId, counters, injection, log } = options
   if (counters.injected.size > 0 || counters.overflow.size > 0
-    || counters.searchedCount > 0 || counters.searchUsed.size > 0) {
+    || counters.searchedCount > 0 || counters.searchUsed.size > 0
+    || counters.recalled.size > 0) {
     try {
       store.recordRecall(sessionId, [...counters.injected], [...counters.used], counters.overflow.size, {
         searched: counters.searchedCount,
         searchUsed: counters.searchUsed.size,
+        // 轮级召回去重呈现数（B18 可观测性）；无轮级召回时为 0。
+        recalled: counters.recalled.size,
       })
     } catch (error) {
       log('warn', `写命中率统计失败：${error instanceof Error ? error.message : String(error)}`)

@@ -480,7 +480,7 @@ describe('记忆存储：Markdown 事实、手改、去重与生命周期', () =
     for (let index = 0; index < 60; index += 1) {
       store.recordInjection({ sessionId: 's-1', entries: index, chars: index })
     }
-    store.recordRecall('s-1', ['a', 'b'], ['b'], 3)
+    store.recordRecall('s-1', ['a', 'b'], ['b'], 3, { searched: 4, searchUsed: 1, recalled: 2 })
 
     const stats = store.stats()
     expect(stats.captureRuns).toBe(1)
@@ -493,7 +493,7 @@ describe('记忆存储：Markdown 事实、手改、去重与生命周期', () =
     // 有界 50，最新在前。
     expect(stats.recentInjections).toHaveLength(50)
     expect(stats.recentInjections[0]?.entries).toBe(59)
-    expect(stats.sessions[0]).toMatchObject({ sessionId: 's-1', injected: 2, injectedUsed: 1, overflow: 3 })
+    expect(stats.sessions[0]).toMatchObject({ sessionId: 's-1', injected: 2, injectedUsed: 1, overflow: 3, searched: 4, searchUsed: 1, recalled: 2 })
 
     const raw = JSON.parse(readFileSync(path.join(store.root, 'stats.json'), 'utf8')) as Record<string, unknown>
     expect(raw.schema).toBe(2)

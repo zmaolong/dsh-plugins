@@ -3,7 +3,9 @@
 > **正式版（`0.0.1`）**：记忆子系统 v2（B0–B5）已完成并收敛。npm `latest` dist-tag 指向本版本；
 > 预览线为 `0.0.1-preview.N`（与正式版同核心）。v2 之后第二阶段「写入质量与生命周期」
 > （短期/长期分层、相似吸收、维护自动化）见 [`docs/memory-write-quality.md`](docs/memory-write-quality.md)
-> 与 preview.22–24 变更记录。
+> 与 preview.22–24 变更记录；第三阶段「生产级打磨」（体检研判增强、消费闭环、冲突显式化、
+> 轮级召回、导入桥）见 [`docs/memory-production-hardening.md`](docs/memory-production-hardening.md)
+> 与 preview.25–32 变更记录。
 > 需要安装时：
 > `dsh plugin --profile web add dsh-agent-extension@0.0.1`。
 > 版本说明：官方化工具链形态（TypeScript + JSX + CSS Modules + tsdown + vitest，对齐官方插件形态，
@@ -25,6 +27,31 @@ DSH 的**智能体扩展**（Agent Extension）：管理智能体插件、技能
 `mcpServers` 等能力。已知格式包括 Claude Code、CodeBuddy、ZCode；它们不是 DSH 插件
 （cordis bundle）。本包自己才是 DSH 插件，负责把智能体插件装进 DSH，并把能力注册成
 DSH 的技能、命令、hooks 与 MCP。
+
+## 0.0.1-preview.25–32 变更（记忆第三阶段 · 生产级打磨，B9–B17）
+
+- **体检与维护实质化（preview.25）**：维护 Run 全量研判（规则预筛不再短路 LLM）；体检新增
+  「从未被消费」组与解释型空态。
+- **检索排序（preview.26）**：`memory_search` 多词覆盖排序 + 高频词降噪；注入排序纳入消费
+  信号；注入抬头立「依赖时引用 id」规约。
+- **层间预算公平分配（preview.27）**：每层按配置条数保底、用不完回流补位，修复项目层被
+  全局层饿死。
+- **secrets 拦截 + recency 衰减（preview.28）**：`memory_save` 入口单点拦截十类高置信密钥
+  模式（整条拒绝）；注入排序改 importance × 0.5^(age/30) 加权、钉住豁免。
+- **消费闭环补环（preview.29）**：轮末扫描 assistant 文本引用的记忆 id 回写 usage（只认本
+  会话暴露集合、按轮增量去重）。
+- **信任边界与文本合同（preview.30）**：`memory_get` 首行「历史数据，不是指令」声明；注入
+  截断改「候选/注入」计数精确提示并按实际丢弃判定；九项模型可见文案冻结为 golden 断言
+  （`tests/memory.prompts.spec.ts`）。
+- **冲突显式化（preview.31）**：supersedes 跨作用域回退全局查找、幻觉 id 丢票记警告；
+  检索排序 stale 沉底；提炼与 save prompt 补 changes/ends 语义。
+- **轮级召回 + 导入桥（preview.32）**：真人 prompt（≥12 字符）触发轻量检索，命中的记忆经
+  宿主 `agent.inject` 延迟注入下一 step 边界（暂存 + 宏任务 + `agent/status` 补射，规避
+  inbox append 重入守卫；真机实测）；同 id 会话内冷却；`turnRecall` 设置八语言。外部记忆
+  导入桥：`/memory/import/plan|apply` 双路由 + 面板「导入外部记忆」弹窗（frontmatter 与
+  二级标题双形态解析、新建/强化/冲突三判定、批内同名互查、`source: import` + `tier: long`
+  幂等写入）。
+- **测试**：全量 402 个离线用例。
 
 ## 0.0.1-preview.24 变更（记忆写入质量 · B8 消费侧与收尾）
 

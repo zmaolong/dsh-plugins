@@ -358,9 +358,10 @@ function normalizeRecallRow(raw: unknown): SessionRecallStats | null {
     injected: clampInt(value.injected, 0, 1000000, 0),
     injectedUsed: clampInt(value.injectedUsed, 0, 1000000, 0),
     overflow: clampInt(value.overflow, 0, 1000000, 0),
-    // 旧 stats.json 没有这两个字段：按 0 读，保证向后兼容。
+    // 旧 stats.json 没有这些字段：按 0 读，保证向后兼容。
     searched,
     searchUsed: Math.min(searched, clampInt(value.searchUsed, 0, 1000000, 0)),
+    recalled: clampInt(value.recalled, 0, 1000000, 0),
     updatedAt: text(value.updatedAt) || new Date().toISOString(),
   }
 }
@@ -740,14 +741,15 @@ export class MemoryStore {
    * @param usedIds - 模型通过记忆工具实际取过的 id。
    * @param overflow - 不在注入集合里的检索命中数。
    * @param metrics - 检索命中率口径：`searched` 为 `memory_search` 累计
-   *   返回的结果条数，`searchUsed` 为其中后来被 `memory_get` 打开的条数。
+   *   返回的结果条数，`searchUsed` 为其中后来被 `memory_get` 打开的条数；
+   *   `recalled` 为轮级召回呈现过的去重条数（B18）。
    */
   recordRecall(
     sessionId: string,
     injectedIds: readonly string[],
     usedIds: readonly string[],
     overflow: number,
-    metrics: { searched?: number, searchUsed?: number } = {},
+    metrics: { searched?: number, searchUsed?: number, recalled?: number } = {},
   ): void {
     if (sessionId === '') return
     const current = this.stats()
@@ -755,6 +757,7 @@ export class MemoryStore {
     const hit = new Set(usedIds.filter(id => injectedSet.has(id)))
     const searched = clampInt(metrics.searched, 0, 1000000, 0)
     const searchUsed = Math.min(searched, clampInt(metrics.searchUsed, 0, 1000000, 0))
+    const recalled = clampInt(metrics.recalled, 0, 1000000, 0)
     const sessions = current.sessions.filter(row => row.sessionId !== sessionId)
     sessions.unshift({
       sessionId,
@@ -763,6 +766,8 @@ export class MemoryStore {
       overflow: Math.max(0, overflow),
       searched,
       searchUsed,
+      // 轮级召回去重呈现数（B18 可观测性；旧数据路径按 0 补齐）。
+      recalled,
       updatedAt: new Date().toISOString(),
     })
     this.statsValue = { ...current, sessions: sessions.slice(0, SESSION_STATS_KEEP) }

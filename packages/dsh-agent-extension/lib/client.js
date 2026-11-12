@@ -279,6 +279,7 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "已捕获条目",
 			memoryInjectionRate: "注入利用率",
 			memoryRetrievalRate: "检索命中率",
+			memoryRecalledCount: "轮级召回条数",
 			memoryRecentCaptures: "最近捕获",
 			memoryCaptureWritten: "写入 {count} 条",
 			memoryCaptureSkipped: "跳过：{reason}",
@@ -624,6 +625,7 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "Entries captured",
 			memoryInjectionRate: "Injection utilization",
 			memoryRetrievalRate: "Retrieval hit rate",
+			memoryRecalledCount: "Per-turn recalled",
 			memoryRecentCaptures: "Recent captures",
 			memoryCaptureWritten: "Wrote {count}",
 			memoryCaptureSkipped: "Skipped: {reason}",
@@ -969,6 +971,7 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "キャプチャ済み件数",
 			memoryInjectionRate: "注入利用率",
 			memoryRetrievalRate: "検索ヒット率",
+			memoryRecalledCount: "ターン毎リコール件数",
 			memoryRecentCaptures: "最近のキャプチャ",
 			memoryCaptureWritten: "{count} 件書き込み",
 			memoryCaptureSkipped: "スキップ：{reason}",
@@ -1314,6 +1317,7 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "Entradas capturadas",
 			memoryInjectionRate: "Utilización de inyección",
 			memoryRetrievalRate: "Tasa de acierto de búsqueda",
+			memoryRecalledCount: "Recall por turno",
 			memoryRecentCaptures: "Capturas recientes",
 			memoryCaptureWritten: "Escritas: {count}",
 			memoryCaptureSkipped: "Omitida: {reason}",
@@ -1659,6 +1663,7 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "Entrées capturées",
 			memoryInjectionRate: "Utilisation de l’injection",
 			memoryRetrievalRate: "Taux de réussite de la recherche",
+			memoryRecalledCount: "Rappel par tour",
 			memoryRecentCaptures: "Captures récentes",
 			memoryCaptureWritten: "Écrites : {count}",
 			memoryCaptureSkipped: "Ignorée : {reason}",
@@ -2004,6 +2009,7 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "Erfasste Einträge",
 			memoryInjectionRate: "Injektionsnutzung",
 			memoryRetrievalRate: "Suchtrefferquote",
+			memoryRecalledCount: "Ruf pro Runde",
 			memoryRecentCaptures: "Letzte Erfassungen",
 			memoryCaptureWritten: "{count} geschrieben",
 			memoryCaptureSkipped: "Übersprungen: {reason}",
@@ -2349,6 +2355,7 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "Захвачено записей",
 			memoryInjectionRate: "Использование инъекции",
 			memoryRetrievalRate: "Доля успешных поисков",
+			memoryRecalledCount: "Напоминаний по ходу",
 			memoryRecentCaptures: "Недавние захваты",
 			memoryCaptureWritten: "Записано: {count}",
 			memoryCaptureSkipped: "Пропущено: {reason}",
@@ -2694,6 +2701,7 @@ window.__ModuleLoader__.load({
 			memoryStatCapturedEntries: "Entradas capturadas",
 			memoryInjectionRate: "Utilização da injeção",
 			memoryRetrievalRate: "Taxa de acerto da busca",
+			memoryRecalledCount: "Recall por turno",
 			memoryRecentCaptures: "Capturas recentes",
 			memoryCaptureWritten: "Gravadas: {count}",
 			memoryCaptureSkipped: "Ignorada: {reason}",
@@ -6957,6 +6965,7 @@ window.__ModuleLoader__.load({
 					searched: integer(session.searched, 0, Number.MAX_SAFE_INTEGER, 0),
 					searchUsed: integer(session.searchUsed, 0, Number.MAX_SAFE_INTEGER, 0),
 					overflow: integer(session.overflow, 0, Number.MAX_SAFE_INTEGER, 0),
+					recalled: integer(session.recalled, 0, Number.MAX_SAFE_INTEGER, 0),
 					updatedAt: text(session.updatedAt)
 				};
 			});
@@ -7118,13 +7127,15 @@ window.__ModuleLoader__.load({
 				injected: 0,
 				injectedUsed: 0,
 				searched: 0,
-				searchUsed: 0
+				searchUsed: 0,
+				recalled: 0
 			};
 			for (const session of stats?.sessions ?? []) {
 				totals.injected += session.injected;
 				totals.injectedUsed += session.injectedUsed;
 				totals.searched += session.searched ?? 0;
 				totals.searchUsed += session.searchUsed ?? 0;
+				totals.recalled += session.recalled ?? 0;
 			}
 			return totals;
 		}
@@ -9147,6 +9158,16 @@ window.__ModuleLoader__.load({
 										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 											className: memory_module_css_default.statValue,
 											children: retrievalRate
+										})]
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+										className: memory_module_css_default.stat,
+										children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.statLabel,
+											children: t("memoryRecalledCount")
+										}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: memory_module_css_default.statValue,
+											children: String(recallTotals.recalled)
 										})]
 									})
 								]
